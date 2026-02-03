@@ -135,6 +135,7 @@ export const MetabolicProfileSchema = z.object({
   mealTargets: z.array(MealTargetSchema),
   trainingDayBonusKcal: z.number().int(),
   restDayKcal: z.number().int(),
+  trainingDayKcal: z.number().int(),
   calculationMethod: z.literal('mifflin_st_jeor'),
   macroSplit: z.object({
     proteinPercent: z.number(),
