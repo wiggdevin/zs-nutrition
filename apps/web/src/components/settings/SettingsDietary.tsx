@@ -19,13 +19,19 @@ const commonAllergies = [
   "Wheat", "Fish", "Shellfish", "Sesame", "Gluten",
 ];
 
+const cuisineOptions = [
+  "American", "Italian", "Mexican", "Asian", "Mediterranean",
+  "Indian", "Japanese", "Thai", "Greek", "Middle Eastern", "Korean", "French",
+];
+
 export default function SettingsDietary() {
   const [dietaryStyle, setDietaryStyle] = useState<DietaryStyle | "">("");
   const [allergies, setAllergies] = useState<string[]>([]);
   const [allergyInput, setAllergyInput] = useState("");
   const [exclusions, setExclusions] = useState<string[]>([]);
   const [exclusionInput, setExclusionInput] = useState("");
-  const [originalData, setOriginalData] = useState({ dietaryStyle: "" as string, allergies: [] as string[], exclusions: [] as string[] });
+  const [cuisinePrefs, setCuisinePrefs] = useState<string[]>([]);
+  const [originalData, setOriginalData] = useState({ dietaryStyle: "" as string, allergies: [] as string[], exclusions: [] as string[], cuisinePrefs: [] as string[] });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +39,8 @@ export default function SettingsDietary() {
 
   const dirty = dietaryStyle !== originalData.dietaryStyle ||
     JSON.stringify(allergies) !== JSON.stringify(originalData.allergies) ||
-    JSON.stringify(exclusions) !== JSON.stringify(originalData.exclusions);
+    JSON.stringify(exclusions) !== JSON.stringify(originalData.exclusions) ||
+    JSON.stringify(cuisinePrefs) !== JSON.stringify(originalData.cuisinePrefs);
 
   // Track the current fetch request so we can abort stale ones
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -66,10 +73,12 @@ export default function SettingsDietary() {
       setDietaryStyle(p.dietaryStyle || "");
       setAllergies(p.allergies || []);
       setExclusions(p.exclusions || []);
+      setCuisinePrefs(p.cuisinePrefs || []);
       setOriginalData({
         dietaryStyle: p.dietaryStyle || "",
         allergies: p.allergies || [],
         exclusions: p.exclusions || [],
+        cuisinePrefs: p.cuisinePrefs || [],
       });
     } catch (err: unknown) {
       // Ignore aborted requests (user navigated away or new fetch started)
@@ -133,6 +142,16 @@ export default function SettingsDietary() {
     setSuccess(false);
   };
 
+  const toggleCuisine = (cuisine: string) => {
+    const lower = cuisine.toLowerCase();
+    if (cuisinePrefs.includes(lower)) {
+      setCuisinePrefs(cuisinePrefs.filter((c) => c !== lower));
+    } else {
+      setCuisinePrefs([...cuisinePrefs, lower]);
+    }
+    setSuccess(false);
+  };
+
   async function handleSave() {
     try {
       setSaving(true);
@@ -141,13 +160,13 @@ export default function SettingsDietary() {
       const res = await fetch("/api/settings/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ dietaryStyle, allergies, exclusions }),
+        body: JSON.stringify({ dietaryStyle, allergies, exclusions, cuisinePrefs }),
       });
       if (!res.ok) {
         const data = await res.json();
         throw new Error(data.error || "Failed to save");
       }
-      setOriginalData({ dietaryStyle, allergies: [...allergies], exclusions: [...exclusions] });
+      setOriginalData({ dietaryStyle, allergies: [...allergies], exclusions: [...exclusions], cuisinePrefs: [...cuisinePrefs] });
       setSuccess(true);
       toast.success("Dietary preferences saved!");
     } catch (err: unknown) {
@@ -162,6 +181,7 @@ export default function SettingsDietary() {
     setDietaryStyle(originalData.dietaryStyle as DietaryStyle | "");
     setAllergies([...originalData.allergies]);
     setExclusions([...originalData.exclusions]);
+    setCuisinePrefs([...originalData.cuisinePrefs]);
     setSuccess(false);
     setError(null);
   }
@@ -309,6 +329,37 @@ export default function SettingsDietary() {
               ))}
             </div>
           )}
+        </div>
+
+        {/* Cuisine Preferences */}
+        <div>
+          <label id="settings-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+            Cuisine Preferences (select favorites)
+          </label>
+          <div className="flex flex-wrap gap-2" role="group" aria-labelledby="settings-cuisine-label">
+            {cuisineOptions.map((cuisine) => (
+              <button
+                key={cuisine}
+                type="button"
+                onClick={() => toggleCuisine(cuisine)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    toggleCuisine(cuisine);
+                  }
+                }}
+                aria-pressed={cuisinePrefs.includes(cuisine.toLowerCase())}
+                className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+                  cuisinePrefs.includes(cuisine.toLowerCase())
+                    ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
+                    : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                }`}
+                title={cuisine}
+              >
+                {cuisine}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
