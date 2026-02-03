@@ -216,29 +216,54 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
         const mealCarbs = Math.round(target.carbsG * kcalScale);
         const mealFat = Math.round(target.fatG * kcalScale);
 
-        // Pick a meal avoiding variety violations
-        const slotType = target.label.includes('snack') ? 'snack' : target.label;
-        const candidates = mealDB[slotType] || mealDB['snack'] || [];
+        // Pick a meal avoiding variety violations, prioritizing preferred cuisines
+        const slotType = target.label.toLowerCase().includes('snack') ? 'snack' : target.label.toLowerCase();
+        const slotData = mealDB[slotType] || mealDB['snack'] || { preferred: [], other: [] };
 
-        let selected = candidates[0];
-        for (const candidate of candidates) {
-          // Check: not used in last 3 meals of same slot
-          const recentSlotMeals = recentMealNames.slice(-21); // ~3 days worth
-          if (recentSlotMeals.includes(candidate.name)) continue;
+        let selected = null;
 
-          // Check: no consecutive same protein
-          const lastProtein = usedProteins[usedProteins.length - 1];
-          if (lastProtein === candidate.primaryProtein && candidate.primaryProtein !== 'mixed') continue;
+        // Strategy: Try preferred cuisines 75% of the time to ensure >50% overall preference
+        // while still allowing enough variety from other cuisines
+        const usePreferred = slotData.preferred.length > 0 && Math.random() < 0.75;
 
-          selected = candidate;
-          break;
+        if (usePreferred) {
+          // Try preferred cuisines (with relaxed variety check)
+          for (const candidate of slotData.preferred) {
+            const recentPreferredMeals = recentMealNames.slice(-7); // Only 1 day for preferred cuisines
+            if (recentPreferredMeals.includes(candidate.name)) continue;
+
+            const lastProtein = usedProteins[usedProteins.length - 1];
+            if (lastProtein === candidate.primaryProtein && candidate.primaryProtein !== 'mixed') continue;
+
+            selected = candidate;
+            break;
+          }
         }
 
-        // Rotate candidates to ensure variety
-        const slotCandidates = mealDB[slotType] || mealDB['snack'] || [];
-        const idx = slotCandidates.indexOf(selected);
+        // If no suitable preferred meal (or we're using other pool), try other cuisines
+        if (!selected && slotData.other.length > 0) {
+          for (const candidate of slotData.other) {
+            const recentOtherMeals = recentMealNames.slice(-21); // 3 days for other cuisines
+            if (recentOtherMeals.includes(candidate.name)) continue;
+
+            const lastProtein = usedProteins[usedProteins.length - 1];
+            if (lastProtein === candidate.primaryProtein && candidate.primaryProtein !== 'mixed') continue;
+
+            selected = candidate;
+            break;
+          }
+        }
+
+        // Ultimate fallback: pick first available meal if variety constraints block everything
+        if (!selected) {
+          selected = slotData.preferred[0] || slotData.other[0];
+        }
+
+        // Rotate the selected meal in its pool to ensure variety
+        const pool = slotData.preferred.includes(selected) ? slotData.preferred : slotData.other;
+        const idx = pool.indexOf(selected);
         if (idx >= 0) {
-          slotCandidates.push(slotCandidates.splice(idx, 1)[0]);
+          pool.push(pool.splice(idx, 1)[0]);
         }
 
         usedProteins.push(selected.primaryProtein);
@@ -296,32 +321,90 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
 
   /**
    * Returns a meal database filtered by dietary style and allergies.
+   * Organizes meals into preferred and other categories based on cuisine preferences.
    */
-  private getMealDatabase(intake: ClientIntake): Record<string, MealCandidate[]> {
+  private getMealDatabase(intake: ClientIntake): Record<string, { preferred: MealCandidate[]; other: MealCandidate[] }> {
     const allergiesLower = new Set(intake.allergies.map((a) => a.toLowerCase()));
     const exclusionsLower = new Set(intake.exclusions.map((e) => e.toLowerCase()));
+    const preferredCuisines = new Set(
+      intake.cuisinePreferences.map((c) => c.toLowerCase())
+    );
 
     const allMeals = this.getFullMealDatabase();
 
-    // Filter by dietary style
-    const filtered: Record<string, MealCandidate[]> = {};
+    // Filter by dietary style and cuisine preferences
+    const filtered: Record<string, { preferred: MealCandidate[]; other: MealCandidate[] }> = {};
     for (const [slot, meals] of Object.entries(allMeals)) {
-      filtered[slot] = meals.filter((meal) => {
+      const preferred: MealCandidate[] = [];
+      const other: MealCandidate[] = [];
+
+      for (const meal of meals) {
         // Dietary style check
-        if (intake.dietaryStyle === 'vegetarian' && meal.tags.includes('meat')) return false;
-        if (intake.dietaryStyle === 'vegan' && (meal.tags.includes('meat') || meal.tags.includes('dairy') || meal.tags.includes('eggs'))) return false;
-        if (intake.dietaryStyle === 'pescatarian' && meal.tags.includes('meat') && !meal.tags.includes('fish')) return false;
+        let passesDietaryStyle = true;
+        switch (intake.dietaryStyle) {
+          case 'vegetarian':
+            // No meat/poultry/fish, but eggs/dairy allowed
+            if (meal.tags.includes('meat') || meal.tags.includes('fish')) passesDietaryStyle = false;
+            break;
+
+          case 'vegan':
+            // No meat, fish, eggs, dairy, or other animal products
+            if (meal.tags.includes('meat') || meal.tags.includes('fish') ||
+                meal.tags.includes('eggs') || meal.tags.includes('dairy')) passesDietaryStyle = false;
+            break;
+
+          case 'pescatarian':
+            // No meat/poultry, but fish/eggs/dairy allowed
+            if (meal.tags.includes('meat')) passesDietaryStyle = false;
+            break;
+
+          case 'keto':
+            // Very low carb, high fat meals only
+            if (!meal.tags.includes('keto')) passesDietaryStyle = false;
+            break;
+
+          case 'paleo':
+            // No grains, dairy, legumes
+            if (meal.tags.includes('grains') || meal.tags.includes('dairy') ||
+                meal.tags.includes('legumes')) passesDietaryStyle = false;
+            break;
+
+          case 'omnivore':
+          default:
+            // No restrictions
+            break;
+        }
+
+        if (!passesDietaryStyle) continue;
 
         // Allergy/exclusion check
+        let passesAllergies = true;
         for (const allergen of allergiesLower) {
-          if (meal.name.toLowerCase().includes(allergen) || meal.primaryProtein.toLowerCase().includes(allergen)) return false;
+          if (meal.name.toLowerCase().includes(allergen) || meal.primaryProtein.toLowerCase().includes(allergen)) {
+            passesAllergies = false;
+            break;
+          }
         }
-        for (const exclusion of exclusionsLower) {
-          if (meal.name.toLowerCase().includes(exclusion) || meal.primaryProtein.toLowerCase().includes(exclusion)) return false;
-        }
+        if (!passesAllergies) continue;
 
-        return true;
-      });
+        for (const exclusion of exclusionsLower) {
+          if (meal.name.toLowerCase().includes(exclusion) || meal.primaryProtein.toLowerCase().includes(exclusion)) {
+            passesAllergies = false;
+            break;
+          }
+        }
+        if (!passesAllergies) continue;
+
+        // Categorize by cuisine preference
+        const isPreferred = preferredCuisines.has(meal.cuisine.toLowerCase());
+        if (isPreferred) {
+          preferred.push(meal);
+        } else {
+          other.push(meal);
+        }
+      }
+
+      filtered[slot] = { preferred, other };
     }
 
     return filtered;
@@ -342,10 +425,26 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
         { name: 'Whole Grain Pancakes with Fresh Blueberries', cuisine: 'American', basePrepMin: 15, baseCookMin: 15, primaryProtein: 'mixed', searchQuery: 'whole grain pancakes blueberries', tags: ['eggs', 'dairy'] },
         { name: 'Smoked Salmon Bagel with Cream Cheese', cuisine: 'American', basePrepMin: 10, baseCookMin: 0, primaryProtein: 'salmon', searchQuery: 'smoked salmon bagel cream cheese', tags: ['fish', 'dairy', 'no-cook'] },
         { name: 'Vegetable Frittata with Bell Peppers', cuisine: 'Italian', basePrepMin: 10, baseCookMin: 20, primaryProtein: 'eggs', searchQuery: 'vegetable frittata bell peppers', tags: ['eggs', 'dairy'] },
+        { name: 'Miso Soup with Tofu and Seaweed', cuisine: 'Japanese', basePrepMin: 5, baseCookMin: 10, primaryProtein: 'tofu', searchQuery: 'miso soup tofu seaweed', tags: ['vegan-friendly', 'quick'] },
+        { name: 'Japanese Rice Bowl with Natto and Egg', cuisine: 'Japanese', basePrepMin: 5, baseCookMin: 5, primaryProtein: 'mixed', searchQuery: 'japanese rice natto egg', tags: ['quick', 'no-cook'] },
+        { name: 'Italian Bruschetta with Tomato and Basil', cuisine: 'Italian', basePrepMin: 10, baseCookMin: 5, primaryProtein: 'mixed', searchQuery: 'bruschetta tomato basil', tags: ['vegan-friendly', 'quick'] },
         { name: 'Chia Pudding with Mango and Coconut', cuisine: 'Thai', basePrepMin: 10, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'chia pudding mango coconut', tags: ['no-cook', 'meal-prep', 'vegan-friendly'] },
+        // Keto options
+        { name: 'Bacon and Eggs with Avocado', cuisine: 'American', basePrepMin: 5, baseCookMin: 15, primaryProtein: 'eggs', searchQuery: 'bacon eggs avocado', tags: ['keto', 'eggs', 'high-fat'] },
+        { name: 'Scrambled Eggs with Cheese and Heavy Cream', cuisine: 'American', basePrepMin: 5, baseCookMin: 10, primaryProtein: 'eggs', searchQuery: 'scrambled eggs cheese heavy cream', tags: ['keto', 'eggs', 'dairy', 'high-fat'] },
+        { name: 'Keto Smoothie with Avocado and Coconut Milk', cuisine: 'American', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'keto smoothie avocado coconut milk', tags: ['keto', 'high-fat', 'no-cook'] },
+        { name: 'Smoked Salmon with Cream Cheese', cuisine: 'American', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'salmon', searchQuery: 'smoked salmon cream cheese', tags: ['keto', 'fish', 'dairy', 'high-fat', 'no-cook'] },
+        // Paleo options
+        { name: 'Sweet Potato with Almond Butter and Berries', cuisine: 'American', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'sweet potato almond butter berries', tags: ['paleo', 'grain-free', 'no-dairy', 'no-cook'] },
+        { name: 'Scrambled Eggs with Avocado and Tomato', cuisine: 'American', basePrepMin: 5, baseCookMin: 10, primaryProtein: 'eggs', searchQuery: 'scrambled eggs avocado tomato', tags: ['paleo', 'grain-free', 'no-dairy'] },
+        { name: 'Coconut Chia Pudding with Berries', cuisine: 'American', basePrepMin: 10, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'coconut chia pudding berries', tags: ['paleo', 'grain-free', 'no-dairy', 'no-cook', 'meal-prep'] },
       ],
       lunch: [
         { name: 'Grilled Chicken Caesar Salad', cuisine: 'Italian', basePrepMin: 15, baseCookMin: 15, primaryProtein: 'chicken', searchQuery: 'grilled chicken caesar salad', tags: ['meat', 'grill'] },
+        { name: 'Italian Caprese Sandwich with Mozzarella and Tomato', cuisine: 'Italian', basePrepMin: 10, baseCookMin: 0, primaryProtein: 'dairy', searchQuery: 'caprese sandwich mozzarella tomato', tags: ['dairy', 'quick', 'no-cook'] },
+        { name: 'Minestrone Soup with Pasta and Vegetables', cuisine: 'Italian', basePrepMin: 10, baseCookMin: 25, primaryProtein: 'mixed', searchQuery: 'minestrone soup pasta vegetables', tags: ['vegan-friendly'] },
+        { name: 'Chicken Katsu Curry Rice Bowl', cuisine: 'Japanese', basePrepMin: 15, baseCookMin: 20, primaryProtein: 'chicken', searchQuery: 'chicken katsu curry rice', tags: ['meat'] },
+        { name: 'Beef Teriyaki Bowl with Rice and Vegetables', cuisine: 'Japanese', basePrepMin: 10, baseCookMin: 15, primaryProtein: 'beef', searchQuery: 'beef teriyaki bowl rice vegetables', tags: ['meat', 'quick'] },
         { name: 'Turkey and Avocado Wrap with Mixed Greens', cuisine: 'American', basePrepMin: 10, baseCookMin: 0, primaryProtein: 'turkey', searchQuery: 'turkey avocado wrap', tags: ['meat', 'quick', 'no-cook'] },
         { name: 'Quinoa Power Bowl with Chickpeas and Tahini', cuisine: 'Mediterranean', basePrepMin: 15, baseCookMin: 20, primaryProtein: 'chickpeas', searchQuery: 'quinoa bowl chickpeas tahini', tags: ['vegan-friendly'] },
         { name: 'Mediterranean Grilled Chicken Bowl with Hummus', cuisine: 'Mediterranean', basePrepMin: 15, baseCookMin: 20, primaryProtein: 'chicken', searchQuery: 'mediterranean chicken bowl hummus', tags: ['meat', 'grill'] },
@@ -355,6 +454,17 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
         { name: 'Tuna Nicoise Salad with Hard-Boiled Eggs', cuisine: 'French', basePrepMin: 20, baseCookMin: 10, primaryProtein: 'tuna', searchQuery: 'tuna nicoise salad eggs', tags: ['fish', 'eggs'] },
         { name: 'Lentil Soup with Whole Grain Bread', cuisine: 'Indian', basePrepMin: 10, baseCookMin: 30, primaryProtein: 'lentils', searchQuery: 'lentil soup bread', tags: ['vegan-friendly'] },
         { name: 'Beef and Broccoli Stir-Fry with Brown Rice', cuisine: 'Chinese', basePrepMin: 15, baseCookMin: 15, primaryProtein: 'beef', searchQuery: 'beef broccoli stir fry brown rice', tags: ['meat', 'stir-fry'] },
+        // Keto options
+        { name: 'Cobb Salad with Bacon, Avocado, and Blue Cheese', cuisine: 'American', basePrepMin: 15, baseCookMin: 10, primaryProtein: 'mixed', searchQuery: 'cobb salad bacon avocado blue cheese', tags: ['keto', 'eggs', 'dairy', 'high-fat'] },
+        { name: 'Grilled Chicken with Garlic Butter and Asparagus', cuisine: 'American', basePrepMin: 10, baseCookMin: 20, primaryProtein: 'chicken', searchQuery: 'grilled chicken garlic butter asparagus', tags: ['keto', 'meat', 'high-fat', 'grill'] },
+        { name: 'Salmon with Lemon Butter and Spinach', cuisine: 'American', basePrepMin: 10, baseCookMin: 20, primaryProtein: 'salmon', searchQuery: 'salmon lemon butter spinach', tags: ['keto', 'fish', 'high-fat'] },
+        { name: 'Zucchini Noodles with Pesto and Grilled Chicken', cuisine: 'Italian', basePrepMin: 15, baseCookMin: 15, primaryProtein: 'chicken', searchQuery: 'zucchini noodles pesto grilled chicken', tags: ['keto', 'meat', 'grain-free'] },
+        { name: 'Steak Salad with Blue Cheese Dressing', cuisine: 'American', basePrepMin: 15, baseCookMin: 15, primaryProtein: 'beef', searchQuery: 'steak salad blue cheese dressing', tags: ['keto', 'meat', 'dairy', 'high-fat'] },
+        // Paleo options
+        { name: 'Grilled Chicken with Roasted Sweet Potato and Broccoli', cuisine: 'American', basePrepMin: 10, baseCookMin: 25, primaryProtein: 'chicken', searchQuery: 'grilled chicken roasted sweet potato broccoli', tags: ['paleo', 'grain-free', 'no-dairy', 'grill'] },
+        { name: 'Salmon with Asparagus and Sweet Potato', cuisine: 'American', basePrepMin: 10, baseCookMin: 20, primaryProtein: 'salmon', searchQuery: 'salmon asparagus sweet potato', tags: ['paleo', 'grain-free', 'no-dairy', 'fish'] },
+        { name: 'Steak Salad with Avocado and Tomato', cuisine: 'American', basePrepMin: 15, baseCookMin: 15, primaryProtein: 'beef', searchQuery: 'steak salad avocado tomato', tags: ['paleo', 'grain-free', 'no-dairy'] },
+        { name: 'Chicken and Vegetable Stir-Fry with Cauliflower Rice', cuisine: 'Chinese', basePrepMin: 15, baseCookMin: 15, primaryProtein: 'chicken', searchQuery: 'chicken vegetable stir fry cauliflower rice', tags: ['paleo', 'grain-free', 'no-dairy', 'stir-fry'] },
       ],
       dinner: [
         { name: 'Grilled Salmon with Roasted Sweet Potato and Asparagus', cuisine: 'American', basePrepMin: 15, baseCookMin: 25, primaryProtein: 'salmon', searchQuery: 'grilled salmon sweet potato asparagus', tags: ['fish', 'grill'] },
@@ -367,6 +477,19 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
         { name: 'Pork Tenderloin with Apple Cider Glaze and Quinoa', cuisine: 'American', basePrepMin: 15, baseCookMin: 30, primaryProtein: 'pork', searchQuery: 'pork tenderloin apple cider quinoa', tags: ['meat', 'bake'] },
         { name: 'Chickpea and Spinach Curry with Basmati Rice', cuisine: 'Indian', basePrepMin: 15, baseCookMin: 25, primaryProtein: 'chickpeas', searchQuery: 'chickpea spinach curry basmati rice', tags: ['vegan-friendly'] },
         { name: 'Grilled Tofu with Teriyaki Glaze and Stir-Fried Vegetables', cuisine: 'Japanese', basePrepMin: 20, baseCookMin: 20, primaryProtein: 'tofu', searchQuery: 'grilled tofu teriyaki stir fry vegetables', tags: ['vegan-friendly', 'grill'] },
+        { name: 'Eggplant Parmigiana with Whole Wheat Pasta', cuisine: 'Italian', basePrepMin: 20, baseCookMin: 40, primaryProtein: 'mixed', searchQuery: 'eggplant parmigiana whole wheat pasta', tags: ['vegetarian'] },
+        { name: 'Japanese Chicken Teriyaki with Steamed Rice', cuisine: 'Japanese', basePrepMin: 15, baseCookMin: 20, primaryProtein: 'chicken', searchQuery: 'chicken teriyaki steamed rice', tags: ['meat', 'quick'] },
+        { name: 'Spaghetti Bolognese with Lean Beef', cuisine: 'Italian', basePrepMin: 15, baseCookMin: 30, primaryProtein: 'beef', searchQuery: 'spaghetti bolognese lean beef', tags: ['meat'] },
+        { name: 'Salmon Teriyaki with Soba Noodles', cuisine: 'Japanese', basePrepMin: 15, baseCookMin: 15, primaryProtein: 'salmon', searchQuery: 'salmon teriyaki soba noodles', tags: ['fish', 'quick'] },
+        // Keto options
+        { name: 'Pan-Seared Steak with Garlic Butter', cuisine: 'American', basePrepMin: 10, baseCookMin: 20, primaryProtein: 'beef', searchQuery: 'pan seared steak garlic butter', tags: ['keto', 'meat', 'high-fat'] },
+        { name: 'Baked Salmon with Cream Cheese Spinach', cuisine: 'American', basePrepMin: 15, baseCookMin: 25, primaryProtein: 'salmon', searchQuery: 'baked salmon cream cheese spinach', tags: ['keto', 'fish', 'dairy', 'high-fat', 'bake'] },
+        { name: 'Chicken Thighs with Skin and Roasted Vegetables', cuisine: 'American', basePrepMin: 10, baseCookMin: 40, primaryProtein: 'chicken', searchQuery: 'chicken thighs skin roasted vegetables', tags: ['keto', 'meat', 'high-fat', 'bake'] },
+        { name: 'Shrimp with Zucchini Noodles in Alfredo Sauce', cuisine: 'Italian', basePrepMin: 15, baseCookMin: 20, primaryProtein: 'shrimp', searchQuery: 'shrimp zucchini noodles alfredo sauce', tags: ['keto', 'fish', 'dairy', 'high-fat'] },
+        // Paleo options
+        { name: 'Grilled Steak with Roasted Vegetables', cuisine: 'American', basePrepMin: 10, baseCookMin: 25, primaryProtein: 'beef', searchQuery: 'grilled steak roasted vegetables', tags: ['paleo', 'grain-free', 'no-dairy', 'grill'] },
+        { name: 'Baked Salmon with Lemon and Asparagus', cuisine: 'American', basePrepMin: 15, baseCookMin: 25, primaryProtein: 'salmon', searchQuery: 'baked salmon lemon asparagus', tags: ['paleo', 'grain-free', 'no-dairy', 'fish', 'bake'] },
+        { name: 'Chicken Stir-Fry with Cauliflower Rice', cuisine: 'Chinese', basePrepMin: 15, baseCookMin: 20, primaryProtein: 'chicken', searchQuery: 'chicken stir fry cauliflower rice', tags: ['paleo', 'grain-free', 'no-dairy', 'stir-fry'] },
       ],
       snack: [
         { name: 'Apple Slices with Almond Butter', cuisine: 'American', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'apple slices almond butter', tags: ['no-cook', 'quick', 'vegan-friendly'] },
@@ -378,7 +501,19 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
         { name: 'Hard-Boiled Eggs with Everything Seasoning', cuisine: 'American', basePrepMin: 5, baseCookMin: 12, primaryProtein: 'eggs', searchQuery: 'hard boiled eggs seasoning', tags: ['eggs', 'meal-prep'] },
         { name: 'Greek Yogurt with Honey and Walnuts', cuisine: 'Greek', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'dairy', searchQuery: 'greek yogurt honey walnuts', tags: ['dairy', 'no-cook', 'quick'] },
         { name: 'Edamame with Sea Salt', cuisine: 'Japanese', basePrepMin: 2, baseCookMin: 5, primaryProtein: 'soy', searchQuery: 'edamame sea salt', tags: ['vegan-friendly', 'quick'] },
+        { name: 'Rice Crackers with Nori and Sesame', cuisine: 'Japanese', basePrepMin: 0, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'rice crackers nori sesame', tags: ['no-cook', 'quick', 'vegan-friendly'] },
+        { name: 'Italian Mozzarella and Tomato Skewers', cuisine: 'Italian', basePrepMin: 10, baseCookMin: 0, primaryProtein: 'dairy', searchQuery: 'mozzarella tomato skewers', tags: ['dairy', 'no-cook', 'quick'] },
         { name: 'Dark Chocolate Almonds (30g)', cuisine: 'American', basePrepMin: 0, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'dark chocolate almonds', tags: ['no-cook', 'quick'] },
+        // Keto options
+        { name: 'Cheese and Nuts', cuisine: 'American', basePrepMin: 2, baseCookMin: 0, primaryProtein: 'dairy', searchQuery: 'cheese nuts', tags: ['keto', 'dairy', 'high-fat', 'no-cook', 'quick'] },
+        { name: 'Avocado with Everything Bagel Seasoning', cuisine: 'American', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'avocado everything bagel seasoning', tags: ['keto', 'high-fat', 'no-cook', 'quick'] },
+        { name: 'Hard-Boiled Eggs with Mayonnaise', cuisine: 'American', basePrepMin: 5, baseCookMin: 12, primaryProtein: 'eggs', searchQuery: 'hard boiled eggs mayonnaise', tags: ['keto', 'eggs', 'high-fat', 'meal-prep'] },
+        { name: 'Pork Rinds with Guacamole', cuisine: 'American', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'pork', searchQuery: 'pork rinds guacamole', tags: ['keto', 'meat', 'high-fat', 'no-cook', 'quick'] },
+        // Paleo options
+        { name: 'Mixed Nuts and Seeds', cuisine: 'American', basePrepMin: 0, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'mixed nuts seeds', tags: ['paleo', 'grain-free', 'no-dairy', 'no-cook', 'quick'] },
+        { name: 'Apple Slices with Cashew Butter', cuisine: 'American', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'apple slices cashew butter', tags: ['paleo', 'grain-free', 'no-dairy', 'no-cook', 'quick'] },
+        { name: 'Beef Jerky', cuisine: 'American', basePrepMin: 0, baseCookMin: 0, primaryProtein: 'beef', searchQuery: 'beef jerky', tags: ['paleo', 'grain-free', 'no-dairy', 'no-cook', 'quick'] },
+        { name: 'Carrot Sticks with Almond Butter', cuisine: 'American', basePrepMin: 5, baseCookMin: 0, primaryProtein: 'mixed', searchQuery: 'carrot sticks almond butter', tags: ['paleo', 'grain-free', 'no-dairy', 'no-cook', 'quick'] },
       ],
       // Additional slot mappings
       morning_snack: [],
