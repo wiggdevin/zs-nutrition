@@ -1,0 +1,20 @@
+{
+  "name": "@zsn/queue-processor",
+  "version": "0.1.0",
+  "private": true,
+  "main": "dist/index.js",
+  "scripts": {
+    "build": "tsc",
+    "dev": "tsc --watch & node --watch dist/index.js",
+    "start": "node dist/index.js"
+  },
+  "dependencies": {
+    "@zero-sum/nutrition-engine": "workspace:*",
+    "bullmq": "^5.34.0",
+    "ioredis": "^5.6.1"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "@types/node": "^22.0.0"
+  }
+}

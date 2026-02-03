@@ -1,0 +1,52 @@
+{
+  "name": "@zsn/web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --port 3456",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate",
+    "db:studio": "prisma studio"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.72.1",
+    "@clerk/nextjs": "^6.12.0",
+    "@clerk/themes": "^2.2.0",
+    "@prisma/client": "6.19.2",
+    "@radix-ui/react-slot": "^1.2.4",
+    "@tailwindcss/postcss": "^4.0.0",
+    "@tanstack/react-query": "^5.90.20",
+    "@trpc/client": "^11.9.0",
+    "@trpc/react-query": "^11.9.0",
+    "@trpc/server": "^11.9.0",
+    "@vercel/blob": "^2.0.1",
+    "@zero-sum/nutrition-engine": "workspace:*",
+    "bullmq": "^5.34.0",
+    "class-variance-authority": "^0.7.1",
+    "clsx": "^2.1.1",
+    "ioredis": "^5.4.2",
+    "lucide-react": "^0.460.0",
+    "next": "15.5.7",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "recharts": "^3.7.0",
+    "superjson": "^2.2.6",
+    "tailwind-merge": "^3.4.0",
+    "tailwindcss": "^4.0.0",
+    "uuid": "^11.0.0",
+    "zod": "^3.25.76",
+    "zustand": "^5.0.11"
+  },
+  "devDependencies": {
+    "@types/node": "^22.0.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "@types/uuid": "^10.0.0",
+    "postcss": "^8.4.0",
+    "prisma": "6.19.2",
+    "typescript": "5.9.3"
+  }
+}

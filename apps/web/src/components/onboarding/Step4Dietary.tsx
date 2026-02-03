@@ -1,0 +1,151 @@
+"use client";
+
+import { useState } from "react";
+import { OnboardingData, DietaryStyle } from "@/lib/onboarding-types";
+
+interface Props {
+  data: OnboardingData;
+  updateData: (partial: Partial<OnboardingData>) => void;
+}
+
+const dietaryStyles: { value: DietaryStyle; label: string }[] = [
+  { value: "omnivore", label: "Omnivore" },
+  { value: "vegetarian", label: "Vegetarian" },
+  { value: "vegan", label: "Vegan" },
+  { value: "pescatarian", label: "Pescatarian" },
+  { value: "keto", label: "Keto" },
+  { value: "paleo", label: "Paleo" },
+];
+
+const commonAllergies = [
+  "Peanuts",
+  "Tree Nuts",
+  "Dairy",
+  "Eggs",
+  "Soy",
+  "Wheat",
+  "Fish",
+  "Shellfish",
+  "Sesame",
+  "Gluten",
+];
+
+export function Step4Dietary({ data, updateData }: Props) {
+  const [exclusionInput, setExclusionInput] = useState("");
+
+  const toggleAllergy = (allergy: string) => {
+    const lower = allergy.toLowerCase();
+    const current = data.allergies;
+    if (current.includes(lower)) {
+      updateData({ allergies: current.filter((a) => a !== lower) });
+    } else {
+      updateData({ allergies: [...current, lower] });
+    }
+  };
+
+  const addExclusion = () => {
+    const trimmed = exclusionInput.trim().toLowerCase();
+    if (trimmed && !data.exclusions.includes(trimmed)) {
+      updateData({ exclusions: [...data.exclusions, trimmed] });
+      setExclusionInput("");
+    }
+  };
+
+  const removeExclusion = (item: string) => {
+    updateData({ exclusions: data.exclusions.filter((e) => e !== item) });
+  };
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-[#a1a1aa]">
+        Your dietary preferences help us curate meals you&apos;ll enjoy.
+      </p>
+
+      {/* Dietary Style */}
+      <div>
+        <label id="onboarding-dietary-style-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          Dietary Style
+        </label>
+        <div className="grid grid-cols-3 gap-2">
+          {dietaryStyles.map(({ value, label }) => (
+            <button
+              key={value}
+              onClick={() => updateData({ dietaryStyle: value })}
+              className={`rounded-lg border px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${
+                data.dietaryStyle === value
+                  ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
+                  : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+              }`}
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Allergies */}
+      <div>
+        <label id="onboarding-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          Allergies (select all that apply)
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {commonAllergies.map((allergy) => (
+            <button
+              key={allergy}
+              onClick={() => toggleAllergy(allergy)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                data.allergies.includes(allergy.toLowerCase())
+                  ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"
+                  : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+              }`}
+            >
+              {allergy}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Exclusions */}
+      <div>
+        <label htmlFor="onboarding-exclusions" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          Food Exclusions
+        </label>
+        <div className="flex gap-2">
+          <input
+            id="onboarding-exclusions"
+            type="text"
+            value={exclusionInput}
+            onChange={(e) => setExclusionInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addExclusion()}
+            placeholder="e.g., mushrooms, cilantro"
+            className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316]"
+          />
+          <button
+            onClick={addExclusion}
+            className="rounded-lg bg-[#2a2a2a] px-4 py-2 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a]"
+          >
+            Add
+          </button>
+        </div>
+        {data.exclusions.length > 0 && (
+          <div className="mt-2 flex flex-wrap gap-2">
+            {data.exclusions.map((item) => (
+              <span
+                key={item}
+                className="flex items-center gap-1 rounded-full border border-[#2a2a2a] bg-[#1e1e1e] px-3 py-1 text-xs text-[#a1a1aa]"
+              >
+                {item}
+                <button
+                  onClick={() => removeExclusion(item)}
+                  className="ml-1 text-[#ef4444] hover:text-[#f87171]"
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
+      </div>
+    </div>
+  );
+}

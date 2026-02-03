@@ -1,0 +1,149 @@
+"use client";
+
+import { OnboardingData, MacroStyle } from "@/lib/onboarding-types";
+
+interface Props {
+  data: OnboardingData;
+  updateData: (partial: Partial<OnboardingData>) => void;
+}
+
+const macroStyles: { value: MacroStyle; label: string; desc: string }[] = [
+  { value: "balanced", label: "Balanced", desc: "30P / 40C / 30F — General health" },
+  { value: "high_protein", label: "High Protein", desc: "40P / 35C / 25F — Muscle building" },
+  { value: "low_carb", label: "Low Carb", desc: "35P / 25C / 40F — Fat adaptation" },
+  { value: "keto", label: "Keto", desc: "30P / 5C / 65F — Ketogenic" },
+];
+
+const cuisineOptions = [
+  "American",
+  "Italian",
+  "Mexican",
+  "Asian",
+  "Mediterranean",
+  "Indian",
+  "Japanese",
+  "Thai",
+  "Greek",
+  "Middle Eastern",
+  "Korean",
+  "French",
+];
+
+export function Step6Preferences({ data, updateData }: Props) {
+  const toggleCuisine = (cuisine: string) => {
+    const lower = cuisine.toLowerCase();
+    const current = data.cuisinePreferences;
+    if (current.includes(lower)) {
+      updateData({ cuisinePreferences: current.filter((c) => c !== lower) });
+    } else {
+      updateData({ cuisinePreferences: [...current, lower] });
+    }
+  };
+
+  return (
+    <div className="space-y-6">
+      <p className="text-sm text-[#a1a1aa]">
+        Final step! Choose your macro split and meal preferences.
+      </p>
+
+      {/* Macro Style */}
+      <div>
+        <label id="onboarding-macro-split-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          Macro Split
+        </label>
+        <div className="space-y-2">
+          {macroStyles.map(({ value, label, desc }) => (
+            <button
+              key={value}
+              onClick={() => updateData({ macroStyle: value })}
+              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
+                data.macroStyle === value
+                  ? "border-[#f97316] bg-[#f97316]/10"
+                  : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
+              }`}
+            >
+              <span className={`block text-sm font-bold ${data.macroStyle === value ? "text-[#f97316]" : "text-[#fafafa]"}`}>
+                {label}
+              </span>
+              <span className="block text-xs text-[#a1a1aa]">{desc}</span>
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Cuisine Preferences */}
+      <div>
+        <label id="onboarding-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          Cuisine Preferences (select favorites)
+        </label>
+        <div className="flex flex-wrap gap-2">
+          {cuisineOptions.map((cuisine) => (
+            <button
+              key={cuisine}
+              onClick={() => toggleCuisine(cuisine)}
+              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+                data.cuisinePreferences.includes(cuisine.toLowerCase())
+                  ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
+                  : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+              }`}
+            >
+              {cuisine}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Meals Per Day */}
+      <div className="grid grid-cols-2 gap-4">
+        <div>
+          <label htmlFor="onboarding-meals-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+            Meals/Day: {data.mealsPerDay}
+          </label>
+          <input
+            id="onboarding-meals-per-day"
+            type="range"
+            value={data.mealsPerDay}
+            onChange={(e) => updateData({ mealsPerDay: parseInt(e.target.value) })}
+            min={2}
+            max={6}
+            step={1}
+            className="w-full accent-[#f97316]"
+          />
+          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+            <span>2</span>
+            <span>6</span>
+          </div>
+        </div>
+        <div>
+          <label htmlFor="onboarding-snacks-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+            Snacks/Day: {data.snacksPerDay}
+          </label>
+          <input
+            id="onboarding-snacks-per-day"
+            type="range"
+            value={data.snacksPerDay}
+            onChange={(e) => updateData({ snacksPerDay: parseInt(e.target.value) })}
+            min={0}
+            max={4}
+            step={1}
+            className="w-full accent-[#f97316]"
+          />
+          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+            <span>0</span>
+            <span>4</span>
+          </div>
+        </div>
+      </div>
+
+      {/* Ready message */}
+      <div className="rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/5 p-4 text-center">
+        <p className="text-sm font-bold text-[#22c55e]">
+          You&apos;re all set!
+        </p>
+        <p className="mt-1 text-xs text-[#a1a1aa]">
+          Click &quot;Complete Setup&quot; to generate your personalized meal plan.
+        </p>
+      </div>
+    </div>
+  );
+}

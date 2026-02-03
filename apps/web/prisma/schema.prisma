@@ -1,0 +1,229 @@
+// Zero Sum Nutrition - Prisma Schema
+// Database: SQLite (local dev)
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================================
+// User (synced with Clerk)
+// ============================================================
+model User {
+  id            String    @id @default(uuid())
+  clerkUserId   String    @unique
+  email         String    @unique
+  isActive      Boolean   @default(true)
+  deactivatedAt DateTime?
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  profiles           UserProfile[]
+  mealPlans          MealPlan[]
+  dailyLogs          DailyLog[]
+  trackedMeals       TrackedMeal[]
+  foodScans          FoodScan[]
+  onboarding         OnboardingState?
+  planGenerationJobs PlanGenerationJob[]
+}
+
+// ============================================================
+// Onboarding State (resumable wizard)
+// ============================================================
+model OnboardingState {
+  id          String   @id @default(uuid())
+  userId      String   @unique
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  currentStep Int      @default(1)
+  completed   Boolean  @default(false)
+  stepData    String   @default("{}") // JSON string - Partial RawIntakeForm
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+// ============================================================
+// User Profile (demographics, goals, preferences, cached metabolic)
+// ============================================================
+model UserProfile {
+  id              String   @id @default(uuid())
+  userId          String
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name            String
+  sex             String   // male | female
+  age             Int
+  heightCm        Float
+  weightKg        Float
+  bodyFatPercent   Float?
+  goalType        String   // cut | maintain | bulk
+  goalRate        Float    // 0-2 lbs/week
+  activityLevel   String   // sedentary | lightly_active | moderately_active | very_active | extremely_active
+  dietaryStyle    String   // omnivore | vegetarian | vegan | pescatarian | keto | paleo
+  allergies       String   @default("[]") // JSON array string
+  exclusions      String   @default("[]") // JSON array string
+  cuisinePrefs    String   @default("[]") // JSON array string
+  trainingDays    String   @default("[]") // JSON array string of weekdays
+  trainingTime    String?  // morning | afternoon | evening
+  mealsPerDay     Int      @default(3)
+  snacksPerDay    Int      @default(1)
+  cookingSkill    Int      @default(5)
+  prepTimeMax     Int      @default(30)
+  macroStyle      String   @default("balanced")
+
+  // Cached metabolic calculations
+  bmrKcal         Int?
+  tdeeKcal        Int?
+  goalKcal        Int?
+  proteinTargetG  Int?
+  carbsTargetG    Int?
+  fatTargetG      Int?
+
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  mealPlans MealPlan[]
+
+  @@index([userId, isActive])
+}
+
+// ============================================================
+// Meal Plan
+// ============================================================
+model MealPlan {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  profileId         String
+  profile           UserProfile @relation(fields: [profileId], references: [id])
+  validatedPlan     String   @default("{}") // JSON - Full MealPlanValidated
+  metabolicProfile  String   @default("{}") // JSON - MetabolicProfile
+  dailyKcalTarget   Int?
+  dailyProteinG     Int?
+  dailyCarbsG       Int?
+  dailyFatG         Int?
+  trainingBonusKcal Int?
+  planDays          Int      @default(7)
+  startDate         DateTime?
+  endDate           DateTime?
+  qaScore           Int?     // 0-100
+  qaStatus          String?  // PASS | WARN | FAIL
+  pdfUrl            String?
+  status            String   @default("active") // active | expired | replaced
+  isActive          Boolean  @default(true)
+  generatedAt       DateTime @default(now())
+
+  swaps        MealSwap[]
+  trackedMeals TrackedMeal[]
+
+  @@index([userId, isActive])
+}
+
+// ============================================================
+// Meal Swap History
+// ============================================================
+model MealSwap {
+  id           String   @id @default(uuid())
+  mealPlanId   String
+  mealPlan     MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
+  dayNumber    Int
+  slot         String
+  originalMeal String   @default("{}") // JSON
+  newMeal      String   @default("{}") // JSON
+  createdAt    DateTime @default(now())
+
+  @@index([mealPlanId, dayNumber, slot])
+}
+
+// ============================================================
+// Plan Generation Job (BullMQ tracking)
+// ============================================================
+model PlanGenerationJob {
+  id           String   @id @default(uuid())
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String   @default("pending") // pending | running | completed | failed
+  currentAgent Int?
+  progress     String?  // JSON
+  intakeData   String   @default("{}") // JSON - RawIntakeForm
+  result       String?  // JSON - Pipeline result on success
+  error        String?
+  startedAt    DateTime?
+  completedAt  DateTime?
+  createdAt    DateTime @default(now())
+
+  @@index([userId, status])
+}
+
+// ============================================================
+// Daily Log (one per user per date)
+// ============================================================
+model DailyLog {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date           DateTime // date field
+  targetKcal     Int?
+  targetProteinG Int?
+  targetCarbsG   Int?
+  targetFatG     Int?
+  actualKcal     Int      @default(0)
+  actualProteinG Int      @default(0)
+  actualCarbsG   Int      @default(0)
+  actualFatG     Int      @default(0)
+  adherenceScore Int?     // 0-100
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  @@unique([userId, date])
+  @@index([userId, date])
+}
+
+// ============================================================
+// Tracked Meal (individual meal log entries)
+// ============================================================
+model TrackedMeal {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mealPlanId      String?
+  mealPlan        MealPlan? @relation(fields: [mealPlanId], references: [id])
+  loggedDate      DateTime  // date field
+  mealSlot        String?
+  mealName        String
+  portion         Float     @default(1.0)
+  kcal            Int
+  proteinG        Float
+  carbsG          Float
+  fatG            Float
+  fiberG          Float?
+  source          String    // plan_meal | fatsecret_search | manual | quick_add | food_scan
+  confidenceScore Float?    // 0-1
+  fatsecretId     String?
+  photoUrl        String?
+  scanId          String?
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, loggedDate])
+}
+
+// ============================================================
+// Food Scan (Claude Vision - Phase 2)
+// ============================================================
+model FoodScan {
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scanType       String    // food_plate | restaurant_menu
+  photoUrl       String
+  status         String    @default("pending") // pending | processing | completed | failed
+  analysisResult String?   // JSON
+  adjustedResult String?   // JSON
+  userConfirmed  Boolean   @default(false)
+  error          String?
+  createdAt      DateTime  @default(now())
+  completedAt    DateTime?
+}

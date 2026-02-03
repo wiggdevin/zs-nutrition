@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Feature #155 Test: Plan Generation Saves MealPlan</title>
+  <style>
+    body { font-family: system-ui; background: #1a1a2e; color: #e0e0e0; padding: 40px; max-width: 900px; margin: 0 auto; }
+    h1 { color: #f97316; }
+    button { background: #f97316; color: white; border: none; padding: 12px 24px; border-radius: 8px; font-size: 16px; cursor: pointer; margin: 8px 4px; }
+    button:hover { background: #ea580c; }
+    button:disabled { background: #555; cursor: not-allowed; }
+    .result { background: #16213e; padding: 20px; border-radius: 8px; margin: 16px 0; white-space: pre-wrap; font-family: monospace; font-size: 13px; max-height: 600px; overflow-y: auto; }
+    .pass { color: #4ade80; font-weight: bold; }
+    .fail { color: #f87171; font-weight: bold; }
+    .check { margin: 4px 0; }
+  </style>
+</head>
+<body>
+  <h1>Feature #155: Plan Generation Saves MealPlan to Database</h1>
+  <p>This page tests that successful plan generation persists the validated plan correctly.</p>
+
+  <button id="runTest" onclick="runTest()">Run Plan Save Test (POST)</button>
+  <button id="viewPlans" onclick="viewPlans()">View Saved Plans (GET)</button>
+
+  <div id="status"></div>
+  <div id="checks"></div>
+  <div id="output" class="result" style="display:none;"></div>
+
+  <script>
+    async function runTest() {
+      const btn = document.getElementById('runTest');
+      const status = document.getElementById('status');
+      const checks = document.getElementById('checks');
+      const output = document.getElementById('output');
+
+      btn.disabled = true;
+      status.innerHTML = '<p>Running test...</p>';
+      checks.innerHTML = '';
+      output.style.display = 'none';
+
+      try {
+        const res = await fetch('/api/test-plan-save', { method: 'POST' });
+        const data = await res.json();
+
+        output.style.display = 'block';
+        output.textContent = JSON.stringify(data, null, 2);
+
+        if (data.success && data.allVerificationsPassed) {
+          status.innerHTML = '<h2 class="pass">ALL VERIFICATIONS PASSED</h2>';
+        } else {
+          status.innerHTML = '<h2 class="fail">SOME VERIFICATIONS FAILED</h2>';
+        }
+
+        if (data.verification) {
+          const v = data.verification;
+          const checkItems = [
+            ['MealPlan record created', v.mealPlanCreated],
+            ['validatedPlan has days array', v.validatedPlanHasDays],
+            ['validatedPlan has 7 days', v.validatedPlanDayCount === 7],
+            ['validatedPlan has grocery list', v.validatedPlanHasGroceryList],
+            ['validatedPlan has QA data', v.validatedPlanHasQA],
+            ['validatedPlan has weekly totals', v.validatedPlanHasWeeklyTotals],
+            ['metabolicProfile saved', v.metabolicProfileSaved],
+            ['metabolicProfile has BMR', v.metabolicProfileHasBmr],
+            ['metabolicProfile has TDEE', v.metabolicProfileHasTdee],
+            ['metabolicProfile has goalKcal', v.metabolicProfileHasGoalKcal],
+            ['metabolicProfile has macros', v.metabolicProfileHasMacros],
+            ['dailyKcalTarget populated (' + v.dailyKcalTarget + ')', v.dailyKcalTargetPopulated],
+            ['dailyProteinG populated (' + v.dailyProteinG + ')', v.dailyProteinGPopulated],
+            ['dailyCarbsG populated (' + v.dailyCarbsG + ')', v.dailyCarbsGPopulated],
+            ['dailyFatG populated (' + v.dailyFatG + ')', v.dailyFatGPopulated],
+            ['qaScore saved (' + v.qaScore + ')', v.qaScoreSaved],
+            ['qaStatus is PASS (' + v.qaStatus + ')', v.qaStatusSaved],
+            ['status is active (' + v.status + ')', v.statusIsActive],
+            ['isActive is true', v.isActiveIsTrue],
+            ['Job marked completed', v.jobCompleted],
+            ['Job result has planId', v.jobResultHasPlanId],
+          ];
+
+          checks.innerHTML = '<h3>Verification Checklist:</h3>' +
+            checkItems.map(([label, pass]) =>
+              `<div class="check">${pass ? '✅' : '❌'} ${label}</div>`
+            ).join('');
+        }
+      } catch (err) {
+        status.innerHTML = '<h2 class="fail">ERROR: ' + err.message + '</h2>';
+        output.style.display = 'block';
+        output.textContent = err.stack;
+      }
+      btn.disabled = false;
+    }
+
+    async function viewPlans() {
+      const output = document.getElementById('output');
+      const status = document.getElementById('status');
+      try {
+        const res = await fetch('/api/test-plan-save');
+        const data = await res.json();
+        output.style.display = 'block';
+        output.textContent = JSON.stringify(data, null, 2);
+        status.innerHTML = '<p>Found ' + data.totalPlans + ' meal plan(s) in database</p>';
+      } catch (err) {
+        status.innerHTML = '<h2 class="fail">ERROR: ' + err.message + '</h2>';
+      }
+    }
+  </script>
+</body>
+</html>
