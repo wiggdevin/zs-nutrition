@@ -59,9 +59,9 @@ export function OnboardingWizard() {
         if (res.ok) {
           const serverState: OnboardingStateResponse = await res.json();
 
-          // If onboarding is completed, redirect to generate
+          // If onboarding is completed, redirect to dashboard
           if (serverState.completed) {
-            window.location.href = "/generate";
+            window.location.href = "/dashboard";
             return;
           }
 
@@ -202,8 +202,8 @@ export function OnboardingWizard() {
     localStorage.setItem("zsn_onboarding_complete", "true");
     // Save the profile data for plan generation
     localStorage.setItem("zsn_user_profile", JSON.stringify(data));
-    // Redirect to plan generation
-    window.location.href = "/generate";
+    // Redirect to dashboard
+    window.location.href = "/dashboard";
   };
 
   const stepComponents: Record<number, React.ReactNode> = {
