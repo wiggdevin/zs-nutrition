@@ -11,7 +11,7 @@ import { safeLogError } from '@/lib/safe-logger';
  */
 export async function GET(
   request: Request,
-  { params }: { params: { id: string } }
+  { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const clerkUserId = await getClerkUserId();
@@ -28,7 +28,7 @@ export async function GET(
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    const planId = params.id;
+    const { id: planId } = await params;
 
     // Find the plan being checked
     const checkedPlan = await prisma.mealPlan.findFirst({

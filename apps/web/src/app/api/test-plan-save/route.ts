@@ -170,9 +170,9 @@ export async function POST() {
         ],
       })),
       groceryList: [
-        { category: 'Grains', items: [{ name: 'Oats', amount: '560g' }, { name: 'Brown rice', amount: '700g' }] },
-        { category: 'Protein', items: [{ name: 'Chicken breast', amount: '1400g' }, { name: 'Salmon fillet', amount: '1400g' }] },
-        { category: 'Produce', items: [{ name: 'Broccoli', amount: '1050g' }, { name: 'Sweet potato', amount: '1400g' }] },
+        { category: 'Grains', items: ['Oats (560g)', 'Brown rice (700g)'] },
+        { category: 'Protein', items: ['Chicken breast (1400g)', 'Salmon fillet (1400g)'] },
+        { category: 'Produce', items: ['Broccoli (1050g)', 'Sweet potato (1400g)'] },
       ],
       qa: { status: 'PASS', score: 88, iterations: 2 },
       weeklyTotals: { avgKcal: 1950, avgProteinG: 160, avgCarbsG: 160, avgFatG: 70 },
