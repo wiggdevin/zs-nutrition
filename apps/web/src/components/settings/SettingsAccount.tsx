@@ -2,12 +2,16 @@
 
 import { useState } from "react";
 import { clearAllStores } from "@/lib/stores/clearStores";
+import { useAuth } from "@clerk/nextjs";
 
 export default function SettingsAccount() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
 
   const [signingOut, setSigningOut] = useState(false);
+
+  // Get Clerk's signOut function (undefined in dev mode)
+  const { signOut: clerkSignOut } = useAuth();
 
   async function handleSignOut() {
     try {
@@ -16,9 +20,15 @@ export default function SettingsAccount() {
       // Clear all Zustand stores before signing out
       clearAllStores();
 
-      // Clear the dev auth cookie via API, then redirect to sign-in
-      await fetch("/api/dev-auth/signout", { method: "POST" });
-      window.location.href = "/sign-in";
+      // If Clerk is available, use Clerk's signOut (production mode)
+      if (clerkSignOut) {
+        await clerkSignOut();
+        // Clerk will handle the redirect automatically
+      } else {
+        // Dev mode: Clear the dev auth cookie via API, then redirect
+        await fetch("/api/dev-auth/signout", { method: "POST" });
+        window.location.href = "/sign-in";
+      }
     } catch {
       setSigningOut(false);
     }
@@ -35,8 +45,14 @@ export default function SettingsAccount() {
       // Clear all stores before signing out
       clearAllStores();
       // Sign out after successful deactivation
-      await fetch("/api/dev-auth/signout", { method: "POST" });
-      window.location.href = "/sign-in";
+      if (clerkSignOut) {
+        await clerkSignOut();
+        // Clerk will handle the redirect automatically
+      } else {
+        // Dev mode: Clear the dev auth cookie via API, then redirect
+        await fetch("/api/dev-auth/signout", { method: "POST" });
+        window.location.href = "/sign-in";
+      }
     } catch {
       setDeactivating(false);
     }
