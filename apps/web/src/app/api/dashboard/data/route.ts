@@ -88,8 +88,11 @@ export async function GET(request: Request) {
 
     if (activePlan) {
       planId = activePlan.id;
-      const baseKcal = activePlan.dailyKcalTarget || activeProfile?.goalKcal || 2100;
-      const bonus = isTrainingDay ? (activePlan.trainingBonusKcal || 200) : 0;
+      // The plan's dailyKcalTarget might already include the training bonus
+      // So we calculate the true base by subtracting the training bonus
+      const planBonusKcal = activePlan.trainingBonusKcal || 200;
+      const baseKcal = (activePlan.dailyKcalTarget || activeProfile?.goalKcal || 2100) - planBonusKcal;
+      const bonus = isTrainingDay ? planBonusKcal : 0;
       dailyTargets = {
         kcal: baseKcal + bonus,
         proteinG: activePlan.dailyProteinG || 160,
@@ -170,6 +173,26 @@ export async function GET(request: Request) {
           actualFatG: 0,
         },
       });
+    } else {
+      // Update targets if they don't match current calculated targets
+      // This handles the case where training day status changes or meal plan is updated
+      const needsUpdate =
+        dailyLog.targetKcal !== dailyTargets.kcal ||
+        dailyLog.targetProteinG !== dailyTargets.proteinG ||
+        dailyLog.targetCarbsG !== dailyTargets.carbsG ||
+        dailyLog.targetFatG !== dailyTargets.fatG;
+
+      if (needsUpdate) {
+        dailyLog = await prisma.dailyLog.update({
+          where: { id: dailyLog.id },
+          data: {
+            targetKcal: dailyTargets.kcal,
+            targetProteinG: dailyTargets.proteinG,
+            targetCarbsG: dailyTargets.carbsG,
+            targetFatG: dailyTargets.fatG,
+          },
+        });
+      }
     }
 
     // Use the stored weighted adherence score from DailyLog (calculated by meal logging endpoints)
@@ -233,7 +256,12 @@ export async function GET(request: Request) {
       isTrainingDay,
       trainingDays: normalizedTrainingDays,
       trainingBonusKcal: isTrainingDay ? (activePlan?.trainingBonusKcal || 200) : 0,
-      baseGoalKcal: activeProfile?.goalKcal || (activePlan?.dailyKcalTarget || 2100),
+      // Calculate true base goal by subtracting the training bonus from the plan's target
+      // The plan's dailyKcalTarget might already include the training bonus, so we subtract it to get the base
+      // We use the plan's bonus value since that's what was used during plan generation
+      baseGoalKcal: activePlan
+        ? (activePlan.dailyKcalTarget || 2100) - (activePlan.trainingBonusKcal || 200)
+        : (activeProfile?.goalKcal || 2100),
     });
   } catch (error) {
     safeLogError('Dashboard data error:', error);
