@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { toast } from "@/lib/toast-store";
 
 type DietaryStyle = "omnivore" | "vegetarian" | "vegan" | "pescatarian" | "keto" | "paleo";
@@ -34,12 +34,33 @@ export default function SettingsDietary() {
     JSON.stringify(allergies) !== JSON.stringify(originalData.allergies) ||
     JSON.stringify(exclusions) !== JSON.stringify(originalData.exclusions);
 
+  // Track the current fetch request so we can abort stale ones
+  const abortControllerRef = useRef<AbortController | null>(null);
+  // Track a fetch generation counter to ignore late responses
+  const fetchGenerationRef = useRef(0);
+
   const fetchProfile = useCallback(async () => {
+    // Abort any in-flight request before starting a new one
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+    }
+    const controller = new AbortController();
+    abortControllerRef.current = controller;
+    const generation = ++fetchGenerationRef.current;
+
     try {
       setLoading(true);
-      const res = await fetch("/api/settings/profile");
+      const res = await fetch("/api/settings/profile", { signal: controller.signal });
+
+      // If a newer fetch was started, discard this stale response
+      if (generation !== fetchGenerationRef.current) return;
+
       if (!res.ok) throw new Error("Failed to load profile");
       const data = await res.json();
+
+      // Double-check generation again after async json parsing
+      if (generation !== fetchGenerationRef.current) return;
+
       const p = data.profile;
       setDietaryStyle(p.dietaryStyle || "");
       setAllergies(p.allergies || []);
@@ -50,13 +71,28 @@ export default function SettingsDietary() {
         exclusions: p.exclusions || [],
       });
     } catch (err: unknown) {
+      // Ignore aborted requests (user navigated away or new fetch started)
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      // If this is a stale generation, ignore
+      if (generation !== fetchGenerationRef.current) return;
       setError(err instanceof Error ? err.message : "Failed to load");
     } finally {
-      setLoading(false);
+      // Only update loading state if this is still the current generation
+      if (generation === fetchGenerationRef.current) {
+        setLoading(false);
+      }
     }
   }, []);
 
-  useEffect(() => { fetchProfile(); }, [fetchProfile]);
+  useEffect(() => {
+    fetchProfile();
+    // Cleanup: abort any in-flight request when component unmounts
+    return () => {
+      if (abortControllerRef.current) {
+        abortControllerRef.current.abort();
+      }
+    };
+  }, [fetchProfile]);
 
   const toggleAllergy = (allergy: string) => {
     const lower = allergy.toLowerCase();

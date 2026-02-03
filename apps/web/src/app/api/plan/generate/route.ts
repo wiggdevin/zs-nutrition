@@ -253,7 +253,8 @@ function generateSimulatedPlan(profile: {
     ],
   };
 
-  const days = dayNames.map((dayName, idx) => {
+  // Generate exactly 7 days starting from startDate
+  const days = Array.from({ length: 7 }, (_, idx) => {
     // Calculate the actual day name based on startDate + idx days
     const currentDate = new Date(startDate);
     currentDate.setDate(startDate.getDate() + idx);

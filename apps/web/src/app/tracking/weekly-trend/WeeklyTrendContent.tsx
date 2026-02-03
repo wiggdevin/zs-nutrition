@@ -42,9 +42,9 @@ export default function WeeklyTrendContent() {
   const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
 
   const [startDate, setStartDate] = useState(() => {
-    // Default to 7 days ago for a full past-week view
+    // Default to 6 days ago for a 7-day range including today
     const d = new Date()
-    d.setDate(d.getDate() - 7)
+    d.setDate(d.getDate() - 6)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })
 
@@ -115,7 +115,7 @@ export default function WeeklyTrendContent() {
         <span>Period: </span>
         <span data-testid="trend-start-date">{new Date(data.startDate).toLocaleDateString()}</span>
         <span> - </span>
-        <span data-testid="trend-end-date">{new Date(data.endDate).toLocaleDateString()}</span>
+        <span data-testid="trend-end-date">{data.days.length > 0 ? new Date(data.days[data.days.length - 1].date).toLocaleDateString() : new Date(data.endDate).toLocaleDateString()}</span>
         <span className="ml-3">({data.totalDays} days)</span>
       </div>
 

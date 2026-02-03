@@ -631,7 +631,9 @@ export default function DashboardClient() {
     const generation = ++fetchGenerationRef.current
 
     try {
-      const res = await fetch('/api/dashboard/data', { signal: controller.signal })
+      // Get client-side day of week (respects user's timezone)
+      const clientDayOfWeek = new Date().getDay()
+      const res = await fetch(`/api/dashboard/data?dayOfWeek=${clientDayOfWeek}`, { signal: controller.signal })
       // If a newer fetch was started, discard this stale response
       if (generation !== fetchGenerationRef.current) return
       if (!res.ok) {

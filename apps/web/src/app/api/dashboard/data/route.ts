@@ -3,7 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getClerkUserId } from '@/lib/auth'
 import { safeLogError } from '@/lib/safe-logger'
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
     const clerkUserId = await getClerkUserId();
     if (!clerkUserId) {
@@ -29,8 +29,14 @@ export async function GET() {
     });
 
     // Determine if today is a training day
+    // IMPORTANT: Use client-provided dayOfWeek to respect user's timezone
+    // Fall back to server day if not provided (backward compatibility)
+    const { searchParams } = new URL(request.url);
+    const clientDayOfWeek = searchParams.get('dayOfWeek');
+
     const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
-    const todayDayName = DAY_NAMES[new Date().getDay()];
+    const dayOfWeek = clientDayOfWeek ? parseInt(clientDayOfWeek, 10) : new Date().getDay();
+    const todayDayName = DAY_NAMES[dayOfWeek];
     let trainingDays: string[] = [];
     try {
       trainingDays = activeProfile?.trainingDays ? JSON.parse(activeProfile.trainingDays) : [];

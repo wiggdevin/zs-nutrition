@@ -111,8 +111,11 @@ export const trackingRouter = router({
       // Validate date is not in the future
       const today = new Date()
       const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-      const start = new Date(input.startDate)
-      const startOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+
+      // Parse startDate string as local midnight (not UTC)
+      // ISO date strings without time are parsed as UTC, so we need to extract YMD and recreate
+      const [year, month, day] = input.startDate.split('-').map(Number)
+      const startOnly = new Date(year, month - 1, day) // month is 0-indexed
 
       // Disallow future dates
       if (startOnly > todayOnly) {

@@ -103,6 +103,7 @@ export async function GET(
         status: plan.status,
         isActive: plan.isActive,
         generatedAt: plan.generatedAt,
+        pdfUrl: plan.pdfUrl,
         validatedPlan,
         metabolicProfile,
         profile: plan.profile,

@@ -163,13 +163,25 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
   /**
    * Deterministic meal plan generator for dev/testing.
    * Produces realistic, varied meals that match the user's profile and targets.
+   * @param startDate - Optional start date to calculate correct day names (defaults to today)
    */
   private generateDeterministic(
     metabolicProfile: MetabolicProfile,
-    intake: ClientIntake
+    intake: ClientIntake,
+    startDate?: Date
   ): MealPlanDraft {
+    // Use provided startDate or default to today (UTC to avoid timezone issues)
+    const start = startDate ? new Date(startDate) : new Date();
+    // Normalize to midnight UTC
+    start.setUTCHours(0, 0, 0, 0);
+
     const dayNames: Array<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'> =
       ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'];
+
+    // Map JS getDay() (0=Sunday, 1=Monday, etc.) to our dayNames array
+    const jsDayToName: Array<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'> =
+      ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+
     const trainingDaysSet = new Set(intake.trainingDays);
 
     // Meal database organized by slot and cuisine
@@ -183,7 +195,12 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
     const days: DraftDay[] = [];
 
     for (let d = 0; d < intake.planDurationDays; d++) {
-      const dayName = dayNames[d % 7];
+      // Calculate the actual date for this day
+      const currentDate = new Date(start);
+      currentDate.setUTCDate(start.getUTCDate() + d);
+
+      // Get the day name based on the actual date
+      const dayName = jsDayToName[currentDate.getUTCDay()];
       const isTrainingDay = trainingDaysSet.has(dayName);
       const dayKcal = isTrainingDay
         ? metabolicProfile.goalKcal + metabolicProfile.trainingDayBonusKcal
