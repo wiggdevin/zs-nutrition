@@ -973,6 +973,23 @@ export default function DashboardClient() {
     }
   }, [fetchData])
 
+  // Handle hash scrolling for quick action links
+  useEffect(() => {
+    // Wait for data to load before scrolling
+    if (loading) return
+
+    const hash = window.location.hash.replace('#', '')
+    if (hash === 'todays-plan') {
+      const element = document.getElementById('todays-plan')
+      if (element) {
+        // Small delay to ensure render is complete
+        setTimeout(() => {
+          element.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        }, 100)
+      }
+    }
+  }, [loading])
+
   const openLogModal = (meal: PlanMeal) => {
     setMealToLog(meal)
   }
@@ -1283,7 +1300,7 @@ export default function DashboardClient() {
               <QuickAction
                 icon="📋"
                 label="Log from Plan"
-                href="/tracking?mode=plan"
+                href="/dashboard#todays-plan"
               />
               <QuickAction
                 icon="🔍"
@@ -1423,7 +1440,7 @@ export default function DashboardClient() {
               current={macros.carbs.current}
               target={macros.carbs.target}
               unit="g"
-              color="#22c55e"
+              color="#f59e0b"
               size={120}
             />
             <MacroRing
@@ -1431,7 +1448,7 @@ export default function DashboardClient() {
               current={macros.fat.current}
               target={macros.fat.target}
               unit="g"
-              color="#eab308"
+              color="#ef4444"
               size={120}
             />
           </div>
@@ -1518,6 +1535,7 @@ export default function DashboardClient() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* ═══ TODAY'S PLAN SECTION ═══ */}
           <section
+            id="todays-plan"
             data-testid="todays-plan-section"
             className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
           >
@@ -1643,7 +1661,7 @@ export default function DashboardClient() {
             <QuickAction
               icon="📋"
               label="Log from Plan"
-              href="/tracking?mode=plan"
+              href="/dashboard#todays-plan"
             />
             <QuickAction
               icon="🔍"
