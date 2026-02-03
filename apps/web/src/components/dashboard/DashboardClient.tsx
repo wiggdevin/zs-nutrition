@@ -68,8 +68,22 @@ function MacroRing({
   const radius = (size - strokeWidth) / 2
   const circumference = 2 * Math.PI * radius
   const progress = Math.min(current / (target || 1), 1)
-  const dashOffset = circumference * (1 - progress)
+  const targetDashOffset = circumference * (1 - progress)
   const percentage = Math.round(progress * 100)
+
+  // Animate from 0 on mount, then animate to new values on updates
+  const [dashOffset, setDashOffset] = useState(circumference) // Start empty (full offset)
+  const [animatedCurrent, setAnimatedCurrent] = useState(0)
+
+  useEffect(() => {
+    // Animate to new values with smooth timing
+    const timer = setTimeout(() => {
+      setDashOffset(targetDashOffset)
+      setAnimatedCurrent(current)
+    }, 50) // Small delay to ensure transition triggers
+
+    return () => clearTimeout(timer)
+  }, [current, targetDashOffset])
 
   return (
     <div
@@ -100,12 +114,16 @@ function MacroRing({
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={dashOffset}
-            className="transition-all duration-700 ease-out"
+            className="transition-all duration-500 ease-out"
+            style={{
+              transitionProperty: 'stroke-dashoffset',
+              transitionTimingFunction: 'cubic-bezier(0.4, 0, 0.2, 1)',
+            }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className="text-lg font-bold font-mono" style={{ color }}>
-            {current}
+          <span className="text-lg font-bold font-mono transition-all duration-500 ease-out" style={{ color }}>
+            {animatedCurrent}
           </span>
           <span className="text-[10px] text-[#a1a1aa] font-mono">
             / {target}
