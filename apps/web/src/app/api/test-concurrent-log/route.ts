@@ -42,8 +42,8 @@ export async function POST(request: Request) {
 
     // Fire all 3 meal logs concurrently using transactions
     const results = await Promise.all(
-      meals.map((meal) =>
-        prisma.$transaction(async (tx) => {
+      meals.map((meal: any) =>
+        prisma.$transaction(async (tx: any) => {
           const trackedMeal = await tx.trackedMeal.create({
             data: {
               userId: user.id,
@@ -194,7 +194,7 @@ export async function DELETE(request: Request) {
     })
 
     const totals = remainingMeals.reduce(
-      (acc, m) => ({
+      (acc: any, m: any) => ({
         kcal: acc.kcal + m.kcal,
         proteinG: acc.proteinG + m.proteinG,
         carbsG: acc.carbsG + m.carbsG,

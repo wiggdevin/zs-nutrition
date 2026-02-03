@@ -194,8 +194,52 @@ function DeleteMealButton({
 }
 
 export function DailySummaryContent() {
-  // Don't pass a date - let the server use its local `new Date()` to avoid timezone issues
-  const { data, isLoading, error, refetch } = trpc.tracking.getDailySummary.useQuery()
+  // State for currently selected date
+  const [selectedDate, setSelectedDate] = useState<string>(() => {
+    // Initialize with today's date in YYYY-MM-DD format
+    return new Date().toISOString().split('T')[0]
+  })
+
+  // Query with the selected date
+  const { data, isLoading, error, refetch } = trpc.tracking.getDailySummary.useQuery(
+    { date: selectedDate }
+  )
+
+  // Helper to format date for display
+  const formatDateDisplay = (dateStr: string) => {
+    const date = new Date(dateStr)
+    return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
+  }
+
+  // Navigate to previous/next day
+  const navigateDate = (days: number) => {
+    const currentDate = new Date(selectedDate)
+    currentDate.setDate(currentDate.getDate() + days)
+    const newDateStr = currentDate.toISOString().split('T')[0]
+    setSelectedDate(newDateStr)
+  }
+
+  // Group meals by slot
+  const groupMealsBySlot = (meals: typeof data.trackedMeals) => {
+    const groups: Record<string, typeof meals> = {
+      breakfast: [],
+      lunch: [],
+      dinner: [],
+      snack: [],
+      other: []
+    }
+
+    meals.forEach(meal => {
+      const slot = meal.mealSlot || 'other'
+      if (groups[slot] !== undefined) {
+        groups[slot].push(meal)
+      } else {
+        groups.other.push(meal)
+      }
+    })
+
+    return groups
+  }
 
   if (isLoading) {
     return <div className="text-[#a1a1aa] animate-pulse">Loading daily summary...</div>
@@ -223,10 +267,36 @@ export function DailySummaryContent() {
 
   return (
     <div className="space-y-6">
+      {/* Date Navigation */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-        <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase mb-2">Date</h2>
-        <p className="text-lg" data-testid="summary-date">{new Date(data.date).toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })}</p>
-        <p className="text-sm text-[#a1a1aa]" data-testid="meal-count">{data.mealCount} meals logged</p>
+        <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase mb-3">Date</h2>
+        <div className="flex items-center justify-between gap-3">
+          <button
+            onClick={() => navigateDate(-1)}
+            className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-[#fafafa] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="prev-day-btn"
+            title="Previous day"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+            </svg>
+          </button>
+          <div className="flex-1 text-center">
+            <p className="text-lg font-medium" data-testid="summary-date">{formatDateDisplay(selectedDate)}</p>
+            <p className="text-sm text-[#a1a1aa]" data-testid="meal-count">{data.mealCount} meal{data.mealCount !== 1 ? 's' : ''} logged</p>
+          </div>
+          <button
+            onClick={() => navigateDate(1)}
+            disabled={new Date(selectedDate) >= new Date(new Date().toISOString().split('T')[0])}
+            className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-[#fafafa] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            data-testid="next-day-btn"
+            title="Next day"
+          >
+            <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
@@ -289,47 +359,71 @@ export function DailySummaryContent() {
           Tracked Meals ({data.trackedMeals.length})
         </h2>
         {data.trackedMeals.length > 0 ? (
-          <div className="space-y-3">
-            {data.trackedMeals.map((meal) => (
-              <div
-                key={meal.id}
-                className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3"
-                data-testid="tracked-meal-entry"
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <p className="font-medium" data-testid="meal-name">{meal.mealName}</p>
-                    <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa]">
-                      {meal.mealSlot && <span className="uppercase">{meal.mealSlot}</span>}
-                      {meal.mealSlot && <span>{'\u00B7'}</span>}
-                      <span>{meal.source}</span>
-                      <span>{'\u00B7'}</span>
-                      <PortionAdjuster
-                        mealId={meal.id}
-                        currentPortion={meal.portion}
-                        onAdjusted={() => refetch()}
-                      />
+          <div className="space-y-4">
+            {(() => {
+              const grouped = groupMealsBySlot(data.trackedMeals)
+              const slotOrder = ['breakfast', 'lunch', 'dinner', 'snack', 'other']
+              const slotLabels: Record<string, string> = {
+                breakfast: 'Breakfast',
+                lunch: 'Lunch',
+                dinner: 'Dinner',
+                snack: 'Snack',
+                other: 'Other'
+              }
+
+              return slotOrder.map(slot => {
+                const mealsInSlot = grouped[slot]
+                if (mealsInSlot.length === 0) return null
+
+                return (
+                  <div key={slot} data-testid={`meal-slot-${slot}`}>
+                    <h3 className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2">
+                      {slotLabels[slot]} ({mealsInSlot.length})
+                    </h3>
+                    <div className="space-y-2">
+                      {mealsInSlot.map((meal) => (
+                        <div
+                          key={meal.id}
+                          className="bg-zinc-800/50 border border-zinc-700 rounded-lg p-3"
+                          data-testid="tracked-meal-entry"
+                        >
+                          <div className="flex justify-between items-start">
+                            <div>
+                              <p className="font-medium" data-testid="meal-name">{meal.mealName}</p>
+                              <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa]">
+                                <span>{meal.source}</span>
+                                <span>{'\u00B7'}</span>
+                                <PortionAdjuster
+                                  mealId={meal.id}
+                                  currentPortion={meal.portion}
+                                  onAdjusted={() => refetch()}
+                                />
+                              </div>
+                            </div>
+                            <div className="flex items-center gap-1.5">
+                              <span className="text-orange-400 font-semibold text-sm" data-testid="meal-kcal">{meal.kcal} kcal</span>
+                              <DeleteMealButton
+                                mealId={meal.id}
+                                mealName={meal.mealName}
+                                onDeleted={() => refetch()}
+                              />
+                            </div>
+                          </div>
+                          <div className="flex gap-2 mt-2">
+                            <span className="text-xs text-blue-400">P {meal.proteinG}g</span>
+                            <span className="text-xs text-amber-400">C {meal.carbsG}g</span>
+                            <span className="text-xs text-red-400">F {meal.fatG}g</span>
+                          </div>
+                        </div>
+                      ))}
                     </div>
                   </div>
-                  <div className="flex items-center gap-1.5">
-                    <span className="text-orange-400 font-semibold text-sm" data-testid="meal-kcal">{meal.kcal} kcal</span>
-                    <DeleteMealButton
-                      mealId={meal.id}
-                      mealName={meal.mealName}
-                      onDeleted={() => refetch()}
-                    />
-                  </div>
-                </div>
-                <div className="flex gap-2 mt-2">
-                  <span className="text-xs text-blue-400">P {meal.proteinG}g</span>
-                  <span className="text-xs text-amber-400">C {meal.carbsG}g</span>
-                  <span className="text-xs text-red-400">F {meal.fatG}g</span>
-                </div>
-              </div>
-            ))}
+                )
+              })
+            })()}
           </div>
         ) : (
-          <p className="text-[#a1a1aa]" data-testid="no-meals">No meals tracked today.</p>
+          <p className="text-[#a1a1aa]" data-testid="no-meals">No meals tracked on this date.</p>
         )}
       </div>
     </div>

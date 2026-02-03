@@ -147,8 +147,9 @@ export const mealRouter = router({
         })
       }
 
+      // Use UTC midnight for consistent date handling
       const today = new Date()
-      const dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      const dateOnly = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
 
       // Use a serialized transaction to prevent race conditions from concurrent tabs
       return await prisma.$transaction(async (tx) => {
@@ -321,14 +322,15 @@ export const mealRouter = router({
       if (input.loggedDate) {
         const parsed = new Date(input.loggedDate + 'T00:00:00')
         if (!isNaN(parsed.getTime())) {
-          dateOnly = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+          // Use UTC midnight for consistent date handling
+          dateOnly = new Date(Date.UTC(parsed.getFullYear(), parsed.getMonth(), parsed.getDate()))
         } else {
           const today = new Date()
-          dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+          dateOnly = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
         }
       } else {
         const today = new Date()
-        dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        dateOnly = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
       }
 
       const kcal = input.calories
@@ -512,11 +514,12 @@ export const mealRouter = router({
         })
       }
 
-      const dateOnly = new Date(
-        trackedMeal.loggedDate.getFullYear(),
-        trackedMeal.loggedDate.getMonth(),
-        trackedMeal.loggedDate.getDate()
-      )
+      // Use toLocalDay to ensure consistent date handling (UTC midnight)
+      const dateOnly = new Date(Date.UTC(
+        trackedMeal.loggedDate.getUTCFullYear(),
+        trackedMeal.loggedDate.getUTCMonth(),
+        trackedMeal.loggedDate.getUTCDate()
+      ))
 
       // Delete the tracked meal
       await prisma.trackedMeal.delete({
@@ -599,8 +602,9 @@ export const mealRouter = router({
       const { prisma } = ctx
       const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
 
+      // Use UTC midnight for consistent date handling
       const today = input?.date ? new Date(input.date) : new Date()
-      const dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      const dateOnly = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
 
       const [dailyLog, trackedMeals] = await Promise.all([
         prisma.dailyLog.findUnique({

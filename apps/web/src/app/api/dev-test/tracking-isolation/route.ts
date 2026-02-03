@@ -59,11 +59,16 @@ export async function GET() {
       },
     });
 
+    // Non-null assertions (create would throw if failed)
+    if (!userA || !userB) {
+      throw new Error("Failed to create test users");
+    }
+
     testResults.push({
       step: "1",
       description: "Create two test users (A and B)",
-      passed: !!userA.id && !!userB.id && userA.id !== userB.id,
-      details: `User A: ${userA.id}, User B: ${userB.id}`,
+      passed: !!userA?.id && !!userB?.id && userA.id !== userB.id,
+      details: `User A: ${userA?.id || 'null'}, User B: ${userB?.id || 'null'}`,
     });
 
     // ==========================================

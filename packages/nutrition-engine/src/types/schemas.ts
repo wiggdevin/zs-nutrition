@@ -21,12 +21,7 @@ export const DietaryStyleEnum = z.enum([
   'keto',
   'paleo',
 ]);
-export const MacroStyleEnum = z.enum([
-  'balanced',
-  'high_protein',
-  'low_carb',
-  'keto',
-]);
+export const MacroStyleEnum = z.enum(['balanced', 'high_protein', 'low_carb', 'keto']);
 export const WeekdayEnum = z.enum([
   'monday',
   'tuesday',
@@ -165,6 +160,7 @@ export const DraftMealSchema = z.object({
   prepTimeMin: z.number(),
   cookTimeMin: z.number(),
   estimatedNutrition: EstimatedNutritionSchema,
+  targetNutrition: EstimatedNutritionSchema, // Target nutrition for this meal slot
   fatsecretSearchQuery: z.string(),
   suggestedServings: z.number(),
   primaryProtein: z.string(),

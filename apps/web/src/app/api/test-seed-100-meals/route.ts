@@ -38,7 +38,7 @@ export async function POST() {
     }
 
     // Create 100 meals spread across today and the past 10 days
-    const mealsToCreate = []
+    const mealsToCreate: any[] = []
     const today = new Date()
     today.setHours(0, 0, 0, 0)
 

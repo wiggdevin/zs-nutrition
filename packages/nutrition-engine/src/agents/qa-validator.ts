@@ -20,7 +20,7 @@ export class QAValidator {
   private static readonly MAX_ITERATIONS = 3;
 
   async validate(compiled: MealPlanCompiled): Promise<MealPlanValidated> {
-    let currentDays = [...compiled.days];
+    const currentDays = [...compiled.days];
     let iterations = 0;
     const adjustmentsMade: string[] = [];
 
@@ -138,12 +138,11 @@ export class QAValidator {
         // Estimate expected macro grams from target kcal (balanced: 30/40/30)
         // We check actual macro variance against a reasonable target
         const totalMacroKcal =
-          day.dailyTotals.proteinG * 4 +
-          day.dailyTotals.carbsG * 4 +
-          day.dailyTotals.fatG * 9;
+          day.dailyTotals.proteinG * 4 + day.dailyTotals.carbsG * 4 + day.dailyTotals.fatG * 9;
 
         if (totalMacroKcal > 0) {
-          const macroVsKcal = Math.abs(totalMacroKcal - day.dailyTotals.kcal) / day.dailyTotals.kcal;
+          const macroVsKcal =
+            Math.abs(totalMacroKcal - day.dailyTotals.kcal) / day.dailyTotals.kcal;
           if (macroVsKcal > QAValidator.MACRO_TOLERANCE) {
             violations.push({
               dayIndex: i,
@@ -219,9 +218,7 @@ export class QAValidator {
     const newTotals = this.recalcDailyTotals(meals);
     const newVarianceKcal = newTotals.kcal - targetKcal;
     const newVariancePercent =
-      targetKcal > 0
-        ? Math.round((newVarianceKcal / targetKcal) * 10000) / 100
-        : 0;
+      targetKcal > 0 ? Math.round((newVarianceKcal / targetKcal) * 10000) / 100 : 0;
 
     const adjustedDay: CompiledDay = {
       ...day,
@@ -271,7 +268,9 @@ export class QAValidator {
    * Perfect adherence = 100, each % of variance costs points.
    */
   private calculateQAScore(days: CompiledDay[]): number {
-    if (days.length === 0) return 100;
+    if (days.length === 0) {
+      return 100;
+    }
 
     let totalScore = 0;
 
@@ -312,15 +311,103 @@ export class QAValidator {
 
     const categoryRules: Array<{ keywords: string[]; category: string }> = [
       // Produce - includes vegetables and fruits
-      { keywords: ['spinach', 'broccoli', 'tomato', 'pepper', 'lettuce', 'salad', 'carrot', 'onion', 'garlic', 'potato', 'corn', 'zucchini', 'mushroom', 'asparagus', 'vegetable', 'greens', 'avocado', 'sweet potato', 'cucumber', 'banana', 'berr', 'mango', 'apple', 'orange', 'fruit', 'lemon', 'lime'], category: 'Produce' },
+      {
+        keywords: [
+          'spinach',
+          'broccoli',
+          'tomato',
+          'pepper',
+          'lettuce',
+          'salad',
+          'carrot',
+          'onion',
+          'garlic',
+          'potato',
+          'corn',
+          'zucchini',
+          'mushroom',
+          'asparagus',
+          'vegetable',
+          'greens',
+          'avocado',
+          'sweet potato',
+          'cucumber',
+          'banana',
+          'berr',
+          'mango',
+          'apple',
+          'orange',
+          'fruit',
+          'lemon',
+          'lime',
+        ],
+        category: 'Produce',
+      },
       // Meat and Seafood
-      { keywords: ['chicken', 'beef', 'pork', 'turkey', 'salmon', 'tuna', 'cod', 'shrimp', 'fish', 'steak', 'lamb'], category: 'Meat and Seafood' },
+      {
+        keywords: [
+          'chicken',
+          'beef',
+          'pork',
+          'turkey',
+          'salmon',
+          'tuna',
+          'cod',
+          'shrimp',
+          'fish',
+          'steak',
+          'lamb',
+        ],
+        category: 'Meat and Seafood',
+      },
       // Dairy and Eggs
-      { keywords: ['egg', 'yogurt', 'cheese', 'milk', 'cream', 'butter'], category: 'Dairy and Eggs' },
+      {
+        keywords: ['egg', 'yogurt', 'cheese', 'milk', 'cream', 'butter'],
+        category: 'Dairy and Eggs',
+      },
       // Bakery - bread and baked goods
       { keywords: ['bread', 'bagel', 'pancake', 'tortilla'], category: 'Bakery' },
       // Pantry - grains, legumes, oils, condiments, spices, nuts, seeds
-      { keywords: ['rice', 'pasta', 'oats', 'quinoa', 'flour', 'cereal', 'bean', 'lentil', 'chickpea', 'tofu', 'tempeh', 'edamame', 'olive oil', 'oil', 'vinegar', 'soy sauce', 'honey', 'maple', 'sauce', 'dressing', 'salt', 'pepper', 'spice', 'herb', 'cumin', 'paprika', 'garlic powder', 'season', 'taste', 'almond', 'walnut', 'peanut', 'seed', 'nut', 'cashew'], category: 'Pantry' },
+      {
+        keywords: [
+          'rice',
+          'pasta',
+          'oats',
+          'quinoa',
+          'flour',
+          'cereal',
+          'bean',
+          'lentil',
+          'chickpea',
+          'tofu',
+          'tempeh',
+          'edamame',
+          'olive oil',
+          'oil',
+          'vinegar',
+          'soy sauce',
+          'honey',
+          'maple',
+          'sauce',
+          'dressing',
+          'salt',
+          'pepper',
+          'spice',
+          'herb',
+          'cumin',
+          'paprika',
+          'garlic powder',
+          'season',
+          'taste',
+          'almond',
+          'walnut',
+          'peanut',
+          'seed',
+          'nut',
+          'cashew',
+        ],
+        category: 'Pantry',
+      },
       // Frozen - frozen foods
       { keywords: ['frozen'], category: 'Frozen' },
     ];
@@ -370,8 +457,12 @@ export class QAValidator {
           return indexA - indexB;
         }
         // If only one is in the order list, that one comes first
-        if (indexA !== -1) return -1;
-        if (indexB !== -1) return 1;
+        if (indexA !== -1) {
+          return -1;
+        }
+        if (indexB !== -1) {
+          return 1;
+        }
         // If neither is in the order list, sort alphabetically
         return a.localeCompare(b);
       })
@@ -393,8 +484,12 @@ export class QAValidator {
 
     // Grams: round up to nearest 25g for amounts > 100g, nearest 10g for smaller
     if (unitLower === 'g' || unitLower === 'grams' || unitLower === 'gram') {
-      if (amount > 500) return Math.ceil(amount / 50) * 50;
-      if (amount > 100) return Math.ceil(amount / 25) * 25;
+      if (amount > 500) {
+        return Math.ceil(amount / 50) * 50;
+      }
+      if (amount > 100) {
+        return Math.ceil(amount / 25) * 25;
+      }
       return Math.ceil(amount / 10) * 10;
     }
 
@@ -409,13 +504,20 @@ export class QAValidator {
     }
 
     // Pounds: round up to nearest 0.5 lb
-    if (unitLower === 'lb' || unitLower === 'lbs' || unitLower === 'pounds' || unitLower === 'pound') {
+    if (
+      unitLower === 'lb' ||
+      unitLower === 'lbs' ||
+      unitLower === 'pounds' ||
+      unitLower === 'pound'
+    ) {
       return Math.ceil(amount * 2) / 2;
     }
 
     // Milliliters: round up to nearest 25ml or 50ml
     if (unitLower === 'ml' || unitLower === 'milliliters' || unitLower === 'milliliter') {
-      if (amount > 200) return Math.ceil(amount / 50) * 50;
+      if (amount > 200) {
+        return Math.ceil(amount / 50) * 50;
+      }
       return Math.ceil(amount / 25) * 25;
     }
 
@@ -440,7 +542,19 @@ export class QAValidator {
     }
 
     // Scoops, slices, pieces, etc: round up to whole numbers
-    if (['scoop', 'scoops', 'slice', 'slices', 'piece', 'pieces', 'whole', 'clove', 'cloves'].includes(unitLower)) {
+    if (
+      [
+        'scoop',
+        'scoops',
+        'slice',
+        'slices',
+        'piece',
+        'pieces',
+        'whole',
+        'clove',
+        'cloves',
+      ].includes(unitLower)
+    ) {
       return Math.ceil(amount);
     }
 

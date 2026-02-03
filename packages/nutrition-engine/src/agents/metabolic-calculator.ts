@@ -1,4 +1,9 @@
-import { ClientIntake, MetabolicProfile, MetabolicProfileSchema, MealTarget } from '../types/schemas';
+import {
+  ClientIntake,
+  MetabolicProfile,
+  MetabolicProfileSchema,
+  MealTarget,
+} from '../types/schemas';
 
 /**
  * Agent 2: Metabolic Calculator
@@ -14,7 +19,10 @@ export class MetabolicCalculator {
     extremely_active: 1.9,
   };
 
-  private static readonly MACRO_SPLITS: Record<string, { protein: number; carbs: number; fat: number }> = {
+  private static readonly MACRO_SPLITS: Record<
+    string,
+    { protein: number; carbs: number; fat: number }
+  > = {
     balanced: { protein: 0.3, carbs: 0.4, fat: 0.3 },
     high_protein: { protein: 0.4, carbs: 0.35, fat: 0.25 },
     low_carb: { protein: 0.35, carbs: 0.25, fat: 0.4 },
@@ -22,11 +30,11 @@ export class MetabolicCalculator {
   };
 
   private static readonly MEAL_DISTRIBUTIONS: Record<number, number[]> = {
-    2: [0.40, 0.60],
-    3: [0.25, 0.35, 0.40],
-    4: [0.20, 0.30, 0.35, 0.15],
-    5: [0.20, 0.25, 0.30, 0.15, 0.10],
-    6: [0.15, 0.25, 0.25, 0.15, 0.10, 0.10],
+    2: [0.4, 0.6],
+    3: [0.25, 0.35, 0.4],
+    4: [0.2, 0.3, 0.35, 0.15],
+    5: [0.2, 0.25, 0.3, 0.15, 0.1],
+    6: [0.15, 0.25, 0.25, 0.15, 0.1, 0.1],
   };
 
   private static readonly MEAL_LABELS: Record<number, string[]> = {
@@ -82,8 +90,11 @@ export class MetabolicCalculator {
     const fiberTargetG = Math.max(25, Math.round((goalKcal / 1000) * 14));
 
     // Meal distribution
-    const baseDist = MetabolicCalculator.MEAL_DISTRIBUTIONS[intake.mealsPerDay] ?? MetabolicCalculator.MEAL_DISTRIBUTIONS[3];
-    const baseLabels = MetabolicCalculator.MEAL_LABELS[intake.mealsPerDay] ?? MetabolicCalculator.MEAL_LABELS[3];
+    const baseDist =
+      MetabolicCalculator.MEAL_DISTRIBUTIONS[intake.mealsPerDay] ??
+      MetabolicCalculator.MEAL_DISTRIBUTIONS[3];
+    const baseLabels =
+      MetabolicCalculator.MEAL_LABELS[intake.mealsPerDay] ?? MetabolicCalculator.MEAL_LABELS[3];
 
     // Adjust for snacks: each snack takes 10%
     const snackTotal = intake.snacksPerDay * 0.1;

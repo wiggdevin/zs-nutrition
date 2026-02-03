@@ -54,10 +54,7 @@ export class NutritionPipelineOrchestrator {
     this.brandRenderer = new BrandRenderer();
   }
 
-  async run(
-    input: RawIntakeForm,
-    onProgress?: ProgressCallback
-  ): Promise<PipelineResult> {
+  async run(input: RawIntakeForm, onProgress?: ProgressCallback): Promise<PipelineResult> {
     const emit = (agent: number, agentName: string, message: string) => {
       onProgress?.({
         status: 'running',

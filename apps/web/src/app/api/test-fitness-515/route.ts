@@ -147,7 +147,7 @@ export async function POST(req: NextRequest) {
 
       // Calculate adjustment with mock data
       const adjustment = calculateCalorieAdjustment(profile.goalKcal, {
-        platform: 'test_platform',
+        platform: 'apple_health',
         syncDate: new Date(),
         activeCalories: 500,
         workouts: [

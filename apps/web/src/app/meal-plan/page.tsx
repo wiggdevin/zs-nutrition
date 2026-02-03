@@ -616,7 +616,7 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
   }, [formatGroceryListText]);
 
   return (
-    <div className="mt-8 mx-auto max-w-[1600px] px-4 pb-8" data-testid="grocery-list-section">
+    <div className="mx-auto max-w-[1600px] pb-8" data-testid="grocery-list-section">
       {/* Section header */}
       <div className="rounded-lg border border-[#2a2a2a] bg-[#141414]">
         <div className="flex items-center justify-between px-5 py-4">
@@ -754,6 +754,7 @@ export default function MealPlanPage() {
   const [swapLoading, setSwapLoading] = useState(false);
   const [swappingMeal, setSwappingMeal] = useState<{ dayNumber: number; mealIdx: number } | null>(null);
   const [swapSuccess, setSwapSuccess] = useState<{ dayNumber: number; mealIdx: number } | null>(null);
+  const [swapError, setSwapError] = useState<string | null>(null);
   // Ref-based guard for synchronous double-click prevention (state updates are async)
   const swapLockRef = useRef(false);
 
@@ -768,6 +769,9 @@ export default function MealPlanPage() {
   // Track the current fetch request so we can abort stale ones
   const planAbortRef = useRef<AbortController | null>(null);
   const planFetchGenRef = useRef(0);
+
+  // Tab view state
+  const [activeTab, setActiveTab] = useState<'meal-plan' | 'grocery-list'>('meal-plan');
 
   const fetchPlan = useCallback(async () => {
     // Abort any in-flight request before starting a new one
@@ -915,7 +919,7 @@ export default function MealPlanPage() {
     [plan?.id, planReplaced, checkPlanStatus]
   );
 
-  // Handle selecting a swap alternative
+  // Handle selecting a swap alternative with retry logic
   const handleSwapSelect = useCallback(
     async (alt: Meal) => {
       if (!swapTarget || !plan) return;
@@ -923,53 +927,94 @@ export default function MealPlanPage() {
       // Close modal and show skeleton
       const target = swapTarget;
       setSwapTarget(null);
+      setSwapError(null); // Clear any previous error
       setSwappingMeal({ dayNumber: target.dayNumber, mealIdx: target.mealIdx });
 
-      try {
-        const res = await fetch("/api/plan/swap", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            planId: plan.id,
-            dayNumber: target.dayNumber,
-            slot: target.meal.slot,
-            mealIdx: target.mealIdx,
-            originalMeal: target.meal,
-            newMeal: alt,
-          }),
-        });
+      const MAX_RETRIES = 3;
+      const RETRY_DELAY_MS = 1000; // 1 second between retries
+      let lastError: Error | null = null;
 
-        if (res.ok) {
-          // Update the plan locally
-          const updatedDays = [...(plan.validatedPlan?.days || [])];
-          const dayIdx = updatedDays.findIndex(
-            (d) => d.dayNumber === target.dayNumber
-          );
-          if (dayIdx !== -1 && updatedDays[dayIdx].meals[target.mealIdx]) {
-            updatedDays[dayIdx].meals[target.mealIdx] = alt;
-            setPlan({
-              ...plan,
-              validatedPlan: {
-                ...plan.validatedPlan,
-                days: updatedDays,
-              },
-            });
+      for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+        try {
+          const res = await fetch("/api/plan/swap", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              planId: plan.id,
+              dayNumber: target.dayNumber,
+              slot: target.meal.slot,
+              mealIdx: target.mealIdx,
+              originalMeal: target.meal,
+              newMeal: alt,
+            }),
+          });
+
+          if (res.ok) {
+            const data = await res.json();
+
+            // Update the plan locally
+            const updatedDays = [...(plan.validatedPlan?.days || [])];
+            const dayIdx = updatedDays.findIndex(
+              (d) => d.dayNumber === target.dayNumber
+            );
+            if (dayIdx !== -1 && updatedDays[dayIdx].meals[target.mealIdx]) {
+              updatedDays[dayIdx].meals[target.mealIdx] = alt;
+              setPlan({
+                ...plan,
+                validatedPlan: {
+                  ...plan.validatedPlan,
+                  days: updatedDays,
+                },
+              });
+            }
+
+            // Success - clear error and show success indicator
+            setSwapError(null);
+            setTimeout(() => {
+              setSwappingMeal(null);
+              swapLockRef.current = false;
+              setSwapSuccess({ dayNumber: target.dayNumber, mealIdx: target.mealIdx });
+              // Clear success indicator after 3 seconds
+              setTimeout(() => {
+                setSwapSuccess(null);
+              }, 3000);
+            }, 500);
+            return; // Exit on success
+          } else {
+            // Non-OK response - store error for potential retry
+            const errorData = await res.json().catch(() => ({ error: res.statusText }));
+            lastError = new Error(errorData.error || `HTTP ${res.status}: ${res.statusText}`);
+
+            // If this is the last attempt, we'll handle it after the loop
+            if (attempt < MAX_RETRIES - 1) {
+              console.log(`Swap attempt ${attempt + 1} failed, retrying... (${lastError.message})`);
+              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            }
+          }
+        } catch (err) {
+          lastError = err as Error;
+
+          // Network error or other exception - retry if attempts remain
+          if (attempt < MAX_RETRIES - 1) {
+            console.log(`Swap attempt ${attempt + 1} failed with error, retrying... (${lastError.message})`);
+            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
           }
         }
-      } catch (err) {
-        console.error("Failed to swap meal:", err);
-      } finally {
-        // Keep skeleton for a brief moment, then show success indicator
-        setTimeout(() => {
-          setSwappingMeal(null);
-          swapLockRef.current = false;
-          setSwapSuccess({ dayNumber: target.dayNumber, mealIdx: target.mealIdx });
-          // Clear success indicator after 3 seconds
-          setTimeout(() => {
-            setSwapSuccess(null);
-          }, 3000);
-        }, 500);
       }
+
+      // If we get here, all retries failed
+      console.error(`Failed to swap meal after ${MAX_RETRIES} attempts:`, lastError);
+      setSwapError(`Failed to swap meal after ${MAX_RETRIES} attempts. Please try again.`);
+
+      // Clear skeleton state and lock
+      setTimeout(() => {
+        setSwappingMeal(null);
+        swapLockRef.current = false;
+        // Clear error after 5 seconds
+        setTimeout(() => {
+          setSwapError(null);
+        }, 5000);
+      }, 500);
     },
     [swapTarget, plan]
   );
@@ -1347,8 +1392,41 @@ export default function MealPlanPage() {
         </div>
       </div>
 
+      {/* Tab Navigation */}
+      <div className="mx-auto max-w-[1600px] px-4 pt-6">
+        <div className="flex gap-2 border-b border-[#2a2a2a]" data-testid="meal-plan-tabs">
+          <button
+            onClick={() => setActiveTab('meal-plan')}
+            className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+              activeTab === 'meal-plan'
+                ? 'border-[#f97316] text-[#f97316]'
+                : 'border-transparent text-[#a1a1aa] hover:text-[#fafafa] hover:border-[#3a3a3a]'
+            }`}
+            data-testid="tab-meal-plan"
+            aria-label="View meal plan"
+            aria-selected={activeTab === 'meal-plan'}
+          >
+            📅 Meal Plan
+          </button>
+          <button
+            onClick={() => setActiveTab('grocery-list')}
+            className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+              activeTab === 'grocery-list'
+                ? 'border-[#f97316] text-[#f97316]'
+                : 'border-transparent text-[#a1a1aa] hover:text-[#fafafa] hover:border-[#3a3a3a]'
+            }`}
+            data-testid="tab-grocery-list"
+            aria-label="View grocery list"
+            aria-selected={activeTab === 'grocery-list'}
+          >
+            🛒 Grocery List
+          </button>
+        </div>
+      </div>
+
       {/* 7-day grid - Responsive layout */}
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      {activeTab === 'meal-plan' && (
+      <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="meal-plan-view">
         {/* Desktop: 7 columns (xl+), Tablet: 3-4 columns (md-lg), Mobile: swipeable cards (xs-sm) */}
         <div
           className="
@@ -1394,10 +1472,19 @@ export default function MealPlanPage() {
           </div>
         )}
       </div>
+      )}
 
-      {/* Grocery List Section */}
-      {plan.validatedPlan?.groceryList && plan.validatedPlan.groceryList.length > 0 && (
-        <GroceryListSection groceryList={normalizeGroceryList(plan.validatedPlan.groceryList as unknown[])} />
+      {/* Grocery List View */}
+      {activeTab === 'grocery-list' && (
+        <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="grocery-list-view">
+          {plan.validatedPlan?.groceryList && plan.validatedPlan.groceryList.length > 0 ? (
+            <GroceryListSection groceryList={normalizeGroceryList(plan.validatedPlan.groceryList as unknown[])} />
+          ) : (
+            <div className="text-center py-12">
+              <p className="text-[#a1a1aa]">No grocery list available.</p>
+            </div>
+          )}
+        </div>
       )}
     </div>
     </div>
@@ -1411,6 +1498,30 @@ export default function MealPlanPage() {
         onSelect={handleSwapSelect}
         onClose={handleSwapClose}
       />
+    )}
+
+    {/* Swap error toast */}
+    {swapError && (
+      <div className="fixed bottom-4 right-4 z-50 max-w-md rounded-lg border border-red-500/60 bg-red-500/10 px-4 py-3 shadow-lg" data-testid="swap-error-toast">
+        <div className="flex items-start gap-3">
+          <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" viewBox="0 0 20 20" fill="currentColor">
+            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+          </svg>
+          <div className="flex-1">
+            <p className="text-sm font-semibold text-red-500">Meal Swap Failed</p>
+            <p className="mt-1 text-xs text-red-400">{swapError}</p>
+          </div>
+          <button
+            onClick={() => setSwapError(null)}
+            className="flex-shrink-0 rounded text-red-400 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+            aria-label="Dismiss error"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
+            </svg>
+          </button>
+        </div>
+      </div>
     )}
 
     {/* Meal detail modal */}

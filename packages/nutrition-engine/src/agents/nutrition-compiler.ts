@@ -34,9 +34,8 @@ export class NutritionCompiler {
 
       // Calculate variance from target
       const varianceKcal = dailyTotals.kcal - day.targetKcal;
-      const variancePercent = day.targetKcal > 0
-        ? Math.round((varianceKcal / day.targetKcal) * 10000) / 100
-        : 0;
+      const variancePercent =
+        day.targetKcal > 0 ? Math.round((varianceKcal / day.targetKcal) * 10000) / 100 : 0;
 
       compiledDays.push({
         dayNumber: day.dayNumber,
@@ -81,10 +80,7 @@ export class NutritionCompiler {
 
     try {
       // Search FatSecret for the meal
-      const searchResults = await this.fatSecretAdapter.searchFoods(
-        meal.fatsecretSearchQuery,
-        5
-      );
+      const searchResults = await this.fatSecretAdapter.searchFoods(meal.fatsecretSearchQuery, 5);
 
       if (searchResults.length > 0) {
         // Found a match — get detailed food info
@@ -96,20 +92,22 @@ export class NutritionCompiler {
           const serving = foodDetails.servings[0];
           const servingScale = meal.suggestedServings || 1;
 
-          // Scale nutrition to match target kcal if the difference is reasonable
+          // Scale nutrition to match TARGET kcal (not estimated)
+          // This ensures the meal meets the nutritional target for that slot
           const baseKcal = serving.calories * servingScale;
-          const scaleFactor = baseKcal > 0
-            ? Math.min(Math.max(meal.estimatedNutrition.kcal / baseKcal, 0.5), 3.0)
-            : 1;
+          const targetKcal = meal.targetNutrition.kcal;
+          const scaleFactor =
+            baseKcal > 0 ? Math.min(Math.max(targetKcal / baseKcal, 0.5), 3.0) : 1;
 
           nutrition = {
             kcal: Math.round(serving.calories * servingScale * scaleFactor),
             proteinG: Math.round(serving.protein * servingScale * scaleFactor * 10) / 10,
             carbsG: Math.round(serving.carbohydrate * servingScale * scaleFactor * 10) / 10,
             fatG: Math.round(serving.fat * servingScale * scaleFactor * 10) / 10,
-            fiberG: serving.fiber !== undefined
-              ? Math.round(serving.fiber * servingScale * scaleFactor * 10) / 10
-              : undefined,
+            fiberG:
+              serving.fiber !== undefined
+                ? Math.round(serving.fiber * servingScale * scaleFactor * 10) / 10
+                : undefined,
           };
 
           confidenceLevel = 'verified';
@@ -167,9 +165,7 @@ export class NutritionCompiler {
     if (primaryServing) {
       ingredients.push({
         name: foodDetails.name,
-        amount: Math.round(
-          (primaryServing.metricServingAmount || 100) * scaleFactor
-        ),
+        amount: Math.round((primaryServing.metricServingAmount || 100) * scaleFactor),
         unit: primaryServing.metricServingUnit || 'g',
         fatsecretFoodId: foodDetails.foodId,
       });
@@ -274,7 +270,7 @@ export class NutritionCompiler {
     if (ingredients.length === 0) {
       ingredients.push(
         { name: 'Primary Ingredient', amount: 150, unit: 'g' },
-        { name: 'Secondary Ingredient', amount: 100, unit: 'g' },
+        { name: 'Secondary Ingredient', amount: 100, unit: 'g' }
       );
     }
 
@@ -344,27 +340,41 @@ export class NutritionCompiler {
     );
 
     if (meal.tags.includes('no-cook')) {
+      instructions.push(`Combine ingredients in a bowl or container.`);
       instructions.push(
-        `Combine ingredients in a bowl or container.`
+        `Mix well and serve${meal.tags.includes('meal-prep') ? ' or refrigerate for later' : ''}.`
       );
-      instructions.push(`Mix well and serve${meal.tags.includes('meal-prep') ? ' or refrigerate for later' : ''}.`);
     } else {
       // Cooking method based on tags
       if (meal.tags.includes('grill')) {
         instructions.push(`Preheat grill to medium-high heat.`);
-        instructions.push(`Season ${meal.primaryProtein || 'protein'} with salt, pepper, and desired spices.`);
-        instructions.push(`Grill for ${Math.round(meal.cookTimeMin / 2)} minutes per side until cooked through.`);
+        instructions.push(
+          `Season ${meal.primaryProtein || 'protein'} with salt, pepper, and desired spices.`
+        );
+        instructions.push(
+          `Grill for ${Math.round(meal.cookTimeMin / 2)} minutes per side until cooked through.`
+        );
       } else if (meal.tags.includes('stir-fry')) {
         instructions.push(`Heat olive oil in a large skillet or wok over high heat.`);
-        instructions.push(`Add ${meal.primaryProtein || 'protein'} and stir-fry for 3-4 minutes until browned.`);
-        instructions.push(`Add vegetables and cook for another ${Math.round(meal.cookTimeMin / 3)} minutes.`);
+        instructions.push(
+          `Add ${meal.primaryProtein || 'protein'} and stir-fry for 3-4 minutes until browned.`
+        );
+        instructions.push(
+          `Add vegetables and cook for another ${Math.round(meal.cookTimeMin / 3)} minutes.`
+        );
       } else if (meal.tags.includes('bake')) {
         instructions.push(`Preheat oven to 375°F (190°C).`);
-        instructions.push(`Season ${meal.primaryProtein || 'protein'} and place on a lined baking sheet.`);
-        instructions.push(`Bake for ${meal.cookTimeMin} minutes until internal temperature reaches safe levels.`);
+        instructions.push(
+          `Season ${meal.primaryProtein || 'protein'} and place on a lined baking sheet.`
+        );
+        instructions.push(
+          `Bake for ${meal.cookTimeMin} minutes until internal temperature reaches safe levels.`
+        );
       } else {
         instructions.push(`Heat a pan over medium heat with olive oil.`);
-        instructions.push(`Cook ${meal.primaryProtein || 'main ingredient'} for ${meal.cookTimeMin} minutes until done.`);
+        instructions.push(
+          `Cook ${meal.primaryProtein || 'main ingredient'} for ${meal.cookTimeMin} minutes until done.`
+        );
       }
 
       instructions.push(`Plate and serve with sides. Season to taste.`);

@@ -29,7 +29,7 @@ export async function GET(req: NextRequest) {
     });
 
     // Don't expose access tokens in response
-    const sanitizedConnections = connections.map((conn) => ({
+    const sanitizedConnections = connections.map((conn: any) => ({
       platform: conn.platform,
       platformUserId: conn.platformUserId,
       lastSyncAt: conn.lastSyncAt,

@@ -35,7 +35,7 @@ export async function POST() {
   const today = new Date(now.getFullYear(), now.getMonth(), now.getDate())
 
   // Create 120 meals: 20 today, 100 across past 14 days
-  const mealsToCreate = []
+  const mealsToCreate: any[] = []
 
   // 20 meals for today (to test dashboard with many today meals)
   for (let i = 0; i < 20; i++) {
