@@ -59,6 +59,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/test-optimization-loop(.*)",
   "/api/dev-test(.*)",
   "/api/seed-plan(.*)",
+  "/api/test-411-ingredients(.*)",
   "/test-network-error(.*)",
   "/test-500-error(.*)",
   "/test-loading-states(.*)",

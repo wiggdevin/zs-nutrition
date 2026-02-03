@@ -480,11 +480,12 @@ export default function FoodSearch() {
                     key={`sug-${idx}`}
                     onClick={() => handleSuggestionClick(suggestion)}
                     className="w-full px-4 py-2.5 text-left text-[#fafafa] hover:bg-[#f97316]/10 hover:text-[#f97316] transition-colors flex items-center gap-2"
+                    title={suggestion}
                   >
                     <svg className="w-4 h-4 text-[#666] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
-                    <span>{suggestion}</span>
+                    <span className="truncate">{suggestion}</span>
                   </button>
                 ))}
               </div>
@@ -503,7 +504,12 @@ export default function FoodSearch() {
                     className="w-full px-4 py-3 text-left hover:bg-[#f97316]/10 transition-colors border-b border-[#222] last:border-0"
                   >
                     <div className="flex items-center justify-between gap-2">
-                      <div className="font-medium text-[#fafafa]">{food.name}</div>
+                      <div
+                        className="font-medium text-[#fafafa] truncate"
+                        title={food.name}
+                      >
+                        {food.name}
+                      </div>
                       {food.verified && (
                         <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
@@ -514,7 +520,12 @@ export default function FoodSearch() {
                       )}
                     </div>
                     {food.brandName && (
-                      <div className="text-xs text-[#f97316] mt-0.5">{food.brandName}</div>
+                      <div
+                        className="text-xs text-[#f97316] mt-0.5 truncate"
+                        title={food.brandName}
+                      >
+                        {food.brandName}
+                      </div>
                     )}
                     {food.nutrition && (
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
@@ -591,13 +602,14 @@ export default function FoodSearch() {
                   <button
                     key={serving.servingId}
                     onClick={() => setSelectedServingIdx(idx)}
-                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+                    className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors max-w-[200px] ${
                       selectedServingIdx === idx
                         ? 'bg-[#f97316] text-[#0a0a0a]'
                         : 'bg-[#222] text-[#a1a1aa] hover:bg-[#333] hover:text-[#fafafa]'
                     }`}
+                    title={serving.servingDescription}
                   >
-                    {serving.servingDescription}
+                    <span className="truncate block">{serving.servingDescription}</span>
                   </button>
                 ))}
               </div>
