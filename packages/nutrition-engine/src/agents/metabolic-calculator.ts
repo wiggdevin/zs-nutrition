@@ -22,6 +22,7 @@ export class MetabolicCalculator {
   };
 
   private static readonly MEAL_DISTRIBUTIONS: Record<number, number[]> = {
+    2: [0.40, 0.60],
     3: [0.25, 0.35, 0.40],
     4: [0.20, 0.30, 0.35, 0.15],
     5: [0.20, 0.25, 0.30, 0.15, 0.10],
@@ -29,6 +30,7 @@ export class MetabolicCalculator {
   };
 
   private static readonly MEAL_LABELS: Record<number, string[]> = {
+    2: ['breakfast', 'dinner'],
     3: ['breakfast', 'lunch', 'dinner'],
     4: ['breakfast', 'lunch', 'dinner', 'evening_snack'],
     5: ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner'],

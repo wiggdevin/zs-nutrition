@@ -4,6 +4,22 @@ import { useState, useEffect, useCallback, useRef } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { toast } from '@/lib/toast-store'
+import { useTrackingStore, MacroTargets, MacroCurrent } from '@/lib/stores/useTrackingStore'
+import { shallow } from 'zustand/shallow'
+
+const defaultTargets: MacroTargets = {
+  calories: 2000,
+  protein: 150,
+  carbs: 200,
+  fat: 65,
+}
+
+const defaultCurrent: MacroCurrent = {
+  calories: 0,
+  protein: 0,
+  carbs: 0,
+  fat: 0,
+}
 
 /* ── Types ── */
 interface PlanMeal {
@@ -630,12 +646,35 @@ function DashboardSkeleton() {
 
 /* ── Main Dashboard Client Component ── */
 export default function DashboardClient() {
-  const [data, setData] = useState<DashboardData | null>(null)
+  // Zustand store for tracking state (persists across navigation)
+  // Use shallow comparison to avoid unnecessary re-renders
+  const trackedMeals = useTrackingStore((state) => state.trackedMeals)
+  const targets = useTrackingStore((state) => state.targets)
+  const current = useTrackingStore((state) => state.current)
+  const adherenceScore = useTrackingStore((state) => state.adherenceScore)
+  const weeklyAverageAdherence = useTrackingStore((state) => state.weeklyAverageAdherence)
+  const planId = useTrackingStore((state) => state.planId)
+  const lastFetch = useTrackingStore((state) => state.lastFetch)
+
+  // Actions - separate calls to avoid hook dependency issues
+  const setTrackedMeals = useTrackingStore((state) => state.setTrackedMeals)
+  const setCurrent = useTrackingStore((state) => state.setCurrent)
+  const setTargets = useTrackingStore((state) => state.setTargets)
+  const setAdherenceScore = useTrackingStore((state) => state.setAdherenceScore)
+  const setWeeklyAverageAdherence = useTrackingStore((state) => state.setWeeklyAverageAdherence)
+  const setPlanId = useTrackingStore((state) => state.setPlanId)
+  const addTrackedMeal = useTrackingStore((state) => state.addTrackedMeal)
+  const setLastFetch = useTrackingStore((state) => state.setLastFetch)
+
+  const [todayPlanMeals, setTodayPlanMeals] = useState<PlanMeal[]>([])
   const [loading, setLoading] = useState(true)
   const [loggingSlot, setLoggingSlot] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [mealToLog, setMealToLog] = useState<PlanMeal | null>(null)
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
+  const [isTrainingDay, setIsTrainingDay] = useState(false)
+  const [trainingBonusKcal, setTrainingBonusKcal] = useState(0)
+  const [baseGoalKcal, setBaseGoalKcal] = useState(0)
   const router = useRouter()
 
   // Track the current fetch request so we can abort stale ones
@@ -643,7 +682,17 @@ export default function DashboardClient() {
   // Track a fetch generation counter to ignore late responses
   const fetchGenerationRef = useRef(0)
 
-  const fetchData = useCallback(async () => {
+  const fetchData = useCallback(async (forceRefetch = false) => {
+    // Check if we have fresh data in Zustand store (less than 1 minute old)
+    const now = Date.now()
+    const STORE_FRESHNESS_MS = 60 * 1000 // 1 minute
+
+    if (!forceRefetch && lastFetch && (now - lastFetch < STORE_FRESHNESS_MS)) {
+      // Use Zustand store data - no need to refetch
+      setLoading(false)
+      return
+    }
+
     // Abort any in-flight request before starting a new one
     if (abortControllerRef.current) {
       abortControllerRef.current.abort()
@@ -677,7 +726,33 @@ export default function DashboardClient() {
         return
       }
 
-      setData(json)
+      // Update Zustand store with server data
+      setTargets(json.macros.calories ? {
+        calories: json.macros.calories.target,
+        protein: json.macros.protein.target,
+        carbs: json.macros.carbs.target,
+        fat: json.macros.fat.target,
+      } : defaultTargets)
+
+      setCurrent(json.macros.calories ? {
+        calories: json.macros.calories.current,
+        protein: json.macros.protein.current,
+        carbs: json.macros.carbs.current,
+        fat: json.macros.fat.current,
+      } : defaultCurrent)
+
+      setTrackedMeals(json.trackedMeals || [])
+      setAdherenceScore(json.adherenceScore ?? 0)
+      setWeeklyAverageAdherence(json.weeklyAverageAdherence ?? null)
+      setPlanId(json.planId || null)
+      setLastFetch(now)
+
+      // Set local state for plan meals
+      setTodayPlanMeals(json.todayPlanMeals || [])
+      setIsTrainingDay(json.isTrainingDay ?? false)
+      setTrainingBonusKcal(json.trainingBonusKcal ?? 0)
+      setBaseGoalKcal(json.baseGoalKcal ?? json.macros?.calories?.target ?? 2000)
+
       setError(null)
     } catch (err) {
       // Ignore aborted requests (user navigated away or new fetch started)
@@ -694,7 +769,7 @@ export default function DashboardClient() {
         setLoading(false)
       }
     }
-  }, [router])
+  }, [router, lastFetch, setTargets, setCurrent, setTrackedMeals, setAdherenceScore, setWeeklyAverageAdherence, setPlanId, setLastFetch])
 
   useEffect(() => {
     fetchData()
@@ -713,7 +788,7 @@ export default function DashboardClient() {
   const isLoggingRef = useRef(false)
 
   const handleLogFromPlan = async (portion: number) => {
-    if (!data?.planId || !mealToLog) return
+    if (!mealToLog) return
     // Synchronous guard prevents double-click from creating duplicate entries
     if (isLoggingRef.current) return
     isLoggingRef.current = true
@@ -723,7 +798,7 @@ export default function DashboardClient() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          planId: data.planId,
+          planId: useTrackingStore.getState().planId,
           dayNumber: mealToLog.dayNumber,
           slot: mealToLog.slot,
           portion,
@@ -737,13 +812,24 @@ export default function DashboardClient() {
 
       const result = await res.json()
 
-      // Close modal and refresh dashboard data
-      setMealToLog(null)
-      await fetchData()
+      if (result.success && result.trackedMeal) {
+        // Update Zustand store immediately (optimistic update)
+        addTrackedMeal({
+          id: result.trackedMeal.id,
+          name: result.trackedMeal.name,
+          calories: result.trackedMeal.calories,
+          protein: result.trackedMeal.protein,
+          carbs: result.trackedMeal.carbs,
+          fat: result.trackedMeal.fat,
+          source: result.trackedMeal.source || 'plan_meal',
+          mealSlot: result.trackedMeal.mealSlot || mealToLog.slot,
+          createdAt: result.trackedMeal.createdAt || new Date().toISOString(),
+        })
 
-      // Show success toast
-      if (result.success) {
-        const mealName = result.trackedMeal?.name || mealToLog.name
+        // Close modal
+        setMealToLog(null)
+
+        const mealName = result.trackedMeal.name || mealToLog.name
         toast.success(`${mealName} logged successfully`)
       }
     } catch (err) {
@@ -774,7 +860,7 @@ export default function DashboardClient() {
 
   if (loading) return <DashboardSkeleton />
 
-  if (error && !data) {
+  if (error && trackedMeals.length === 0 && targets.calories === 0) {
     return (
       <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center" data-testid="network-error-state">
         <div className="text-center space-y-6 max-w-md mx-auto px-4">
@@ -788,7 +874,7 @@ export default function DashboardClient() {
             <p className="text-sm text-[#a1a1aa]" data-testid="error-message">{error}</p>
           </div>
           <button
-            onClick={() => { setLoading(true); setError(null); fetchData() }}
+            onClick={() => { setLoading(true); setError(null); fetchData(true) }}
             data-testid="retry-button"
             aria-label="Retry loading dashboard"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-sm font-bold uppercase tracking-wide rounded-xl transition-colors"
@@ -803,10 +889,8 @@ export default function DashboardClient() {
     )
   }
 
-  if (!data) return null
-
   // ═══ EMPTY STATE: New user with no meal plans ═══
-  const hasNoPlan = !data.planId && data.todayPlanMeals.length === 0 && data.trackedMeals.length === 0
+  const hasNoPlan = !planId && todayPlanMeals.length === 0 && trackedMeals.length === 0
 
   if (hasNoPlan) {
     return (
@@ -823,7 +907,7 @@ export default function DashboardClient() {
                   Daily Target
                 </span>
                 <span className="text-lg font-bold font-mono text-[#f97316]">
-                  {data.macros.calories.target.toLocaleString()} kcal
+                  {targets.calories.toLocaleString()} kcal
                 </span>
               </div>
               <div className="h-10 w-10 rounded-full bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-bold">
@@ -969,7 +1053,13 @@ export default function DashboardClient() {
     )
   }
 
-  const macros = data.macros
+  const macros = {
+    calories: { current: current.calories, target: targets.calories },
+    protein: { current: current.protein, target: targets.protein },
+    carbs: { current: current.carbs, target: targets.carbs },
+    fat: { current: current.fat, target: targets.fat },
+  }
+
   const remaining = {
     calories: Math.max(0, macros.calories.target - macros.calories.current),
     protein: Math.max(0, macros.protein.target - macros.protein.current),
@@ -977,7 +1067,7 @@ export default function DashboardClient() {
 
   // Determine which slots have already been logged today
   const loggedSlots = new Set(
-    data.trackedMeals
+    trackedMeals
       .filter(tm => tm.source === 'plan_meal')
       .map(tm => tm.mealSlot?.toLowerCase())
   )
@@ -1043,12 +1133,12 @@ export default function DashboardClient() {
               /// Macro Rings
             </p>
             <div className="flex items-center gap-3">
-              {data.isTrainingDay ? (
+              {isTrainingDay ? (
                 <span
                   data-testid="training-day-badge"
                   className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full bg-[#f97316]/15 text-[#f97316] border border-[#f97316]/30"
                 >
-                  Training Day +{data.trainingBonusKcal} kcal
+                  Training Day +{trainingBonusKcal} kcal
                 </span>
               ) : (
                 <span
@@ -1126,19 +1216,19 @@ export default function DashboardClient() {
             <div className="flex items-center gap-4 sm:gap-8">
               <div className="flex flex-col items-center">
                 <span data-testid="adherence-score-today" className="text-4xl sm:text-5xl font-black text-[#22c55e] font-mono">
-                  {data.adherenceScore}
+                  {adherenceScore}
                 </span>
                 <span className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mt-1">
                   Today
                 </span>
               </div>
               <div className="h-12 w-px bg-[#2a2a2a]" />
-              {data.weeklyAverageAdherence !== null && data.weeklyAverageAdherence !== undefined ? (
+              {weeklyAverageAdherence !== null && weeklyAverageAdherence !== undefined ? (
                 <div className="flex flex-col items-center">
                   <span data-testid="adherence-score-weekly" className="text-2xl sm:text-3xl font-bold font-mono" style={{
-                    color: data.weeklyAverageAdherence >= 80 ? '#22c55e' : data.weeklyAverageAdherence >= 50 ? '#eab308' : '#ef4444'
+                    color: weeklyAverageAdherence >= 80 ? '#22c55e' : weeklyAverageAdherence >= 50 ? '#eab308' : '#ef4444'
                   }}>
-                    {data.weeklyAverageAdherence}
+                    {weeklyAverageAdherence}
                   </span>
                   <span className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mt-1">
                     7-Day Avg
@@ -1159,13 +1249,13 @@ export default function DashboardClient() {
                 className="h-3 bg-[#2a2a2a] rounded-full overflow-hidden"
                 role="progressbar"
                 aria-label="Daily adherence score"
-                aria-valuenow={data.adherenceScore}
+                aria-valuenow={adherenceScore}
                 aria-valuemax={100}
-                aria-valuetext={`${data.adherenceScore}% daily adherence`}
+                aria-valuetext={`${adherenceScore}% daily adherence`}
               >
                 <div
                   className="h-full bg-gradient-to-r from-[#22c55e] to-[#22c55e]/70 rounded-full transition-all duration-700"
-                  style={{ width: `${data.adherenceScore}%` }}
+                  style={{ width: `${adherenceScore}%` }}
                 />
               </div>
               <p className="text-[10px] text-[#a1a1aa] mt-1">
@@ -1193,7 +1283,7 @@ export default function DashboardClient() {
                 View Full Plan →
               </Link>
             </div>
-            {data.todayPlanMeals.length === 0 ? (
+            {todayPlanMeals.length === 0 ? (
               <div className="text-center py-8">
                 <p className="text-[#a1a1aa] text-sm">No meal plan for today.</p>
                 <Link
@@ -1205,7 +1295,7 @@ export default function DashboardClient() {
               </div>
             ) : (
               <div className="space-y-3">
-                {data.todayPlanMeals.map((meal) => (
+                {todayPlanMeals.map((meal) => (
                   <PlanMealCard
                     key={meal.slot}
                     mealSlot={meal.slot.charAt(0).toUpperCase() + meal.slot.slice(1)}
@@ -1234,10 +1324,10 @@ export default function DashboardClient() {
                 /// Today&apos;s Log
               </p>
               <span className="text-xs text-[#a1a1aa]">
-                {data.trackedMeals.length} item{data.trackedMeals.length !== 1 ? 's' : ''} logged
+                {trackedMeals.length} item{trackedMeals.length !== 1 ? 's' : ''} logged
               </span>
             </div>
-            {data.trackedMeals.length === 0 ? (
+            {trackedMeals.length === 0 ? (
               <div data-testid="empty-log-state" className="text-center py-8 space-y-4">
                 <div className="w-16 h-16 mx-auto rounded-full bg-[#f97316]/10 flex items-center justify-center">
                   <span className="text-3xl">🍽️</span>
@@ -1249,7 +1339,7 @@ export default function DashboardClient() {
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
-                  {data.todayPlanMeals.length > 0 ? (
+                  {todayPlanMeals.length > 0 ? (
                     <p className="text-xs text-[#a1a1aa]">
                       Tap <span className="text-[#f97316] font-bold">&quot;Log&quot;</span> on a plan meal to get started!
                     </p>
@@ -1266,7 +1356,7 @@ export default function DashboardClient() {
               </div>
             ) : (
               <div className="divide-y divide-[#2a2a2a]">
-                {data.trackedMeals.map((entry) => (
+                {trackedMeals.map((entry) => (
                   <LogEntry
                     key={entry.id}
                     name={entry.name}

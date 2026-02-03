@@ -3,6 +3,8 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from '@/lib/toast-store'
 
+type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
 interface SearchResultNutrition {
   servingDescription: string
   calories: number
@@ -61,6 +63,12 @@ export default function FoodSearch() {
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
   const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [quantity, setQuantity] = useState(1)
+  const [mealSlot, setMealSlot] = useState<MealSlot | ''>('')
+  const [loggedDate, setLoggedDate] = useState<string>(() => {
+    // Initialize with today's date in YYYY-MM-DD format
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  })
   const [isLogging, setIsLogging] = useState(false)
   const [logSuccess, setLogSuccess] = useState<string | null>(null)
   const [logError, setLogError] = useState<string | null>(null)
@@ -238,6 +246,8 @@ export default function FoodSearch() {
     setIsLoadingDetails(true)
     setSelectedServingIdx(0)
     setQuantity(1)
+    setMealSlot('')
+    setLoggedDate(new Date().toISOString().split('T')[0]) // Reset to today when selecting new food
     setLogSuccess(null)
     setLogError(null)
 
@@ -292,6 +302,8 @@ export default function FoodSearch() {
           carbs: currentServing.carbohydrate,
           fat: currentServing.fat,
           fiber: currentServing.fiber,
+          mealSlot: mealSlot || undefined,
+          loggedDate: loggedDate,
         }),
       })
 
@@ -319,6 +331,8 @@ export default function FoodSearch() {
           setQuery('')
           setLogSuccess(null)
           setQuantity(1)
+          setMealSlot('')
+          setLoggedDate(new Date().toISOString().split('T')[0]) // Reset to today
           inputRef.current?.focus()
         }, 2500)
       } else {
@@ -398,6 +412,8 @@ export default function FoodSearch() {
                 setIsLogNetworkError(false)
                 setQueryTooLong(false)
                 setQuantity(1)
+                setMealSlot('')
+                setLoggedDate(new Date().toISOString().split('T')[0]) // Reset to today
                 setSelectedServingIdx(0)
                 setCurrentPage(0)
                 setHasMore(false)
@@ -695,6 +711,41 @@ export default function FoodSearch() {
               Fiber: <span className="text-[#fafafa] font-medium">{currentServing.fiber}g</span>
             </div>
           )}
+
+          {/* Meal Slot Selector */}
+          <div className="mt-4">
+            <label htmlFor="food-meal-slot" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-2">
+              Meal Slot <span className="text-[#666] normal-case font-normal">(optional)</span>
+            </label>
+            <select
+              id="food-meal-slot"
+              value={mealSlot}
+              onChange={(e) => setMealSlot(e.target.value as MealSlot | '')}
+              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              data-testid="food-meal-slot"
+            >
+              <option value="">No meal slot</option>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="dinner">Dinner</option>
+              <option value="snack">Snack</option>
+            </select>
+          </div>
+
+          {/* Date Selector */}
+          <div className="mt-4">
+            <label htmlFor="food-date" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-2">
+              Date
+            </label>
+            <input
+              id="food-date"
+              type="date"
+              value={loggedDate}
+              onChange={(e) => setLoggedDate(e.target.value)}
+              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              data-testid="food-date"
+            />
+          </div>
 
           {/* Quantity Selector and Log Button */}
           {currentServing && (

@@ -308,15 +308,28 @@ export const mealRouter = router({
         carbs: z.number().min(0).max(1000).optional(),
         fat: z.number().min(0).max(1000).optional(),
         mealName: z.string().max(100).optional(),
-        mealSlot: z.string().optional(),
+        mealSlot: z.enum(['breakfast', 'lunch', 'dinner', 'snack']).optional(),
+        loggedDate: z.string().optional(), // YYYY-MM-DD format
       })
     )
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
       const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
 
-      const today = new Date()
-      const dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      // Use provided loggedDate or default to today
+      let dateOnly: Date
+      if (input.loggedDate) {
+        const parsed = new Date(input.loggedDate + 'T00:00:00')
+        if (!isNaN(parsed.getTime())) {
+          dateOnly = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+        } else {
+          const today = new Date()
+          dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+        }
+      } else {
+        const today = new Date()
+        dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      }
 
       const kcal = input.calories
       const proteinG = input.protein ?? 0

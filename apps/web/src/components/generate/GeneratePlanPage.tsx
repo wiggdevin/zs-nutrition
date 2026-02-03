@@ -24,6 +24,8 @@ export function GeneratePlanPage() {
   const hasNavigated = useRef(false);
   const isSubmitting = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
+  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
+  const isUsingPolling = useRef(false);
 
   useEffect(() => {
     // Check if user has completed onboarding
@@ -32,12 +34,16 @@ export function GeneratePlanPage() {
     setHasProfile(!!profile && onboardingComplete === "true");
   }, []);
 
-  // Cleanup: Close EventSource when component unmounts
+  // Cleanup: Close EventSource and stop polling when component unmounts
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
         eventSourceRef.current.close();
         eventSourceRef.current = null;
+      }
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
       }
     };
   }, []);
@@ -91,17 +97,62 @@ export function GeneratePlanPage() {
     };
 
     eventSource.onerror = () => {
-      // SSE connection failed - show error state with retry option
+      // SSE connection failed - fall back to polling
       eventSource.close();
       eventSourceRef.current = null;
-      console.warn("SSE connection failed: network error during plan generation stream");
-      setErrorMessage(
-        "Network connection lost during plan generation. Your plan may still be processing — please retry to check status."
-      );
-      setStatus("failed");
+      console.warn("SSE connection failed, falling back to polling for job status");
+      isUsingPolling.current = true;
+      startPolling(streamJobId);
     };
 
     return eventSource;
+  };
+
+  const startPolling = (pollJobId: string) => {
+    // Poll every 2 seconds
+    pollingIntervalRef.current = setInterval(async () => {
+      try {
+        const response = await fetch("/api/trpc/plan.getJobStatus", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            json: { jobId: pollJobId },
+          }),
+        });
+
+        if (response.ok) {
+          const data = await response.json();
+
+          if (data.result && data.result.data) {
+            const jobStatus = data.result.data;
+
+            // Update currentAgent if provided
+            if (jobStatus.currentAgent !== undefined && jobStatus.currentAgent !== null) {
+              setCurrentAgent(jobStatus.currentAgent);
+            }
+
+            // Check if job completed
+            if (jobStatus.status === "completed") {
+              clearInterval(pollingIntervalRef.current!);
+              pollingIntervalRef.current = null;
+              setStatus("completed");
+              localStorage.setItem("zsn_plan_generated", "true");
+              if (jobStatus.planId) {
+                localStorage.setItem("zsn_plan_id", jobStatus.planId);
+              }
+            } else if (jobStatus.status === "failed") {
+              clearInterval(pollingIntervalRef.current!);
+              pollingIntervalRef.current = null;
+              setErrorMessage(jobStatus.error || "Plan generation failed");
+              setStatus("failed");
+            }
+          }
+        }
+      } catch (error) {
+        console.error("Polling error:", error);
+        // Continue polling on error - don't give up immediately
+      }
+    }, 2000);
   };
 
   const simulateAgentProgress = async () => {
@@ -172,7 +223,13 @@ export function GeneratePlanPage() {
       eventSourceRef.current.close();
       eventSourceRef.current = null;
     }
+    // Stop any active polling
+    if (pollingIntervalRef.current) {
+      clearInterval(pollingIntervalRef.current);
+      pollingIntervalRef.current = null;
+    }
     isSubmitting.current = false;
+    isUsingPolling.current = false;
     setStatus("idle");
     setCurrentAgent(0);
     setJobId(null);
@@ -221,6 +278,11 @@ export function GeneratePlanPage() {
             {jobId && (
               <p className="mt-1 font-mono text-[10px] text-[#a1a1aa]/50">
                 Job: {jobId}
+              </p>
+            )}
+            {isUsingPolling.current && (
+              <p className="mt-1 font-mono text-[10px] text-[#f97316]/80">
+                /// POLLING MODE
               </p>
             )}
           </div>

@@ -27,7 +27,7 @@ async function createFullTestPlan() {
             cookTimeMin: 5,
             servings: 1,
             nutrition: { kcal: 450, proteinG: 15, carbsG: 70, fatG: 12, fiberG: 8 },
-            confidenceLevel: 'verified',
+            confidenceLevel: 'verified' as const,
             ingredients: [
               { name: 'rolled oats', amount: 100, unit: 'g' },
               { name: 'almond milk', amount: 250, unit: 'ml' },
@@ -47,7 +47,7 @@ async function createFullTestPlan() {
             cookTimeMin: 15,
             servings: 1,
             nutrition: { kcal: 600, proteinG: 40, carbsG: 50, fatG: 25, fiberG: 5 },
-            confidenceLevel: 'verified',
+            confidenceLevel: 'verified' as const,
             ingredients: [
               { name: 'chicken breast', amount: 150, unit: 'g' },
               { name: 'whole wheat bread', amount: 2, unit: 'slices' },
@@ -68,7 +68,7 @@ async function createFullTestPlan() {
             cookTimeMin: 20,
             servings: 1,
             nutrition: { kcal: 650, proteinG: 45, carbsG: 30, fatG: 35, fiberG: 6 },
-            confidenceLevel: 'verified',
+            confidenceLevel: 'verified' as const,
             ingredients: [
               { name: 'salmon fillet', amount: 200, unit: 'g' },
               { name: 'broccoli', amount: 200, unit: 'g' },
@@ -90,7 +90,7 @@ async function createFullTestPlan() {
             cookTimeMin: 0,
             servings: 1,
             nutrition: { kcal: 200, proteinG: 15, carbsG: 20, fatG: 5, fiberG: 2 },
-            confidenceLevel: 'verified',
+            confidenceLevel: 'verified' as const,
             ingredients: [
               { name: 'greek yogurt', amount: 150, unit: 'g' },
               { name: 'banana', amount: 1, unit: 'whole' },
@@ -106,7 +106,8 @@ async function createFullTestPlan() {
         varianceKcal: 0,
         variancePercent: 0
       }
-    ]
+    ],
+    weeklyAverages: { kcal: 2500, proteinG: 150, carbsG: 250, fatG: 83 }
   };
 
   // Run the QA validator to generate the grocery list

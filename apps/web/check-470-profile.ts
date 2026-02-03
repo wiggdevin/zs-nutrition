@@ -58,7 +58,7 @@ async function main() {
 
     // Check training bonus (should be 300 for very_active)
     console.log('\nTraining bonus should be 300 kcal for very_active');
-    console.log('Calculated training bonus from TDEE:', profile.tdeeKcal - profile.bmrKcal, 'kcal above BMR');
+    console.log('Calculated training bonus from TDEE:', (profile.tdeeKcal || 0) - (profile.bmrKcal || 0), 'kcal above BMR');
   } else {
     console.log('No profile found for test user 470');
   }

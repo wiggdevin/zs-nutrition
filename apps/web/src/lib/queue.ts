@@ -49,11 +49,11 @@ function createQueue(): Queue | MockQueue {
     defaultJobOptions: {
       attempts: 1,
       removeOnComplete: {
-        age: 3600,
+        age: 24 * 3600, // keep completed jobs for 24 hours
         count: 100,
       },
       removeOnFail: {
-        age: 86400,
+        age: 7 * 24 * 3600, // keep failed jobs for 7 days
       },
     },
   })

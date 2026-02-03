@@ -3,6 +3,8 @@
 import { useState, useRef, useEffect } from 'react'
 import { trpc } from '@/lib/trpc'
 
+type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
 /** Block non-numeric keys on number inputs. Allows digits, navigation, and control keys. */
 function numericKeyFilter(e: React.KeyboardEvent<HTMLInputElement>, allowDecimal = false) {
   const allowed = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Delete', 'Home', 'End', 'Enter'];
@@ -22,12 +24,18 @@ export default function QuickAddForm() {
   const [carbs, setCarbs] = useState('')
   const [fat, setFat] = useState('')
   const [mealName, setMealName] = useState('')
+  const [mealSlot, setMealSlot] = useState<MealSlot | ''>('')
+  const [loggedDate, setLoggedDate] = useState<string>(() => {
+    // Initialize with today's date in YYYY-MM-DD format
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  })
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isNetworkError, setIsNetworkError] = useState(false)
   const [hasSubmittedRecently, setHasSubmittedRecently] = useState(false)
-  const lastMutationPayloadRef = useRef<{ calories: number; protein?: number; carbs?: number; fat?: number; mealName?: string } | null>(null)
+  const lastMutationPayloadRef = useRef<{ calories: number; protein?: number; carbs?: number; fat?: number; mealName?: string; mealSlot?: MealSlot; loggedDate?: string } | null>(null)
   const lastSubmissionTimestampRef = useRef<number>(0)
   const isSubmittingRef = useRef(false) // Synchronous lock to prevent concurrent submissions
 
@@ -95,6 +103,8 @@ export default function QuickAddForm() {
       setCarbs('')
       setFat('')
       setMealName('')
+      setMealSlot('')
+      setLoggedDate(new Date().toISOString().split('T')[0]) // Reset to today
       setFieldErrors({})
       // Clear success after 4s
       setTimeout(() => setSuccessMessage(null), 4000)
@@ -114,7 +124,7 @@ export default function QuickAddForm() {
     },
   })
 
-  const doMutate = (payload: { calories: number; protein?: number; carbs?: number; fat?: number; mealName?: string }) => {
+  const doMutate = (payload: { calories: number; protein?: number; carbs?: number; fat?: number; mealName?: string; mealSlot?: MealSlot; loggedDate?: string }) => {
     lastMutationPayloadRef.current = payload
     setErrorMessage(null)
     setIsNetworkError(false)
@@ -160,6 +170,8 @@ export default function QuickAddForm() {
       carbs: carbs ? parseFloat(carbs) : undefined,
       fat: fat ? parseFloat(fat) : undefined,
       mealName: mealName.trim() || undefined,
+      mealSlot: mealSlot || undefined,
+      loggedDate: loggedDate,
     })
   }
 
@@ -194,6 +206,7 @@ export default function QuickAddForm() {
             setErrorMessage(null)
             setFieldErrors({})
             setSuccessMessage(null)
+            setMealSlot('')
           }}
           className="text-[#666] hover:text-[#fafafa] transition-colors"
         >
@@ -216,6 +229,41 @@ export default function QuickAddForm() {
             onChange={(e) => setMealName(e.target.value)}
             placeholder="e.g. Protein shake, Snack bar..."
             className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+          />
+        </div>
+
+        {/* Meal Slot Selector */}
+        <div>
+          <label htmlFor="quick-add-meal-slot" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
+            Meal Slot <span className="text-[#666] normal-case font-normal">(optional)</span>
+          </label>
+          <select
+            id="quick-add-meal-slot"
+            value={mealSlot}
+            onChange={(e) => setMealSlot(e.target.value as MealSlot | '')}
+            className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+            data-testid="quick-add-meal-slot"
+          >
+            <option value="">No meal slot</option>
+            <option value="breakfast">Breakfast</option>
+            <option value="lunch">Lunch</option>
+            <option value="dinner">Dinner</option>
+            <option value="snack">Snack</option>
+          </select>
+        </div>
+
+        {/* Date Selector */}
+        <div>
+          <label htmlFor="quick-add-date" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
+            Date
+          </label>
+          <input
+            id="quick-add-date"
+            type="date"
+            value={loggedDate}
+            onChange={(e) => setLoggedDate(e.target.value)}
+            className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+            data-testid="quick-add-date"
           />
         </div>
 

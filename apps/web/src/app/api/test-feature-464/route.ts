@@ -31,7 +31,17 @@ export async function GET(request: NextRequest) {
           weightKg: 75,
           heightCm: 175,
           goalType: 'maintain',
-          activityLevel: 'moderate',
+          goalRate: 0,
+          activityLevel: 'moderately_active',
+          dietaryStyle: 'omnivore',
+          allergies: '[]',
+          exclusions: '[]',
+          trainingDays: '[]',
+          mealsPerDay: 3,
+          snacksPerDay: 1,
+          cookingSkill: 5,
+          prepTimeMax: 30,
+          macroStyle: 'balanced',
         },
       });
     }

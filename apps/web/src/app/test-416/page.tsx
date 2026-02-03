@@ -254,17 +254,20 @@ export default function Test416Page() {
           <ul className="space-y-2">
             <li className="flex items-start gap-2">
               <span className={results.some(r => r.scenario === 'exact_match' && r.adherenceScore === 100)
-                ? '✅' : '○'} className="mt-1"/>
+                ? '✅' : '○'}>
+              </span>
               <span>Log meals that exactly match daily targets → adherence score displays 100</span>
             </li>
             <li className="flex items-start gap-2">
               <span className={results.some(r => r.scenario === 'exact_match' && r.adherenceScore === 100)
-                ? '✅' : '○'} className="mt-1"/>
+                ? '✅' : '○'}>
+              </span>
               <span>Verify score calculation is based on all macros (kcal, P, C, F)</span>
             </li>
             <li className="flex items-start gap-2">
               <span className={results.some(r => r.scenario === 'half_match' && r.adherenceScore < 100)
-                ? '✅' : '○'} className="mt-1"/>
+                ? '✅' : '○'}>
+              </span>
               <span>Partially log meals and verify score &lt; 100</span>
             </li>
           </ul>

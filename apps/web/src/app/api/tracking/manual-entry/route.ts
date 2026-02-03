@@ -27,7 +27,7 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
     }
-    const { foodName, calories, protein, carbs, fat, mealSlot } = body
+    const { foodName, calories, protein, carbs, fat, mealSlot, loggedDate } = body
 
     // Validate required fields
     if (!foodName || typeof foodName !== 'string' || foodName.trim().length === 0) {
@@ -42,8 +42,23 @@ export async function POST(request: Request) {
     const carbsG = Math.round((Number(carbs) || 0) * 10) / 10
     const fatG = Math.round((Number(fat) || 0) * 10) / 10
 
-    const today = new Date()
-    const dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    // Use provided loggedDate or default to today
+    let dateOnly: Date
+    if (loggedDate && typeof loggedDate === 'string') {
+      // Parse the provided date (YYYY-MM-DD format from HTML date input)
+      const parsed = new Date(loggedDate + 'T00:00:00')
+      if (!isNaN(parsed.getTime())) {
+        dateOnly = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
+      } else {
+        // Invalid date, fall back to today
+        const today = new Date()
+        dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      }
+    } else {
+      // No date provided, use today
+      const today = new Date()
+      dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+    }
 
     // Use a serialized transaction to prevent race conditions from concurrent tabs
     const result = await prisma.$transaction(async (tx) => {

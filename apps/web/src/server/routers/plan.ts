@@ -321,4 +321,112 @@ export const planRouter = router({
         qaStatus: mealPlan.qaStatus,
       }
     }),
+
+  /**
+   * regeneratePlan mutation:
+   * Regenerates a meal plan using the user's current active profile data.
+   * This allows users to update their settings (e.g., weight change) and regenerate
+   * without going through onboarding again. The old plan is marked as 'replaced'.
+   */
+  regeneratePlan: protectedProcedure
+    .mutation(async ({ ctx }) => {
+      const { prisma } = ctx
+      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+
+      // Find user's active profile
+      const profile = await prisma.userProfile.findFirst({
+        where: { userId: dbUserId, isActive: true },
+        orderBy: { createdAt: 'desc' },
+      })
+
+      if (!profile) {
+        throw new TRPCError({
+          code: 'PRECONDITION_FAILED',
+          message: 'No active user profile found. Complete onboarding first.',
+        })
+      }
+
+      // Parse JSON array fields from profile
+      let allergies: string[] = []
+      let exclusions: string[] = []
+      let cuisinePreferences: string[] = []
+      let trainingDays: string[] = []
+
+      try {
+        allergies = profile.allergies ? JSON.parse(profile.allergies) : []
+        exclusions = profile.exclusions ? JSON.parse(profile.exclusions) : []
+        cuisinePreferences = profile.cuisinePrefs ? JSON.parse(profile.cuisinePrefs) : []
+        trainingDays = profile.trainingDays ? JSON.parse(profile.trainingDays) : []
+      } catch (parseError) {
+        safeLogWarn('Failed to parse profile JSON arrays:', parseError)
+      }
+
+      // Construct intake data from active profile (matching RawIntakeFormSchema)
+      const intakeData = {
+        name: profile.name,
+        sex: profile.sex as 'male' | 'female',
+        age: profile.age,
+        heightCm: profile.heightCm,
+        weightKg: profile.weightKg,
+        bodyFatPercent: profile.bodyFatPercent ?? undefined,
+        goalType: profile.goalType as 'cut' | 'maintain' | 'bulk',
+        goalRate: profile.goalRate,
+        activityLevel: profile.activityLevel as
+          | 'sedentary'
+          | 'lightly_active'
+          | 'moderately_active'
+          | 'very_active'
+          | 'extremely_active',
+        trainingDays: trainingDays as Array<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'>,
+        trainingTime: profile.trainingTime as 'morning' | 'afternoon' | 'evening' | undefined,
+        dietaryStyle: profile.dietaryStyle as
+          | 'omnivore'
+          | 'vegetarian'
+          | 'vegan'
+          | 'pescatarian'
+          | 'keto'
+          | 'paleo',
+        allergies,
+        exclusions,
+        cuisinePreferences,
+        mealsPerDay: profile.mealsPerDay,
+        snacksPerDay: profile.snacksPerDay,
+        cookingSkill: profile.cookingSkill,
+        prepTimeMaxMin: profile.prepTimeMax,
+        macroStyle: profile.macroStyle as 'balanced' | 'high_protein' | 'low_carb' | 'keto',
+        planDurationDays: 7, // Default to 7 days
+      }
+
+      // Create PlanGenerationJob record in DB with status 'pending'
+      const job = await prisma.planGenerationJob.create({
+        data: {
+          userId: dbUserId,
+          status: 'pending',
+          intakeData: JSON.stringify(intakeData),
+        },
+      })
+
+      // Enqueue BullMQ job
+      const bullmqJobData: PlanGenerationJobData = {
+        jobId: job.id,
+        userId: dbUserId,
+        intakeData: intakeData as Record<string, unknown>,
+      }
+
+      try {
+        await planGenerationQueue.add(
+          'generate-plan',
+          bullmqJobData,
+          {
+            jobId: job.id, // Use DB job ID as BullMQ job ID for easy correlation
+          }
+        )
+      } catch (queueError) {
+        // If Redis/BullMQ is unavailable (dev environment), log and continue
+        safeLogWarn('BullMQ enqueue failed (Redis may be unavailable):', queueError)
+      }
+
+      // Return jobId immediately - client will open SSE to track progress
+      return { jobId: job.id }
+    }),
 })

@@ -6,7 +6,17 @@
  */
 
 import { useUserStore } from './useUserStore';
+import { useTrackingStore } from './useTrackingStore';
 import { useToastStore } from '../toast-store';
+
+// Extend Window interface to include Clerk
+declare global {
+  interface Window {
+    Clerk?: {
+      addListener: (event: string, callback: () => void) => void;
+    };
+  }
+}
 
 /**
  * Clear all Zustand stores and their localStorage persistence
@@ -23,6 +33,9 @@ export function clearAllStores(): void {
   // Clear user store (profile, onboarding status)
   useUserStore.getState().clearAllState();
 
+  // Clear tracking store (daily macros, meals)
+  useTrackingStore.getState().reset();
+
   // Clear toast notifications
   useToastStore.getState().clearAll();
 
@@ -30,6 +43,7 @@ export function clearAllStores(): void {
   if (typeof window !== 'undefined') {
     // Clear Zustand persist storage (with hyphen)
     localStorage.removeItem('zsn-user-store');
+    localStorage.removeItem('zsn-tracking-store');
 
     // Clear onboarding wizard localStorage (with underscore)
     localStorage.removeItem('zsn_user_profile');
@@ -60,7 +74,6 @@ export function initSignOutListeners(): void {
 
   // Only set up Clerk listeners if Clerk is available
   if (window.Clerk) {
-    // @ts-ignore - Clerk is loaded via script tag in production
     window.Clerk.addListener('sign-out', () => {
       clearAllStores();
     });

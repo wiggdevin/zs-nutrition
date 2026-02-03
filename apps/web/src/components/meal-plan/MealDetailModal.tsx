@@ -82,6 +82,26 @@ export default function MealDetailModal({
         <div className="flex-shrink-0 border-b border-[#2a2a2a] px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
+              {/* Breadcrumb navigation */}
+              <nav className="flex items-center gap-2 mb-3" aria-label="Breadcrumb" data-testid="meal-detail-breadcrumb">
+                <button
+                  onClick={onClose}
+                  className="flex items-center gap-1 text-xs font-medium text-[#a1a1aa] hover:text-[#f97316] transition-colors focus-visible:outline-2 focus-visible:outline-[#f97316] focus-visible:outline-offset-1 rounded"
+                  data-testid="breadcrumb-back"
+                >
+                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  <span>Meal Plan</span>
+                </button>
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-[#52525b]" aria-hidden="true">
+                  <path d="M9 5L5 9M5 5L9 9M19 19L15 15M15 19L19 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span className="text-xs font-medium text-[#fafafa] truncate max-w-[200px]" data-testid="breadcrumb-current">
+                  {meal.name}
+                </span>
+              </nav>
+
               {/* Slot badge */}
               <div className="flex items-center gap-2 mb-2">
                 <span className="inline-flex items-center rounded bg-[#f97316]/20 px-2 py-1 text-xs font-bold uppercase text-[#f97316]">
