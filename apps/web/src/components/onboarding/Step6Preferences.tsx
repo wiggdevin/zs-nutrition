@@ -55,10 +55,17 @@ export function Step6Preferences({ data, updateData }: Props) {
           {macroStyles.map(({ value, label, desc }) => (
             <button
               key={value}
+              type="button"
               onClick={() => updateData({ macroStyle: value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  updateData({ macroStyle: value });
+                }
+              }}
               role="radio"
               aria-checked={data.macroStyle === value}
-              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
+              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
                 data.macroStyle === value
                   ? "border-[#f97316] bg-[#f97316]/10"
                   : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
@@ -82,9 +89,16 @@ export function Step6Preferences({ data, updateData }: Props) {
           {cuisineOptions.map((cuisine) => (
             <button
               key={cuisine}
+              type="button"
               onClick={() => toggleCuisine(cuisine)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleCuisine(cuisine);
+                }
+              }}
               aria-pressed={data.cuisinePreferences.includes(cuisine.toLowerCase())}
-              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate ${
+              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
                 data.cuisinePreferences.includes(cuisine.toLowerCase())
                   ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
@@ -115,7 +129,7 @@ export function Step6Preferences({ data, updateData }: Props) {
             aria-valuemin={2}
             aria-valuemax={6}
             aria-valuetext={`${data.mealsPerDay} meals per day`}
-            className="w-full accent-[#f97316]"
+            className="w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
           />
           <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
             <span>2</span>
@@ -138,7 +152,7 @@ export function Step6Preferences({ data, updateData }: Props) {
             aria-valuemin={0}
             aria-valuemax={4}
             aria-valuetext={`${data.snacksPerDay} snacks per day`}
-            className="w-full accent-[#f97316]"
+            className="w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
           />
           <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
             <span>0</span>

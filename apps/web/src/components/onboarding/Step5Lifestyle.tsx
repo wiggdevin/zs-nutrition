@@ -50,10 +50,17 @@ export function Step5Lifestyle({ data, updateData }: Props) {
           {activityLevels.map(({ value, label, desc }) => (
             <button
               key={value}
+              type="button"
               onClick={() => updateData({ activityLevel: value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  updateData({ activityLevel: value });
+                }
+              }}
               role="radio"
               aria-checked={data.activityLevel === value}
-              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
+              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
                 data.activityLevel === value
                   ? "border-[#f97316] bg-[#f97316]/10"
                   : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
@@ -77,9 +84,16 @@ export function Step5Lifestyle({ data, updateData }: Props) {
           {weekdays.map(({ value, label }) => (
             <button
               key={value}
+              type="button"
               onClick={() => toggleTrainingDay(value)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleTrainingDay(value);
+                }
+              }}
               aria-pressed={data.trainingDays.includes(value)}
-              className={`rounded-lg border px-1 sm:px-2 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] ${
+              className={`rounded-lg border px-1 sm:px-2 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
                 data.trainingDays.includes(value)
                   ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
@@ -108,7 +122,7 @@ export function Step5Lifestyle({ data, updateData }: Props) {
           aria-valuemin={1}
           aria-valuemax={10}
           aria-valuetext={`Cooking skill level ${data.cookingSkill} out of 10`}
-          className="w-full accent-[#f97316]"
+          className="w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
         />
         <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
           <span>Beginner</span>
@@ -133,7 +147,7 @@ export function Step5Lifestyle({ data, updateData }: Props) {
           aria-valuemin={10}
           aria-valuemax={120}
           aria-valuetext={`Maximum prep time ${data.prepTimeMax} minutes`}
-          className="w-full accent-[#f97316]"
+          className="w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
         />
         <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
           <span>10 min</span>

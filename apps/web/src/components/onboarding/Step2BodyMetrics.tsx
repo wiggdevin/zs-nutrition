@@ -120,7 +120,7 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
   const inputClass = (hasError: boolean) =>
     `w-full rounded-lg border ${
       hasError ? "border-red-500" : "border-[#2a2a2a]"
-    } bg-[#1e1e1e] px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors focus:border-[#f97316]`;
+    } bg-[#1e1e1e] px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors focus:border-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]`;
 
   return (
     <div className="space-y-6">
@@ -137,7 +137,15 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
           <button
             type="button"
             onClick={() => handleUnitToggle("imperial")}
-            className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleUnitToggle("imperial");
+              }
+            }}
+            role="radio"
+            aria-checked={isImperial}
+            className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
               isImperial
                 ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                 : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:bg-[#252525]"
@@ -148,7 +156,15 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
           <button
             type="button"
             onClick={() => handleUnitToggle("metric")}
-            className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                handleUnitToggle("metric");
+              }
+            }}
+            role="radio"
+            aria-checked={!isImperial}
+            className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
               !isImperial
                 ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                 : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:bg-[#252525]"

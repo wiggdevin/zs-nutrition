@@ -70,10 +70,17 @@ export function Step4Dietary({ data, updateData }: Props) {
           {dietaryStyles.map(({ value, label }) => (
             <button
               key={value}
+              type="button"
               onClick={() => updateData({ dietaryStyle: value })}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  updateData({ dietaryStyle: value });
+                }
+              }}
               role="radio"
               aria-checked={data.dietaryStyle === value}
-              className={`rounded-lg border px-4 py-3 text-xs font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
+              className={`rounded-lg border px-4 py-3 text-xs font-bold uppercase tracking-wide transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
                 data.dietaryStyle === value
                   ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
@@ -94,9 +101,16 @@ export function Step4Dietary({ data, updateData }: Props) {
           {commonAllergies.map((allergy) => (
             <button
               key={allergy}
+              type="button"
               onClick={() => toggleAllergy(allergy)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  toggleAllergy(allergy);
+                }
+              }}
               aria-pressed={data.allergies.includes(allergy.toLowerCase())}
-              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[200px] truncate ${
+              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[200px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
                 data.allergies.includes(allergy.toLowerCase())
                   ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
@@ -122,11 +136,18 @@ export function Step4Dietary({ data, updateData }: Props) {
             onChange={(e) => setExclusionInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addExclusion()}
             placeholder="e.g., mushrooms, cilantro"
-            className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316]"
+            className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
           />
           <button
+            type="button"
             onClick={addExclusion}
-            className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px]"
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                addExclusion();
+              }
+            }}
+            className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
           >
             Add
           </button>
@@ -141,8 +162,16 @@ export function Step4Dietary({ data, updateData }: Props) {
               >
                 <span className="truncate">{item}</span>
                 <button
+                  type="button"
                   onClick={() => removeExclusion(item)}
-                  className="ml-1 flex-shrink-0 text-[#ef4444] hover:text-[#f87171]"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      removeExclusion(item);
+                    }
+                  }}
+                  className="ml-1 flex-shrink-0 text-[#ef4444] hover:text-[#f87171] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] rounded"
+                  aria-label={`Remove ${item} from exclusions`}
                 >
                   &times;
                 </button>

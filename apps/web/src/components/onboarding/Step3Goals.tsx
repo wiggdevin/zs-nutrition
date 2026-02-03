@@ -53,11 +53,18 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
           {(["cut", "maintain", "bulk"] as GoalType[]).map((goal) => (
             <button
               key={goal}
+              type="button"
               onClick={() => handleGoalSelect(goal)}
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  handleGoalSelect(goal);
+                }
+              }}
               role="radio"
               aria-checked={data.goalType === goal}
               aria-describedby={showErrors && !data.goalType ? "onboarding-goal-type-error" : undefined}
-              className={`w-full rounded-lg border px-4 py-4 text-left transition-colors ${
+              className={`w-full rounded-lg border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
                 data.goalType === goal
                   ? "border-[#f97316] bg-[#f97316]/10"
                   : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
@@ -101,7 +108,7 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
             aria-valuemin={0}
             aria-valuemax={2}
             aria-valuetext={`${displayRate} ${data.goalType === "cut" ? "lbs" : "lbs"} per week`}
-            className={`w-full accent-[#f97316] ${sliderDisabled ? "opacity-40 cursor-not-allowed" : ""}`}
+            className={`w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${sliderDisabled ? "opacity-40 cursor-not-allowed" : ""}`}
           />
           <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
             <span>0 lbs/wk</span>

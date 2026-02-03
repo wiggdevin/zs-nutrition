@@ -184,29 +184,32 @@ export function OnboardingWizard() {
         {/* Navigation */}
         <div className="flex items-center justify-between" role="navigation" aria-label="Onboarding steps navigation">
           <button
+            type="button"
             onClick={prevStep}
             disabled={currentStep === 1}
             aria-label="Go to previous step"
-            className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#fafafa] transition-colors hover:bg-[#252525] disabled:cursor-not-allowed disabled:opacity-30"
+            className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#fafafa] transition-colors hover:bg-[#252525] disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
           >
             Back
           </button>
 
           {currentStep < TOTAL_STEPS ? (
             <button
+              type="button"
               onClick={nextStep}
               aria-label="Continue to next step"
-              className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+              className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
             >
               Continue
             </button>
           ) : (
             <button
+              type="button"
               onClick={handleComplete}
               disabled={isCompleting}
               data-testid="onboarding-complete-btn"
               aria-label="Complete setup and generate meal plan"
-              className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed"
+              className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
             >
               {isCompleting ? (
                 <span className="flex items-center gap-2">
