@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { Confetti } from "../ui/Confetti";
 
 type GenerationStatus = "idle" | "generating" | "enqueued" | "completed" | "failed";
 
@@ -21,11 +22,15 @@ export function GeneratePlanPage() {
   const [hasProfile, setHasProfile] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [isReconnecting, setIsReconnecting] = useState(false);
   const hasNavigated = useRef(false);
   const isSubmitting = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isUsingPolling = useRef(false);
+  const reconnectAttemptsRef = useRef(0);
+  const maxReconnectAttempts = 5;
+  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     // Check if user has completed onboarding
@@ -34,7 +39,7 @@ export function GeneratePlanPage() {
     setHasProfile(!!profile && onboardingComplete === "true");
   }, []);
 
-  // Cleanup: Close EventSource and stop polling when component unmounts
+  // Cleanup: Close EventSource, stop polling, and clear reconnect timeout when component unmounts
   useEffect(() => {
     return () => {
       if (eventSourceRef.current) {
@@ -44,6 +49,10 @@ export function GeneratePlanPage() {
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
+      }
+      if (reconnectTimeoutRef.current) {
+        clearTimeout(reconnectTimeoutRef.current);
+        reconnectTimeoutRef.current = null;
       }
     };
   }, []);
@@ -73,6 +82,10 @@ export function GeneratePlanPage() {
       try {
         const data = JSON.parse(event.data);
 
+        // Reset reconnect attempts on successful message
+        reconnectAttemptsRef.current = 0;
+        setIsReconnecting(false);
+
         if (data.agent) {
           setCurrentAgent(data.agent);
         }
@@ -97,12 +110,39 @@ export function GeneratePlanPage() {
     };
 
     eventSource.onerror = () => {
-      // SSE connection failed - fall back to polling
+      // Close the failed connection
       eventSource.close();
       eventSourceRef.current = null;
-      console.warn("SSE connection failed, falling back to polling for job status");
-      isUsingPolling.current = true;
-      startPolling(streamJobId);
+
+      // Increment reconnect attempts
+      reconnectAttemptsRef.current += 1;
+
+      // Try to reconnect with exponential backoff
+      if (reconnectAttemptsRef.current <= maxReconnectAttempts) {
+        const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
+        console.warn(
+          `SSE connection lost (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts}). ` +
+          `Reconnecting in ${backoffDelay}ms...`
+        );
+        setIsReconnecting(true);
+
+        reconnectTimeoutRef.current = setTimeout(() => {
+          // Only reconnect if we haven't completed/failed and still have the same job
+          if ((status === "generating" || status === "enqueued") && jobId === streamJobId) {
+            console.log("Attempting SSE reconnection...");
+            connectToSSE(streamJobId);
+          }
+        }, backoffDelay);
+      } else {
+        // Max reconnect attempts reached - fall back to polling
+        setIsReconnecting(false);
+        console.warn(
+          `Max SSE reconnect attempts (${maxReconnectAttempts}) reached. ` +
+          `Falling back to polling for job status`
+        );
+        isUsingPolling.current = true;
+        startPolling(streamJobId);
+      }
     };
 
     return eventSource;
@@ -228,8 +268,15 @@ export function GeneratePlanPage() {
       clearInterval(pollingIntervalRef.current);
       pollingIntervalRef.current = null;
     }
+    // Clear any pending reconnect timeout
+    if (reconnectTimeoutRef.current) {
+      clearTimeout(reconnectTimeoutRef.current);
+      reconnectTimeoutRef.current = null;
+    }
     isSubmitting.current = false;
     isUsingPolling.current = false;
+    reconnectAttemptsRef.current = 0;
+    setIsReconnecting(false);
     setStatus("idle");
     setCurrentAgent(0);
     setJobId(null);
@@ -283,6 +330,11 @@ export function GeneratePlanPage() {
             {isUsingPolling.current && (
               <p className="mt-1 font-mono text-[10px] text-[#f97316]/80">
                 /// POLLING MODE
+              </p>
+            )}
+            {isReconnecting && (
+              <p className="mt-1 font-mono text-[10px] text-[#fbbf24]/80 animate-pulse">
+                /// RECONNECTING...
               </p>
             )}
           </div>
@@ -340,44 +392,47 @@ export function GeneratePlanPage() {
   // Completed state
   if (status === "completed") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
-        <div className="w-full max-w-lg text-center">
-          <div className="rounded-lg border border-[#22c55e]/30 bg-[#1a1a1a] p-8 shadow-xl">
-            <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#22c55e]/10">
-              <span className="text-4xl">&#x1F389;</span>
-            </div>
-            <h2 className="text-2xl font-heading uppercase tracking-wider text-[#fafafa]">
-              Plan Generated!
-            </h2>
-            <p className="mt-2 font-mono text-xs uppercase tracking-widest text-[#22c55e]">
-              /// ALL 6 AGENTS COMPLETE
-            </p>
-            <p className="mt-4 text-sm text-[#a1a1aa]">
-              Your personalized 7-day meal plan is ready.
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-2">
-              <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-              <span className="text-sm text-[#f97316] font-mono uppercase tracking-wide">
-                Redirecting to your meal plan...
-              </span>
-            </div>
-            <div className="mt-6 flex flex-col gap-3">
-              <a
-                href="/meal-plan"
-                className="inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
-              >
-                View Meal Plan
-              </a>
-              <a
-                href="/dashboard"
-                className="inline-block rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#fafafa] transition-colors hover:bg-[#252525]"
-              >
-                View Dashboard
-              </a>
+      <>
+        <Confetti duration={2000} particleCount={60} />
+        <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+          <div className="w-full max-w-lg text-center">
+            <div className="rounded-lg border border-[#22c55e]/30 bg-[#1a1a1a] p-8 shadow-xl">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#22c55e]/10">
+                <span className="text-4xl">&#x1F389;</span>
+              </div>
+              <h2 className="text-2xl font-heading uppercase tracking-wider text-[#fafafa]">
+                Plan Generated!
+              </h2>
+              <p className="mt-2 font-mono text-xs uppercase tracking-widest text-[#22c55e]">
+                /// ALL 6 AGENTS COMPLETE
+              </p>
+              <p className="mt-4 text-sm text-[#a1a1aa]">
+                Your personalized 7-day meal plan is ready.
+              </p>
+              <div className="mt-4 flex items-center justify-center gap-2">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
+                <span className="text-sm text-[#f97316] font-mono uppercase tracking-wide">
+                  Redirecting to your meal plan...
+                </span>
+              </div>
+              <div className="mt-6 flex flex-col gap-3">
+                <a
+                  href="/meal-plan"
+                  className="inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+                >
+                  View Meal Plan
+                </a>
+                <a
+                  href="/dashboard"
+                  className="inline-block rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#fafafa] transition-colors hover:bg-[#252525]"
+                >
+                  View Dashboard
+                </a>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </>
     );
   }
 

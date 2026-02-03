@@ -516,7 +516,8 @@ function DayColumn({
 
 /**
  * Format a grocery amount for practical display.
- * Rounds up and uses friendly formats (e.g., "2 lbs" not "1.73 lbs").
+ * Rounds UP to the nearest practical amount (e.g., "2 lbs" not "1.73 lbs").
+ * This ensures shoppers buy enough rather than too little.
  */
 function formatGroceryAmount(amount: number, unit: string): string {
   if (!amount && !unit) return 'as needed';
@@ -528,6 +529,7 @@ function formatGroceryAmount(amount: number, unit: string): string {
   if (Number.isInteger(amount)) {
     return `${amount} ${unitStr}`.trim();
   }
+
   // For quarter increments, show as fraction-like
   const quarters = amount * 4;
   if (Number.isInteger(Math.round(quarters))) {
@@ -537,8 +539,11 @@ function formatGroceryAmount(amount: number, unit: string): string {
     if (Math.abs(frac - 0.5) < 0.01) return `${whole > 0 ? whole + ' ' : ''}1/2 ${unitStr}`.trim();
     if (Math.abs(frac - 0.75) < 0.01) return `${whole > 0 ? whole + ' ' : ''}3/4 ${unitStr}`.trim();
   }
-  // Fallback: 1 decimal place
-  return `${Math.round(amount * 10) / 10} ${unitStr}`.trim();
+
+  // Round UP to nearest whole number for practical shopping
+  // e.g., 1.73 lbs → 2 lbs, 0.52 lbs → 1 lb
+  const roundedUp = Math.ceil(amount);
+  return `${roundedUp} ${unitStr}`.trim();
 }
 
 /** Category icon mapping for grocery list */
@@ -1057,11 +1062,20 @@ export default function MealPlanPage() {
               </div>
             </div>
 
-            {/* Skeleton 7-day grid */}
+            {/* Skeleton 7-day grid - Responsive layout matching main grid */}
             <div className="mx-auto max-w-[1600px] px-4 py-6">
-              <div className="flex gap-3 overflow-x-auto pb-4" data-testid="meal-plan-skeleton-grid">
+              <div
+                className="
+                  flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory
+                  md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0
+                  lg:grid-cols-4
+                  xl:grid-cols-5
+                  2xl:grid-cols-7
+                "
+                data-testid="meal-plan-skeleton-grid"
+              >
                 {[1, 2, 3, 4, 5, 6, 7].map((dayNum) => (
-                  <div key={dayNum} className="min-w-[200px] flex-1">
+                  <div key={dayNum} className="min-w-[280px] snap-start md:min-w-0">
                     <div className="flex flex-col rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden" data-testid={`skeleton-day-${dayNum}`}>
                       {/* Skeleton day header */}
                       <div className="border-b border-[#2a2a2a] bg-gradient-to-b from-[#1a1a1a] to-[#141414] px-4 py-4 text-center">
@@ -1272,11 +1286,30 @@ export default function MealPlanPage() {
                 </div>
               )}
               {plan.dailyKcalTarget && (
-                <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-center">
-                  <p className="font-mono text-xs text-[#a1a1aa]">Target</p>
-                  <p className="text-lg font-bold text-[#f97316]">
-                    {plan.dailyKcalTarget} kcal
-                  </p>
+                <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-2">
+                  <p className="font-mono text-xs text-[#a1a1aa] text-center mb-1">Daily Targets</p>
+                  <div className="flex items-center gap-3">
+                    <div className="text-center">
+                      <p className="text-lg font-bold text-[#f97316]">{plan.dailyKcalTarget}</p>
+                      <p className="text-[10px] text-[#a1a1aa]">kcal</p>
+                    </div>
+                    {(plan.dailyProteinG || plan.dailyCarbsG || plan.dailyFatG) && (
+                      <>
+                        <div className="w-px h-8 bg-[#2a2a2a]"></div>
+                        <div className="flex items-center gap-2 text-xs font-semibold">
+                          {plan.dailyProteinG && (
+                            <span className="text-[#3b82f6]" data-testid="daily-protein-target">P {plan.dailyProteinG}g</span>
+                          )}
+                          {plan.dailyCarbsG && (
+                            <span className="text-[#f59e0b]" data-testid="daily-carbs-target">C {plan.dailyCarbsG}g</span>
+                          )}
+                          {plan.dailyFatG && (
+                            <span className="text-[#ef4444]" data-testid="daily-fat-target">F {plan.dailyFatG}g</span>
+                          )}
+                        </div>
+                      </>
+                    )}
+                  </div>
                 </div>
               )}
               {plan.pdfUrl && (
@@ -1314,11 +1347,34 @@ export default function MealPlanPage() {
         </div>
       </div>
 
-      {/* 7-day grid */}
+      {/* 7-day grid - Responsive layout */}
       <div className="mx-auto max-w-[1600px] px-4 py-6">
-        <div className="flex gap-3 overflow-x-auto pb-4" data-testid="seven-day-grid">
+        {/* Desktop: 7 columns (xl+), Tablet: 3-4 columns (md-lg), Mobile: swipeable cards (xs-sm) */}
+        <div
+          className="
+            /* Mobile: horizontal scroll with snap (swipeable cards) */
+            flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory
+            /* md: grid with 3 columns */
+            md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0
+            /* lg: grid with 4 columns */
+            lg:grid-cols-4
+            /* xl: grid with 5 columns */
+            xl:grid-cols-5
+            /* 2xl: full 7 columns grid */
+            2xl:grid-cols-7
+          "
+          data-testid="seven-day-grid"
+        >
           {days.map((day) => (
-            <div key={day.dayNumber} className="min-w-[200px] flex-1">
+            <div
+              key={day.dayNumber}
+              className="
+                /* Mobile: min-width for swipeable cards with snap alignment */
+                min-w-[280px] snap-start
+                /* md+: remove min-width, use grid columns */
+                md:min-w-0
+              "
+            >
               <DayColumn
                 day={day}
                 swappingMeal={swappingMeal}
