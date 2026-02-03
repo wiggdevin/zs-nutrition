@@ -71,12 +71,12 @@ export function Step5Lifestyle({ data, updateData }: Props) {
         <label id="onboarding-training-days-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
           Training Days
         </label>
-        <div className="grid grid-cols-7 gap-2">
+        <div className="grid grid-cols-7 gap-1 sm:gap-2">
           {weekdays.map(({ value, label }) => (
             <button
               key={value}
               onClick={() => toggleTrainingDay(value)}
-              className={`rounded-lg border px-2 py-3 text-center text-xs font-bold uppercase transition-colors ${
+              className={`rounded-lg border px-1 sm:px-2 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] ${
                 data.trainingDays.includes(value)
                   ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"

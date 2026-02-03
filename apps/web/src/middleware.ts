@@ -27,6 +27,7 @@ const publicPaths = [
   "/test-network-error",
   "/test-500-error",
   "/test-loading-states",
+  "/dev-test",
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -49,6 +50,7 @@ const isPublicRoute = createRouteMatcher([
   "/test-network-error(.*)",
   "/test-500-error(.*)",
   "/test-loading-states(.*)",
+  "/dev-test(.*)",
 ]);
 
 /**

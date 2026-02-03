@@ -483,7 +483,7 @@ function DashboardSkeleton() {
     <div className="min-h-screen bg-[#0a0a0a]" data-testid="dashboard-skeleton">
       {/* Header */}
       <header className="border-b border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <span className="text-[#f97316] text-2xl font-heading">///</span>
             <SkeletonBlock className="h-7 w-32" />
@@ -492,7 +492,7 @@ function DashboardSkeleton() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-8 space-y-8">
         {/* Page Title Skeleton */}
         <div className="space-y-2">
           <SkeletonBlock className="h-3 w-24" />
@@ -778,7 +778,7 @@ export default function DashboardClient() {
       <div className="min-h-screen bg-[#0a0a0a]">
         {/* Header */}
         <header className="border-b border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between">
             <h1 className="text-2xl font-heading uppercase tracking-wide text-[#fafafa]">
               <span className="text-[#f97316]">///</span> Dashboard
             </h1>
@@ -946,7 +946,7 @@ export default function DashboardClient() {
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
       <header className="border-b border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <h1 className="text-2xl font-heading uppercase tracking-wide text-[#fafafa]">
             <span className="text-[#f97316]">///</span> Dashboard
           </h1>
@@ -956,7 +956,7 @@ export default function DashboardClient() {
         </div>
       </header>
 
-      <main className="max-w-7xl mx-auto px-4 py-8 space-y-8">
+      <main className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-8 space-y-8">
         {/* Error Banner */}
         {error && (
           <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
@@ -1133,7 +1133,7 @@ export default function DashboardClient() {
               </p>
               <Link
                 href="/meal-plan"
-                className="text-xs text-[#f97316] hover:text-[#ea580c] font-semibold uppercase tracking-wide transition-colors"
+                className="text-xs text-[#f97316] hover:text-[#ea580c] font-semibold uppercase tracking-wide transition-colors py-4 px-2 -mx-2 inline-block"
               >
                 View Full Plan →
               </Link>
@@ -1143,7 +1143,7 @@ export default function DashboardClient() {
                 <p className="text-[#a1a1aa] text-sm">No meal plan for today.</p>
                 <Link
                   href="/generate"
-                  className="text-[#f97316] text-sm mt-2 inline-block hover:underline"
+                  className="text-[#f97316] text-sm mt-2 inline-block hover:underline py-4 px-2 -mx-2"
                 >
                   Generate a plan →
                 </Link>

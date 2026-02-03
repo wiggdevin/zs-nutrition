@@ -66,12 +66,12 @@ export function Step4Dietary({ data, updateData }: Props) {
         <label id="onboarding-dietary-style-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
           Dietary Style
         </label>
-        <div className="grid grid-cols-3 gap-2">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
           {dietaryStyles.map(({ value, label }) => (
             <button
               key={value}
               onClick={() => updateData({ dietaryStyle: value })}
-              className={`rounded-lg border px-3 py-2 text-xs font-bold uppercase tracking-wide transition-colors ${
+              className={`rounded-lg border px-4 py-3 text-xs font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
                 data.dietaryStyle === value
                   ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
@@ -93,7 +93,7 @@ export function Step4Dietary({ data, updateData }: Props) {
             <button
               key={allergy}
               onClick={() => toggleAllergy(allergy)}
-              className={`rounded-full border px-3 py-1 text-xs font-medium transition-colors ${
+              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] ${
                 data.allergies.includes(allergy.toLowerCase())
                   ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
@@ -122,7 +122,7 @@ export function Step4Dietary({ data, updateData }: Props) {
           />
           <button
             onClick={addExclusion}
-            className="rounded-lg bg-[#2a2a2a] px-4 py-2 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a]"
+            className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px]"
           >
             Add
           </button>

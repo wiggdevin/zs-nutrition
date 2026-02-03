@@ -9,6 +9,8 @@ export interface Toast {
   createdAt: number
 }
 
+export const MAX_VISIBLE_TOASTS = 5
+
 interface ToastStore {
   toasts: Toast[]
   addToast: (type: ToastType, message: string) => string
@@ -23,7 +25,14 @@ export const useToastStore = create<ToastStore>((set) => ({
   addToast: (type, message) => {
     const id = `toast-${++toastCounter}-${Date.now()}`
     const toast: Toast = { id, type, message, createdAt: Date.now() }
-    set((state) => ({ toasts: [...state.toasts, toast] }))
+    set((state) => {
+      const newToasts = [...state.toasts, toast]
+      // Automatically remove oldest toasts if limit exceeded
+      if (newToasts.length > MAX_VISIBLE_TOASTS) {
+        return { toasts: newToasts.slice(newToasts.length - MAX_VISIBLE_TOASTS) }
+      }
+      return { toasts: newToasts }
+    })
     return id
   },
   removeToast: (id) => {
