@@ -11,6 +11,7 @@ export function DevSignInForm() {
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
+  const [accountDeactivated, setAccountDeactivated] = useState(false)
   const [step, setStep] = useState<'email' | 'verify'>('email')
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -36,6 +37,7 @@ export function DevSignInForm() {
   const handleVerify = async () => {
     setIsLoading(true)
     setError('')
+    setAccountDeactivated(false)
     try {
       const res = await fetch('/api/dev-auth/signin', {
         method: 'POST',
@@ -44,6 +46,13 @@ export function DevSignInForm() {
       })
       const data = await res.json()
       if (!res.ok) {
+        // Check if account is deactivated
+        if (data.code === 'ACCOUNT_DEACTIVATED') {
+          setAccountDeactivated(true)
+          setError(data.error || 'This account has been deactivated.')
+          setIsLoading(false)
+          return
+        }
         setError(data.error || 'Sign in failed')
         setIsLoading(false)
         return
@@ -71,9 +80,34 @@ export function DevSignInForm() {
           <p className="text-xs text-[#a1a1aa]/60 font-mono">
             [DEV MODE] Click below to simulate sign-in
           </p>
+
+          {/* Account Deactivated Warning */}
+          {accountDeactivated && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-4">
+              <div className="flex items-start gap-3">
+                <svg className="h-5 w-5 flex-shrink-0 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+                </svg>
+                <div className="text-left">
+                  <p className="text-sm font-semibold text-red-400">Account Deactivated</p>
+                  <p className="text-xs text-red-300/80 mt-1">
+                    This account has been deactivated and is no longer accessible. Your data has been preserved but you cannot sign in.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* General Error */}
+          {error && !accountDeactivated && (
+            <div className="rounded-lg border border-red-500/30 bg-red-500/10 p-3">
+              <p className="text-sm text-red-400">{error}</p>
+            </div>
+          )}
+
           <button
             onClick={handleVerify}
-            disabled={isLoading}
+            disabled={isLoading || accountDeactivated}
             className="w-full rounded-lg bg-[#f97316] px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] disabled:opacity-50"
           >
             {isLoading ? (

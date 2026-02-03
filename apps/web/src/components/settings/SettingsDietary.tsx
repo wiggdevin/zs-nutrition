@@ -22,6 +22,7 @@ const commonAllergies = [
 export default function SettingsDietary() {
   const [dietaryStyle, setDietaryStyle] = useState<DietaryStyle | "">("");
   const [allergies, setAllergies] = useState<string[]>([]);
+  const [allergyInput, setAllergyInput] = useState("");
   const [exclusions, setExclusions] = useState<string[]>([]);
   const [exclusionInput, setExclusionInput] = useState("");
   const [originalData, setOriginalData] = useState({ dietaryStyle: "" as string, allergies: [] as string[], exclusions: [] as string[] });
@@ -101,6 +102,20 @@ export default function SettingsDietary() {
     } else {
       setAllergies([...allergies, lower]);
     }
+    setSuccess(false);
+  };
+
+  const addAllergy = () => {
+    const trimmed = allergyInput.trim().toLowerCase();
+    if (trimmed && !allergies.includes(trimmed)) {
+      setAllergies([...allergies, trimmed]);
+      setAllergyInput("");
+    }
+    setSuccess(false);
+  };
+
+  const removeAllergy = (allergy: string) => {
+    setAllergies(allergies.filter((a) => a !== allergy));
     setSuccess(false);
   };
 
@@ -202,21 +217,64 @@ export default function SettingsDietary() {
           <label id="settings-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
             Allergies
           </label>
-          <div className="flex flex-wrap gap-2">
+
+          {/* Common allergy quick-select buttons */}
+          <div className="mb-3 flex flex-wrap gap-2">
             {commonAllergies.map((allergy) => (
               <button
                 key={allergy}
                 onClick={() => toggleAllergy(allergy)}
-                className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors min-h-[44px] ${
+                className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
                   allergies.includes(allergy.toLowerCase())
                     ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"
                     : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
                 }`}
+                aria-pressed={allergies.includes(allergy.toLowerCase())}
               >
                 {allergy}
               </button>
             ))}
           </div>
+
+          {/* Custom allergy input field */}
+          <div className="flex gap-2">
+            <input
+              id="settings-allergies-custom"
+              type="text"
+              value={allergyInput}
+              onChange={(e) => setAllergyInput(e.target.value)}
+              onKeyDown={(e) => e.key === "Enter" && addAllergy()}
+              placeholder="Type custom allergy and press Enter"
+              className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-3 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+            />
+            <button
+              onClick={addAllergy}
+              className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+            >
+              Add
+            </button>
+          </div>
+
+          {/* Allergy chips display */}
+          {allergies.length > 0 && (
+            <div className="mt-3 flex flex-wrap gap-2">
+              {allergies.map((allergy) => (
+                <span
+                  key={allergy}
+                  className="flex items-center gap-1 rounded-full border border-[#ef4444] bg-[#ef4444]/10 px-3 py-1 text-xs text-[#ef4444]"
+                >
+                  {allergy}
+                  <button
+                    onClick={() => removeAllergy(allergy)}
+                    className="ml-1 hover:text-[#f87171] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] rounded"
+                    aria-label={`Remove ${allergy}`}
+                  >
+                    &times;
+                  </button>
+                </span>
+              ))}
+            </div>
+          )}
         </div>
 
         {/* Exclusions */}

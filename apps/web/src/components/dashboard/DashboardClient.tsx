@@ -152,7 +152,7 @@ function QuickAction({
     <Link
       href={href}
       aria-label={label}
-      className="flex items-center gap-3 px-5 py-3 bg-[#111111] border border-[#2a2a2a] rounded-xl hover:bg-[#252525] hover:border-[#f97316]/30 transition-all duration-200 group"
+      className="flex items-center gap-3 px-5 py-3 card-elevation border border-[#2a2a2a] rounded-xl hover:border-[#f97316]/30 transition-all duration-200 group"
     >
       <span className="text-xl" aria-hidden="true">{icon}</span>
       <span className="text-sm font-semibold uppercase tracking-wide text-[#a1a1aa] group-hover:text-[#fafafa] transition-colors">
@@ -187,7 +187,7 @@ function PlanMealCard({
   onLog: () => void
 }) {
   return (
-    <div className="p-4 bg-[#111111] border border-[#2a2a2a] rounded-xl hover:border-[#3a3a3a] transition-colors">
+    <div className="p-4 card-elevation border border-[#2a2a2a] rounded-xl hover:border-[#3a3a3a] transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
           <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-1">
@@ -308,7 +308,7 @@ function LogConfirmModal({
         {/* Auto-filled Nutrition Preview */}
         <div
           data-testid="nutrition-preview"
-          className="bg-[#111111] border border-[#2a2a2a] rounded-xl p-4 mb-6"
+          className="card-elevation border border-[#2a2a2a] rounded-xl p-4 mb-6"
         >
           <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-3">
             Nutrition
@@ -475,7 +475,7 @@ function MacroRingSkeleton({ size = 120 }: { size?: number }) {
 /* ── Meal Card Skeleton ── */
 function MealCardSkeleton() {
   return (
-    <div className="flex items-center justify-between p-4 bg-[#111111] border border-[#2a2a2a] rounded-xl" data-testid="meal-card-skeleton">
+    <div className="flex items-center justify-between p-4 card-elevation border border-[#2a2a2a] rounded-xl" data-testid="meal-card-skeleton">
       <div className="flex-1 min-w-0 space-y-2">
         <SkeletonBlock className="h-3 w-16" />
         <SkeletonBlock className="h-4 w-40" />
@@ -813,12 +813,22 @@ export default function DashboardClient() {
       <div className="min-h-screen bg-[#0a0a0a]">
         {/* Header */}
         <header className="border-b border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm sticky top-0 z-50">
-          <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between">
+          <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
             <h1 className="text-2xl font-heading uppercase tracking-wide text-[#fafafa]">
               <span className="text-[#f97316]">///</span> Dashboard
             </h1>
-            <div className="h-10 w-10 rounded-full bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-bold">
-              D
+            <div className="flex items-center gap-3">
+              <div className="flex flex-col items-end">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-[#a1a1aa]">
+                  Daily Target
+                </span>
+                <span className="text-lg font-bold font-mono text-[#f97316]">
+                  {data.macros.calories.target.toLocaleString()} kcal
+                </span>
+              </div>
+              <div className="h-10 w-10 rounded-full bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-bold">
+                D
+              </div>
             </div>
           </div>
         </header>
@@ -868,19 +878,19 @@ export default function DashboardClient() {
 
             {/* Sub-actions */}
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg w-full">
-              <div className="flex flex-col items-center p-4 bg-[#111111] border border-[#2a2a2a] rounded-xl">
+              <div className="flex flex-col items-center p-4 card-elevation border border-[#2a2a2a] rounded-xl">
                 <span className="text-2xl mb-2">🎯</span>
                 <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
                   Set Goals
                 </p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-[#111111] border border-[#2a2a2a] rounded-xl">
+              <div className="flex flex-col items-center p-4 card-elevation border border-[#2a2a2a] rounded-xl">
                 <span className="text-2xl mb-2">📊</span>
                 <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
                   Track Macros
                 </p>
               </div>
-              <div className="flex flex-col items-center p-4 bg-[#111111] border border-[#2a2a2a] rounded-xl">
+              <div className="flex flex-col items-center p-4 card-elevation border border-[#2a2a2a] rounded-xl">
                 <span className="text-2xl mb-2">🛒</span>
                 <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
                   Grocery Lists
@@ -981,12 +991,22 @@ export default function DashboardClient() {
     <div className="min-h-screen bg-[#0a0a0a]">
       {/* Header */}
       <header className="border-b border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm sticky top-0 z-50">
-        <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between">
+        <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
           <h1 className="text-2xl font-heading uppercase tracking-wide text-[#fafafa]">
             <span className="text-[#f97316]">///</span> Dashboard
           </h1>
-          <div className="h-10 w-10 rounded-full bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-bold">
-            D
+          <div className="flex items-center gap-3">
+            <div className="flex flex-col items-end">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-[#a1a1aa]">
+                Daily Target
+              </span>
+              <span className="text-lg font-bold font-mono text-[#f97316]">
+                {macros.calories.target.toLocaleString()} kcal
+              </span>
+            </div>
+            <div className="h-10 w-10 rounded-full bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-bold">
+              D
+            </div>
           </div>
         </div>
       </header>

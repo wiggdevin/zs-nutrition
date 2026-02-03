@@ -18,7 +18,12 @@ interface Meal {
   cookTimeMin?: number;
   nutrition: MealNutrition;
   confidenceLevel?: string;
-  ingredients?: Array<{ name: string; amount: string }>;
+  ingredients?: Array<{
+    name: string;
+    amount: number | string; // Support both old (string) and new (number) formats
+    unit?: string;
+    fatsecretFoodId?: string;
+  }>;
   instructions?: string[];
 }
 
@@ -169,23 +174,54 @@ export default function MealDetailModal({
                   <span>Ingredients</span>
                 </h3>
                 <ul className="space-y-2">
-                  {meal.ingredients!.map((ingredient, idx) => (
-                    <li
-                      key={idx}
-                      className="flex items-start gap-3 text-sm text-[#fafafa] py-2 border-b border-[#2a2a2a]/50 last:border-0"
-                      data-testid={`meal-detail-ingredient-${idx}`}
-                    >
-                      <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#f97316]/20 flex items-center justify-center text-xs font-bold text-[#f97316] mt-0.5">
-                        {idx + 1}
-                      </span>
-                      <div className="flex-1 min-w-0">
-                        <span className="font-medium">{ingredient.name}</span>
-                        {ingredient.amount && (
-                          <span className="ml-2 text-[#a1a1aa]">({ingredient.amount})</span>
-                        )}
-                      </div>
-                    </li>
-                  ))}
+                  {meal.ingredients!.map((ingredient, idx) => {
+                    // Handle both old format (amount as string) and new format (amount as number + unit)
+                    let amountDisplay = '';
+                    if (typeof ingredient.amount === 'string') {
+                      // Old format: amount is already combined (e.g., "200g")
+                      amountDisplay = ingredient.amount;
+                    } else if (typeof ingredient.amount === 'number') {
+                      // New format: separate amount and unit
+                      amountDisplay = `${ingredient.amount}${ingredient.unit || ''}`;
+                    }
+
+                    const isVerified = !!ingredient.fatsecretFoodId;
+
+                    return (
+                      <li
+                        key={idx}
+                        className="flex items-start gap-3 text-sm text-[#fafafa] py-2 border-b border-[#2a2a2a]/50 last:border-0"
+                        data-testid={`meal-detail-ingredient-${idx}`}
+                      >
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#f97316]/20 flex items-center justify-center text-xs font-bold text-[#f97316] mt-0.5">
+                          {idx + 1}
+                        </span>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="font-medium">{ingredient.name}</span>
+                            {isVerified && (
+                              <span
+                                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide bg-[#22c55e]/20 text-[#22c55e]"
+                                data-testid={`ingredient-verified-badge-${idx}`}
+                              >
+                                ✓ Verified
+                              </span>
+                            )}
+                          </div>
+                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
+                            {amountDisplay && (
+                              <span className="text-[#a1a1aa]">({amountDisplay})</span>
+                            )}
+                            {ingredient.fatsecretFoodId && (
+                              <span className="text-xs text-[#a1a1aa] bg-[#2a2a2a] px-1.5 py-0.5 rounded" data-testid={`ingredient-fatsecret-id-${idx}`}>
+                                FS: {ingredient.fatsecretFoodId}
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </li>
+                    );
+                  })}
                 </ul>
               </div>
             )}

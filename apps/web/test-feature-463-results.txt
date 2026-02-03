@@ -1,0 +1,99 @@
+===========================================
+FEATURE #463 TEST RESULTS
+===========================================
+Feature: Meal plan replaces previous active plan
+Status: ✅ PASSED
+Date: 2026-02-03
+
+SUMMARY:
+--------
+Successfully verified that generating a new meal plan correctly replaces
+the previous active plan by setting isActive=false and status='replaced'
+on the old plan.
+
+VERIFICATION STEPS:
+------------------
+
+✅ Step 1: Generate Plan A, verify isActive=true
+   - Created test user: test-463-plan-replacement@example.com
+   - Completed onboarding
+   - Generated Plan A
+   - Plan A ID: 4692c0f1-0744-47e9-947b-432849880e8c
+   - Status: ✓ Active (verified in plan history)
+   - VERIFIED
+
+✅ Step 2: Generate Plan B
+   - Navigated to /generate page
+   - Clicked "Generate Plan" button
+   - Plan B ID: aa842724-576c-4e6b-b015-5004c74521a2
+   - Different from Plan A (confirms new plan created)
+   - VERIFIED
+
+✅ Step 3: Verify Plan B isActive=true
+   - Checked plan history page
+   - Plan B shows: "✓ Active" badge
+   - VERIFIED
+
+✅ Step 4: Verify Plan A isActive=false, status='replaced'
+   - Checked plan history page
+   - Plan A shows: "Replaced" badge (no Active checkmark)
+   - VERIFIED
+
+✅ Step 5: Verify dashboard shows Plan B meals
+   - Navigated to dashboard
+   - Today's meals show:
+     * Breakfast: "Scrambled Eggs with Spinach Toast" (13 min prep)
+     * Lunch: "Turkey and Avocado Wrap" (7 min prep)
+     * Dinner: "Chicken Stir-Fry with Brown Rice" (7 min prep)
+     * Snack 1: "Protein Bar" (8 min prep)
+   - These prep times match Plan B (NOT Plan A's prep times)
+   - VERIFIED
+
+✅ Step 6: Verify grocery list is from Plan B
+   - Navigated to /meal-plan page
+   - Grocery list shows: "16 items across 4 categories"
+   - Categories: Protein, Grains, Vegetables, Fruits
+   - VERIFIED
+
+CODE REVIEW:
+-----------
+The replacement logic is implemented in:
+  zero-sum-nutrition/apps/web/src/lib/save-plan.ts
+  Lines 175-179:
+
+  // 4. Deactivate any existing active plans for this user
+  await prisma.mealPlan.updateMany({
+    where: { userId, isActive: true },
+    data: { isActive: false, status: 'replaced' },
+  })
+
+This code runs BEFORE creating the new plan (line 182), ensuring
+that only one plan is active at a time.
+
+DATABASE VERIFICATION:
+---------------------
+- Plan A (4692c0f1-0744-47e9-947b-432849880e8c):
+  * isActive: false
+  * status: 'replaced'
+
+- Plan B (aa842724-576c-4e6b-b015-5004c74521a2):
+  * isActive: true
+  * status: 'active'
+
+CONSOLE ERRORS:
+--------------
+✅ 0 errors found
+
+SCREENSHOTS:
+----------
+- feature-463-plan-b-generated.png - Plan B successfully generated
+- feature-463-plan-history.png - Shows Plan A as "Replaced", Plan B as "Active"
+- feature-463-meal-plan-b-grocery.png - Plan B with grocery list
+
+PROJECT STATUS UPDATE:
+---------------------
+Previous: 329/515 features passing (63.9%)
+Current:  330/515 features passing (64.1%)
+Feature #463 marked as PASSING ✅
+
+===========================================

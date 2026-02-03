@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState, useCallback, useRef } from "react";
+import Link from "next/link";
 import NavBar from '@/components/navigation/NavBar';
 import MealDetailModal from '@/components/meal-plan/MealDetailModal';
 
@@ -20,7 +21,12 @@ interface Meal {
   cookTimeMin?: number;
   nutrition: MealNutrition;
   confidenceLevel?: string;
-  ingredients?: Array<{ name: string; amount: string }>;
+  ingredients?: Array<{
+    name: string;
+    amount: number | string; // Support both old (string) and new (number) formats
+    unit?: string;
+    fatsecretFoodId?: string;
+  }>;
   instructions?: string[];
 }
 
@@ -166,16 +172,16 @@ interface SwapTarget {
 function MealCardSkeleton() {
   return (
     <div
-      className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-2.5"
+      className="rounded-lg border border-[#2a2a2a] card-elevation p-3"
       data-testid="meal-swap-skeleton"
     >
-      <div className="flex items-center gap-1.5 mb-1.5">
-        <div className="h-4 w-16 rounded skeleton-shimmer" />
-        <div className="h-3 w-14 rounded skeleton-shimmer" />
+      <div className="flex items-center gap-2 mb-2">
+        <div className="h-4.5 w-16 rounded-md skeleton-shimmer" />
+        <div className="h-3.5 w-14 rounded-md skeleton-shimmer" />
       </div>
       <div className="h-4 w-3/4 rounded skeleton-shimmer mt-1" />
       <div className="h-3 w-1/2 rounded skeleton-shimmer mt-2" />
-      <div className="mt-2 flex gap-1">
+      <div className="mt-2.5 flex gap-1.5">
         <div className="h-5 w-14 rounded-full skeleton-shimmer" />
         <div className="h-5 w-10 rounded-full skeleton-shimmer" />
         <div className="h-5 w-10 rounded-full skeleton-shimmer" />
@@ -209,7 +215,7 @@ function SwapModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="swap-modal">
-      <div className="relative mx-4 w-full max-w-lg rounded-xl border border-[#2a2a2a] bg-[#141414] shadow-2xl">
+      <div className="relative mx-4 w-full max-w-lg rounded-xl border border-[#2a2a2a] card-elevation-modal">
         {/* Modal header */}
         <div className="flex items-center justify-between border-b border-[#2a2a2a] px-5 py-4">
           <div>
@@ -237,7 +243,7 @@ function SwapModal({
           {loading ? (
             <div className="space-y-3" data-testid="swap-alternatives-loading">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4">
+                <div key={i} className="rounded-lg border border-[#2a2a2a] card-elevation p-4">
                   <div className="h-4 w-2/3 rounded skeleton-shimmer" />
                   <div className="mt-2 h-3 w-1/2 rounded skeleton-shimmer" />
                   <div className="mt-2 flex gap-2">
@@ -259,10 +265,10 @@ function SwapModal({
                   key={idx}
                   onClick={() => handleSelect(alt)}
                   disabled={selecting}
-                  className={`w-full rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4 text-left transition-all ${
+                  className={`w-full rounded-lg border border-[#2a2a2a] card-elevation p-4 text-left transition-all ${
                     selecting
                       ? "opacity-50 cursor-not-allowed"
-                      : "hover:border-[#f97316]/50 hover:bg-[#1a1a1a]"
+                      : "hover:border-[#f97316]/50"
                   }`}
                   data-testid={`swap-alternative-${idx}`}
                 >
@@ -326,33 +332,43 @@ function DayColumn({
   onMealClick: (dayNumber: number, mealIdx: number, meal: Meal) => void;
   onUndoClick: (dayNumber: number, mealIdx: number, slot: string) => void;
 }) {
+  // Handle keyboard navigation for meal cards
+  const handleMealKeyDown = useCallback(
+    (e: React.KeyboardEvent, dayNumber: number, mealIdx: number, meal: Meal) => {
+      if (e.key === 'Enter' || e.key === ' ') {
+        e.preventDefault();
+        onMealClick(dayNumber, mealIdx, meal);
+      }
+    },
+    [onMealClick]
+  );
   const dayTotalKcal = day.meals.reduce((sum, m) => sum + m.nutrition.kcal, 0);
   const dayTotalProtein = day.meals.reduce((sum, m) => sum + m.nutrition.proteinG, 0);
   const dayTotalCarbs = day.meals.reduce((sum, m) => sum + m.nutrition.carbsG, 0);
   const dayTotalFat = day.meals.reduce((sum, m) => sum + m.nutrition.fatG, 0);
 
   return (
-    <div className="flex flex-col rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden" data-testid={`day-column-${day.dayNumber}`}>
-      {/* Day header */}
-      <div className="border-b border-[#2a2a2a] bg-[#141414] px-3 py-3 text-center">
-        <h3 className="text-sm font-bold uppercase tracking-wider text-[#fafafa]">
+    <div className="flex flex-col rounded-lg border border-[#2a2a2a] card-elevation overflow-hidden" data-testid={`day-column-${day.dayNumber}`}>
+      {/* Day header - prominent and distinguishable */}
+      <div className="border-b border-[#2a2a2a] bg-gradient-to-b from-[#1a1a1a] to-[#141414] px-4 py-4 text-center">
+        <h3 className="text-base font-black uppercase tracking-widest text-[#fafafa]">
           {day.dayName}
           {day.isTrainingDay && (
-            <span className="ml-1 text-[10px]" title="Training Day">&#x1F4AA;</span>
+            <span className="ml-2 text-xs" title="Training Day">&#x1F4AA;</span>
           )}
         </h3>
-        <p className="mt-0.5 font-mono text-xs text-[#a1a1aa]">
+        <p className="mt-1 font-mono text-xs font-semibold text-[#a1a1aa]">
           {day.targetKcal} kcal target
         </p>
       </div>
 
-      {/* Day macro summary */}
-      <div className="border-b border-[#2a2a2a] bg-[#111] px-3 py-2">
+      {/* Day macro summary - visually distinct from cards */}
+      <div className="border-b border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 shadow-inner">
         <div className="text-center">
-          <span className="text-sm font-bold text-[#f97316]">{dayTotalKcal}</span>
-          <span className="ml-1 text-[10px] text-[#a1a1aa]">kcal</span>
+          <span className="text-lg font-black text-[#f97316]">{dayTotalKcal}</span>
+          <span className="ml-1 text-xs font-semibold text-[#a1a1aa]">kcal</span>
         </div>
-        <div className="mt-1 flex justify-center gap-2 text-[10px]">
+        <div className="mt-1.5 flex justify-center gap-3 text-xs font-semibold">
           <span className="text-[#3b82f6]">P {dayTotalProtein}g</span>
           <span className="text-[#f59e0b]">C {dayTotalCarbs}g</span>
           <span className="text-[#ef4444]">F {dayTotalFat}g</span>
@@ -360,7 +376,7 @@ function DayColumn({
       </div>
 
       {/* Meals */}
-      <div className="flex-1 space-y-2 p-2" data-testid={`day-${day.dayNumber}-meals`}>
+      <div className="flex-1 space-y-2.5 p-2.5" data-testid={`day-${day.dayNumber}-meals`}>
         {day.meals.map((meal, mealIdx) => {
           const isSwapping =
             swappingMeal?.dayNumber === day.dayNumber &&
@@ -377,12 +393,16 @@ function DayColumn({
           return (
             <div
               key={mealIdx}
-              className={`group relative rounded-md border p-2.5 transition-all ${
+              className={`group relative rounded-lg border border-[#2a2a2a] card-elevation p-3 transition-all outline-none ${
                 isSwapSuccess
                   ? "border-green-500/60 bg-green-500/5 ring-1 ring-green-500/30"
-                  : "border-[#2a2a2a] bg-[#0f0f0f] hover:border-[#3a3a3a]"
-              }`}
+                  : "hover:border-[#3a3a3a]"
+              } focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:border-[#f97316]`}
               onClick={() => onMealClick(day.dayNumber, mealIdx, meal)}
+              onKeyDown={(e) => handleMealKeyDown(e, day.dayNumber, mealIdx, meal)}
+              tabIndex={0}
+              role="button"
+              aria-label={`View details for ${meal.name}`}
               data-testid={`meal-card-${day.dayNumber}-${mealIdx}`}
             >
               {/* Swap success indicator + undo button */}
@@ -431,25 +451,25 @@ function DayColumn({
               </button>
 
               {/* Slot label + Confidence badge */}
-              <div className="flex items-center gap-1.5 mb-1.5">
-                <span className="rounded bg-[#f97316]/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#f97316]">
+              <div className="flex items-center gap-2 mb-2">
+                <span className="rounded-md bg-[#f97316]/20 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[#f97316] border border-[#f97316]/30">
                   {meal.slot}
                 </span>
                 <span
                   data-testid={`confidence-badge-${day.dayNumber}-${mealIdx}`}
-                  className={`rounded px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${
+                  className={`rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider border ${
                     meal.confidenceLevel === "verified"
-                      ? "bg-[#22c55e]/20 text-[#22c55e]"
-                      : "bg-[#f59e0b]/20 text-[#f59e0b]"
+                      ? "bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/30"
+                      : "bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30"
                   }`}
                 >
                   {meal.confidenceLevel === "verified" ? "✓ Verified" : "⚡ AI-Estimated"}
                 </span>
               </div>
 
-              {/* Meal name */}
+              {/* Meal name - primary visual element in card */}
               <h4
-                className="text-xs font-semibold text-[#fafafa] leading-tight pr-6 truncate"
+                className="text-sm font-bold text-[#fafafa] leading-snug pr-7 line-clamp-2"
                 data-testid={`meal-name-${day.dayNumber}-${mealIdx}`}
                 title={meal.name}
               >
@@ -457,13 +477,13 @@ function DayColumn({
               </h4>
 
               {meal.cuisine && (
-                <p className="mt-0.5 text-[10px] text-[#a1a1aa]">{meal.cuisine}</p>
+                <p className="mt-1 text-[11px] font-medium text-[#a1a1aa]">{meal.cuisine}</p>
               )}
 
               {/* Prep time indicator */}
-              <div className="mt-1.5 flex items-center gap-1 text-[10px] text-[#a1a1aa]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
-                <span>🕒</span>
-                <span>
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[#a1a1aa]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
+                <span className="text-[12px]">🕒</span>
+                <span className="font-medium">
                   {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ""}
                   {meal.prepTimeMin && meal.cookTimeMin ? " + " : ""}
                   {meal.cookTimeMin ? `${meal.cookTimeMin}m cook` : ""}
@@ -472,17 +492,17 @@ function DayColumn({
               </div>
 
               {/* Macro pills */}
-              <div className="mt-2 flex flex-wrap gap-1" data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}>
-                <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-0.5 text-[10px] font-bold text-[#f97316]">
+              <div className="mt-2.5 flex flex-wrap gap-1.5" data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}>
+                <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-1 text-[11px] font-bold text-[#f97316] border border-[#f97316]/20">
                   {meal.nutrition.kcal} kcal
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-0.5 text-[10px] font-bold text-[#3b82f6]">
+                <span className="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-1 text-[11px] font-bold text-[#3b82f6] border border-[#3b82f6]/20">
                   P {meal.nutrition.proteinG}g
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-0.5 text-[10px] font-bold text-[#f59e0b]">
+                <span className="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-1 text-[11px] font-bold text-[#f59e0b] border border-[#f59e0b]/20">
                   C {meal.nutrition.carbsG}g
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-0.5 text-[10px] font-bold text-[#ef4444]">
+                <span className="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-1 text-[11px] font-bold text-[#ef4444] border border-[#ef4444]/20">
                   F {meal.nutrition.fatG}g
                 </span>
               </div>
@@ -1044,40 +1064,40 @@ export default function MealPlanPage() {
                   <div key={dayNum} className="min-w-[200px] flex-1">
                     <div className="flex flex-col rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden" data-testid={`skeleton-day-${dayNum}`}>
                       {/* Skeleton day header */}
-                      <div className="border-b border-[#2a2a2a] bg-[#141414] px-3 py-3 text-center">
-                        <div className="mx-auto h-4 w-20 rounded skeleton-shimmer" />
-                        <div className="mx-auto mt-1.5 h-3 w-24 rounded skeleton-shimmer" />
+                      <div className="border-b border-[#2a2a2a] bg-gradient-to-b from-[#1a1a1a] to-[#141414] px-4 py-4 text-center">
+                        <div className="mx-auto h-5 w-24 rounded skeleton-shimmer" />
+                        <div className="mx-auto mt-2 h-3.5 w-28 rounded skeleton-shimmer" />
                       </div>
 
                       {/* Skeleton day macro summary */}
-                      <div className="border-b border-[#2a2a2a] bg-[#111] px-3 py-2">
-                        <div className="mx-auto h-4 w-16 rounded skeleton-shimmer" />
-                        <div className="mt-1 flex justify-center gap-2">
-                          <div className="h-3 w-10 rounded skeleton-shimmer" />
-                          <div className="h-3 w-10 rounded skeleton-shimmer" />
-                          <div className="h-3 w-10 rounded skeleton-shimmer" />
+                      <div className="border-b border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 shadow-inner">
+                        <div className="mx-auto h-5 w-20 rounded skeleton-shimmer" />
+                        <div className="mt-1.5 flex justify-center gap-3">
+                          <div className="h-3.5 w-12 rounded skeleton-shimmer" />
+                          <div className="h-3.5 w-12 rounded skeleton-shimmer" />
+                          <div className="h-3.5 w-12 rounded skeleton-shimmer" />
                         </div>
                       </div>
 
                       {/* Skeleton meal cards */}
-                      <div className="flex-1 space-y-2 p-2">
+                      <div className="flex-1 space-y-2.5 p-2.5">
                         {[1, 2, 3, 4].map((mealNum) => (
                           <div
                             key={mealNum}
-                            className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-2.5"
+                            className="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-3"
                             data-testid={`skeleton-meal-card-${dayNum}-${mealNum}`}
                           >
                             {/* Slot label + confidence badge */}
-                            <div className="flex items-center gap-1.5 mb-1.5">
-                              <div className="h-4 w-16 rounded skeleton-shimmer" />
-                              <div className="h-3 w-14 rounded skeleton-shimmer" />
+                            <div className="flex items-center gap-2 mb-2">
+                              <div className="h-4.5 w-16 rounded-md skeleton-shimmer" />
+                              <div className="h-3.5 w-14 rounded-md skeleton-shimmer" />
                             </div>
                             {/* Meal name */}
                             <div className="h-4 w-3/4 rounded skeleton-shimmer mt-1" />
                             {/* Prep time */}
                             <div className="h-3 w-1/2 rounded skeleton-shimmer mt-2" />
                             {/* Macro pills */}
-                            <div className="mt-2 flex gap-1">
+                            <div className="mt-2.5 flex gap-1.5">
                               <div className="h-5 w-14 rounded-full skeleton-shimmer" />
                               <div className="h-5 w-10 rounded-full skeleton-shimmer" />
                               <div className="h-5 w-10 rounded-full skeleton-shimmer" />
@@ -1224,11 +1244,30 @@ export default function MealPlanPage() {
               )}
             </div>
             <div className="flex items-center gap-4">
-              {plan.qaScore !== null && (
-                <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-center">
+              {plan.qaStatus && (
+                <div
+                  className="rounded-lg border px-3 py-2 text-center"
+                  style={{
+                    backgroundColor: plan.qaStatus === 'PASS' ? 'rgba(34, 197, 94, 0.1)' :
+                                   plan.qaStatus === 'WARN' ? 'rgba(245, 158, 11, 0.1)' :
+                                   'rgba(239, 68, 68, 0.1)',
+                    borderColor: plan.qaStatus === 'PASS' ? 'rgba(34, 197, 94, 0.3)' :
+                                plan.qaStatus === 'WARN' ? 'rgba(245, 158, 11, 0.3)' :
+                                'rgba(239, 68, 68, 0.3)'
+                  }}
+                  title={`QA Status: ${plan.qaStatus}${plan.qaScore !== null ? ` (${plan.qaScore}%)` : ''}`}
+                  data-testid="qa-score-badge"
+                >
                   <p className="font-mono text-xs text-[#a1a1aa]">QA Score</p>
-                  <p className={`text-lg font-bold ${plan.qaScore >= 80 ? "text-[#22c55e]" : plan.qaScore >= 60 ? "text-[#f59e0b]" : "text-[#ef4444]"}`}>
-                    {plan.qaScore}%
+                  <p
+                    className="text-lg font-bold"
+                    style={{
+                      color: plan.qaStatus === 'PASS' ? '#22c55e' :
+                             plan.qaStatus === 'WARN' ? '#f59e0b' :
+                             '#ef4444'
+                    }}
+                  >
+                    {plan.qaScore !== null ? `${plan.qaScore}%` : 'N/A'}
                   </p>
                 </div>
               )}
@@ -1258,6 +1297,18 @@ export default function MealPlanPage() {
                   <span>PDF</span>
                 </a>
               )}
+              <Link
+                href="/meal-plan/history"
+                className="flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:border-[#3b82f6]/50 hover:bg-[#3b82f6]/10 hover:text-[#3b82f6]"
+                data-testid="view-history-button"
+                aria-label="View plan history"
+                title="View plan history"
+              >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                </svg>
+                <span>History</span>
+              </Link>
             </div>
           </div>
         </div>

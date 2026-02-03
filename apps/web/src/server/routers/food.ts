@@ -38,18 +38,20 @@ export const foodRouter = router({
   /**
    * search: Full food search returning food items with descriptions.
    * Used when user submits a search or selects an autocomplete suggestion.
+   * Supports pagination via pageNumber parameter (zero-based).
    */
   search: protectedProcedure
     .input(
       z.object({
         query: z.string().min(1).max(100),
         maxResults: z.number().int().min(1).max(50).default(10),
+        pageNumber: z.number().int().min(0).default(0),
       })
     )
     .query(async ({ input }) => {
       const adapter = getFatSecretAdapter()
-      const results = await adapter.searchFoods(input.query, input.maxResults)
-      return { results }
+      const results = await adapter.searchFoods(input.query, input.maxResults, input.pageNumber)
+      return { results, pageNumber: input.pageNumber }
     }),
 
   /**

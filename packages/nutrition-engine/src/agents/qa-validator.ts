@@ -311,15 +311,18 @@ export class QAValidator {
     const categoryMap = new Map<string, Array<{ name: string; amount: number; unit: string }>>();
 
     const categoryRules: Array<{ keywords: string[]; category: string }> = [
-      { keywords: ['chicken', 'beef', 'pork', 'turkey', 'salmon', 'tuna', 'cod', 'shrimp', 'fish', 'steak', 'lamb'], category: 'Meat & Seafood' },
-      { keywords: ['egg', 'yogurt', 'cheese', 'milk', 'cream', 'butter'], category: 'Dairy & Eggs' },
-      { keywords: ['rice', 'pasta', 'bread', 'oats', 'quinoa', 'tortilla', 'bagel', 'pancake', 'flour', 'cereal'], category: 'Grains & Bread' },
-      { keywords: ['spinach', 'broccoli', 'tomato', 'pepper', 'lettuce', 'salad', 'carrot', 'onion', 'garlic', 'potato', 'corn', 'zucchini', 'mushroom', 'asparagus', 'vegetable', 'greens', 'avocado', 'sweet potato'], category: 'Produce' },
-      { keywords: ['banana', 'berr', 'mango', 'apple', 'orange', 'fruit', 'lemon', 'lime'], category: 'Fruits' },
-      { keywords: ['bean', 'lentil', 'chickpea', 'tofu', 'tempeh', 'edamame'], category: 'Legumes & Plant Protein' },
-      { keywords: ['olive oil', 'oil', 'vinegar', 'soy sauce', 'honey', 'maple', 'sauce', 'dressing'], category: 'Oils & Condiments' },
-      { keywords: ['salt', 'pepper', 'spice', 'herb', 'cumin', 'paprika', 'garlic powder', 'season', 'taste'], category: 'Spices & Seasonings' },
-      { keywords: ['almond', 'walnut', 'peanut', 'seed', 'nut', 'cashew'], category: 'Nuts & Seeds' },
+      // Produce - includes vegetables and fruits
+      { keywords: ['spinach', 'broccoli', 'tomato', 'pepper', 'lettuce', 'salad', 'carrot', 'onion', 'garlic', 'potato', 'corn', 'zucchini', 'mushroom', 'asparagus', 'vegetable', 'greens', 'avocado', 'sweet potato', 'cucumber', 'banana', 'berr', 'mango', 'apple', 'orange', 'fruit', 'lemon', 'lime'], category: 'Produce' },
+      // Meat and Seafood
+      { keywords: ['chicken', 'beef', 'pork', 'turkey', 'salmon', 'tuna', 'cod', 'shrimp', 'fish', 'steak', 'lamb'], category: 'Meat and Seafood' },
+      // Dairy and Eggs
+      { keywords: ['egg', 'yogurt', 'cheese', 'milk', 'cream', 'butter'], category: 'Dairy and Eggs' },
+      // Bakery - bread and baked goods
+      { keywords: ['bread', 'bagel', 'pancake', 'tortilla'], category: 'Bakery' },
+      // Pantry - grains, legumes, oils, condiments, spices, nuts, seeds
+      { keywords: ['rice', 'pasta', 'oats', 'quinoa', 'flour', 'cereal', 'bean', 'lentil', 'chickpea', 'tofu', 'tempeh', 'edamame', 'olive oil', 'oil', 'vinegar', 'soy sauce', 'honey', 'maple', 'sauce', 'dressing', 'salt', 'pepper', 'spice', 'herb', 'cumin', 'paprika', 'garlic powder', 'season', 'taste', 'almond', 'walnut', 'peanut', 'seed', 'nut', 'cashew'], category: 'Pantry' },
+      // Frozen - frozen foods
+      { keywords: ['frozen'], category: 'Frozen' },
     ];
 
     for (const [key, { amount, unit }] of ingredientMap) {
@@ -344,9 +347,34 @@ export class QAValidator {
       });
     }
 
-    // Convert to GroceryCategory array, sorted by category name
+    // Convert to GroceryCategory array, sorted by specified store section order
+    // Order: Produce, Meat and Seafood, Dairy and Eggs, Bakery, Pantry, Frozen, Other
+    const categoryOrder = [
+      'Produce',
+      'Meat and Seafood',
+      'Dairy and Eggs',
+      'Bakery',
+      'Pantry',
+      'Frozen',
+      'Other',
+    ];
+
     return Array.from(categoryMap.entries())
-      .sort(([a], [b]) => a.localeCompare(b))
+      .sort(([a], [b]) => {
+        // Get the index of each category in the order array
+        const indexA = categoryOrder.indexOf(a);
+        const indexB = categoryOrder.indexOf(b);
+
+        // If both categories are in the order list, sort by their position
+        if (indexA !== -1 && indexB !== -1) {
+          return indexA - indexB;
+        }
+        // If only one is in the order list, that one comes first
+        if (indexA !== -1) return -1;
+        if (indexB !== -1) return 1;
+        // If neither is in the order list, sort alphabetically
+        return a.localeCompare(b);
+      })
       .map(([category, items]) => ({
         category,
         items: items.sort((a, b) => a.name.localeCompare(b.name)),

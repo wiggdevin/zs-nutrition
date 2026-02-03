@@ -25,7 +25,12 @@ export interface PdfPlanData {
         fatG: number
         fiberG?: number
       }
-      ingredients?: Array<{ name: string; amount: string }>
+      ingredients?: Array<{
+        name: string
+        amount: number | string
+        unit?: string
+        fatsecretFoodId?: string
+      }>
       instructions?: string[]
     }>
   }>
@@ -168,7 +173,14 @@ export function generatePlanPdf(planData: PdfPlanData, metadata: PdfMetadata): B
         py -= 12
         for (const ing of meal.ingredients) {
           if (py < 100) break
-          pageLines.push(textLine(70, py, `- ${ing.name}: ${ing.amount}`, 8))
+          // Handle both old format (amount as string) and new format (amount + unit)
+          let amountText = '';
+          if (typeof ing.amount === 'string') {
+            amountText = ing.amount;
+          } else if (typeof ing.amount === 'number') {
+            amountText = `${ing.amount}${ing.unit || ''}`;
+          }
+          pageLines.push(textLine(70, py, `- ${ing.name}: ${amountText}`, 8))
           py -= 11
         }
       }

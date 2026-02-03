@@ -22,11 +22,15 @@ export default function SettingsMealStructure() {
   const [cuisinePrefs, setCuisinePrefs] = useState<string[]>([]);
   const [mealsPerDay, setMealsPerDay] = useState(3);
   const [snacksPerDay, setSnacksPerDay] = useState(1);
+  const [cookingSkill, setCookingSkill] = useState(5);
+  const [prepTimeMax, setPrepTimeMax] = useState(30);
   const [originalData, setOriginalData] = useState({
     macroStyle: "" as string,
     cuisinePrefs: [] as string[],
     mealsPerDay: 3,
     snacksPerDay: 1,
+    cookingSkill: 5,
+    prepTimeMax: 30,
   });
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -38,7 +42,9 @@ export default function SettingsMealStructure() {
     macroStyle !== originalData.macroStyle ||
     JSON.stringify(cuisinePrefs) !== JSON.stringify(originalData.cuisinePrefs) ||
     mealsPerDay !== originalData.mealsPerDay ||
-    snacksPerDay !== originalData.snacksPerDay;
+    snacksPerDay !== originalData.snacksPerDay ||
+    cookingSkill !== originalData.cookingSkill ||
+    prepTimeMax !== originalData.prepTimeMax;
 
   // Track the current fetch request so we can abort stale ones
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -72,11 +78,15 @@ export default function SettingsMealStructure() {
       const cp = p.cuisinePrefs || [];
       const mpd = p.mealsPerDay || 3;
       const spd = p.snacksPerDay ?? 1;
+      const cs = p.cookingSkill ?? 5;
+      const ptm = p.prepTimeMax ?? 30;
       setMacroStyle(ms);
       setCuisinePrefs(cp);
       setMealsPerDay(mpd);
       setSnacksPerDay(spd);
-      setOriginalData({ macroStyle: ms, cuisinePrefs: cp, mealsPerDay: mpd, snacksPerDay: spd });
+      setCookingSkill(cs);
+      setPrepTimeMax(ptm);
+      setOriginalData({ macroStyle: ms, cuisinePrefs: cp, mealsPerDay: mpd, snacksPerDay: spd, cookingSkill: cs, prepTimeMax: ptm });
     } catch (err: unknown) {
       // Ignore aborted requests (user navigated away or new fetch started)
       if (err instanceof DOMException && err.name === 'AbortError') return;
@@ -111,6 +121,19 @@ export default function SettingsMealStructure() {
     setSuccess(false);
   };
 
+  const cookingSkillLabels: Record<number, string> = {
+    1: "Beginner",
+    2: "Novice",
+    3: "Learning",
+    4: "Competent",
+    5: "Intermediate",
+    6: "Capable",
+    7: "Experienced",
+    8: "Advanced",
+    9: "Expert",
+    10: "Professional Chef",
+  };
+
   async function handleSave() {
     try {
       setSaving(true);
@@ -130,7 +153,7 @@ export default function SettingsMealStructure() {
       const res = await fetch("/api/settings/profile", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ macroStyle, cuisinePrefs, mealsPerDay, snacksPerDay }),
+        body: JSON.stringify({ macroStyle, cuisinePrefs, mealsPerDay, snacksPerDay, cookingSkill, prepTimeMax }),
       });
       if (!res.ok) {
         const data = await res.json();
@@ -141,6 +164,8 @@ export default function SettingsMealStructure() {
         cuisinePrefs: [...cuisinePrefs],
         mealsPerDay,
         snacksPerDay,
+        cookingSkill,
+        prepTimeMax,
       });
       setSuccess(true);
       toast.success("Meal structure saved!");
@@ -157,6 +182,8 @@ export default function SettingsMealStructure() {
     setCuisinePrefs([...originalData.cuisinePrefs]);
     setMealsPerDay(originalData.mealsPerDay);
     setSnacksPerDay(originalData.snacksPerDay);
+    setCookingSkill(originalData.cookingSkill);
+    setPrepTimeMax(originalData.prepTimeMax);
     setSuccess(false);
     setError(null);
   }
@@ -273,6 +300,50 @@ export default function SettingsMealStructure() {
               <span>0</span>
               <span>4</span>
             </div>
+          </div>
+        </div>
+
+        {/* Cooking Skill */}
+        <div>
+          <label htmlFor="settings-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+            Cooking Skill: {cookingSkillLabels[cookingSkill]}
+          </label>
+          <input
+            id="settings-cooking-skill"
+            type="range"
+            value={cookingSkill}
+            onChange={(e) => { setCookingSkill(parseInt(e.target.value)); setSuccess(false); }}
+            min={1}
+            max={10}
+            step={1}
+            data-testid="settings-cooking-skill"
+            className="w-full accent-[#f97316]"
+          />
+          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+            <span>Beginner</span>
+            <span>Professional Chef</span>
+          </div>
+        </div>
+
+        {/* Max Prep Time */}
+        <div>
+          <label htmlFor="settings-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+            Max Prep Time: {prepTimeMax} minutes
+          </label>
+          <input
+            id="settings-prep-time"
+            type="range"
+            value={prepTimeMax}
+            onChange={(e) => { setPrepTimeMax(parseInt(e.target.value)); setSuccess(false); }}
+            min={10}
+            max={120}
+            step={5}
+            data-testid="settings-prep-time-max"
+            className="w-full accent-[#f97316]"
+          />
+          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+            <span>10 min</span>
+            <span>120 min</span>
           </div>
         </div>
       </div>

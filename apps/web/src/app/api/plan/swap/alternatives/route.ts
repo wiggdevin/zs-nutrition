@@ -75,7 +75,17 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Failed to parse plan data' }, { status: 500 });
     }
 
+    // Find the current day to collect all meals on that day (for variety exclusion)
+    const currentDay = (validatedPlan.days || []).find(d => d.dayNumber === dayNumber);
+    const currentDayMealNames = new Set<string>();
+    if (currentDay?.meals) {
+      for (const meal of currentDay.meals) {
+        currentDayMealNames.add(meal.name.toLowerCase());
+      }
+    }
+
     // Collect alternative meals from other days with the same slot
+    // Exclude meals that are already on the current day to ensure variety
     const alternatives: Meal[] = [];
     const seenNames = new Set<string>();
     if (currentMealName) {
@@ -87,7 +97,8 @@ export async function POST(req: NextRequest) {
       for (const meal of (day.meals || [])) {
         if (
           meal.slot?.toLowerCase() === slot.toLowerCase() &&
-          !seenNames.has(meal.name.toLowerCase())
+          !seenNames.has(meal.name.toLowerCase()) &&
+          !currentDayMealNames.has(meal.name.toLowerCase()) // Exclude meals already on current day
         ) {
           seenNames.add(meal.name.toLowerCase());
           alternatives.push({

@@ -133,14 +133,15 @@ export class FatSecretAdapter {
     return response.json();
   }
 
-  async searchFoods(query: string, maxResults: number = 20): Promise<FoodSearchResult[]> {
+  async searchFoods(query: string, maxResults: number = 20, pageNumber: number = 0): Promise<FoodSearchResult[]> {
     if (!this.isConfigured()) {
-      return LocalFoodDatabase.searchFoods(query, maxResults);
+      return LocalFoodDatabase.searchFoods(query, maxResults, pageNumber);
     }
 
     const data = await this.apiRequest('foods.search', {
       search_expression: query,
       max_results: String(maxResults),
+      page_number: String(pageNumber),
     });
 
     const foods = data?.foods?.food;
@@ -560,7 +561,7 @@ export class LocalFoodDatabase {
     },
   ];
 
-  static searchFoods(query: string, maxResults: number = 20): FoodSearchResult[] {
+  static searchFoods(query: string, maxResults: number = 20, pageNumber: number = 0): FoodSearchResult[] {
     const q = query.toLowerCase().trim();
     if (!q) return [];
 
@@ -580,10 +581,13 @@ export class LocalFoodDatabase {
         return { food: f, score: matchCount };
       })
       .filter((item) => item.score > 0)
-      .sort((a, b) => b.score - a.score)
-      .slice(0, maxResults);
+      .sort((a, b) => b.score - a.score);
 
-    return scored.map((item) => ({
+    // Apply pagination
+    const offset = pageNumber * maxResults;
+    const paginated = scored.slice(offset, offset + maxResults);
+
+    return paginated.map((item) => ({
       foodId: item.food.foodId,
       name: item.food.name,
       description: item.food.description,

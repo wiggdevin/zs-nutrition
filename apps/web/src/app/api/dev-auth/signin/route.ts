@@ -49,6 +49,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Check if account is deactivated
+    if (!user.isActive) {
+      return NextResponse.json(
+        {
+          error: "This account has been deactivated.",
+          code: "ACCOUNT_DEACTIVATED",
+          message: "Your account has been deactivated and is no longer accessible."
+        },
+        { status: 403 }
+      );
+    }
+
     // Set dev auth cookie
     const cookieStore = await cookies();
     cookieStore.set("dev-user-id", user.id, {

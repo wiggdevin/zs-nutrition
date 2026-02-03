@@ -17,7 +17,7 @@ function getFatSecretAdapter(): FatSecretAdapter {
 
 /**
  * GET /api/food-search?q=chicken&type=autocomplete
- * GET /api/food-search?q=chicken&type=search&max=8
+ * GET /api/food-search?q=chicken&type=search&max=8&page=0
  */
 export async function GET(request: NextRequest) {
   try {
@@ -26,6 +26,8 @@ export async function GET(request: NextRequest) {
     const type = searchParams.get('type') || 'search'
     const maxStr = searchParams.get('max')
     const max = maxStr ? parseInt(maxStr, 10) : (type === 'autocomplete' ? 10 : 20)
+    const pageStr = searchParams.get('page')
+    const page = pageStr ? parseInt(pageStr, 10) : 0
 
     if (!query || query.length < 2) {
       return NextResponse.json({ results: [] })
@@ -48,11 +50,11 @@ export async function GET(request: NextRequest) {
     }
 
     // Full search with food details including nutrition per serving
-    const foods = await fatSecret.searchFoods(query, max)
+    const foods = await fatSecret.searchFoods(query, max, page)
 
     // Enrich search results with nutrition data from first serving
     const enrichedResults = await Promise.all(
-      foods.slice(0, 8).map(async (food) => {
+      foods.slice(0, max).map(async (food) => {
         try {
           const details = await fatSecret.getFood(food.foodId)
           const firstServing = details.servings?.[0]
@@ -85,7 +87,7 @@ export async function GET(request: NextRequest) {
       })
     )
 
-    return NextResponse.json({ results: enrichedResults })
+    return NextResponse.json({ results: enrichedResults, page, hasMore: foods.length === max })
   } catch (error) {
     safeLogError('Food search error:', error)
     return NextResponse.json({ error: 'Search failed' }, { status: 500 })

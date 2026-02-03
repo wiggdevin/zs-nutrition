@@ -30,6 +30,7 @@ export interface UserState {
   clearProfile: () => void;
   setIsOnboarded: (value: boolean) => void;
   setIsLoading: (value: boolean) => void;
+  clearAllState: () => void; // Clears all state on sign-out
 }
 
 // ── Default values ─────────────────────────────────────────────────────────
@@ -72,6 +73,12 @@ export const useUserStore = create<UserState>()(
       setIsOnboarded: (value) => set({ isOnboarded: value }),
 
       setIsLoading: (value) => set({ isLoading: value }),
+
+      clearAllState: () => set({
+        profile: null,
+        isOnboarded: false,
+        isLoading: false,
+      }),
     }),
     {
       name: 'zsn-user-store', // localStorage key

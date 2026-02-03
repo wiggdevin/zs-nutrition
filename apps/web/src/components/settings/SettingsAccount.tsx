@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { clearAllStores } from "@/lib/stores/clearStores";
 
 export default function SettingsAccount() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
@@ -11,6 +12,10 @@ export default function SettingsAccount() {
   async function handleSignOut() {
     try {
       setSigningOut(true);
+
+      // Clear all Zustand stores before signing out
+      clearAllStores();
+
       // Clear the dev auth cookie via API, then redirect to sign-in
       await fetch("/api/dev-auth/signout", { method: "POST" });
       window.location.href = "/sign-in";
@@ -27,6 +32,8 @@ export default function SettingsAccount() {
         const data = await res.json().catch(() => ({}));
         throw new Error(data.error || "Failed to deactivate account");
       }
+      // Clear all stores before signing out
+      clearAllStores();
       // Sign out after successful deactivation
       await fetch("/api/dev-auth/signout", { method: "POST" });
       window.location.href = "/sign-in";

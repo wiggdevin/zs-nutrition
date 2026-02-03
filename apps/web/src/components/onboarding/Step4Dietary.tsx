@@ -32,6 +32,7 @@ const commonAllergies = [
 
 export function Step4Dietary({ data, updateData }: Props) {
   const [exclusionInput, setExclusionInput] = useState("");
+  const [allergyInput, setAllergyInput] = useState("");
 
   const toggleAllergy = (allergy: string) => {
     const lower = allergy.toLowerCase();
@@ -41,6 +42,18 @@ export function Step4Dietary({ data, updateData }: Props) {
     } else {
       updateData({ allergies: [...current, lower] });
     }
+  };
+
+  const addAllergy = () => {
+    const trimmed = allergyInput.trim().toLowerCase();
+    if (trimmed && !data.allergies.includes(trimmed)) {
+      updateData({ allergies: [...data.allergies, trimmed] });
+      setAllergyInput("");
+    }
+  };
+
+  const removeAllergy = (allergy: string) => {
+    updateData({ allergies: data.allergies.filter((a) => a !== allergy) });
   };
 
   const addExclusion = () => {
@@ -95,9 +108,11 @@ export function Step4Dietary({ data, updateData }: Props) {
       {/* Allergies */}
       <div>
         <label id="onboarding-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-          Allergies (select all that apply)
+          Allergies (select common or add custom)
         </label>
-        <div className="flex flex-wrap gap-2" role="group" aria-labelledby="onboarding-allergies-label">
+
+        {/* Common allergy quick-select buttons */}
+        <div className="mb-3 flex flex-wrap gap-2" role="group" aria-labelledby="onboarding-allergies-label">
           {commonAllergies.map((allergy) => (
             <button
               key={allergy}
@@ -121,6 +136,62 @@ export function Step4Dietary({ data, updateData }: Props) {
             </button>
           ))}
         </div>
+
+        {/* Custom allergy input field */}
+        <div className="flex gap-2">
+          <input
+            id="onboarding-allergies-custom"
+            type="text"
+            value={allergyInput}
+            onChange={(e) => setAllergyInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && addAllergy()}
+            placeholder="Type custom allergy and press Enter"
+            className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+          />
+          <button
+            type="button"
+            onClick={addAllergy}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter' || e.key === ' ') {
+                e.preventDefault();
+                addAllergy();
+              }
+            }}
+            className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+          >
+            Add
+          </button>
+        </div>
+
+        {/* Allergy chips display */}
+        {data.allergies.length > 0 && (
+          <div className="mt-3 flex flex-wrap gap-2" role="list" aria-label="Selected allergies">
+            {data.allergies.map((allergy) => (
+              <span
+                key={allergy}
+                className="inline-flex flex-shrink-0 max-w-[250px] items-center gap-1 rounded-full border border-[#ef4444] bg-[#ef4444]/10 px-3 py-1 text-xs text-[#ef4444]"
+                role="listitem"
+                title={allergy}
+              >
+                <span className="truncate">{allergy}</span>
+                <button
+                  type="button"
+                  onClick={() => removeAllergy(allergy)}
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault();
+                      removeAllergy(allergy);
+                    }
+                  }}
+                  className="ml-1 flex-shrink-0 hover:text-[#f87171] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] rounded"
+                  aria-label={`Remove ${allergy} from allergies`}
+                >
+                  &times;
+                </button>
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       {/* Exclusions */}

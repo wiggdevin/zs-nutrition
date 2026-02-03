@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Auth Test</title>
+</head>
+<body>
+  <h1>Setting up authentication...</h1>
+  <p id="status">Please wait...</p>
+
+  <script>
+    // Call the signin API
+    fetch('/api/dev-auth/signin', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email: 'dev@zsnutrition.test' })
+    })
+    .then(res => res.json())
+    .then(data => {
+      document.getElementById('status').textContent = JSON.stringify(data, null, 2);
+      if (data.success) {
+        // The server set the cookie, now redirect
+        setTimeout(() => {
+          window.location.href = data.redirectTo;
+        }, 500);
+      }
+    })
+    .catch(err => {
+      document.getElementById('status').textContent = 'Error: ' + err.message;
+    });
+  </script>
+</body>
+</html>
