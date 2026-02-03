@@ -37,7 +37,12 @@ export interface PlanCompletionData {
           fiberG?: number
         }
         confidenceLevel?: string
-        ingredients?: Array<{ name: string; amount: string }>
+        ingredients?: Array<{
+          name: string
+          amount: number | string
+          unit?: string
+          fatsecretFoodId?: string
+        }>
         instructions?: string[]
       }>
     }>
