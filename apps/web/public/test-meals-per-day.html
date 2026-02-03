@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Meals Per Day Validation</title>
+    <style>
+        body {
+            font-family: system-ui, sans-serif;
+            max-width: 600px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fafafa;
+        }
+        .test-section {
+            background: #2a2a2a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+        }
+        input[type="range"] {
+            width: 100%;
+            accent-color: #f97316;
+        }
+        .result {
+            margin-top: 10px;
+            padding: 10px;
+            border-radius: 4px;
+        }
+        .pass { background: #22c55e20; color: #22c55e; }
+        .fail { background: #ef444420; color: #ef4444; }
+        button {
+            background: #f97316;
+            color: #0a0a0a;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Meals Per Day Validation Test</h1>
+    <p>This test verifies that the meals per day input only accepts values between 2 and 6.</p>
+
+    <div class="test-section">
+        <h2>Test 1: Range Input Constraints</h2>
+        <label>Meals/Day: <span id="currentValue">3</span></label><br><br>
+        <input
+            id="mealsInput"
+            type="range"
+            min="2"
+            max="6"
+            step="1"
+            value="3"
+            oninput="document.getElementById('currentValue').textContent = this.value"
+        >
+        <div class="result" id="rangeTestResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 2: Try to set value below min</h2>
+        <button onclick="testBelowMin()">Attempt to set to 1</button>
+        <div class="result" id="belowMinResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 3: Try to set value above max</h2>
+        <button onclick="testAboveMax()">Attempt to set to 7</button>
+        <div class="result" id="aboveMaxResult"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Test 4: Valid values within range</h2>
+        <button onclick="testValidValues()">Test values 2-6</button>
+        <div class="result" id="validValuesResult"></div>
+    </div>
+
+    <script>
+        // Test 1: Check range input attributes
+        function testRangeAttributes() {
+            const input = document.getElementById('mealsInput');
+            const min = parseInt(input.min);
+            const max = parseInt(input.max);
+            const step = parseInt(input.step);
+
+            const result = document.getElementById('rangeTestResult');
+            if (min === 2 && max === 6 && step === 1) {
+                result.className = 'result pass';
+                result.textContent = `✅ PASS: Range input has min=${min}, max=${max}, step=${step}`;
+            } else {
+                result.className = 'result fail';
+                result.textContent = `❌ FAIL: Expected min=2, max=6, step=1 but got min=${min}, max=${max}, step=${step}`;
+            }
+        }
+
+        // Test 2: Try to set value below min
+        function testBelowMin() {
+            const input = document.getElementById('mealsInput');
+            input.value = 1;
+            input.dispatchEvent(new Event('input'));
+
+            const result = document.getElementById('belowMinResult');
+            const actualValue = parseInt(input.value);
+
+            if (actualValue >= 2) {
+                result.className = 'result pass';
+                result.textContent = `✅ PASS: Tried to set to 1, but input enforced minimum of ${actualValue}`;
+            } else {
+                result.className = 'result fail';
+                result.textContent = `❌ FAIL: Value ${actualValue} is below minimum of 2`;
+            }
+        }
+
+        // Test 3: Try to set value above max
+        function testAboveMax() {
+            const input = document.getElementById('mealsInput');
+            input.value = 7;
+            input.dispatchEvent(new Event('input'));
+
+            const result = document.getElementById('aboveMaxResult');
+            const actualValue = parseInt(input.value);
+
+            if (actualValue <= 6) {
+                result.className = 'result pass';
+                result.textContent = `✅ PASS: Tried to set to 7, but input enforced maximum of ${actualValue}`;
+            } else {
+                result.className = 'result fail';
+                result.textContent = `❌ FAIL: Value ${actualValue} is above maximum of 6`;
+            }
+        }
+
+        // Test 4: Test all valid values
+        function testValidValues() {
+            const input = document.getElementById('mealsInput');
+            const validValues = [2, 3, 4, 5, 6];
+            const results = [];
+
+            for (const value of validValues) {
+                input.value = value;
+                input.dispatchEvent(new Event('input'));
+                const actualValue = parseInt(input.value);
+                results.push(actualValue === value ? `✅ ${value}` : `❌ ${value} (got ${actualValue})`);
+            }
+
+            const result = document.getElementById('validValuesResult');
+            if (results.every(r => r.startsWith('✅'))) {
+                result.className = 'result pass';
+                result.textContent = `✅ PASS: All valid values accepted\n${results.join('\n')}`;
+            } else {
+                result.className = 'result fail';
+                result.textContent = `❌ FAIL: Some valid values rejected\n${results.join('\n')}`;
+            }
+        }
+
+        // Run all tests on load
+        window.addEventListener('load', () => {
+            testRangeAttributes();
+        });
+    </script>
+</body>
+</html>

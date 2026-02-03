@@ -20,13 +20,34 @@ export async function GET() {
   }
 
   const user = await getOrCreateUser(clerkUserId)
-  let onboarding = await prisma.onboardingState.findUnique({
+  const onboarding = await prisma.onboardingState.findUnique({
     where: { userId: user.id },
   })
 
+  // If no onboarding state exists, check if user has a profile
+  // (which means onboarding was completed and cleaned up)
   if (!onboarding) {
-    onboarding = await prisma.onboardingState.create({
+    const profile = await prisma.userProfile.findFirst({
+      where: { userId: user.id, isActive: true },
+    })
+
+    if (profile) {
+      // User has completed onboarding (state was cleaned up)
+      return NextResponse.json({
+        currentStep: 7,
+        completed: true,
+        stepData: {},
+      })
+    }
+
+    // No profile and no onboarding state - start fresh onboarding
+    const newOnboarding = await prisma.onboardingState.create({
       data: { userId: user.id, currentStep: 1, stepData: '{}' },
+    })
+    return NextResponse.json({
+      currentStep: newOnboarding.currentStep,
+      completed: newOnboarding.completed,
+      stepData: JSON.parse(newOnboarding.stepData),
     })
   }
 

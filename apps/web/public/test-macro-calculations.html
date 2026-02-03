@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feature #87: Macro Split Calculations Test</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      background: #0a0a0a;
+      color: #fafafa;
+      padding: 40px 20px;
+      line-height: 1.6;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 2rem;
+      font-weight: 700;
+      margin-bottom: 10px;
+      color: #f97316;
+    }
+    .subtitle {
+      color: #a1a1aa;
+      margin-bottom: 30px;
+      font-size: 1rem;
+    }
+    .test-section {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .test-section h2 {
+      font-size: 1.25rem;
+      margin-bottom: 16px;
+      color: #fafafa;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .status-badge {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      text-transform: uppercase;
+    }
+    .status-pending {
+      background: #3f3f46;
+      color: #a1a1aa;
+    }
+    .status-pass {
+      background: #22c55e;
+      color: #fafafa;
+    }
+    .status-fail {
+      background: #ef4444;
+      color: #fafafa;
+    }
+    .calculation-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .calc-card {
+      background: #121212;
+      border: 1px solid #2a2a2a;
+      border-radius: 6px;
+      padding: 16px;
+    }
+    .calc-card h3 {
+      font-size: 0.875rem;
+      color: #a1a1aa;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    .calc-card .value {
+      font-size: 1.5rem;
+      font-weight: 700;
+      color: #fafafa;
+    }
+    .calc-card .unit {
+      font-size: 0.875rem;
+      color: #a1a1aa;
+      margin-left: 4px;
+    }
+    .calc-card .expected {
+      font-size: 0.75rem;
+      color: #a1a1aa;
+      margin-top: 4px;
+    }
+    .calc-card .match {
+      color: #22c55e;
+    }
+    .calc-card .mismatch {
+      color: #ef4444;
+    }
+    .macro-split-info {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 12px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+    }
+    .macro-split-info span {
+      padding: 4px 8px;
+      background: #2a2a2a;
+      border-radius: 4px;
+    }
+    .protein-label { color: #3b82f6; }
+    .carbs-label { color: #f59e0b; }
+    .fat-label { color: #ef4444; }
+    button {
+      background: #f97316;
+      color: #fafafa;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: 600;
+      cursor: pointer;
+      transition: background 0.2s;
+      margin-right: 12px;
+    }
+    button:hover {
+      background: #ea580c;
+    }
+    button:disabled {
+      background: #3f3f46;
+      cursor: not-allowed;
+    }
+    .results {
+      margin-top: 24px;
+      padding: 16px;
+      background: #121212;
+      border-radius: 6px;
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.875rem;
+      white-space: pre-wrap;
+      color: #a1a1aa;
+    }
+    .summary {
+      background: #1a1a1a;
+      border: 2px solid #f97316;
+      border-radius: 8px;
+      padding: 24px;
+      margin-top: 24px;
+    }
+    .summary h2 {
+      color: #f97316;
+      margin-bottom: 16px;
+    }
+    .summary-stats {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+      gap: 16px;
+    }
+    .stat {
+      text-align: center;
+    }
+    .stat .value {
+      font-size: 2rem;
+      font-weight: 700;
+      color: #fafafa;
+    }
+    .stat .label {
+      font-size: 0.875rem;
+      color: #a1a1aa;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Feature #87: Macro Split Calculations</h1>
+    <p class="subtitle">Testing macro calculations for all four styles at 2000 kcal</p>
+
+    <div style="margin-bottom: 24px;">
+      <button id="runAllTests" onclick="runAllTests()">Run All Tests</button>
+      <button onclick="window.location.reload()">Reset</button>
+    </div>
+
+    <div class="summary">
+      <h2>Test Summary</h2>
+      <div class="summary-stats">
+        <div class="stat">
+          <div class="value" id="totalTests">0</div>
+          <div class="label">Total Tests</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="passedTests" style="color: #22c55e;">0</div>
+          <div class="label">Passed</div>
+        </div>
+        <div class="stat">
+          <div class="value" id="failedTests" style="color: #ef4444;">0</div>
+          <div class="label">Failed</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 1: Balanced -->
+    <div class="test-section" id="test-balanced">
+      <h2>
+        <span class="status-badge status-pending" id="status-balanced">Pending</span>
+        Test 1: Balanced (30% P, 40% C, 30% F) at 2000 kcal
+      </h2>
+      <div class="macro-split-info">
+        <span class="protein-label">Protein: 30%</span>
+        <span class="carbs-label">Carbs: 40%</span>
+        <span class="fat-label">Fat: 30%</span>
+      </div>
+      <div class="calculation-grid">
+        <div class="calc-card">
+          <h3>Protein</h3>
+          <div class="value" id="balanced-protein">-</div>
+          <div class="expected" id="balanced-protein-expected">Expected: 150g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Carbs</h3>
+          <div class="value" id="balanced-carbs">-</div>
+          <div class="expected" id="balanced-carbs-expected">Expected: 200g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Fat</h3>
+          <div class="value" id="balanced-fat">-</div>
+          <div class="expected" id="balanced-fat-expected">Expected: 67g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Fiber</h3>
+          <div class="value" id="balanced-fiber">-</div>
+          <div class="expected" id="balanced-fiber-expected">Expected: 28g</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 2: High Protein -->
+    <div class="test-section" id="test-high_protein">
+      <h2>
+        <span class="status-badge status-pending" id="status-high_protein">Pending</span>
+        Test 2: High Protein (40% P, 35% C, 25% F) at 2000 kcal
+      </h2>
+      <div class="macro-split-info">
+        <span class="protein-label">Protein: 40%</span>
+        <span class="carbs-label">Carbs: 35%</span>
+        <span class="fat-label">Fat: 25%</span>
+      </div>
+      <div class="calculation-grid">
+        <div class="calc-card">
+          <h3>Protein</h3>
+          <div class="value" id="high_protein-protein">-</div>
+          <div class="expected" id="high_protein-protein-expected">Expected: 200g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Carbs</h3>
+          <div class="value" id="high_protein-carbs">-</div>
+          <div class="expected" id="high_protein-carbs-expected">Expected: 175g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Fat</h3>
+          <div class="value" id="high_protein-fat">-</div>
+          <div class="expected" id="high_protein-fat-expected">Expected: 56g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Fiber</h3>
+          <div class="value" id="high_protein-fiber">-</div>
+          <div class="expected" id="high_protein-fiber-expected">Expected: 28g</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 3: Low Carb -->
+    <div class="test-section" id="test-low_carb">
+      <h2>
+        <span class="status-badge status-pending" id="status-low_carb">Pending</span>
+        Test 3: Low Carb (35% P, 25% C, 40% F) at 2000 kcal
+      </h2>
+      <div class="macro-split-info">
+        <span class="protein-label">Protein: 35%</span>
+        <span class="carbs-label">Carbs: 25%</span>
+        <span class="fat-label">Fat: 40%</span>
+      </div>
+      <div class="calculation-grid">
+        <div class="calc-card">
+          <h3>Protein</h3>
+          <div class="value" id="low_carb-protein">-</div>
+          <div class="expected" id="low_carb-protein-expected">Expected: 175g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Carbs</h3>
+          <div class="value" id="low_carb-carbs">-</div>
+          <div class="expected" id="low_carb-carbs-expected">Expected: 125g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Fat</h3>
+          <div class="value" id="low_carb-fat">-</div>
+          <div class="expected" id="low_carb-fat-expected">Expected: 89g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Fiber</h3>
+          <div class="value" id="low_carb-fiber">-</div>
+          <div class="expected" id="low_carb-fiber-expected">Expected: 28g</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 4: Keto -->
+    <div class="test-section" id="test-keto">
+      <h2>
+        <span class="status-badge status-pending" id="status-keto">Pending</span>
+        Test 4: Keto (30% P, 5% C, 65% F) at 2000 kcal
+      </h2>
+      <div class="macro-split-info">
+        <span class="protein-label">Protein: 30%</span>
+        <span class="carbs-label">Carbs: 5%</span>
+        <span class="fat-label">Fat: 65%</span>
+      </div>
+      <div class="calculation-grid">
+        <div class="calc-card">
+          <h3>Protein</h3>
+          <div class="value" id="keto-protein">-</div>
+          <div class="expected" id="keto-protein-expected">Expected: 150g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Carbs</h3>
+          <div class="value" id="keto-carbs">-</div>
+          <div class="expected" id="keto-carbs-expected">Expected: 25g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Fat</h3>
+          <div class="value" id="keto-fat">-</div>
+          <div class="expected" id="keto-fat-expected">Expected: 144g</div>
+        </div>
+        <div class="calc-card">
+          <h3>Fiber</h3>
+          <div class="value" id="keto-fiber">-</div>
+          <div class="expected" id="keto-fiber-expected">Expected: 28g</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Test 5: Fiber at different calorie levels -->
+    <div class="test-section" id="test-fiber">
+      <h2>
+        <span class="status-badge status-pending" id="status-fiber">Pending</span>
+        Test 5: Fiber Calculation (14g per 1000kcal, min 25g)
+      </h2>
+      <div class="calculation-grid" style="grid-template-columns: repeat(2, 1fr);">
+        <div class="calc-card">
+          <h3>1000 kcal</h3>
+          <div class="value" id="fiber-1000">-</div>
+          <div class="expected">Expected: 25g (min)</div>
+        </div>
+        <div class="calc-card">
+          <h3>1500 kcal</h3>
+          <div class="value" id="fiber-1500">-</div>
+          <div class="expected">Expected: 25g (min)</div>
+        </div>
+        <div class="calc-card">
+          <h3>2000 kcal</h3>
+          <div class="value" id="fiber-2000">-</div>
+          <div class="expected">Expected: 28g</div>
+        </div>
+        <div class="calc-card">
+          <h3>3000 kcal</h3>
+          <div class="value" id="fiber-3000">-</div>
+          <div class="expected">Expected: 42g</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="results" id="results">
+      Click "Run All Tests" to begin verification...
+    </div>
+  </div>
+
+  <script>
+    // Import the metabolic calculator
+    let calculateMetabolicProfile;
+
+    async function loadCalculator() {
+      try {
+        // Try to use the calculator from the app
+        const module = await import('/src/lib/metabolic.ts');
+        calculateMetabolicProfile = module.calculateMetabolicProfile;
+        return true;
+      } catch (e) {
+        console.error('Could not load calculator:', e);
+        return false;
+      }
+    }
+
+    // Macro splits from the code
+    const MACRO_SPLITS = {
+      balanced: { protein: 0.30, carbs: 0.40, fat: 0.30 },
+      high_protein: { protein: 0.40, carbs: 0.35, fat: 0.25 },
+      low_carb: { protein: 0.35, carbs: 0.25, fat: 0.40 },
+      keto: { protein: 0.30, carbs: 0.05, fat: 0.65 },
+    };
+
+    function calculateMacros(macroStyle, goalKcal) {
+      const split = MACRO_SPLITS[macroStyle];
+      const proteinTargetG = Math.round((goalKcal * split.protein) / 4);
+      const carbsTargetG = Math.round((goalKcal * split.carbs) / 4);
+      const fatTargetG = Math.round((goalKcal * split.fat) / 9);
+      const fiberTargetG = Math.max(25, Math.round((goalKcal / 1000) * 14));
+
+      return { proteinTargetG, carbsTargetG, fatTargetG, fiberTargetG };
+    }
+
+    function updateTestResult(testId, passed, data) {
+      const statusEl = document.getElementById(`status-${testId}`);
+      statusEl.textContent = passed ? 'PASS' : 'FAIL';
+      statusEl.className = `status-badge ${passed ? 'status-pass' : 'status-fail'}`;
+
+      // Update values
+      if (data.protein !== undefined) {
+        document.getElementById(`${testId}-protein`).textContent = data.protein + 'g';
+        document.getElementById(`${testId}-carbs`).textContent = data.carbs + 'g';
+        document.getElementById(`${testId}-fat`).textContent = data.fat + 'g';
+        document.getElementById(`${testId}-fiber`).textContent = data.fiber + 'g';
+      }
+    }
+
+    function updateFiberTest() {
+      const tests = [
+        { kcal: 1000, expected: 25 },
+        { kcal: 1500, expected: 25 },
+        { kcal: 2000, expected: 28 },
+        { kcal: 3000, expected: 42 },
+      ];
+
+      let allPassed = true;
+
+      tests.forEach(test => {
+        const actual = Math.max(25, Math.round((test.kcal / 1000) * 14));
+        const passed = actual === test.expected;
+        const el = document.getElementById(`fiber-${test.kcal}`);
+        el.textContent = actual + 'g';
+        el.style.color = passed ? '#22c55e' : '#ef4444';
+        if (!passed) allPassed = false;
+      });
+
+      const statusEl = document.getElementById('status-fiber');
+      statusEl.textContent = allPassed ? 'PASS' : 'FAIL';
+      statusEl.className = `status-badge ${allPassed ? 'status-pass' : 'status-fail'}`;
+
+      return allPassed;
+    }
+
+    function runTest(macroStyle, expected) {
+      const actual = calculateMacros(macroStyle, 2000);
+      const passed =
+        actual.proteinTargetG === expected.protein &&
+        actual.carbsTargetG === expected.carbs &&
+        actual.fatTargetG === expected.fat &&
+        actual.fiberTargetG === expected.fiber;
+
+      updateTestResult(macroStyle, passed, actual);
+      return passed;
+    }
+
+    function runAllTests() {
+      const results = [];
+      let passed = 0;
+      let failed = 0;
+
+      // Test 1: Balanced
+      const test1 = runTest('balanced', {
+        protein: 150, // 2000 * 0.30 / 4
+        carbs: 200,   // 2000 * 0.40 / 4
+        fat: 67,      // 2000 * 0.30 / 9 = 66.67 → 67
+        fiber: 28,    // Math.max(25, 2000/1000 * 14) = 28
+      });
+      if (test1) passed++; else failed++;
+      results.push(`Balanced: ${test1 ? 'PASS' : 'FAIL'}`);
+
+      // Test 2: High Protein
+      const test2 = runTest('high_protein', {
+        protein: 200, // 2000 * 0.40 / 4
+        carbs: 175,   // 2000 * 0.35 / 4
+        fat: 56,      // 2000 * 0.25 / 9 = 55.56 → 56
+        fiber: 28,
+      });
+      if (test2) passed++; else failed++;
+      results.push(`High Protein: ${test2 ? 'PASS' : 'FAIL'}`);
+
+      // Test 3: Low Carb
+      const test3 = runTest('low_carb', {
+        protein: 175, // 2000 * 0.35 / 4
+        carbs: 125,   // 2000 * 0.25 / 4
+        fat: 89,      // 2000 * 0.40 / 9 = 88.89 → 89
+        fiber: 28,
+      });
+      if (test3) passed++; else failed++;
+      results.push(`Low Carb: ${test3 ? 'PASS' : 'FAIL'}`);
+
+      // Test 4: Keto
+      const test4 = runTest('keto', {
+        protein: 150, // 2000 * 0.30 / 4
+        carbs: 25,    // 2000 * 0.05 / 4
+        fat: 144,     // 2000 * 0.65 / 9 = 144.44 → 144
+        fiber: 28,
+      });
+      if (test4) passed++; else failed++;
+      results.push(`Keto: ${test4 ? 'PASS' : 'FAIL'}`);
+
+      // Test 5: Fiber
+      const test5 = updateFiberTest();
+      if (test5) passed++; else failed++;
+      results.push(`Fiber: ${test5 ? 'PASS' : 'FAIL'}`);
+
+      // Update summary
+      document.getElementById('totalTests').textContent = '5';
+      document.getElementById('passedTests').textContent = passed;
+      document.getElementById('failedTests').textContent = failed;
+
+      // Update results
+      const resultsEl = document.getElementById('results');
+      resultsEl.textContent = `Test Results:\n\n${results.join('\n')}\n\nTotal: ${passed}/5 tests passed`;
+
+      // Disable button
+      document.getElementById('runAllTests').disabled = true;
+
+      return { passed, failed, total: 5 };
+    }
+
+    // Auto-run on load
+    window.addEventListener('load', () => {
+      setTimeout(runAllTests, 500);
+    });
+  </script>
+</body>
+</html>

@@ -135,11 +135,10 @@ export async function POST(request: NextRequest) {
 
     if (existingProfile) {
       // Profile already exists — return it without creating a duplicate
-      // Also ensure onboarding is marked complete
-      if (user.onboarding && !user.onboarding.completed) {
-        await prisma.onboardingState.update({
+      // Clean up onboarding state by deleting it
+      if (user.onboarding) {
+        await prisma.onboardingState.delete({
           where: { id: user.onboarding.id },
-          data: { completed: true, currentStep: 7 },
         });
       }
       return NextResponse.json({
@@ -190,26 +189,13 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Create or update onboarding state as completed
+    // Clean up onboarding state by deleting it (profile creation is the permanent record)
     if (user.onboarding) {
-      await prisma.onboardingState.update({
+      await prisma.onboardingState.delete({
         where: { id: user.onboarding.id },
-        data: {
-          completed: true,
-          currentStep: 7,
-          stepData: JSON.stringify(stepData),
-        },
-      });
-    } else {
-      await prisma.onboardingState.create({
-        data: {
-          userId: user.id,
-          completed: true,
-          currentStep: 7,
-          stepData: JSON.stringify(stepData),
-        },
       });
     }
+    // If onboarding state doesn't exist for some reason, no action needed
 
     return NextResponse.json({
       success: true,
