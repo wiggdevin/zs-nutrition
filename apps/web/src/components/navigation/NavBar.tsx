@@ -106,7 +106,7 @@ export default function NavBar() {
                 className={`flex flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1.5 min-w-[60px] transition-colors focus-visible:outline-2 focus-visible:outline-[#f97316] focus-visible:outline-offset-2 ${
                   isActive
                     ? 'text-[#f97316]'
-                    : 'text-[#71717a] hover:text-[#a1a1aa]'
+                    : 'text-[#a1a1aa] hover:text-[#fafafa]'
                 }`}
               >
                 {item.icon(!!isActive)}

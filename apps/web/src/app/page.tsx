@@ -73,7 +73,7 @@ export default async function HomePage() {
             AI-powered meal planning &amp; macro tracking
           </p>
 
-          <p className="mt-2 max-w-xl mx-auto text-sm text-[#71717a] sm:text-base">
+          <p className="mt-2 max-w-xl mx-auto text-sm text-[#a1a1aa] sm:text-base">
             Transform your health goals into a personalized 7-day meal plan with verified nutrition data,
             powered by our 6-agent AI pipeline.
           </p>
@@ -104,7 +104,7 @@ export default async function HomePage() {
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-[#fafafa]">Personalized Plans</h3>
-            <p className="mt-1 text-xs text-[#71717a]">7-day meal plans tailored to your goals and preferences</p>
+            <p className="mt-1 text-xs text-[#a1a1aa]">7-day meal plans tailored to your goals and preferences</p>
           </div>
           <div className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a]/50 p-6 text-center">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#22c55e]/10">
@@ -113,7 +113,7 @@ export default async function HomePage() {
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-[#fafafa]">Macro Tracking</h3>
-            <p className="mt-1 text-xs text-[#71717a]">Track calories, protein, carbs, and fats with precision</p>
+            <p className="mt-1 text-xs text-[#a1a1aa]">Track calories, protein, carbs, and fats with precision</p>
           </div>
           <div className="rounded-xl border border-[#2a2a2a] bg-[#1a1a1a]/50 p-6 text-center">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-[#3b82f6]/10">
@@ -122,13 +122,13 @@ export default async function HomePage() {
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-[#fafafa]">AI-Powered</h3>
-            <p className="mt-1 text-xs text-[#71717a]">6-agent pipeline with verified FatSecret nutrition data</p>
+            <p className="mt-1 text-xs text-[#a1a1aa]">6-agent pipeline with verified FatSecret nutrition data</p>
           </div>
         </div>
       </main>
 
       {/* Footer */}
-      <footer className="py-6 text-center text-xs text-[#52525b]">
+      <footer className="py-6 text-center text-xs text-[#a1a1aa]">
         <p>&copy; {new Date().getFullYear()} Zero Sum Nutrition. All rights reserved.</p>
       </footer>
     </div>

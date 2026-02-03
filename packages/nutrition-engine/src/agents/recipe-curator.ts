@@ -103,6 +103,7 @@ ${metabolicProfile.mealTargets.map((t) => `- ${t.label}: ${t.kcal} kcal (P: ${t.
 2. No identical meal within a 3-day window
 3. Spread cuisines across at least 3 different types over the week
 4. Mix cooking methods (grilling, baking, stir-fry, raw/no-cook)
+5. IMPORTANT: Prioritize meals from the client's cuisine preferences (${intake.cuisinePreferences.length > 0 ? intake.cuisinePreferences.join(', ') : 'Any'}) - aim for at least 60-70% of meals from these cuisines while still maintaining variety
 
 ## Output Format
 Return ONLY valid JSON (no markdown, no explanation) matching this exact structure:

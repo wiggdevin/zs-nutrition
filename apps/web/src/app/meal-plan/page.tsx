@@ -166,20 +166,20 @@ interface SwapTarget {
 function MealCardSkeleton() {
   return (
     <div
-      className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-2.5 animate-pulse"
+      className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-2.5"
       data-testid="meal-swap-skeleton"
     >
       <div className="flex items-center gap-1.5 mb-1.5">
-        <div className="h-4 w-16 rounded bg-[#2a2a2a]" />
-        <div className="h-3 w-14 rounded bg-[#2a2a2a]" />
+        <div className="h-4 w-16 rounded skeleton-shimmer" />
+        <div className="h-3 w-14 rounded skeleton-shimmer" />
       </div>
-      <div className="h-4 w-3/4 rounded bg-[#2a2a2a] mt-1" />
-      <div className="h-3 w-1/2 rounded bg-[#2a2a2a] mt-2" />
+      <div className="h-4 w-3/4 rounded skeleton-shimmer mt-1" />
+      <div className="h-3 w-1/2 rounded skeleton-shimmer mt-2" />
       <div className="mt-2 flex gap-1">
-        <div className="h-5 w-14 rounded-full bg-[#2a2a2a]" />
-        <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
-        <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
-        <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
+        <div className="h-5 w-14 rounded-full skeleton-shimmer" />
+        <div className="h-5 w-10 rounded-full skeleton-shimmer" />
+        <div className="h-5 w-10 rounded-full skeleton-shimmer" />
+        <div className="h-5 w-10 rounded-full skeleton-shimmer" />
       </div>
     </div>
   );
@@ -237,13 +237,13 @@ function SwapModal({
           {loading ? (
             <div className="space-y-3" data-testid="swap-alternatives-loading">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="animate-pulse rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4">
-                  <div className="h-4 w-2/3 rounded bg-[#2a2a2a]" />
-                  <div className="mt-2 h-3 w-1/2 rounded bg-[#2a2a2a]" />
+                <div key={i} className="rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4">
+                  <div className="h-4 w-2/3 rounded skeleton-shimmer" />
+                  <div className="mt-2 h-3 w-1/2 rounded skeleton-shimmer" />
                   <div className="mt-2 flex gap-2">
-                    <div className="h-5 w-16 rounded-full bg-[#2a2a2a]" />
-                    <div className="h-5 w-12 rounded-full bg-[#2a2a2a]" />
-                    <div className="h-5 w-12 rounded-full bg-[#2a2a2a]" />
+                    <div className="h-5 w-16 rounded-full skeleton-shimmer" />
+                    <div className="h-5 w-12 rounded-full skeleton-shimmer" />
+                    <div className="h-5 w-12 rounded-full skeleton-shimmer" />
                   </div>
                 </div>
               ))}
@@ -416,7 +416,7 @@ function DayColumn({
                   if (!swapInProgress) onSwapClick(day.dayNumber, mealIdx, meal);
                 }}
                 disabled={swapInProgress}
-                className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-[#71717a] transition-all ${
+                className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-[#a1a1aa] transition-all ${
                   swapInProgress
                     ? "opacity-30 cursor-not-allowed"
                     : "opacity-0 group-hover:opacity-100 hover:border-[#f97316]/50 hover:bg-[#f97316]/10 hover:text-[#f97316]"
@@ -457,11 +457,11 @@ function DayColumn({
               </h4>
 
               {meal.cuisine && (
-                <p className="mt-0.5 text-[10px] text-[#71717a]">{meal.cuisine}</p>
+                <p className="mt-0.5 text-[10px] text-[#a1a1aa]">{meal.cuisine}</p>
               )}
 
               {/* Prep time indicator */}
-              <div className="mt-1.5 flex items-center gap-1 text-[10px] text-[#71717a]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
+              <div className="mt-1.5 flex items-center gap-1 text-[10px] text-[#a1a1aa]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
                 <span>🕒</span>
                 <span>
                   {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ""}
@@ -1025,13 +1025,13 @@ export default function MealPlanPage() {
               <div className="mx-auto max-w-[1600px]">
                 <div className="flex items-center justify-between">
                   <div>
-                    <div className="h-3 w-40 animate-pulse rounded bg-[#2a2a2a]" />
-                    <div className="mt-2 h-7 w-56 animate-pulse rounded bg-[#2a2a2a]" />
-                    <div className="mt-2 h-4 w-48 animate-pulse rounded bg-[#2a2a2a]" />
+                    <div className="h-3 w-40 rounded skeleton-shimmer" />
+                    <div className="mt-2 h-7 w-56 rounded skeleton-shimmer" />
+                    <div className="mt-2 h-4 w-48 rounded skeleton-shimmer" />
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="h-14 w-20 animate-pulse rounded-lg border border-[#2a2a2a] bg-[#1a1a1a]" />
-                    <div className="h-14 w-20 animate-pulse rounded-lg border border-[#2a2a2a] bg-[#1a1a1a]" />
+                    <div className="h-14 w-20 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] skeleton-shimmer" />
+                    <div className="h-14 w-20 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] skeleton-shimmer" />
                   </div>
                 </div>
               </div>
@@ -1045,17 +1045,17 @@ export default function MealPlanPage() {
                     <div className="flex flex-col rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden" data-testid={`skeleton-day-${dayNum}`}>
                       {/* Skeleton day header */}
                       <div className="border-b border-[#2a2a2a] bg-[#141414] px-3 py-3 text-center">
-                        <div className="mx-auto h-4 w-20 animate-pulse rounded bg-[#2a2a2a]" />
-                        <div className="mx-auto mt-1.5 h-3 w-24 animate-pulse rounded bg-[#2a2a2a]" />
+                        <div className="mx-auto h-4 w-20 rounded skeleton-shimmer" />
+                        <div className="mx-auto mt-1.5 h-3 w-24 rounded skeleton-shimmer" />
                       </div>
 
                       {/* Skeleton day macro summary */}
                       <div className="border-b border-[#2a2a2a] bg-[#111] px-3 py-2">
-                        <div className="mx-auto h-4 w-16 animate-pulse rounded bg-[#2a2a2a]" />
+                        <div className="mx-auto h-4 w-16 rounded skeleton-shimmer" />
                         <div className="mt-1 flex justify-center gap-2">
-                          <div className="h-3 w-10 animate-pulse rounded bg-[#2a2a2a]" />
-                          <div className="h-3 w-10 animate-pulse rounded bg-[#2a2a2a]" />
-                          <div className="h-3 w-10 animate-pulse rounded bg-[#2a2a2a]" />
+                          <div className="h-3 w-10 rounded skeleton-shimmer" />
+                          <div className="h-3 w-10 rounded skeleton-shimmer" />
+                          <div className="h-3 w-10 rounded skeleton-shimmer" />
                         </div>
                       </div>
 
@@ -1064,24 +1064,24 @@ export default function MealPlanPage() {
                         {[1, 2, 3, 4].map((mealNum) => (
                           <div
                             key={mealNum}
-                            className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-2.5 animate-pulse"
+                            className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-2.5"
                             data-testid={`skeleton-meal-card-${dayNum}-${mealNum}`}
                           >
                             {/* Slot label + confidence badge */}
                             <div className="flex items-center gap-1.5 mb-1.5">
-                              <div className="h-4 w-16 rounded bg-[#2a2a2a]" />
-                              <div className="h-3 w-14 rounded bg-[#2a2a2a]" />
+                              <div className="h-4 w-16 rounded skeleton-shimmer" />
+                              <div className="h-3 w-14 rounded skeleton-shimmer" />
                             </div>
                             {/* Meal name */}
-                            <div className="h-4 w-3/4 rounded bg-[#2a2a2a] mt-1" />
+                            <div className="h-4 w-3/4 rounded skeleton-shimmer mt-1" />
                             {/* Prep time */}
-                            <div className="h-3 w-1/2 rounded bg-[#2a2a2a] mt-2" />
+                            <div className="h-3 w-1/2 rounded skeleton-shimmer mt-2" />
                             {/* Macro pills */}
                             <div className="mt-2 flex gap-1">
-                              <div className="h-5 w-14 rounded-full bg-[#2a2a2a]" />
-                              <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
-                              <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
-                              <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
+                              <div className="h-5 w-14 rounded-full skeleton-shimmer" />
+                              <div className="h-5 w-10 rounded-full skeleton-shimmer" />
+                              <div className="h-5 w-10 rounded-full skeleton-shimmer" />
+                              <div className="h-5 w-10 rounded-full skeleton-shimmer" />
                             </div>
                           </div>
                         ))}
@@ -1214,7 +1214,7 @@ export default function MealPlanPage() {
                 </p>
               )}
               {plan.generatedAt && (
-                <p className="mt-1 text-xs text-[#71717a]" data-testid="plan-generated-date">
+                <p className="mt-1 text-xs text-[#a1a1aa]" data-testid="plan-generated-date">
                   Generated {new Date(plan.generatedAt).toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'short',

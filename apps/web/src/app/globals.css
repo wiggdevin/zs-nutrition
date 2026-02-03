@@ -180,3 +180,43 @@ body {
     transform: translateX(0) scale(1);
   }
 }
+
+/* Skeleton shimmer animation for dark theme */
+/* Creates a subtle gradient shine that moves from left to right */
+@keyframes shimmer {
+  0% {
+    background-position: -200% 0;
+  }
+  100% {
+    background-position: 200% 0;
+  }
+}
+
+/* Dark theme skeleton base styles */
+.skeleton-shimmer {
+  background: linear-gradient(
+    90deg,
+    #1a1a1a 0%,
+    #2a2a2a 20%,
+    #333333 40%,
+    #2a2a2a 60%,
+    #1a1a1a 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 2s ease-in-out infinite;
+}
+
+/* Alternative skeleton pulse for dark theme */
+/* Uses opacity changes for a softer, more subtle animation */
+@keyframes skeleton-pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.skeleton-pulse {
+  animation: skeleton-pulse 1.5s ease-in-out infinite;
+}

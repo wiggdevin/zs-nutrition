@@ -140,7 +140,7 @@ export default function SettingsGoals() {
         <h2 className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
           <span className="text-[#f97316]">///</span> Goals
         </h2>
-        <p className="mt-1 text-sm text-[#71717a]">
+        <p className="mt-1 text-sm text-[#a1a1aa]">
           Set your nutrition goal and target rate
         </p>
       </div>

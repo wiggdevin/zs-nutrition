@@ -216,7 +216,7 @@ export default function WeeklyTrendContent() {
                     <span className="text-yellow-400 text-sm">F {day.targets.fatG ?? '-'}g</span>
                   </div>
                 ) : (
-                  <span className="text-[#52525b] text-sm ml-2">No targets set</span>
+                  <span className="text-[#a1a1aa] text-sm ml-2">No targets set</span>
                 )}
               </div>
 
@@ -231,7 +231,7 @@ export default function WeeklyTrendContent() {
                 </div>
               </div>
 
-              <div className="mt-1 text-xs text-[#52525b]">{day.mealCount} meals logged</div>
+              <div className="mt-1 text-xs text-[#a1a1aa]">{day.mealCount} meals logged</div>
             </div>
           )
         })}

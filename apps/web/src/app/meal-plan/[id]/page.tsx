@@ -107,7 +107,7 @@ export default function MealPlanByIdPage() {
                   {error}
                 </p>
                 <p
-                  className="mt-1 text-xs text-[#71717a]"
+                  className="mt-1 text-xs text-[#a1a1aa]"
                   data-testid="access-denied-detail"
                 >
                   {statusCode === 404

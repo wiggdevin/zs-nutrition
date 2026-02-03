@@ -62,7 +62,7 @@ function PortionAdjuster({
     return (
       <button
         onClick={() => setIsEditing(true)}
-        className="text-xs text-zinc-400 hover:text-orange-400 transition-colors border border-zinc-700 hover:border-orange-500/50 rounded px-2 py-0.5"
+        className="text-xs text-[#a1a1aa] hover:text-orange-400 transition-colors border border-[#2a2a2a] hover:border-orange-500/50 rounded px-2 py-0.5"
         data-testid="adjust-portion-btn"
         title="Adjust portion"
       >
@@ -116,7 +116,7 @@ function PortionAdjuster({
       <button
         onClick={handleCancel}
         disabled={isSaving}
-        className="text-xs text-zinc-400 hover:text-white px-1"
+        className="text-xs text-[#a1a1aa] hover:text-white px-1"
         data-testid="portion-cancel"
       >
         Cancel
@@ -171,7 +171,7 @@ function DeleteMealButton({
         <button
           onClick={() => { setConfirming(false); setError(null) }}
           disabled={isDeleting}
-          className="text-xs text-zinc-400 hover:text-white px-1"
+          className="text-xs text-[#a1a1aa] hover:text-white px-1"
           data-testid="delete-confirm-no"
         >
           No
@@ -184,7 +184,7 @@ function DeleteMealButton({
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="text-xs text-zinc-500 hover:text-red-400 transition-colors p-1"
+      className="text-xs text-[#a1a1aa] hover:text-red-400 transition-colors p-1"
       data-testid="delete-meal-btn"
       title="Delete meal"
     >

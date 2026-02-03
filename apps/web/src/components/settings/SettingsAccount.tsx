@@ -67,7 +67,7 @@ export default function SettingsAccount() {
           <h2 className="text-xs font-mono tracking-wider uppercase text-red-400">
             <span className="text-red-500">///</span> Danger Zone
           </h2>
-          <p className="mt-1 text-sm text-[#71717a]">
+          <p className="mt-1 text-sm text-[#a1a1aa]">
             Deactivate your account. Your data will be preserved but inaccessible.
           </p>
         </div>

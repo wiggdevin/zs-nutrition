@@ -28,10 +28,14 @@ const publicPaths = [
   "/api/dev-auth",
   "/api/test-empty-state",
   "/api/test-dietary-style",
+  "/api/test-optimization-loop",
   "/api/dev-test",
+  "/api/seed-plan",
+  "/api/test-411-ingredients",
   "/test-network-error",
   "/test-500-error",
   "/test-loading-states",
+  "/test-skeleton",
   "/dev-test",
 ];
 
@@ -52,10 +56,13 @@ const isPublicRoute = createRouteMatcher([
   "/api/dev-auth(.*)",
   "/api/test-empty-state(.*)",
   "/api/test-dietary-style(.*)",
+  "/api/test-optimization-loop(.*)",
   "/api/dev-test(.*)",
+  "/api/seed-plan(.*)",
   "/test-network-error(.*)",
   "/test-500-error(.*)",
   "/test-loading-states(.*)",
+  "/test-skeleton(.*)",
   "/dev-test(.*)",
 ]);
 

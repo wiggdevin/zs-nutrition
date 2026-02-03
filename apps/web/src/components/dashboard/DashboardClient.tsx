@@ -406,7 +406,7 @@ function LogEntry({
 
 /* ── Skeleton Pulse Block ── */
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`bg-[#1a1a1a] rounded animate-pulse ${className ?? ''}`} />
+  return <div className={`bg-[#1a1a1a] rounded skeleton-shimmer ${className ?? ''}`} />
 }
 
 /* ── Macro Ring Skeleton ── */
@@ -432,12 +432,16 @@ function MacroRingSkeleton({ size = 120 }: { size?: number }) {
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="#1a1a1a"
+            stroke="#2a2a2a"
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={circumference * 0.7}
-            className="animate-pulse"
+            className="skeleton-shimmer"
+            style={{
+              background: 'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)',
+              backgroundSize: '200% 100%',
+            }}
           />
         </svg>
         <div className="absolute inset-0 flex flex-col items-center justify-center gap-1">
@@ -866,7 +870,7 @@ export default function DashboardClient() {
               </div>
             </div>
 
-            <p className="text-xs text-[#52525b] mt-8">
+            <p className="text-xs text-[#a1a1aa] mt-8">
               Your AI-powered nutrition protocol starts here
             </p>
           </div>
@@ -1104,7 +1108,7 @@ export default function DashboardClient() {
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl font-bold font-mono text-[#52525b]">—</span>
+                  <span className="text-2xl sm:text-3xl font-bold font-mono text-[#a1a1aa]">—</span>
                   <span className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mt-1">
                     7-Day Avg
                   </span>

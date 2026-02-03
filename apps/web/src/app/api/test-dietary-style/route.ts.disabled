@@ -37,7 +37,7 @@ export async function GET() {
     goalType: 'maintain' as const,
     goalRate: 1,
     activityLevel: 'moderately_active' as const,
-    trainingDays: ['monday', 'wednesday', 'friday'] as const,
+    trainingDays: ['monday', 'wednesday', 'friday'] as ('monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday')[],
     trainingTime: 'morning' as const,
     dietaryStyle: dietaryStyle as any,
     allergies: [],
