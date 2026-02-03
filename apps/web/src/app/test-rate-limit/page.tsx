@@ -179,14 +179,16 @@ export default function TestRateLimitPage() {
               )}
 
               <div className="text-sm text-gray-400">
-                {result.body.message && (
-                  <span data-testid={`message-${idx}`}>{String(result.body.message)}</span>
-                )}
-                {result.body.error && (
-                  <span className="text-red-400" data-testid={`error-${idx}`}>
-                    {String(result.body.error)}: {String(result.body.message || '')}
-                  </span>
-                )}
+                {(() => {
+                  const body = result.body as Record<string, unknown>;
+                  return body?.message ? (
+                    <span data-testid={`message-${idx}`}>{String(body.message)}</span>
+                  ) : body?.error ? (
+                    <span className="text-red-400" data-testid={`error-${idx}`}>
+                      {String(body.error)}: {String(body.message || '')}
+                    </span>
+                  ) : null;
+                })()}
               </div>
             </div>
           ))}

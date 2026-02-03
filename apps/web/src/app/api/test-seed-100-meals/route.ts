@@ -98,7 +98,6 @@ export async function POST() {
     // Bulk create all meals
     const created = await prisma.trackedMeal.createMany({
       data: mealsToCreate,
-      skipDuplicates: true,
     })
 
     return NextResponse.json({

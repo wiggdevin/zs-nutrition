@@ -23,12 +23,23 @@ export function GeneratePlanPage() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const hasNavigated = useRef(false);
   const isSubmitting = useRef(false);
+  const eventSourceRef = useRef<EventSource | null>(null);
 
   useEffect(() => {
     // Check if user has completed onboarding
     const profile = localStorage.getItem("zsn_user_profile");
     const onboardingComplete = localStorage.getItem("zsn_onboarding_complete");
     setHasProfile(!!profile && onboardingComplete === "true");
+  }, []);
+
+  // Cleanup: Close EventSource when component unmounts
+  useEffect(() => {
+    return () => {
+      if (eventSourceRef.current) {
+        eventSourceRef.current.close();
+        eventSourceRef.current = null;
+      }
+    };
   }, []);
 
   // Auto-navigate to /meal-plan when generation completes
@@ -44,7 +55,13 @@ export function GeneratePlanPage() {
   }, [status, router]);
 
   const connectToSSE = (streamJobId: string) => {
+    // Close any existing EventSource before creating a new one
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+    }
+
     const eventSource = new EventSource(`/api/plan-stream/${streamJobId}`);
+    eventSourceRef.current = eventSource;
 
     eventSource.onmessage = (event) => {
       try {
@@ -61,10 +78,12 @@ export function GeneratePlanPage() {
             localStorage.setItem("zsn_plan_id", data.planId);
           }
           eventSource.close();
+          eventSourceRef.current = null;
         } else if (data.status === "failed") {
           setErrorMessage(data.message || "Plan generation failed");
           setStatus("failed");
           eventSource.close();
+          eventSourceRef.current = null;
         }
       } catch {
         // Ignore parse errors
@@ -74,6 +93,7 @@ export function GeneratePlanPage() {
     eventSource.onerror = () => {
       // SSE connection failed - show error state with retry option
       eventSource.close();
+      eventSourceRef.current = null;
       console.warn("SSE connection failed: network error during plan generation stream");
       setErrorMessage(
         "Network connection lost during plan generation. Your plan may still be processing — please retry to check status."
@@ -147,6 +167,11 @@ export function GeneratePlanPage() {
   };
 
   const handleRetry = () => {
+    // Close any existing SSE connection before retry
+    if (eventSourceRef.current) {
+      eventSourceRef.current.close();
+      eventSourceRef.current = null;
+    }
     isSubmitting.current = false;
     setStatus("idle");
     setCurrentAgent(0);

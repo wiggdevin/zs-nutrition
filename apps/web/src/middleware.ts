@@ -6,7 +6,11 @@ import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
 const isDevMode =
   !process.env.CLERK_SECRET_KEY ||
   process.env.CLERK_SECRET_KEY === "sk_test_placeholder" ||
-  process.env.CLERK_SECRET_KEY === "";
+  process.env.CLERK_SECRET_KEY === "" ||
+  process.env.CLERK_SECRET_KEY.startsWith("sk_...") ||
+  process.env.CLERK_SECRET_KEY === "sk_..." ||
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_...") ||
+  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === "pk_...";
 
 /**
  * Public routes that do not require authentication.

@@ -316,6 +316,7 @@ function DayColumn({
   swapInProgress,
   onSwapClick,
   onMealClick,
+  onUndoClick,
 }: {
   day: PlanDay;
   swappingMeal: { dayNumber: number; mealIdx: number } | null;
@@ -323,6 +324,7 @@ function DayColumn({
   swapInProgress: boolean;
   onSwapClick: (dayNumber: number, mealIdx: number, meal: Meal) => void;
   onMealClick: (dayNumber: number, mealIdx: number, meal: Meal) => void;
+  onUndoClick: (dayNumber: number, mealIdx: number, slot: string) => void;
 }) {
   const dayTotalKcal = day.meals.reduce((sum, m) => sum + m.nutrition.kcal, 0);
   const dayTotalProtein = day.meals.reduce((sum, m) => sum + m.nutrition.proteinG, 0);
@@ -383,12 +385,28 @@ function DayColumn({
               onClick={() => onMealClick(day.dayNumber, mealIdx, meal)}
               data-testid={`meal-card-${day.dayNumber}-${mealIdx}`}
             >
-              {/* Swap success indicator */}
+              {/* Swap success indicator + undo button */}
               {isSwapSuccess && (
-                <div className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/30" data-testid={`swap-success-${day.dayNumber}-${mealIdx}`}>
-                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                    <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
-                  </svg>
+                <div className="absolute -top-2 -right-1 z-10 flex items-center gap-1">
+                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/30" data-testid={`swap-success-${day.dayNumber}-${mealIdx}`}>
+                    <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                    </svg>
+                  </div>
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      onUndoClick(day.dayNumber, mealIdx, meal.slot);
+                    }}
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-500 shadow-lg shadow-blue-500/30 hover:bg-blue-600 transition-colors"
+                    data-testid={`undo-button-${day.dayNumber}-${mealIdx}`}
+                    aria-label={`Undo swap of ${meal.name}`}
+                    title="Undo swap"
+                  >
+                    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    </svg>
+                  </button>
                 </div>
               )}
               {/* Swap icon button */}
@@ -938,6 +956,53 @@ export default function MealPlanPage() {
     swapLockRef.current = false;
   }, []);
 
+  // Handle undo swap
+  const handleUndoClick = useCallback(
+    async (dayNumber: number, mealIdx: number, slot: string) => {
+      if (!plan || swapLockRef.current) return;
+
+      swapLockRef.current = true;
+
+      try {
+        const res = await fetch("/api/plan/swap/undo", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            planId: plan.id,
+            dayNumber,
+            slot,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+
+          // Update the plan locally with the restored meal
+          const updatedDays = [...(plan.validatedPlan?.days || [])];
+          const dayIdx = updatedDays.findIndex((d) => d.dayNumber === dayNumber);
+          if (dayIdx !== -1 && updatedDays[dayIdx].meals[mealIdx]) {
+            updatedDays[dayIdx].meals[mealIdx] = data.restoredMeal;
+            setPlan({
+              ...plan,
+              validatedPlan: {
+                ...plan.validatedPlan,
+                days: updatedDays,
+              },
+            });
+          }
+
+          // Clear the swap success indicator
+          setSwapSuccess(null);
+        }
+      } catch (err) {
+        console.error("Failed to undo swap:", err);
+      } finally {
+        swapLockRef.current = false;
+      }
+    },
+    [plan]
+  );
+
   // Handle dismissing the plan replaced banner
   const handleDismissReplacedBanner = useCallback(() => {
     setPlanReplaced(false);
@@ -1210,6 +1275,7 @@ export default function MealPlanPage() {
                 swapInProgress={swapLoading || swappingMeal !== null}
                 onSwapClick={handleSwapClick}
                 onMealClick={(dayNumber, mealIdx, meal) => setSelectedMeal({ dayNumber, mealIdx, meal })}
+                onUndoClick={handleUndoClick}
               />
             </div>
           ))}
