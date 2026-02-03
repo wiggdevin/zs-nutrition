@@ -1,0 +1,64 @@
+============================================================
+Feature #125: Pipeline Orchestrator Sequential Execution
+============================================================
+
+📋 TEST 1: Run full pipeline with valid input
+------------------------------------------------------------
+  → Agent 1: Intake Normalizer - Validating and normalizing your input...
+  → Agent 2: Metabolic Calculator - Calculating your metabolic targets...
+  → Agent 3: Recipe Curator - Generating personalized meal ideas...
+  → Agent 4: Nutrition Compiler - Verifying nutrition data via FatSecret...
+  → Agent 5: QA Validator - Running quality assurance checks...
+  → Agent 6: Brand Renderer - Generating your meal plan deliverables...
+  → Agent 6: Brand Renderer - Your meal plan is ready!
+  ✅ Pipeline completed successfully
+
+📋 TEST 2: Verify agents execute in order 1 through 6
+------------------------------------------------------------
+  ✅ Agents executed in correct order: 1 → 2 → 3 → 4 → 5 → 6
+     Progress events: 1 → 2 → 3 → 4 → 5 → 6 → 6
+
+📋 TEST 3: Verify progress callback fires for each agent stage
+------------------------------------------------------------
+  ✅ Progress callbacks fired for all 6 agents
+     Agent stages executed: 1, 2, 3, 4, 5, 6
+     Total progress events: 7 (includes completion event)
+
+📋 TEST 4: Verify final output contains all expected data
+------------------------------------------------------------
+  ✅ Final output contains all expected data:
+     • Plan with 7 days
+     • Each day has meals with nutrition info
+     • QA results (status, score)
+     • Weekly totals
+     • Deliverables: summary HTML, grid HTML, grocery HTML, PDF buffer
+
+📋 TEST 5: Verify on failure, error is returned with details
+------------------------------------------------------------
+  ✅ Failure handled correctly:
+     Error returned: [
+  {
+    "code": "too_big",
+    "maximum": 100,
+    "type": "number",
+    "inclusive": true,
+    "exact": false,
+    "message": "Number must be less than or equal to 100",
+    "path": [
+      "age"
+    ]
+  }
+]
+
+============================================================
+TEST SUMMARY
+============================================================
+1. ✅ PASS: Run full pipeline with valid input
+2. ✅ PASS: Verify agents execute in order 1 through 6
+3. ✅ PASS: Verify progress callback fires for each agent stage
+4. ✅ PASS: Verify final output contains all expected data
+5. ✅ PASS: Verify on failure, error is returned with details
+
+Total: 5/5 tests passing
+
+🎉 Feature #125 is FULLY FUNCTIONAL!
