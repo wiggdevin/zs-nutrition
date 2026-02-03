@@ -59,6 +59,10 @@ export async function POST() {
       return NextResponse.json({ error: 'No active profile found' }, { status: 400 });
     }
 
+    // Parse allergies and exclusions from JSON strings in profile
+    const allergies = activeProfile.allergies ? JSON.parse(activeProfile.allergies) : [];
+    const exclusions = activeProfile.exclusions ? JSON.parse(activeProfile.exclusions) : [];
+
     // Check for existing pending/running jobs to prevent duplicates
     const existingJob = await prisma.planGenerationJob.findFirst({
       where: {
@@ -100,6 +104,8 @@ export async function POST() {
           macroStyle: activeProfile.macroStyle,
           mealsPerDay: activeProfile.mealsPerDay,
           snacksPerDay: activeProfile.snacksPerDay,
+          allergies,
+          exclusions,
         }),
       },
     });
@@ -114,7 +120,7 @@ export async function POST() {
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-        const simulatedPlanData = generateSimulatedPlan(activeProfile, startDate);
+        const simulatedPlanData = generateSimulatedPlan(activeProfile, startDate, allergies, exclusions, activeProfile.prepTimeMax);
         const simulatedMetabolicProfile = calculateSimulatedMetabolicProfile(activeProfile);
 
         const saveResult = await savePlanToDatabase({
@@ -155,6 +161,9 @@ export async function POST() {
  *
  * @param profile - User profile data
  * @param startDate - The start date of the meal plan (used to calculate correct day names)
+ * @param allergies - Array of food allergies (e.g., ['peanuts', 'shellfish'])
+ * @param exclusions - Array of foods to exclude (e.g., ['mushrooms'])
+ * @param prepTimeMax - Maximum prep time in minutes (user preference)
  */
 function generateSimulatedPlan(profile: {
   name: string;
@@ -169,7 +178,7 @@ function generateSimulatedPlan(profile: {
   macroStyle: string;
   mealsPerDay: number;
   snacksPerDay: number;
-}, startDate: Date) {
+}, startDate: Date, allergies: string[] = [], exclusions: string[] = [], prepTimeMax: number = 30) {
   // Calculate approximate calorie target
   const bmr = profile.sex === 'male'
     ? 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5
@@ -201,9 +210,93 @@ function generateSimulatedPlan(profile: {
 
   // Day names array starting from Sunday (JavaScript getDay() convention)
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-  const mealSlots = ['Breakfast', 'Lunch', 'Dinner'];
-  if (profile.mealsPerDay >= 4) mealSlots.push('Snack 1');
-  if (profile.mealsPerDay >= 5) mealSlots.push('Snack 2');
+
+  // Build meal slots based on mealsPerDay and snacksPerDay
+  // mealsPerDay: 2-6 main meals
+  // snacksPerDay: 0-4 snacks
+  const mealSlots: string[] = [];
+
+  // Add main meals
+  const mainMealLabels = ['Breakfast', 'Lunch', 'Dinner', 'Meal 4', 'Meal 5', 'Meal 6'];
+  for (let i = 0; i < profile.mealsPerDay; i++) {
+    mealSlots.push(mainMealLabels[i]);
+  }
+
+  // Add snacks
+  for (let i = 0; i < profile.snacksPerDay; i++) {
+    mealSlots.push(`Snack ${i + 1}`);
+  }
+
+  // Combine all restrictions into a single set (lowercase for easy matching)
+  const restrictedFoods = new Set([
+    ...allergies.map(a => a.toLowerCase()),
+    ...exclusions.map(e => e.toLowerCase())
+  ]);
+
+  // Helper function to check if a meal name contains restricted foods
+  function mealContainsRestrictions(mealName: string): boolean {
+    const lowerName = mealName.toLowerCase();
+    for (const food of restrictedFoods) {
+      if (lowerName.includes(food)) {
+        return true;
+      }
+    }
+    // Also check for related allergens
+    if (restrictedFoods.has('peanuts') || restrictedFoods.has('tree nuts')) {
+      if (lowerName.includes('peanut') || lowerName.includes('almond') ||
+          lowerName.includes('cashew') || lowerName.includes('walnut') ||
+          lowerName.includes('pecan') || lowerName.includes('trail mix') ||
+          lowerName.includes('mixed nuts')) {
+        return true;
+      }
+    }
+    if (restrictedFoods.has('dairy')) {
+      if (lowerName.includes('yogurt') || lowerName.includes('cheese') ||
+          lowerName.includes('milk') || lowerName.includes('cottage cheese')) {
+        return true;
+      }
+    }
+    if (restrictedFoods.has('eggs')) {
+      if (lowerName.includes('egg')) {
+        return true;
+      }
+    }
+    if (restrictedFoods.has('fish') || restrictedFoods.has('shellfish')) {
+      if (lowerName.includes('salmon') || lowerName.includes('cod') ||
+          lowerName.includes('shrimp') || lowerName.includes('poke') ||
+          lowerName.includes('fish')) {
+        return true;
+      }
+    }
+    if (restrictedFoods.has('wheat') || restrictedFoods.has('gluten')) {
+      if (lowerName.includes('wheat') || lowerName.includes('bread') ||
+          lowerName.includes('pasta') || lowerName.includes('tortilla') ||
+          lowerName.includes('wrap') || lowerName.includes('pancake') ||
+          lowerName.includes('oat')) {
+        return true;
+      }
+    }
+    if (restrictedFoods.has('soy')) {
+      if (lowerName.includes('soy') || lowerName.includes('edamame') ||
+          lowerName.includes('tofu')) {
+        return true;
+      }
+    }
+    if (restrictedFoods.has('sesame')) {
+      if (lowerName.includes('sesame') || lowerName.includes('hummus')) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // Helper function to filter meal options to only safe meals
+  function getSafeMealOptions(slotOptions: Array<{ name: string; slot: string }>): Array<{ name: string; slot: string }> {
+    if (restrictedFoods.size === 0) {
+      return slotOptions; // No restrictions, return all meals
+    }
+    return slotOptions.filter(meal => !mealContainsRestrictions(meal.name));
+  }
 
   const sampleMeals: Record<string, Array<{ name: string; slot: string }>> = {
     Breakfast: [
@@ -214,6 +307,18 @@ function generateSimulatedPlan(profile: {
       { name: 'Avocado Toast with Poached Eggs', slot: 'Breakfast' },
       { name: 'Whole Grain Pancakes with Berries', slot: 'Breakfast' },
       { name: 'Breakfast Burrito with Turkey', slot: 'Breakfast' },
+      // Nut-free alternatives
+      { name: 'Fresh Fruit Salad with Chia Seeds', slot: 'Breakfast' },
+      { name: 'Bacon and Sweet Potato Hash', slot: 'Breakfast' },
+      // Dairy-free alternatives
+      { name: 'Coconut Yogurt Parfait', slot: 'Breakfast' },
+      { name: 'Smoothie with Coconut Milk', slot: 'Breakfast' },
+      // Egg-free alternatives
+      { name: 'Nut Butter Toast with Banana', slot: 'Breakfast' },
+      { name: 'Chia Pudding with Fruit', slot: 'Breakfast' },
+      // Gluten-free alternatives
+      { name: 'Scrambled Eggs with Avocado', slot: 'Breakfast' },
+      { name: 'Gluten-Free Protein Pancakes', slot: 'Breakfast' },
     ],
     Lunch: [
       { name: 'Grilled Chicken Caesar Salad', slot: 'Lunch' },
@@ -223,6 +328,14 @@ function generateSimulatedPlan(profile: {
       { name: 'Salmon Poke Bowl', slot: 'Lunch' },
       { name: 'Southwest Black Bean Bowl', slot: 'Lunch' },
       { name: 'Asian Chicken Lettuce Wraps', slot: 'Lunch' },
+      // Fish-free alternatives
+      { name: 'Grilled Chicken Buddha Bowl', slot: 'Lunch' },
+      { name: 'Beef and Vegetable Stir-Fry', slot: 'Lunch' },
+      { name: 'Lentil Soup with Side Salad', slot: 'Lunch' },
+      // Wheat/gluten-free alternatives
+      { name: 'Chicken Rice Bowl', slot: 'Lunch' },
+      { name: 'Mediterranean Salad with Grilled Chicken', slot: 'Lunch' },
+      { name: 'Stuffed Bell Peppers with Beef', slot: 'Lunch' },
     ],
     Dinner: [
       { name: 'Grilled Salmon with Roasted Vegetables', slot: 'Dinner' },
@@ -232,6 +345,12 @@ function generateSimulatedPlan(profile: {
       { name: 'Turkey Meatballs with Zucchini Noodles', slot: 'Dinner' },
       { name: 'Herb-Crusted Chicken Thighs', slot: 'Dinner' },
       { name: 'Shrimp and Vegetable Skewers', slot: 'Dinner' },
+      // Fish-free alternatives
+      { name: 'Grilled Chicken Breast with Asparagus', slot: 'Dinner' },
+      { name: 'Beef Stir-Fry with Vegetables', slot: 'Dinner' },
+      { name: 'Pork Tenderloin with Roasted Potatoes', slot: 'Dinner' },
+      { name: 'Lentil Curry with Rice', slot: 'Dinner' },
+      { name: 'Vegetable Paella', slot: 'Dinner' },
     ],
     'Snack 1': [
       { name: 'Apple Slices with Almond Butter', slot: 'Snack 1' },
@@ -241,6 +360,17 @@ function generateSimulatedPlan(profile: {
       { name: 'Rice Cakes with Peanut Butter', slot: 'Snack 1' },
       { name: 'Hummus with Veggie Sticks', slot: 'Snack 1' },
       { name: 'Hard-Boiled Eggs (2)', slot: 'Snack 1' },
+      // Nut-free alternatives
+      { name: 'Fresh Berries', slot: 'Snack 1' },
+      { name: 'Carrot Sticks with Guacamole', slot: 'Snack 1' },
+      { name: 'Rice Cakes with Avocado', slot: 'Snack 1' },
+      { name: 'Beef Jerky', slot: 'Snack 1' },
+      { name: 'Olives', slot: 'Snack 1' },
+      // Dairy-free alternatives
+      { name: 'Coconut Yogurt Cup', slot: 'Snack 1' },
+      { name: 'Fresh Fruit Cup', slot: 'Snack 1' },
+      // Egg-free alternatives
+      { name: 'Nut Butter on Celery', slot: 'Snack 1' },
     ],
     'Snack 2': [
       { name: 'Mixed Nuts (25g)', slot: 'Snack 2' },
@@ -250,6 +380,55 @@ function generateSimulatedPlan(profile: {
       { name: 'Dark Chocolate (20g) with Almonds', slot: 'Snack 2' },
       { name: 'Cheese Stick with Crackers', slot: 'Snack 2' },
       { name: 'Whey Protein Shake', slot: 'Snack 2' },
+      // Nut-free alternatives
+      { name: 'Fresh Pear', slot: 'Snack 2' },
+      { name: 'Roasted Chickpeas', slot: 'Snack 2' },
+      { name: 'Beef Jerky', slot: 'Snack 2' },
+      { name: 'Sunflower Seeds', slot: 'Snack 2' },
+      // Dairy-free alternatives
+      { name: 'Coconut Chia Pudding', slot: 'Snack 2' },
+      { name: 'Dried Fruit', slot: 'Snack 2' },
+      // Soy-free alternatives
+      { name: 'Protein Shake (Whey)', slot: 'Snack 2' },
+    ],
+    'Snack 3': [
+      { name: 'Apple Slices with Peanut Butter', slot: 'Snack 3' },
+      { name: 'Protein Smoothie', slot: 'Snack 3' },
+      { name: 'Trail Mix (30g)', slot: 'Snack 3' },
+      { name: 'Cottage Cheese with Berries', slot: 'Snack 3' },
+      { name: 'Rice Cakes with Almond Butter', slot: 'Snack 3' },
+      { name: 'Beef Jerky', slot: 'Snack 3' },
+      { name: 'Hard-Boiled Eggs (2)', slot: 'Snack 3' },
+    ],
+    'Snack 4': [
+      { name: 'Mixed Nuts (25g)', slot: 'Snack 4' },
+      { name: 'Greek Yogurt Cup', slot: 'Snack 4' },
+      { name: 'Banana with Peanut Butter', slot: 'Snack 4' },
+      { name: 'Edamame (100g)', slot: 'Snack 4' },
+      { name: 'Dark Chocolate (20g)', slot: 'Snack 4' },
+      { name: 'Cheese Stick', slot: 'Snack 4' },
+      { name: 'Protein Shake', slot: 'Snack 4' },
+    ],
+    'Meal 4': [
+      { name: 'Grilled Chicken Breast', slot: 'Meal 4' },
+      { name: 'Turkey Meatballs', slot: 'Meal 4' },
+      { name: 'Beef Stir-Fry', slot: 'Meal 4' },
+      { name: 'Salmon Fillet', slot: 'Meal 4' },
+      { name: 'Tofu Vegetable Bowl', slot: 'Meal 4' },
+    ],
+    'Meal 5': [
+      { name: 'Chicken Thighs', slot: 'Meal 5' },
+      { name: 'Lean Beef Steak', slot: 'Meal 5' },
+      { name: 'Pork Tenderloin', slot: 'Meal 5' },
+      { name: 'Cod Fillet', slot: 'Meal 5' },
+      { name: 'Tempeh Bowl', slot: 'Meal 5' },
+    ],
+    'Meal 6': [
+      { name: 'Grilled Chicken', slot: 'Meal 6' },
+      { name: 'Ground Turkey', slot: 'Meal 6' },
+      { name: 'Beef Roast', slot: 'Meal 6' },
+      { name: 'Shrimp', slot: 'Meal 6' },
+      { name: 'Edamame Bowl', slot: 'Meal 6' },
     ],
   };
 
@@ -268,17 +447,35 @@ function generateSimulatedPlan(profile: {
     const kcalPerMeal = Math.round(dayKcal / mealSlots.length);
 
     const meals = mealSlots.map((slot) => {
-      const mealOptions = sampleMeals[slot] || sampleMeals['Snack 1'];
+      // Get meal options for this slot, or fallback to appropriate default
+      const allMealOptions = sampleMeals[slot] ||
+        (slot.startsWith('Snack') ? sampleMeals['Snack 1'] : sampleMeals['Lunch']);
+      // Filter out meals that contain allergens or excluded foods
+      const safeMealOptions = getSafeMealOptions(allMealOptions);
+
+      // If no safe meals available, use a fallback
+      if (safeMealOptions.length === 0) {
+        console.warn(`No safe meals available for ${slot} with restrictions:`, Array.from(restrictedFoods));
+      }
+
+      // Select from safe options, cycling through them
+      const mealOptions = safeMealOptions.length > 0 ? safeMealOptions : allMealOptions;
       const meal = mealOptions[idx % mealOptions.length];
       const mealProtein = Math.round(proteinG / mealSlots.length);
       const mealCarbs = Math.round(carbsG / mealSlots.length);
       const mealFat = Math.round(fatG / mealSlots.length);
 
+      // Generate prep time that respects user's max prep time constraint
+      // Base range is 5-25 minutes, but capped at prepTimeMax
+      const minPrep = 5;
+      const maxPrep = Math.min(25, prepTimeMax);
+      const prepTime = minPrep + Math.round(Math.random() * (maxPrep - minPrep));
+
       return {
         slot: meal.slot,
         name: meal.name,
         cuisine: 'American',
-        prepTimeMin: 10 + Math.round(Math.random() * 15),
+        prepTimeMin: prepTime,
         cookTimeMin: 15 + Math.round(Math.random() * 20),
         nutrition: {
           kcal: kcalPerMeal,
