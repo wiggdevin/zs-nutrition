@@ -200,13 +200,13 @@ export default function SettingsActivity() {
           <label id="settings-training-days-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
             Training Days
           </label>
-          <div className="grid grid-cols-7 gap-1.5">
+          <div className="grid grid-cols-7 gap-1">
             {weekdays.map(({ value, label }) => (
               <button
                 key={value}
                 onClick={() => toggleTrainingDay(value)}
                 data-testid={`settings-training-${value}`}
-                className={`rounded-lg border px-1 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] ${
+                className={`rounded-lg border px-0.5 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] ${
                   trainingDays.includes(value)
                     ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                     : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
@@ -290,7 +290,7 @@ export default function SettingsActivity() {
           onClick={handleSave}
           disabled={!dirty || saving}
           data-testid="settings-activity-save"
-          className={`rounded-lg px-6 py-2.5 text-sm font-bold uppercase tracking-wide transition-colors ${
+          className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
               ? "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] cursor-pointer"
               : "bg-[#f97316]/30 text-white/50 cursor-not-allowed"

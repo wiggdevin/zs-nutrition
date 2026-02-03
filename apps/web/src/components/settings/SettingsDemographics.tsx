@@ -219,6 +219,8 @@ export default function SettingsDemographics() {
             }}
             placeholder="Enter your name"
             data-testid="settings-name-input"
+            aria-invalid={!!validationErrors.name}
+            aria-describedby={validationErrors.name ? "settings-name-error" : undefined}
             className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
               validationErrors.name
                 ? "border-red-500 focus:border-red-500"
@@ -226,7 +228,9 @@ export default function SettingsDemographics() {
             }`}
           />
           {validationErrors.name && (
-            <p className="mt-1 text-xs text-red-500">{validationErrors.name}</p>
+            <p id="settings-name-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+              {validationErrors.name}
+            </p>
           )}
         </div>
 
@@ -235,7 +239,7 @@ export default function SettingsDemographics() {
           <label id="settings-sex-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
             Biological Sex <span className="text-[#f97316]">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="settings-sex-label">
+          <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="settings-sex-label" aria-invalid={!!validationErrors.sex}>
             {(["male", "female"] as Sex[]).map((sex) => (
               <button
                 key={sex}
@@ -246,6 +250,7 @@ export default function SettingsDemographics() {
                   }
                 }}
                 data-testid={`settings-sex-${sex}`}
+                aria-describedby={validationErrors.sex ? "settings-sex-error" : undefined}
                 className={`rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
                   editSex === sex
                     ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
@@ -259,7 +264,9 @@ export default function SettingsDemographics() {
             ))}
           </div>
           {validationErrors.sex && (
-            <p className="mt-1 text-xs text-red-500">{validationErrors.sex}</p>
+            <p id="settings-sex-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+              {validationErrors.sex}
+            </p>
           )}
         </div>
 
@@ -285,6 +292,8 @@ export default function SettingsDemographics() {
             min={18}
             max={100}
             data-testid="settings-age-input"
+            aria-invalid={!!validationErrors.age}
+            aria-describedby={validationErrors.age ? "settings-age-error" : undefined}
             className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
               validationErrors.age
                 ? "border-red-500 focus:border-red-500"
@@ -292,7 +301,9 @@ export default function SettingsDemographics() {
             }`}
           />
           {validationErrors.age && (
-            <p className="mt-1 text-xs text-red-500">{validationErrors.age}</p>
+            <p id="settings-age-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+              {validationErrors.age}
+            </p>
           )}
         </div>
 
@@ -319,6 +330,8 @@ export default function SettingsDemographics() {
             max={250}
             step="0.1"
             data-testid="settings-height-input"
+            aria-invalid={!!validationErrors.height}
+            aria-describedby={validationErrors.height ? "settings-height-error" : undefined}
             className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
               validationErrors.height
                 ? "border-red-500 focus:border-red-500"
@@ -326,7 +339,9 @@ export default function SettingsDemographics() {
             }`}
           />
           {validationErrors.height && (
-            <p className="mt-1 text-xs text-red-500">{validationErrors.height}</p>
+            <p id="settings-height-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+              {validationErrors.height}
+            </p>
           )}
         </div>
 
@@ -386,7 +401,7 @@ export default function SettingsDemographics() {
           onClick={handleSave}
           disabled={!dirty || saving}
           data-testid="settings-save-btn"
-          className={`rounded-lg px-6 py-2.5 text-sm font-bold uppercase tracking-wide transition-colors ${
+          className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
               ? "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] cursor-pointer"
               : "bg-[#f97316]/30 text-white/50 cursor-not-allowed"

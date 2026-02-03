@@ -60,6 +60,8 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           value={data.name}
           onChange={(e) => updateData({ name: e.target.value })}
           placeholder="Enter your name"
+          aria-invalid={showErrors && !!errors.name}
+          aria-describedby={showErrors && errors.name ? "onboarding-name-error" : undefined}
           className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
             showErrors && errors.name
               ? "border-red-500 focus:border-red-500"
@@ -67,7 +69,9 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           }`}
         />
         {showErrors && errors.name && (
-          <p className="mt-1 text-xs text-red-500">{errors.name}</p>
+          <p id="onboarding-name-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            {errors.name}
+          </p>
         )}
       </div>
 
@@ -76,7 +80,7 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
         <label id="onboarding-sex-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
           Biological Sex <span className="text-[#f97316]">*</span>
         </label>
-        <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="onboarding-sex-label">
+        <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="onboarding-sex-label" aria-invalid={showErrors && !!errors.sex}>
           {(["male", "female"] as Sex[]).map((sex) => (
             <button
               key={sex}
@@ -94,7 +98,9 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           ))}
         </div>
         {showErrors && errors.sex && (
-          <p className="mt-1 text-xs text-red-500">{errors.sex}</p>
+          <p id="onboarding-sex-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            {errors.sex}
+          </p>
         )}
       </div>
 
@@ -116,6 +122,8 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           min={18}
           max={100}
           data-testid="onboarding-age"
+          aria-invalid={showErrors && !!errors.age}
+          aria-describedby={showErrors && errors.age ? "onboarding-age-error" : undefined}
           className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
             showErrors && errors.age
               ? "border-red-500 focus:border-red-500"
@@ -123,7 +131,9 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           }`}
         />
         {showErrors && errors.age && (
-          <p className="mt-1 text-xs text-red-500">{errors.age}</p>
+          <p id="onboarding-age-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            {errors.age}
+          </p>
         )}
       </div>
     </div>

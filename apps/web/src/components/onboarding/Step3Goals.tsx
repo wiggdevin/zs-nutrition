@@ -45,15 +45,18 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
           Goal Type
         </label>
         {showErrors && !data.goalType && (
-          <p className="mb-2 text-xs text-red-500">Please select a goal type</p>
+          <p id="onboarding-goal-type-error" className="mb-2 text-xs text-red-500" role="alert" aria-live="polite">
+            Please select a goal type
+          </p>
         )}
-        <div className="space-y-3" role="group" aria-labelledby="onboarding-goal-type-label">
+        <div className="space-y-3" role="group" aria-labelledby="onboarding-goal-type-label" aria-invalid={showErrors && !data.goalType}>
           {(["cut", "maintain", "bulk"] as GoalType[]).map((goal) => (
             <button
               key={goal}
               onClick={() => handleGoalSelect(goal)}
               role="radio"
               aria-checked={data.goalType === goal}
+              aria-describedby={showErrors && !data.goalType ? "onboarding-goal-type-error" : undefined}
               className={`w-full rounded-lg border px-4 py-4 text-left transition-colors ${
                 data.goalType === goal
                   ? "border-[#f97316] bg-[#f97316]/10"

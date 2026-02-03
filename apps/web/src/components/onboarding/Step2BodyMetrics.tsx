@@ -182,6 +182,8 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
                 placeholder="5"
                 min={3}
                 max={8}
+                aria-invalid={!!heightError}
+                aria-describedby={heightError ? "onboarding-height-error" : undefined}
                 className={inputClass(!!heightError)}
               />
             </div>
@@ -205,6 +207,8 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
                 placeholder="10"
                 min={0}
                 max={11}
+                aria-invalid={!!heightError}
+                aria-describedby={heightError ? "onboarding-height-error" : undefined}
                 className={inputClass(!!heightError)}
               />
             </div>
@@ -229,12 +233,14 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
               min={90}
               max={250}
               step="0.1"
+              aria-invalid={!!heightError}
+              aria-describedby={heightError ? "onboarding-height-error" : undefined}
               className={inputClass(!!heightError)}
             />
           </div>
         )}
         {heightError && (
-          <p className="mt-1 text-xs text-red-500">
+          <p id="onboarding-height-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
             {heightEmpty
               ? "Height is required"
               : isImperial
@@ -266,6 +272,8 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
               placeholder="Enter weight in lbs"
               min={80}
               max={500}
+              aria-invalid={!!weightError}
+              aria-describedby={weightError ? "onboarding-weight-error" : undefined}
               className={inputClass(!!weightError)}
             />
           </div>
@@ -289,12 +297,14 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
               min={35}
               max={230}
               step="0.1"
+              aria-invalid={!!weightError}
+              aria-describedby={weightError ? "onboarding-weight-error" : undefined}
               className={inputClass(!!weightError)}
             />
           </div>
         )}
         {weightError && (
-          <p className="mt-1 text-xs text-red-500">
+          <p id="onboarding-weight-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
             {weightEmpty
               ? "Weight is required"
               : isImperial
@@ -326,10 +336,14 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
           min={3}
           max={60}
           step="0.1"
+          aria-invalid={!!bodyFatOutOfRange}
+          aria-describedby={bodyFatOutOfRange ? "onboarding-body-fat-error" : undefined}
           className={inputClass(!!bodyFatOutOfRange)}
         />
         {bodyFatOutOfRange && (
-          <p className="mt-1 text-xs text-red-500">Body fat must be between 3% and 60%</p>
+          <p id="onboarding-body-fat-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            Body fat must be between 3% and 60%
+          </p>
         )}
         <p className="mt-1 text-xs text-[#555]">
           If known, this helps us calculate your lean body mass for more accurate targets.

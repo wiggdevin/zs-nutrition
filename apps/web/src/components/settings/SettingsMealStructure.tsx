@@ -257,7 +257,7 @@ export default function SettingsMealStructure() {
           onClick={handleSave}
           disabled={!dirty || saving}
           data-testid="settings-meal-save"
-          className={`rounded-lg px-6 py-2.5 text-sm font-bold uppercase tracking-wide transition-colors ${
+          className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
               ? "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] cursor-pointer"
               : "bg-[#f97316]/30 text-white/50 cursor-not-allowed"

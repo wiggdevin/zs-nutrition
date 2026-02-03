@@ -377,18 +377,11 @@ function DayColumn({
               className={`group relative rounded-md border p-2.5 transition-all ${
                 isSwapSuccess
                   ? "border-green-500/60 bg-green-500/5 ring-1 ring-green-500/30"
-                  : "border-[#2a2a2a] bg-[#0f0f0f] hover:border-[#3a3a3a] hover:cursor-pointer"
+                  : "border-[#2a2a2a] bg-[#0f0f0f] hover:border-[#3a3a3a]"
               }`}
+              onClick={() => onMealClick(day.dayNumber, mealIdx, meal)}
               data-testid={`meal-card-${day.dayNumber}-${mealIdx}`}
             >
-              {/* Clickable overlay for meal details - excludes swap button */}
-              <div
-                className="absolute inset-0 z-0"
-                onClick={() => onMealClick(day.dayNumber, mealIdx, meal)}
-                data-testid={`meal-card-click-area-${day.dayNumber}-${mealIdx}`}
-                aria-label={`View ${meal.name} details`}
-              />
-
               {/* Swap success indicator */}
               {isSwapSuccess && (
                 <div className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/30" data-testid={`swap-success-${day.dayNumber}-${mealIdx}`}>
@@ -404,7 +397,7 @@ function DayColumn({
                   if (!swapInProgress) onSwapClick(day.dayNumber, mealIdx, meal);
                 }}
                 disabled={swapInProgress}
-                className={`relative z-10 absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-[#71717a] transition-all ${
+                className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-[#71717a] transition-all ${
                   swapInProgress
                     ? "opacity-30 cursor-not-allowed"
                     : "opacity-0 group-hover:opacity-100 hover:border-[#f97316]/50 hover:bg-[#f97316]/10 hover:text-[#f97316]"
@@ -419,7 +412,7 @@ function DayColumn({
               </button>
 
               {/* Slot label + Confidence badge */}
-              <div className="relative z-10 flex items-center gap-1.5 mb-1.5">
+              <div className="flex items-center gap-1.5 mb-1.5">
                 <span className="rounded bg-[#f97316]/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#f97316]">
                   {meal.slot}
                 </span>
@@ -437,7 +430,7 @@ function DayColumn({
 
               {/* Meal name */}
               <h4
-                className="relative z-10 text-xs font-semibold text-[#fafafa] leading-tight pr-6 truncate"
+                className="text-xs font-semibold text-[#fafafa] leading-tight pr-6 truncate"
                 data-testid={`meal-name-${day.dayNumber}-${mealIdx}`}
                 title={meal.name}
               >
@@ -445,11 +438,11 @@ function DayColumn({
               </h4>
 
               {meal.cuisine && (
-                <p className="relative z-10 mt-0.5 text-[10px] text-[#71717a]">{meal.cuisine}</p>
+                <p className="mt-0.5 text-[10px] text-[#71717a]">{meal.cuisine}</p>
               )}
 
               {/* Prep time indicator */}
-              <div className="relative z-10 mt-1.5 flex items-center gap-1 text-[10px] text-[#71717a]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
+              <div className="mt-1.5 flex items-center gap-1 text-[10px] text-[#71717a]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
                 <span>🕒</span>
                 <span>
                   {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ""}
@@ -460,7 +453,7 @@ function DayColumn({
               </div>
 
               {/* Macro pills */}
-              <div className="relative z-10 mt-2 flex flex-wrap gap-1" data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}>
+              <div className="mt-2 flex flex-wrap gap-1" data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}>
                 <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-0.5 text-[10px] font-bold text-[#f97316]">
                   {meal.nutrition.kcal} kcal
                 </span>
