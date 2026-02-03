@@ -910,3 +910,318 @@ NOTES:
 - Function is ready for use in meal swap functionality
 
 ===========================================
+
+===========================================
+SESSION COMPLETE - Feature #262
+===========================================
+Feature: API 500 errors show friendly message
+Status: ✅ PASSED (No regression found)
+Date: 2026-02-03
+
+SUMMARY:
+--------
+Successfully verified that internal server errors show friendly error messages,
+no stack traces, proper server-side logging, and provide retry options.
+
+VERIFICATION STEPS COMPLETED:
+-----------------------------
+
+✅ Step 1: Trigger an internal server error condition
+   - Navigated to /test-500-error test page
+   - Clicked "Trigger 500 Error" button
+   - API endpoint /api/dev-test/trigger-500 returned HTTP 500
+   - Simulated database crash with connection string containing sensitive data
+   - Status: PASSING
+
+✅ Step 2: Verify user sees friendly error message
+   - Error message displayed: "Something went wrong. Please try again later."
+   - User-friendly "Server Error" label with icon
+   - Reassuring message: "Don't worry — your data is safe"
+   - No technical jargon or confusing details
+   - Status: PASSING
+
+✅ Step 3: Verify no stack trace shown in UI
+   - Raw API response: {"error":"Something went wrong. Please try again later."}
+   - No stack traces in response
+   - No file paths (.ts:, .js:)
+   - No "node_modules" references
+   - No internal error details (ECONNREFUSED, postgresql://)
+   - Database credentials NOT leaked:
+     * Original error contained: postgresql://admin:s3cretP@ss@db.internal:5432/prod
+     * API response contained: "Something went wrong. Please try again later."
+   - Status: PASSING
+
+✅ Step 4: Verify error logged server-side
+   - API route uses safeLogError() from @/lib/safe-logger
+   - safeLogError redacts PII patterns:
+     * Email addresses
+     * API keys (sk-ant-, sk_test_, pk_live_, etc.)
+     * Bearer tokens
+     * Database connection strings with credentials
+   - Error logged to console with sanitized message
+   - No sensitive data in server logs
+   - Status: PASSING
+
+✅ Step 5: Verify retry option available
+   - "Try Again" button displayed with refresh icon
+   - Button functional — re-triggers the API call
+   - Loading state with spinner during retry
+   - User can easily retry the failed operation
+   - Status: PASSING
+
+TECHNICAL VERIFICATION:
+----------------------
+
+API Endpoint: /api/dev-test/trigger-500
+- Simulates internal server error (database connection failure)
+- Returns HTTP 500 with friendly JSON response
+- Uses safeLogError() for server-side logging
+
+Error Handling Components:
+1. API Response Format:
+   { error: "Something went wrong. Please try again later." }
+   - No stack property
+   - No message property with raw error
+   - No technical details
+
+2. Safe Logger (lib/safe-logger.ts):
+   - safeLogError() function sanitizes errors before logging
+   - Redacts PII: emails, API keys, connection strings
+   - Prevents sensitive data leakage in logs
+
+3. Test Page (/test-500-error):
+   - Automated verification of all requirements
+   - Checks for friendly messages
+   - Validates no stack traces leaked
+   - Confirms retry button availability
+   - Displays raw API response for inspection
+
+4. Global Error Boundary (app/error.tsx):
+   - Catches unhandled React errors
+   - Shows friendly UI with "Something went wrong."
+   - Provides "Try Again" and "Go Home" buttons
+   - No stack traces shown to users
+
+BROWSER TESTING:
+---------------
+✅ Navigated to http://localhost:3456/test-500-error
+✅ Clicked "Trigger 500 Error" button
+✅ Verified HTTP 500 response received
+✅ Confirmed friendly error message displayed
+✅ Checked raw API response — no sensitive data leaked
+✅ Verified "Try Again" button functional
+✅ Clicked retry button — successfully re-triggered error
+✅ All test results show: ✅ ALL PASSED
+✅ Zero unexpected console errors (only expected 500 error)
+✅ Network requests show proper 500 response
+
+Screenshots:
+- feature-262-test-page-initial.png: Initial test page state
+- feature-262-test-results-all-passed.png: All verification steps passed
+- feature-262-retry-functionality.png: Retry button working
+- feature-262-final-verification.png: Final comprehensive verification
+
+SECURITY VERIFICATION:
+---------------------
+✅ Sensitive data NOT leaked to client:
+   - Database connection string: postgresql://admin:s3cretP@ss@...
+   - Password: s3cretP@ss
+   - Host: db.internal:5432
+   - All redacted by safeLogError()
+
+✅ Error message is generic and safe:
+   - "Something went wrong. Please try again later."
+   - No technical details
+   - No system information exposed
+
+✅ Server-side logging is secure:
+   - PII patterns redacted before logging
+   - No credentials in logs
+   - Stack traces not exposed to users
+
+CONCLUSION: 
+-----------
+Feature #262 is fully functional with no regressions detected.
+The application properly handles internal server errors by:
+1. Returning generic, user-friendly error messages
+2. Preventing stack traces and sensitive data from leaking to the UI
+3. Logging errors server-side with PII redaction
+4. Providing retry options for users
+
+The implementation follows security best practices:
+- No PII leakage through error messages
+- No stack traces exposed to users
+- Database credentials redacted
+- Generic error messages prevent information disclosure
+- Safe logging prevents sensitive data in server logs
+
+This protects against:
+- Information disclosure vulnerabilities
+- Credential leakage
+- System reconnaissance through error messages
+- User confusion from technical error details
+
+===========================================
+Feature #262 regression test PASSED - no regression found
+All 500 error handling functionality working correctly
+===========================================
+
+[Testing] Feature #262 verified - still passing
+
+===========================================
+SESSION COMPLETE - Feature #238
+===========================================
+Feature: Quick add requires calories field
+Status: ✅ PASSED
+Date: 2026-02-03
+
+SUMMARY:
+--------
+Successfully verified that the Quick Add form properly validates that calories 
+is a required field. Empty values, zero, and negative numbers all trigger 
+appropriate validation errors.
+
+VERIFICATION STEPS COMPLETED:
+-----------------------------
+
+✅ Step 1: Open quick add form
+   - Navigated to /tracking page
+   - Clicked "Quick Add (enter raw macros)" button
+   - Quick Add form opened with all fields displayed
+   - Status: PASSING
+
+✅ Step 2: Leave calories empty
+   - Calories field left empty (no value entered)
+   - Attempted to submit form
+   - Status: PASSING
+
+✅ Step 3: Try to submit
+   - Clicked "Add Entry" button with empty calories
+   - Validation error displayed: "Must be a positive number (minimum 1)"
+   - Form submission blocked - data not sent to server
+   - Error message shown in red below calories field
+   - Status: PASSING
+
+✅ Step 4: Verify error message about required calories
+   - Error message: "Must be a positive number (minimum 1)"
+   - Displayed in red text color for visibility
+   - Positioned directly below the calories input field
+   - Uses ARIA attributes: aria-invalid and aria-describedby for accessibility
+   - Input border turns red when error is present
+   - Status: PASSING
+
+✅ Step 5: Enter calories and submit
+   - Entered "500" in calories field
+   - Clicked "Add Entry" button
+   - Form submitted successfully
+   - Success message displayed: "Added \"Quick Add (500 kcal)\" — 500 kcal. Today's total: 500 kcal"
+   - Status: PASSING
+
+✅ Step 6: Verify success
+   - API call to /api/tracking/quick-add returned 200 OK
+   - Entry created in database
+   - Form reset to initial state after successful submission
+   - Status: PASSING
+
+ADDITIONAL TESTING:
+------------------
+Tested additional edge cases to ensure robust validation:
+
+✅ Zero calories (0):
+   - Entered "0" in calories field
+   - Validation error: "Must be a positive number (minimum 1)"
+   - Form submission blocked
+   - Status: PASSING
+
+✅ Negative calories (-5):
+   - Entered "-5" in calories field
+   - Validation error: "Must be a positive number (minimum 1)"
+   - Form submission blocked
+   - Status: PASSING
+
+TECHNICAL VERIFICATION:
+----------------------
+
+Frontend Validation (QuickAddForm.tsx):
+- Client-side validation in handleSubmit (lines 153-163)
+- Checks if calories is NaN or less than 1
+- Maximum value validation: 10,000 calories
+- Error message: "Must be a positive number (minimum 1)"
+- Real-time validation clearing when valid value entered
+- Visual feedback with red border and error text
+
+Backend Validation (/api/tracking/quick-add/route.ts):
+- Server-side validation (lines 33-36)
+- Checks for undefined, null, NaN, or values <= 0
+- Returns 400 status with error: "A valid calorie amount is required (must be > 0)"
+- Double protection - even if frontend bypassed, backend catches invalid values
+
+Input Filtering (numericKeyFilter):
+- Prevents non-numeric characters from being typed
+- Allows navigation keys (Backspace, Tab, Arrows, Delete, Home, End, Enter)
+- Allows control keys (Ctrl/Cmd combinations)
+- Allows negative sign and decimal (for macro fields)
+- Note: Negative sign allowed but validation catches it
+
+BROWSER TESTING:
+---------------
+✅ Created test account (feature-238-test@example.com)
+✅ Completed onboarding flow (6 steps)
+✅ Navigated to /tracking page
+✅ Opened Quick Add form
+✅ Tested empty calories submission → error shown
+✅ Tested zero calories submission → error shown
+✅ Tested negative calories submission → error shown
+✅ Tested valid calories (500) → success message shown
+✅ Verified form resets after successful submission
+✅ Checked console - zero JavaScript errors
+✅ Zero network errors related to validation
+
+Screenshots:
+- feature-238-quick-add-form-initial.png: Initial form state
+- feature-238-empty-calories-error.png: Error message for empty calories
+- feature-238-calories-entered.png: Valid calories entered (500)
+- feature-238-success-after-calories.png: Success message after submission
+- feature-238-zero-calories-error.png: Error message for zero calories
+- feature-238-negative-calories.png: Error message for negative calories
+
+PROJECT STATUS UPDATE:
+---------------------
+Previous: 403/515 features passing (78.3%)
+Current:  404/515 features passing (78.4%)
+Feature #238 marked as PASSING ✅
+
+NOTES:
+------
+The Quick Add form properly enforces calories as a required field with comprehensive
+validation on both client and server sides:
+
+1. Client-side validation:
+   - Prevents submission when calories is empty, zero, or negative
+   - Shows clear error message: "Must be a positive number (minimum 1)"
+   - Visual feedback: red border, red error text
+   - Real-time validation clears when valid value entered
+
+2. Server-side validation:
+   - Additional protection even if client validation is bypassed
+   - Returns 400 error for invalid calorie values
+   - Error message: "A valid calorie amount is required (must be > 0)"
+
+3. User experience:
+   - Clear visual indication of required field (orange asterisk *)
+   - Prominent error positioning directly below input field
+   - Form submission blocked until valid value entered
+   - Success confirmation when valid data submitted
+
+4. Accessibility:
+   - Uses aria-invalid attribute when error present
+   - Uses aria-describedby to associate error message with input
+   - Role="alert" on error message for screen readers
+
+The validation is comprehensive, user-friendly, and follows best practices for
+form validation with both client-side and server-side protection.
+
+CONCLUSION: Feature #238 is fully functional with all verification steps passing.
+The Quick Add form correctly validates that calories is a required field and
+shows appropriate error messages for invalid values.
+===========================================

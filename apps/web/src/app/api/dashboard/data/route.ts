@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getClerkUserId } from '@/lib/auth'
 import { safeLogError } from '@/lib/safe-logger'
+import { toLocalDay } from '@/lib/date-utils'
 
 export async function GET(request: Request) {
   try {
@@ -56,11 +57,13 @@ export async function GET(request: Request) {
       orderBy: { generatedAt: 'desc' },
     });
 
-    // Get today's date (start of day)
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
-    const tomorrow = new Date(today);
-    tomorrow.setDate(tomorrow.getDate() + 1);
+    // Get today's date (start of day) - use UTC midnight to match toLocalDay() storage
+    const today = toLocalDay();
+    const tomorrow = new Date(Date.UTC(
+      today.getUTCFullYear(),
+      today.getUTCMonth(),
+      today.getUTCDate() + 1
+    ));
 
     // Figure out today's meals from the plan
     let todayPlanMeals: Array<{
