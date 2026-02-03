@@ -81,11 +81,12 @@ export function Step6Preferences({ data, updateData }: Props) {
             <button
               key={cuisine}
               onClick={() => toggleCuisine(cuisine)}
-              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] ${
+              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate ${
                 data.cuisinePreferences.includes(cuisine.toLowerCase())
                   ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
               }`}
+              title={cuisine}
             >
               {cuisine}
             </button>

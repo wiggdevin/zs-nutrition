@@ -93,11 +93,12 @@ export function Step4Dietary({ data, updateData }: Props) {
             <button
               key={allergy}
               onClick={() => toggleAllergy(allergy)}
-              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] ${
+              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[200px] truncate ${
                 data.allergies.includes(allergy.toLowerCase())
                   ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"
                   : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
               }`}
+              title={allergy}
             >
               {allergy}
             </button>
@@ -132,12 +133,13 @@ export function Step4Dietary({ data, updateData }: Props) {
             {data.exclusions.map((item) => (
               <span
                 key={item}
-                className="flex items-center gap-1 rounded-full border border-[#2a2a2a] bg-[#1e1e1e] px-3 py-1 text-xs text-[#a1a1aa]"
+                className="inline-flex flex-shrink-0 max-w-[250px] items-center gap-1 rounded-full border border-[#2a2a2a] bg-[#1e1e1e] px-3 py-1 text-xs text-[#a1a1aa]"
+                title={item}
               >
-                {item}
+                <span className="truncate">{item}</span>
                 <button
                   onClick={() => removeExclusion(item)}
-                  className="ml-1 text-[#ef4444] hover:text-[#f87171]"
+                  className="ml-1 flex-shrink-0 text-[#ef4444] hover:text-[#f87171]"
                 >
                   &times;
                 </button>

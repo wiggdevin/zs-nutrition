@@ -171,7 +171,7 @@ export default function SettingsDietary() {
               <button
                 key={allergy}
                 onClick={() => toggleAllergy(allergy)}
-                className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors min-h-[36px] ${
+                className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors min-h-[44px] ${
                   allergies.includes(allergy.toLowerCase())
                     ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"
                     : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
@@ -196,11 +196,11 @@ export default function SettingsDietary() {
               onChange={(e) => setExclusionInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addExclusion()}
               placeholder="e.g., mushrooms, cilantro"
-              className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316]"
+              className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-3 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316] min-h-[44px]"
             />
             <button
               onClick={addExclusion}
-              className="rounded-lg bg-[#2a2a2a] px-4 py-2 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a]"
+              className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px]"
             >
               Add
             </button>

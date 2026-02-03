@@ -2,6 +2,7 @@
 
 import { useEffect, useState, useCallback, useRef } from "react";
 import NavBar from '@/components/navigation/NavBar';
+import MealDetailModal from '@/components/meal-plan/MealDetailModal';
 
 interface MealNutrition {
   kcal: number;
@@ -264,9 +265,11 @@ function SwapModal({
                   }`}
                   data-testid={`swap-alternative-${idx}`}
                 >
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <h4 className="text-sm font-semibold text-[#fafafa]">{alt.name}</h4>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex-1 min-w-0">
+                      <h4 className="text-sm font-semibold text-[#fafafa] truncate" title={alt.name}>
+                        {alt.name}
+                      </h4>
                       {alt.cuisine && (
                         <p className="mt-0.5 text-xs text-[#71717a]">{alt.cuisine}</p>
                       )}
@@ -311,12 +314,14 @@ function DayColumn({
   swapSuccess,
   swapInProgress,
   onSwapClick,
+  onMealClick,
 }: {
   day: PlanDay;
   swappingMeal: { dayNumber: number; mealIdx: number } | null;
   swapSuccess: { dayNumber: number; mealIdx: number } | null;
   swapInProgress: boolean;
   onSwapClick: (dayNumber: number, mealIdx: number, meal: Meal) => void;
+  onMealClick: (dayNumber: number, mealIdx: number, meal: Meal) => void;
 }) {
   const dayTotalKcal = day.meals.reduce((sum, m) => sum + m.nutrition.kcal, 0);
   const dayTotalProtein = day.meals.reduce((sum, m) => sum + m.nutrition.proteinG, 0);
@@ -372,10 +377,18 @@ function DayColumn({
               className={`group relative rounded-md border p-2.5 transition-all ${
                 isSwapSuccess
                   ? "border-green-500/60 bg-green-500/5 ring-1 ring-green-500/30"
-                  : "border-[#2a2a2a] bg-[#0f0f0f] hover:border-[#3a3a3a]"
+                  : "border-[#2a2a2a] bg-[#0f0f0f] hover:border-[#3a3a3a] hover:cursor-pointer"
               }`}
               data-testid={`meal-card-${day.dayNumber}-${mealIdx}`}
             >
+              {/* Clickable overlay for meal details - excludes swap button */}
+              <div
+                className="absolute inset-0 z-0"
+                onClick={() => onMealClick(day.dayNumber, mealIdx, meal)}
+                data-testid={`meal-card-click-area-${day.dayNumber}-${mealIdx}`}
+                aria-label={`View ${meal.name} details`}
+              />
+
               {/* Swap success indicator */}
               {isSwapSuccess && (
                 <div className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/30" data-testid={`swap-success-${day.dayNumber}-${mealIdx}`}>
@@ -386,9 +399,12 @@ function DayColumn({
               )}
               {/* Swap icon button */}
               <button
-                onClick={() => !swapInProgress && onSwapClick(day.dayNumber, mealIdx, meal)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  if (!swapInProgress) onSwapClick(day.dayNumber, mealIdx, meal);
+                }}
                 disabled={swapInProgress}
-                className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-[#71717a] transition-all ${
+                className={`relative z-10 absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-[#71717a] transition-all ${
                   swapInProgress
                     ? "opacity-30 cursor-not-allowed"
                     : "opacity-0 group-hover:opacity-100 hover:border-[#f97316]/50 hover:bg-[#f97316]/10 hover:text-[#f97316]"
@@ -403,7 +419,7 @@ function DayColumn({
               </button>
 
               {/* Slot label + Confidence badge */}
-              <div className="flex items-center gap-1.5 mb-1.5">
+              <div className="relative z-10 flex items-center gap-1.5 mb-1.5">
                 <span className="rounded bg-[#f97316]/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#f97316]">
                   {meal.slot}
                 </span>
@@ -420,16 +436,20 @@ function DayColumn({
               </div>
 
               {/* Meal name */}
-              <h4 className="text-xs font-semibold text-[#fafafa] leading-tight pr-6" data-testid={`meal-name-${day.dayNumber}-${mealIdx}`}>
+              <h4
+                className="relative z-10 text-xs font-semibold text-[#fafafa] leading-tight pr-6 truncate"
+                data-testid={`meal-name-${day.dayNumber}-${mealIdx}`}
+                title={meal.name}
+              >
                 {meal.name}
               </h4>
 
               {meal.cuisine && (
-                <p className="mt-0.5 text-[10px] text-[#71717a]">{meal.cuisine}</p>
+                <p className="relative z-10 mt-0.5 text-[10px] text-[#71717a]">{meal.cuisine}</p>
               )}
 
               {/* Prep time indicator */}
-              <div className="mt-1.5 flex items-center gap-1 text-[10px] text-[#71717a]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
+              <div className="relative z-10 mt-1.5 flex items-center gap-1 text-[10px] text-[#71717a]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
                 <span>🕒</span>
                 <span>
                   {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ""}
@@ -440,7 +460,7 @@ function DayColumn({
               </div>
 
               {/* Macro pills */}
-              <div className="mt-2 flex flex-wrap gap-1" data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}>
+              <div className="relative z-10 mt-2 flex flex-wrap gap-1" data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}>
                 <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-0.5 text-[10px] font-bold text-[#f97316]">
                   {meal.nutrition.kcal} kcal
                 </span>
@@ -568,8 +588,10 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
                     className="flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-[#222]"
                     data-testid={`grocery-item-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                   >
-                    <span className="text-sm text-[#fafafa]">{item.name || 'Unknown Item'}</span>
-                    <span className="ml-3 whitespace-nowrap rounded bg-[#2a2a2a] px-2 py-0.5 font-mono text-xs font-bold text-[#a1a1aa]" data-testid={`grocery-amount-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                    <span className="text-sm text-[#fafafa] break-words" title={item.name || 'Unknown Item'}>
+                      {item.name || 'Unknown Item'}
+                    </span>
+                    <span className="ml-3 flex-shrink-0 whitespace-nowrap rounded bg-[#2a2a2a] px-2 py-0.5 font-mono text-xs font-bold text-[#a1a1aa]" data-testid={`grocery-amount-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
                       {formatGroceryAmount(item.amount, item.unit)}
                     </span>
                   </div>
@@ -596,6 +618,9 @@ export default function MealPlanPage() {
   const [swapSuccess, setSwapSuccess] = useState<{ dayNumber: number; mealIdx: number } | null>(null);
   // Ref-based guard for synchronous double-click prevention (state updates are async)
   const swapLockRef = useRef(false);
+
+  // Meal detail modal state
+  const [selectedMeal, setSelectedMeal] = useState<{ meal: Meal; dayNumber: number; mealIdx: number } | null>(null);
 
   // Track the current fetch request so we can abort stale ones
   const planAbortRef = useRef<AbortController | null>(null);
@@ -937,6 +962,7 @@ export default function MealPlanPage() {
                 swapSuccess={swapSuccess}
                 swapInProgress={swapLoading || swappingMeal !== null}
                 onSwapClick={handleSwapClick}
+                onMealClick={(dayNumber, mealIdx, meal) => setSelectedMeal({ dayNumber, mealIdx, meal })}
               />
             </div>
           ))}
@@ -964,6 +990,16 @@ export default function MealPlanPage() {
         loading={swapLoading}
         onSelect={handleSwapSelect}
         onClose={handleSwapClose}
+      />
+    )}
+
+    {/* Meal detail modal */}
+    {selectedMeal && (
+      <MealDetailModal
+        meal={selectedMeal.meal}
+        dayNumber={selectedMeal.dayNumber}
+        mealIdx={selectedMeal.mealIdx}
+        onClose={() => setSelectedMeal(null)}
       />
     )}
     </>
