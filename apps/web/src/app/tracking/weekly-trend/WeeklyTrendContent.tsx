@@ -37,6 +37,10 @@ function CustomTooltip({ active, payload, label }: { active?: boolean; payload?:
 }
 
 export default function WeeklyTrendContent() {
+  // Calculate today's date at midnight for constraints
+  const today = new Date()
+  const todayStr = `${today.getFullYear()}-${String(today.getMonth() + 1).padStart(2, '0')}-${String(today.getDate()).padStart(2, '0')}`
+
   const [startDate, setStartDate] = useState(() => {
     // Default to 7 days ago for a full past-week view
     const d = new Date()
@@ -93,10 +97,14 @@ export default function WeeklyTrendContent() {
   return (
     <div data-testid="weekly-trend-container">
       <div className="mb-4">
-        <label className="text-sm text-[#a1a1aa] mr-2">Start date:</label>
+        <label htmlFor="start-date-input" className="text-sm text-[#a1a1aa] mr-2">
+          Start date:
+        </label>
         <input
+          id="start-date-input"
           type="date"
           value={startDate}
+          max={todayStr}
           onChange={(e) => setStartDate(e.target.value)}
           className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-sm text-white"
           data-testid="start-date-input"

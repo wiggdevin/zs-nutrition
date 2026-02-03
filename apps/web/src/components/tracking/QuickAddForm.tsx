@@ -243,6 +243,8 @@ export default function QuickAddForm() {
             min="1"
             max="10000"
             required
+            aria-invalid={!!fieldErrors.calories}
+            aria-describedby={fieldErrors.calories ? "quick-add-calories-error" : undefined}
             className={`w-full px-3 py-2.5 bg-[#111] border rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none transition-colors text-lg font-semibold ${
               fieldErrors.calories
                 ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
@@ -251,7 +253,9 @@ export default function QuickAddForm() {
             data-testid="quick-add-calories"
           />
           {fieldErrors.calories && (
-            <p className="mt-1 text-xs text-red-500">{fieldErrors.calories}</p>
+            <p id="quick-add-calories-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+              {fieldErrors.calories}
+            </p>
           )}
         </div>
 

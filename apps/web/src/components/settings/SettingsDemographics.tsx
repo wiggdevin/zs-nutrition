@@ -368,6 +368,8 @@ export default function SettingsDemographics() {
             max={230}
             step="0.1"
             data-testid="settings-weight-input"
+            aria-invalid={!!validationErrors.weight}
+            aria-describedby={validationErrors.weight ? "settings-weight-error" : undefined}
             className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
               validationErrors.weight
                 ? "border-red-500 focus:border-red-500"
@@ -375,7 +377,9 @@ export default function SettingsDemographics() {
             }`}
           />
           {validationErrors.weight && (
-            <p className="mt-1 text-xs text-red-500">{validationErrors.weight}</p>
+            <p id="settings-weight-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+              {validationErrors.weight}
+            </p>
           )}
         </div>
       </div>

@@ -921,6 +921,15 @@ export default function MealPlanPage() {
                   {plan.profile.name} &middot; {plan.profile.goalType} &middot; {plan.planDays}-day plan
                 </p>
               )}
+              {plan.generatedAt && (
+                <p className="mt-1 text-xs text-[#71717a]" data-testid="plan-generated-date">
+                  Generated {new Date(plan.generatedAt).toLocaleDateString(undefined, {
+                    year: 'numeric',
+                    month: 'short',
+                    day: 'numeric'
+                  })}
+                </p>
+              )}
             </div>
             <div className="flex items-center gap-4">
               {plan.qaScore !== null && (

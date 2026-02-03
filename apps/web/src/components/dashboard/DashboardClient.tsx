@@ -69,15 +69,16 @@ function MacroRing({
   const circumference = 2 * Math.PI * radius
   const progress = Math.min(current / (target || 1), 1)
   const dashOffset = circumference * (1 - progress)
+  const percentage = Math.round(progress * 100)
 
   return (
     <div
       className="flex flex-col items-center gap-2"
       role="progressbar"
-      aria-label={`${label} progress`}
+      aria-label={`${label}`}
       aria-valuenow={current}
       aria-valuemax={target}
-      aria-valuetext={`${current} of ${target} ${unit}`}
+      aria-valuetext={`${label}: ${current} of ${target} ${unit}, ${percentage}% complete`}
     >
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90" aria-hidden="true">

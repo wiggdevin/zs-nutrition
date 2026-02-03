@@ -108,9 +108,20 @@ export const trackingRouter = router({
       const { prisma } = ctx
       const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
 
-      // Parse start date and compute 7-day range
+      // Validate date is not in the future
+      const today = new Date()
+      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
       const start = new Date(input.startDate)
       const startOnly = new Date(start.getFullYear(), start.getMonth(), start.getDate())
+
+      // Disallow future dates
+      if (startOnly > todayOnly) {
+        throw new TRPCError({
+          code: 'BAD_REQUEST',
+          message: 'Start date cannot be in the future',
+        })
+      }
+
       const endOnly = new Date(startOnly)
       endOnly.setDate(endOnly.getDate() + 7)
 

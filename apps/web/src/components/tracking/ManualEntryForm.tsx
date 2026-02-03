@@ -187,6 +187,8 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                 }
               }}
               placeholder="e.g. Grilled Chicken Breast"
+              aria-invalid={!!fieldErrors.foodName}
+              aria-describedby={fieldErrors.foodName ? "manual-food-name-error" : undefined}
               className={`w-full px-3 py-2.5 bg-[#111] border rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none transition-colors ${
                 fieldErrors.foodName
                   ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
@@ -196,7 +198,9 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
               autoComplete="off"
             />
             {fieldErrors.foodName && (
-              <p className="mt-1 text-xs text-red-500">{fieldErrors.foodName}</p>
+              <p id="manual-food-name-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+                {fieldErrors.foodName}
+              </p>
             )}
           </div>
 
@@ -219,6 +223,8 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                   }
                 }}
                 placeholder="0"
+                aria-invalid={!!fieldErrors.calories}
+                aria-describedby={fieldErrors.calories ? "manual-calories-error" : undefined}
                 className={`w-full px-3 py-2.5 bg-[#111] border rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none transition-colors ${
                   fieldErrors.calories
                     ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
@@ -227,7 +233,9 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                 data-testid="manual-calories"
               />
               {fieldErrors.calories && (
-                <p className="mt-1 text-xs text-red-500">{fieldErrors.calories}</p>
+                <p id="manual-calories-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+                  {fieldErrors.calories}
+                </p>
               )}
             </div>
             <div>
