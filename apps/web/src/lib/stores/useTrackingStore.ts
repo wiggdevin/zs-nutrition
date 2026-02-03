@@ -26,6 +26,7 @@ export interface TrackedMealEntry {
   protein: number;
   carbs: number;
   fat: number;
+  portion: number; // Portion multiplier (e.g., 1.0, 1.5, 2.0)
   source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual';
   mealSlot: string | null;
   createdAt: string;
@@ -49,6 +50,7 @@ export interface DailyLogState {
   setTrackedMeals: (meals: TrackedMealEntry[]) => void;
   addTrackedMeal: (meal: TrackedMealEntry) => void;
   removeTrackedMeal: (mealId: string) => void;
+  updateTrackedMealPortion: (mealId: string, newPortion: number, newNutrition: { calories: number; protein: number; carbs: number; fat: number }) => void;
   setAdherenceScore: (score: number) => void;
   setWeeklyAverageAdherence: (score: number | null) => void;
   setIsLoading: (loading: boolean) => void;
@@ -125,6 +127,32 @@ export const useTrackingStore = create<DailyLogState>()(
               protein: Math.max(0, state.current.protein - mealToRemove.protein),
               carbs: Math.max(0, state.current.carbs - mealToRemove.carbs),
               fat: Math.max(0, state.current.fat - mealToRemove.fat),
+            },
+          };
+        }),
+
+      updateTrackedMealPortion: (mealId, newPortion, newNutrition) =>
+        set((state) => {
+          const mealToUpdate = state.trackedMeals.find((m) => m.id === mealId);
+          if (!mealToUpdate) return state;
+
+          // Calculate the difference in nutrition
+          const calorieDiff = newNutrition.calories - mealToUpdate.calories;
+          const proteinDiff = newNutrition.protein - mealToUpdate.protein;
+          const carbsDiff = newNutrition.carbs - mealToUpdate.carbs;
+          const fatDiff = newNutrition.fat - mealToUpdate.fat;
+
+          return {
+            trackedMeals: state.trackedMeals.map((m) =>
+              m.id === mealId
+                ? { ...m, portion: newPortion, ...newNutrition }
+                : m
+            ),
+            current: {
+              calories: state.current.calories + calorieDiff,
+              protein: state.current.protein + proteinDiff,
+              carbs: state.current.carbs + carbsDiff,
+              fat: state.current.fat + fatDiff,
             },
           };
         }),

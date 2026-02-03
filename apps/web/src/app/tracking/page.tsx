@@ -5,6 +5,7 @@ import NavBar from '@/components/navigation/NavBar'
 import FoodSearch from '@/components/tracking/FoodSearch'
 import ManualEntryForm from '@/components/tracking/ManualEntryForm'
 import QuickAddForm from '@/components/tracking/QuickAddForm'
+import FoodScan from '@/components/tracking/FoodScan'
 import { useTrackingStore } from '@/lib/stores/useTrackingStore'
 
 export default function TrackingPage() {
@@ -67,6 +68,12 @@ export default function TrackingPage() {
                 </p>
               </div>
             </div>
+
+            {/* AI-Powered Food Scan */}
+            <FoodScan onMealLogged={() => {
+              // Refresh tracking data when meal is logged
+              window.location.reload()
+            }} />
 
             <FoodSearch />
             <QuickAddForm />

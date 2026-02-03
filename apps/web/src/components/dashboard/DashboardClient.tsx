@@ -41,6 +41,7 @@ interface TrackedMealEntry {
   protein: number
   carbs: number
   fat: number
+  portion: number
   source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual'
   mealSlot: string | null
   createdAt: string
@@ -390,20 +391,175 @@ function LogConfirmModal({
   )
 }
 
+/* ── Portion Adjustment Modal ── */
+function PortionAdjustModal({
+  mealName,
+  currentPortion,
+  calories,
+  protein,
+  carbs,
+  fat,
+  onConfirm,
+  onCancel,
+  isAdjusting,
+}: {
+  mealName: string
+  currentPortion: number
+  calories: number
+  protein: number
+  carbs: number
+  fat: number
+  onConfirm: (newPortion: number) => void
+  onCancel: () => void
+  isAdjusting: boolean
+}) {
+  const [portion, setPortion] = useState(currentPortion)
+
+  // Calculate base nutrition (per 1.0 portion)
+  const baseKcal = Math.round(calories / currentPortion)
+  const baseProtein = Math.round((protein / currentPortion) * 10) / 10
+  const baseCarbs = Math.round((carbs / currentPortion) * 10) / 10
+  const baseFat = Math.round((fat / currentPortion) * 10) / 10
+
+  // Calculate adjusted nutrition
+  const adjustedKcal = Math.round(baseKcal * portion)
+  const adjustedProtein = Math.round(baseProtein * portion * 10) / 10
+  const adjustedCarbs = Math.round(baseCarbs * portion * 10) / 10
+  const adjustedFat = Math.round(baseFat * portion * 10) / 10
+
+  return (
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="adjust-portion-title"
+    >
+      <div
+        data-testid="adjust-portion-modal"
+        className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        role="document"
+      >
+        <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-1">
+          /// Adjust Portion
+        </p>
+        <h3 id="adjust-portion-title" className="text-lg font-bold text-[#fafafa] mb-4">{mealName}</h3>
+
+        {/* Portion Slider */}
+        <div className="mb-6">
+          <div className="flex items-center justify-between mb-2">
+            <label className="text-sm text-[#a1a1aa]">Portion</label>
+            <span
+              data-testid="adjust-portion-value"
+              className="text-sm font-bold text-[#f97316]"
+            >
+              {portion}x
+            </span>
+          </div>
+          <input
+            type="range"
+            min="0.5"
+            max="3"
+            step="0.1"
+            value={portion}
+            onChange={(e) => setPortion(parseFloat(e.target.value))}
+            className="w-full h-2 bg-[#2a2a2a] rounded-lg appearance-none cursor-pointer accent-[#f97316]"
+            data-testid="adjust-portion-slider"
+          />
+          <div className="flex justify-between text-xs text-[#666] mt-1">
+            <span>0.5x</span>
+            <span>1x</span>
+            <span>2x</span>
+            <span>3x</span>
+          </div>
+        </div>
+
+        {/* Nutrition Preview */}
+        <div className="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 mb-6">
+          <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-3">
+            Adjusted Nutrition
+          </p>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#f97316]" />
+              <span className="text-xs text-[#a1a1aa]">Calories</span>
+              <span className="text-sm font-bold text-[#fafafa] ml-auto">
+                {adjustedKcal} kcal
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
+              <span className="text-xs text-[#a1a1aa]">Protein</span>
+              <span className="text-sm font-bold text-[#fafafa] ml-auto">
+                {adjustedProtein}g
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
+              <span className="text-xs text-[#a1a1aa]">Carbs</span>
+              <span className="text-sm font-bold text-[#fafafa] ml-auto">
+                {adjustedCarbs}g
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#eab308]" />
+              <span className="text-xs text-[#a1a1aa]">Fat</span>
+              <span className="text-sm font-bold text-[#fafafa] ml-auto">
+                {adjustedFat}g
+              </span>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-3">
+          <button
+            onClick={onCancel}
+            disabled={isAdjusting}
+            className="flex-1 px-4 py-3 bg-[#2a2a2a] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed text-[#fafafa] font-bold rounded-lg transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={() => onConfirm(portion)}
+            disabled={isAdjusting}
+            className="flex-1 px-4 py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed text-[#0a0a0a] font-bold rounded-lg transition-colors"
+            data-testid="adjust-portion-confirm"
+          >
+            {isAdjusting ? 'Adjusting...' : 'Confirm'}
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 /* ── Log Entry Component ── */
 function LogEntry({
+  id,
   name,
   calories,
   protein,
+  carbs,
+  fat,
+  portion,
   source,
   time,
+  onAdjust,
+  isAdjusting,
 }: {
+  id: string
   name: string
   calories: number
   protein: number
+  carbs: number
+  fat: number
+  portion: number
   source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual'
   time: string
+  onAdjust: (id: string, newPortion: number) => void
+  isAdjusting: boolean
 }) {
+  const [showAdjustModal, setShowAdjustModal] = useState(false)
   const sourceBadge = {
     plan_meal: { label: 'Plan', color: 'bg-[#3b82f6]/10 text-[#3b82f6]' },
     fatsecret_search: {
@@ -419,22 +575,56 @@ function LogEntry({
 
   const badge = sourceBadge[source]
 
+  const handleConfirmAdjust = (newPortion: number) => {
+    onAdjust(id, newPortion)
+    setShowAdjustModal(false)
+  }
+
   return (
-    <div className="flex items-center justify-between py-3 border-b border-[#2a2a2a] last:border-b-0">
-      <div className="flex-1 min-w-0">
-        <div className="flex items-center gap-2">
-          <p className="text-sm text-[#fafafa] truncate">{name}</p>
-          <span
-            className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${badge.color}`}
-          >
-            {badge.label}
-          </span>
+    <>
+      <div className="flex items-center justify-between py-3 border-b border-[#2a2a2a] last:border-b-0">
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2">
+            <p className="text-sm text-[#fafafa] truncate">{name}</p>
+            <span
+              className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${badge.color}`}
+            >
+              {badge.label}
+            </span>
+            {portion !== 1 && (
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-[#f97316]/10 text-[#f97316]">
+                {portion}x
+              </span>
+            )}
+          </div>
+          <p className="text-xs text-[#a1a1aa] mt-0.5">
+            {time} · {calories} kcal · {protein}g protein
+          </p>
         </div>
-        <p className="text-xs text-[#a1a1aa] mt-0.5">
-          {time} · {calories} kcal · {protein}g protein
-        </p>
+        <button
+          onClick={() => setShowAdjustModal(true)}
+          disabled={isAdjusting}
+          className="px-3 py-1.5 text-xs font-semibold text-[#a1a1aa] hover:text-[#f97316] border border-[#2a2a2a] hover:border-[#f97316] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid={`adjust-btn-${id}`}
+        >
+          Adjust
+        </button>
       </div>
-    </div>
+
+      {showAdjustModal && (
+        <PortionAdjustModal
+          mealName={name}
+          currentPortion={portion}
+          calories={calories}
+          protein={protein}
+          carbs={carbs}
+          fat={fat}
+          onConfirm={handleConfirmAdjust}
+          onCancel={() => setShowAdjustModal(false)}
+          isAdjusting={isAdjusting}
+        />
+      )}
+    </>
   )
 }
 
@@ -664,11 +854,13 @@ export default function DashboardClient() {
   const setWeeklyAverageAdherence = useTrackingStore((state) => state.setWeeklyAverageAdherence)
   const setPlanId = useTrackingStore((state) => state.setPlanId)
   const addTrackedMeal = useTrackingStore((state) => state.addTrackedMeal)
+  const updateTrackedMealPortion = useTrackingStore((state) => state.updateTrackedMealPortion)
   const setLastFetch = useTrackingStore((state) => state.setLastFetch)
 
   const [todayPlanMeals, setTodayPlanMeals] = useState<PlanMeal[]>([])
   const [loading, setLoading] = useState(true)
   const [loggingSlot, setLoggingSlot] = useState<string | null>(null)
+  const [adjustingMealId, setAdjustingMealId] = useState<string | null>(null)
   const [error, setError] = useState<string | null>(null)
   const [mealToLog, setMealToLog] = useState<PlanMeal | null>(null)
   const [needsOnboarding, setNeedsOnboarding] = useState(false)
@@ -821,6 +1013,7 @@ export default function DashboardClient() {
           protein: result.trackedMeal.protein,
           carbs: result.trackedMeal.carbs,
           fat: result.trackedMeal.fat,
+          portion: result.trackedMeal.portion || portion,
           source: result.trackedMeal.source || 'plan_meal',
           mealSlot: result.trackedMeal.mealSlot || mealToLog.slot,
           createdAt: result.trackedMeal.createdAt || new Date().toISOString(),
@@ -840,6 +1033,62 @@ export default function DashboardClient() {
       toast.error(errorMsg)
     } finally {
       setLoggingSlot(null)
+      isLoggingRef.current = false
+    }
+  }
+
+  const handleAdjustPortion = async (trackedMealId: string, newPortion: number) => {
+    // Synchronous guard prevents double-click
+    if (isLoggingRef.current) return
+    isLoggingRef.current = true
+    setAdjustingMealId(trackedMealId)
+    try {
+      const res = await fetch('/api/tracking/adjust-portion', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ trackedMealId, newPortion }),
+      })
+
+      if (!res.ok) {
+        const errData = await res.json()
+        throw new Error(errData.error || 'Failed to adjust portion')
+      }
+
+      const result = await res.json()
+
+      if (result.success && result.trackedMeal) {
+        // Update the tracked meal in Zustand store
+        const updatedMeals = trackedMeals.map((meal) =>
+          meal.id === trackedMealId
+            ? {
+                ...meal,
+                calories: result.trackedMeal.kcal,
+                protein: result.trackedMeal.proteinG,
+                carbs: result.trackedMeal.carbsG,
+                fat: result.trackedMeal.fatG,
+                portion: result.trackedMeal.portion,
+              }
+            : meal
+        )
+        setTrackedMeals(updatedMeals)
+
+        // Update daily totals
+        setCurrent({
+          calories: result.dailyTotals.actualKcal,
+          protein: result.dailyTotals.actualProteinG,
+          carbs: result.dailyTotals.actualCarbsG,
+          fat: result.dailyTotals.actualFatG,
+        })
+
+        toast.success(`Portion adjusted to ${newPortion}x`)
+      }
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Something went wrong'
+      const errorMsg = isFriendly ? msg : 'Something went wrong while adjusting portion. Please try again.'
+      setError(errorMsg)
+      toast.error(errorMsg)
+    } finally {
+      setAdjustingMealId(null)
       isLoggingRef.current = false
     }
   }
@@ -1359,11 +1608,17 @@ export default function DashboardClient() {
                 {trackedMeals.map((entry) => (
                   <LogEntry
                     key={entry.id}
+                    id={entry.id}
                     name={entry.name}
                     calories={entry.calories}
                     protein={Math.round(entry.protein)}
+                    carbs={entry.carbs}
+                    fat={entry.fat}
+                    portion={entry.portion || 1}
                     source={entry.source}
                     time={formatTime(entry.createdAt)}
+                    onAdjust={handleAdjustPortion}
+                    isAdjusting={adjustingMealId === entry.id}
                   />
                 ))}
               </div>

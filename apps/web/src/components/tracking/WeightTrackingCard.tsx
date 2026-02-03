@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { api } from '@/lib/trpc/react'
+import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -18,17 +18,17 @@ export function WeightTrackingCard() {
   const [useLbs, setUseLbs] = useState(false)
   const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const { data: history, refetch: refetchHistory } = api.adaptiveNutrition.getWeightHistory.useQuery(
+  const { data: history, refetch: refetchHistory } = trpc.adaptiveNutrition.getWeightHistory.useQuery(
     { limit: 8 },
     { enabled: true }
   )
 
-  const { data: trend, isLoading: trendLoading } = api.adaptiveNutrition.analyzeWeightTrend.useQuery(undefined, {
+  const { data: trend, isLoading: trendLoading } = trpc.adaptiveNutrition.analyzeWeightTrend.useQuery(undefined, {
     enabled: true,
     refetchInterval: 30000,
   })
 
-  const logWeightMutation = api.adaptiveNutrition.logWeightEntry.useMutation({
+  const logWeightMutation = trpc.adaptiveNutrition.logWeightEntry.useMutation({
     onSuccess: () => {
       toast.success('Weight logged successfully')
       setWeightKg('')

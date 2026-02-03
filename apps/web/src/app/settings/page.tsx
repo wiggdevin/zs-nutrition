@@ -5,6 +5,7 @@ import SettingsDietary from "@/components/settings/SettingsDietary";
 import SettingsActivity from "@/components/settings/SettingsActivity";
 import SettingsMealStructure from "@/components/settings/SettingsMealStructure";
 import SettingsAccount from "@/components/settings/SettingsAccount";
+import FitnessConnections from "@/components/fitness/FitnessConnections";
 
 export default function SettingsPage() {
   return (
@@ -34,6 +35,9 @@ export default function SettingsPage() {
 
             {/* Activity and Training Section */}
             <SettingsActivity />
+
+            {/* Fitness Tracker Integration */}
+            <FitnessConnections />
 
             {/* Meal Structure Section */}
             <SettingsMealStructure />

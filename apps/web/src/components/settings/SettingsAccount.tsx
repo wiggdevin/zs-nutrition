@@ -2,16 +2,30 @@
 
 import { useState } from "react";
 import { clearAllStores } from "@/lib/stores/clearStores";
-import { useAuth } from "@clerk/nextjs";
+
+// Dynamic import of Clerk hooks to avoid errors in dev mode
+let useAuth: any = () => ({ signOut: undefined });
+
+// Only import Clerk hooks if Clerk is configured
+if (process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY) {
+  try {
+    const clerkModule = require("@clerk/nextjs");
+    useAuth = clerkModule.useAuth;
+  } catch (e) {
+    // Clerk not available, will use dev mode
+    console.warn("Clerk not available, using dev mode");
+  }
+}
 
 export default function SettingsAccount() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
-
   const [signingOut, setSigningOut] = useState(false);
 
   // Get Clerk's signOut function (undefined in dev mode)
-  const { signOut: clerkSignOut } = useAuth();
+  // Only call useAuth if Clerk is available
+  const hasClerk = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  const { signOut: clerkSignOut } = hasClerk ? useAuth() : { signOut: undefined };
 
   async function handleSignOut() {
     try {

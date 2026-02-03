@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getClerkUserId } from '@/lib/auth'
 import { calculateAdherenceScore } from '@/lib/adherence'
 import { safeLogError } from '@/lib/safe-logger'
+import { toLocalDay, parseLocalDay } from '@/lib/date-utils'
 
 /**
  * POST /api/tracking/fatsecret-log
@@ -61,21 +62,14 @@ export async function POST(request: Request) {
     const fiberG = fiber !== undefined && fiber !== null ? Math.round((Number(fiber) || 0) * qty * 10) / 10 : null
 
     // Use provided loggedDate or default to today
+    // This ensures dates are stored consistently as UTC midnight representing the local calendar day
     let dateOnly: Date
     if (loggedDate && typeof loggedDate === 'string') {
       // Parse the provided date (YYYY-MM-DD format from HTML date input)
-      const parsed = new Date(loggedDate + 'T00:00:00')
-      if (!isNaN(parsed.getTime())) {
-        dateOnly = new Date(parsed.getFullYear(), parsed.getMonth(), parsed.getDate())
-      } else {
-        // Invalid date, fall back to today
-        const today = new Date()
-        dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-      }
+      dateOnly = parseLocalDay(loggedDate)
     } else {
-      // No date provided, use today
-      const today = new Date()
-      dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
+      // No date provided, use today in local time
+      dateOnly = toLocalDay()
     }
 
     // Use a serialized transaction to prevent race conditions from concurrent requests
@@ -110,6 +104,7 @@ export async function POST(request: Request) {
             proteinG: recentDuplicate.proteinG,
             carbsG: recentDuplicate.carbsG,
             fatG: recentDuplicate.fatG,
+            portion: recentDuplicate.portion || 1.0,
             source: recentDuplicate.source,
             fatsecretId: recentDuplicate.fatsecretId,
             servingDescription: servingDescription || null,
@@ -202,6 +197,7 @@ export async function POST(request: Request) {
           proteinG: trackedMeal.proteinG,
           carbsG: trackedMeal.carbsG,
           fatG: trackedMeal.fatG,
+          portion: trackedMeal.portion,
           source: trackedMeal.source,
           fatsecretId: trackedMeal.fatsecretId,
           servingDescription: servingDescription || null,

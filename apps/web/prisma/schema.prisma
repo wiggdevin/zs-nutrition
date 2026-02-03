@@ -29,8 +29,10 @@ model User {
   foodScans          FoodScan[]
   onboarding         OnboardingState?
   planGenerationJobs PlanGenerationJob[]
-  weightEntries     WeightEntry[]
-  calorieAdjustments CalorieAdjustment[]
+  weightEntries       WeightEntry[]
+  calorieAdjustments  CalorieAdjustment[]
+  fitnessConnections  FitnessConnection[]
+  activitySyncs       ActivitySync[]
 }
 
 // ============================================================
@@ -264,4 +266,62 @@ model CalorieAdjustment {
   createdAt         DateTime @default(now())
 
   @@index([userId, createdAt])
+}
+
+// ============================================================
+// Fitness Connection (OAuth tokens for fitness platforms)
+// ============================================================
+model FitnessConnection {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform        String    // apple_health | google_fit | fitbit | oura
+  accessToken     String    // encrypted OAuth access token
+  refreshToken    String?   // encrypted OAuth refresh token (if available)
+  tokenExpiresAt  DateTime? // token expiration timestamp
+  platformUserId  String?   // external user ID from the platform
+  scope           String?   // granted permissions scope
+  isActive        Boolean   @default(true)
+  lastSyncAt      DateTime? // last successful sync timestamp
+  syncFrequency   String    @default("daily") // hourly | daily | weekly
+  settings        String    @default("{}") // JSON - user preferences for this connection
+  createdAt       DateTime  @default(now())
+  updatedAt       DateTime  @updatedAt
+
+  activitySyncs   ActivitySync[]
+
+  @@unique([userId, platform])
+  @@index([userId, platform, isActive])
+}
+
+// ============================================================
+// Activity Sync (normalized activity data from fitness platforms)
+// ============================================================
+model ActivitySync {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectionId      String
+  connection        FitnessConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  platform          String   // apple_health | google_fit | fitbit | oura
+  syncDate          DateTime // date of the activity data (not sync time)
+  steps             Int?
+  activeCalories    Float?   // calories burned from activity
+  totalCalories     Float?   // total daily calories (BMR + active)
+  distanceKm        Float?
+  distanceMiles     Float?
+  activeMinutes     Int?     // minutes of moderate+ activity
+  workoutCount      Int?
+  workouts          String   @default("[]") // JSON array of workout details
+  sleepMinutes      Int?     // from Oura primarily
+  sleepScore        Int?     // 0-100 sleep quality score
+  heartRateAvg      Float?
+  heartRateMax      Int?
+  rawSyncData       String   @default("{}") // JSON - full platform response for debugging
+  syncedAt          DateTime @default(now())
+  processed         Boolean  @default(false) // whether calorie adjustment was applied
+
+  @@unique([connectionId, syncDate])
+  @@index([userId, syncDate])
+  @@index([connectionId, syncDate])
 }

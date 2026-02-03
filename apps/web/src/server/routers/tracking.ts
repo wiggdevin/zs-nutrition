@@ -1,9 +1,13 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { protectedProcedure, router } from '../trpc'
+import { toLocalDay, parseLocalDay } from '@/lib/date-utils'
 
 /**
  * Tracking Router — handles daily summary, tracked meals queries, and macro tracking.
+ *
+ * All dates are handled as local calendar days (midnight to midnight in user's timezone).
+ * This ensures meals logged at 11:30 PM are assigned to the correct day.
  */
 export const trackingRouter = router({
   /**
@@ -20,8 +24,8 @@ export const trackingRouter = router({
       const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
 
       // Parse date input or default to today
-      const targetDate = input?.date ? new Date(input.date) : new Date()
-      const dateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
+      // Use local day utilities to ensure consistent date boundaries
+      const dateOnly = input?.date ? parseLocalDay(input.date) : toLocalDay()
 
       // Fetch DailyLog and all TrackedMeals for this date in parallel
       const [dailyLog, trackedMeals] = await Promise.all([
@@ -109,13 +113,8 @@ export const trackingRouter = router({
       const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
 
       // Validate date is not in the future
-      const today = new Date()
-      const todayOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate())
-
-      // Parse startDate string as local midnight (not UTC)
-      // ISO date strings without time are parsed as UTC, so we need to extract YMD and recreate
-      const [year, month, day] = input.startDate.split('-').map(Number)
-      const startOnly = new Date(year, month - 1, day) // month is 0-indexed
+      const todayOnly = toLocalDay()
+      const startOnly = parseLocalDay(input.startDate)
 
       // Disallow future dates
       if (startOnly > todayOnly) {
@@ -125,8 +124,9 @@ export const trackingRouter = router({
         })
       }
 
+      // Calculate end date (exclusive, for database queries)
       const endOnly = new Date(startOnly)
-      endOnly.setDate(endOnly.getDate() + 7)
+      endOnly.setUTCDate(endOnly.getUTCDate() + 7)
 
       // Fetch all DailyLogs in the 7-day range
       const dailyLogs = await prisma.dailyLog.findMany({
@@ -153,13 +153,10 @@ export const trackingRouter = router({
       })
 
       // Group tracked meals by date string
+      // Since we store dates as UTC midnight representing local days, we can use toISOString() directly
       const mealsByDate: Record<string, typeof trackedMeals> = {}
       for (const meal of trackedMeals) {
-        const dateKey = new Date(
-          meal.loggedDate.getFullYear(),
-          meal.loggedDate.getMonth(),
-          meal.loggedDate.getDate()
-        ).toISOString()
+        const dateKey = meal.loggedDate.toISOString()
         if (!mealsByDate[dateKey]) mealsByDate[dateKey] = []
         mealsByDate[dateKey].push(meal)
       }
@@ -167,11 +164,7 @@ export const trackingRouter = router({
       // Index DailyLogs by date string
       const logsByDate: Record<string, typeof dailyLogs[0]> = {}
       for (const log of dailyLogs) {
-        const dateKey = new Date(
-          log.date.getFullYear(),
-          log.date.getMonth(),
-          log.date.getDate()
-        ).toISOString()
+        const dateKey = log.date.toISOString()
         logsByDate[dateKey] = log
       }
 
@@ -179,7 +172,7 @@ export const trackingRouter = router({
       const days = []
       for (let i = 0; i < 7; i++) {
         const dayDate = new Date(startOnly)
-        dayDate.setDate(dayDate.getDate() + i)
+        dayDate.setUTCDate(dayDate.getUTCDate() + i)
         const dateKey = dayDate.toISOString()
 
         const log = logsByDate[dateKey] ?? null
@@ -244,8 +237,9 @@ export const trackingRouter = router({
       const { prisma } = ctx
       const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
 
-      const targetDate = input.date ? new Date(input.date) : new Date()
-      const dateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
+      // Parse date input or default to today
+      // Use local day utilities to ensure consistent date boundaries
+      const dateOnly = input.date ? parseLocalDay(input.date) : toLocalDay()
 
       // Use a serialized transaction to prevent race conditions from concurrent requests
       const result = await prisma.$transaction(async (tx) => {

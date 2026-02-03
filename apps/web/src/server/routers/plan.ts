@@ -71,6 +71,57 @@ const PlanResultSchema = z.object({
 
 export const planRouter = router({
   /**
+   * getActivePlan query:
+   * Returns the user's currently active meal plan.
+   * Finds the plan with isActive=true and status='active' for the authenticated user.
+   * Returns null if no active plan exists.
+   */
+  getActivePlan: protectedProcedure
+    .query(async ({ ctx }) => {
+      const { prisma } = ctx
+      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+
+      const plan = await prisma.mealPlan.findFirst({
+        where: {
+          userId: dbUserId,
+          isActive: true,
+          status: 'active',
+        },
+        orderBy: { generatedAt: 'desc' },
+      })
+
+      if (!plan) return null
+
+      let parsedPlan: Record<string, unknown> = {}
+      try {
+        parsedPlan = JSON.parse(plan.validatedPlan)
+      } catch { /* empty */ }
+
+      let parsedMetabolic: Record<string, unknown> = {}
+      try {
+        parsedMetabolic = JSON.parse(plan.metabolicProfile)
+      } catch { /* empty */ }
+
+      return {
+        id: plan.id,
+        dailyKcalTarget: plan.dailyKcalTarget,
+        dailyProteinG: plan.dailyProteinG,
+        dailyCarbsG: plan.dailyCarbsG,
+        dailyFatG: plan.dailyFatG,
+        trainingBonusKcal: plan.trainingBonusKcal,
+        planDays: plan.planDays,
+        startDate: plan.startDate,
+        endDate: plan.endDate,
+        qaScore: plan.qaScore,
+        qaStatus: plan.qaStatus,
+        status: plan.status,
+        isActive: plan.isActive,
+        validatedPlan: parsedPlan,
+        metabolicProfile: parsedMetabolic,
+      }
+    }),
+
+  /**
    * getPlanById query:
    * Returns a specific meal plan by ID, but ONLY if it belongs to the authenticated user.
    * This prevents users from accessing other users' plans via URL/ID manipulation.

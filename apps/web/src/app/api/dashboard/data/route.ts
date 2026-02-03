@@ -217,6 +217,7 @@ export async function GET(request: Request) {
         protein: tm.proteinG,
         carbs: tm.carbsG,
         fat: tm.fatG,
+        portion: tm.portion || 1.0,
         source: tm.source,
         mealSlot: tm.mealSlot,
         createdAt: tm.createdAt.toISOString(),

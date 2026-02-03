@@ -40,6 +40,27 @@ const navItems = [
     ),
   },
   {
+    label: 'Activity',
+    href: '/activity',
+    icon: (active: boolean) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active ? 0 : 1.5} className="h-5 w-5">
+        <circle cx="12" cy="12" r="10" />
+        <polyline points="12 6 12 12 16 14" />
+      </svg>
+    ),
+  },
+  {
+    label: 'Adaptive',
+    href: '/adaptive-nutrition',
+    icon: (active: boolean) => (
+      <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill={active ? 'currentColor' : 'none'} stroke="currentColor" strokeWidth={active ? 0 : 1.5} className="h-5 w-5">
+        <path d="M12 20V10" />
+        <path d="M18 20V4" />
+        <path d="M6 20v-4" />
+      </svg>
+    ),
+  },
+  {
     label: 'Settings',
     href: '/settings',
     icon: (active: boolean) => (

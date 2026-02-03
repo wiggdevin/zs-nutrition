@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma'
 import { getClerkUserId } from '@/lib/auth'
 import { calculateAdherenceScore } from '@/lib/adherence'
 import { safeLogError } from '@/lib/safe-logger'
+import { toLocalDay } from '@/lib/date-utils'
 
 export async function POST(request: NextRequest) {
   try {
@@ -59,9 +60,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Meal not found in plan day' }, { status: 404 });
     }
 
-    // Create today's date at midnight
-    const today = new Date();
-    today.setHours(0, 0, 0, 0);
+    // Create today's date at midnight (local time, stored as UTC midnight)
+    const today = toLocalDay();
 
     // Use a serialized transaction to prevent race conditions from concurrent requests
     const result = await prisma.$transaction(async (tx) => {
@@ -88,6 +88,7 @@ export async function POST(request: NextRequest) {
             protein: existingLog.proteinG,
             carbs: existingLog.carbsG,
             fat: existingLog.fatG,
+            portion: existingLog.portion || 1.0,
             source: existingLog.source,
             mealSlot: existingLog.mealSlot,
           },
@@ -166,6 +167,7 @@ export async function POST(request: NextRequest) {
           protein: trackedMeal.proteinG,
           carbs: trackedMeal.carbsG,
           fat: trackedMeal.fatG,
+          portion: trackedMeal.portion,
           source: trackedMeal.source,
           mealSlot: trackedMeal.mealSlot,
         },

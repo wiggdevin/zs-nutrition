@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import { api } from '@/lib/trpc/react'
+import { trpc } from '@/lib/trpc'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'
@@ -22,7 +22,7 @@ export function AdaptiveCalorieCard() {
   const [showConfirmDialog, setShowConfirmDialog] = useState(false)
   const [pendingKcal, setPendingKcal] = useState<number | null>(null)
 
-  const { data: suggestion, isLoading, refetch } = api.adaptiveNutrition.suggestCalorieAdjustment.useQuery(
+  const { data: suggestion, isLoading, refetch } = trpc.adaptiveNutrition.suggestCalorieAdjustment.useQuery(
     undefined,
     {
       enabled: true,
@@ -30,7 +30,7 @@ export function AdaptiveCalorieCard() {
     }
   )
 
-  const applyAdjustmentMutation = api.adaptiveNutrition.applyCalorieAdjustment.useMutation({
+  const applyAdjustmentMutation = trpc.adaptiveNutrition.applyCalorieAdjustment.useMutation({
     onSuccess: () => {
       toast.success('Calorie targets updated successfully')
       setShowConfirmDialog(false)
