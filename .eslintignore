@@ -1,0 +1,29 @@
+# Dependencies
+node_modules
+
+# Build outputs
+.next
+out
+dist
+build
+
+# Turbo
+.turbo
+
+# Environment files
+.env
+.env.*
+!.env.example
+
+# Generated files
+*.min.js
+*.generated.*
+
+# Logs
+*.log
+
+# Testing
+coverage
+
+# Misc
+.cache

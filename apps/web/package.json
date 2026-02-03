@@ -6,7 +6,7 @@
     "dev": "next dev --port 3456",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint",
+    "lint": "eslint .",
     "db:push": "prisma db push",
     "db:generate": "prisma generate",
     "db:studio": "prisma studio"
@@ -42,12 +42,21 @@
     "zustand": "^5.0.11"
   },
   "devDependencies": {
+    "@eslint/compat": "^1.2.4",
+    "@eslint/js": "^9.18.0",
+    "@next/eslint-plugin-next": "^15.5.7",
     "@types/node": "^22.0.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
     "@types/uuid": "^10.0.0",
+    "eslint": "^9.18.0",
+    "eslint-plugin-prettier": "^5.2.1",
+    "eslint-plugin-react": "^7.37.2",
+    "eslint-plugin-react-hooks": "^5.1.0",
     "postcss": "^8.4.0",
+    "prettier": "^3.4.2",
     "prisma": "6.19.2",
-    "typescript": "5.9.3"
+    "typescript": "5.9.3",
+    "typescript-eslint": "^8.19.1"
   }
 }

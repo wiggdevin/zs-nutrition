@@ -48,6 +48,7 @@ const publicPaths = [
   "/api/set-active-plan",
   "/test-feature-464-badges",
   "/test-feature-503",
+  "/test-feature-150",
   "/api/trpc/test.hello",
 ];
 
@@ -88,6 +89,7 @@ const isPublicRoute = createRouteMatcher([
   "/api/set-active-plan(.*)",
   "/test-feature-464-badges",
   "/test-feature-503",
+  "/test-feature-150",
   "/api/trpc/test.hello(.*)",
 ]);
 
@@ -97,7 +99,10 @@ const isPublicRoute = createRouteMatcher([
  */
 const protectedMiddleware = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
-    await auth.protect();
+    await auth.protect({
+      // Fall back to dashboard if no redirect_url is present
+      fallbackRedirectUrl: '/dashboard',
+    });
   }
 });
 

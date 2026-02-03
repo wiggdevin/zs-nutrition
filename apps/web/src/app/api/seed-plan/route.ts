@@ -153,40 +153,39 @@ export async function POST() {
       })),
       groceryList: [
         {
-          category: 'Dairy & Eggs',
-          items: [
-            { name: 'Greek yogurt', amount: 1400, unit: 'g' },
-          ],
-        },
-        {
-          category: 'Fruits',
+          category: 'Produce',
           items: [
             { name: 'Mixed berries', amount: 700, unit: 'g' },
+            { name: 'Broccoli', amount: 1050, unit: 'g' },
+            { name: 'Cherry tomatoes', amount: 560, unit: 'g' },
+            { name: 'Mixed greens', amount: 700, unit: 'g' },
+            { name: 'Sweet potato', amount: 1050, unit: 'g' },
           ],
         },
         {
-          category: 'Grains & Bread',
-          items: [
-            { name: 'Granola', amount: 210, unit: 'g' },
-            { name: 'Quinoa', amount: 700, unit: 'g' },
-          ],
-        },
-        {
-          category: 'Meat & Seafood',
+          category: 'Meat and Seafood',
           items: [
             { name: 'Chicken breast', amount: 1400, unit: 'g' },
             { name: 'Salmon fillet', amount: 1400, unit: 'g' },
           ],
         },
         {
-          category: 'Nuts & Seeds',
+          category: 'Dairy and Eggs',
           items: [
-            { name: 'Almonds', amount: 140, unit: 'g' },
+            { name: 'Greek yogurt', amount: 1400, unit: 'g' },
           ],
         },
         {
-          category: 'Oils & Condiments',
+          category: 'Bakery',
           items: [
+            { name: 'Granola', amount: 210, unit: 'g' },
+          ],
+        },
+        {
+          category: 'Pantry',
+          items: [
+            { name: 'Quinoa', amount: 700, unit: 'g' },
+            { name: 'Almonds', amount: 140, unit: 'g' },
             { name: 'Olive oil', amount: 14, unit: 'tbsp' },
           ],
         },
@@ -195,15 +194,6 @@ export async function POST() {
           items: [
             { name: 'Almond milk', amount: 2100, unit: 'ml' },
             { name: 'Protein powder', amount: 18, unit: 'scoops' },
-          ],
-        },
-        {
-          category: 'Produce',
-          items: [
-            { name: 'Broccoli', amount: 1050, unit: 'g' },
-            { name: 'Cherry tomatoes', amount: 560, unit: 'g' },
-            { name: 'Mixed greens', amount: 700, unit: 'g' },
-            { name: 'Sweet potato', amount: 1050, unit: 'g' },
           ],
         },
       ],

@@ -313,3 +313,79 @@ export const PipelineProgressSchema = z.object({
 });
 
 export type PipelineProgress = z.infer<typeof PipelineProgressSchema>;
+
+// ============================================================
+// FatSecret API Response Schemas
+// ============================================================
+
+export const FoodSearchResultSchema = z.object({
+  foodId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  brandName: z.string().optional(),
+});
+
+export const FoodServingSchema = z.object({
+  servingId: z.string(),
+  servingDescription: z.string(),
+  metricServingAmount: z.number().optional(),
+  metricServingUnit: z.string().optional(),
+  calories: z.number(),
+  protein: z.number(),
+  carbohydrate: z.number(),
+  fat: z.number(),
+  fiber: z.number().optional(),
+});
+
+export const FoodDetailsSchema = z.object({
+  foodId: z.string(),
+  name: z.string(),
+  brandName: z.string().optional(),
+  servings: z.array(FoodServingSchema),
+});
+
+export const RecipeSearchResultSchema = z.object({
+  recipeId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  preparationTimeMin: z.number().optional(),
+  cookingTimeMin: z.number().optional(),
+});
+
+export const RecipeIngredientSchema = z.object({
+  foodId: z.string().optional(),
+  name: z.string(),
+  amount: z.string(),
+});
+
+export const RecipeDirectionSchema = z.object({
+  stepNumber: z.number(),
+  description: z.string(),
+});
+
+export const RecipeDetailsSchema = z.object({
+  recipeId: z.string(),
+  name: z.string(),
+  description: z.string(),
+  preparationTimeMin: z.number().optional(),
+  cookingTimeMin: z.number().optional(),
+  servingSize: z.number(),
+  ingredients: z.array(RecipeIngredientSchema),
+  directions: z.array(RecipeDirectionSchema),
+  nutrition: z.object({
+    calories: z.number(),
+    protein: z.number(),
+    carbohydrate: z.number(),
+    fat: z.number(),
+    fiber: z.number().optional(),
+  }),
+});
+
+// Type exports for FatSecret schemas
+export type FoodSearchResult = z.infer<typeof FoodSearchResultSchema>;
+export type FoodServing = z.infer<typeof FoodServingSchema>;
+export type FoodDetails = z.infer<typeof FoodDetailsSchema>;
+export type RecipeSearchResult = z.infer<typeof RecipeSearchResultSchema>;
+export type RecipeIngredient = z.infer<typeof RecipeIngredientSchema>;
+export type RecipeDirection = z.infer<typeof RecipeDirectionSchema>;
+export type RecipeDetails = z.infer<typeof RecipeDetailsSchema>;

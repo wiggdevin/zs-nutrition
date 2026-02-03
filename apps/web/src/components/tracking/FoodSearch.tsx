@@ -85,6 +85,7 @@ export default function FoodSearch() {
   const searchAbortRef = useRef<AbortController | null>(null)
   const detailsAbortRef = useRef<AbortController | null>(null)
   const searchGenRef = useRef(0)
+  const [emptySubmitMessage, setEmptySubmitMessage] = useState(false)
 
   // Close dropdown when clicking outside
   useEffect(() => {
@@ -202,6 +203,11 @@ export default function FoodSearch() {
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const val = e.target.value
 
+    // Clear empty submit message when user types
+    if (emptySubmitMessage) {
+      setEmptySubmitMessage(false)
+    }
+
     // Enforce max length - truncate if over limit
     if (val.length > MAX_SEARCH_LENGTH) {
       setQueryTooLong(true)
@@ -223,6 +229,23 @@ export default function FoodSearch() {
     debounceTimerRef.current = setTimeout(() => {
       fetchAutocomplete(val)
     }, 250)
+  }
+
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      const trimmed = query.trim()
+      if (trimmed.length === 0) {
+        // Show empty submit message
+        setEmptySubmitMessage(true)
+        // Auto-hide after 3 seconds
+        setTimeout(() => setEmptySubmitMessage(false), 3000)
+      } else if (trimmed.length < 2) {
+        // Query is too short
+        setEmptySubmitMessage(true)
+        setTimeout(() => setEmptySubmitMessage(false), 3000)
+      }
+      // Otherwise, let the normal search handle it (already debounced)
+    }
   }
 
   const handleSuggestionClick = async (suggestion: string) => {
@@ -374,6 +397,7 @@ export default function FoodSearch() {
             value={query}
             aria-label="Search foods"
             onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
             onFocus={() => {
               setIsFocused(true)
               if (suggestions.length > 0 || searchResults.length > 0) {
@@ -411,6 +435,7 @@ export default function FoodSearch() {
                 setLogError(null)
                 setIsLogNetworkError(false)
                 setQueryTooLong(false)
+                setEmptySubmitMessage(false)
                 setQuantity(1)
                 setMealSlot('')
                 setLoggedDate(new Date().toISOString().split('T')[0]) // Reset to today
@@ -442,6 +467,21 @@ export default function FoodSearch() {
             </svg>
             <span className="text-xs text-red-400 font-medium">
               Search query is too long (max {MAX_SEARCH_LENGTH} characters). Input has been truncated.
+            </span>
+          </div>
+        )}
+
+        {/* Empty Submit Message */}
+        {emptySubmitMessage && (
+          <div
+            className="mt-2 px-3 py-2 bg-yellow-500/10 border border-yellow-500/30 rounded-lg flex items-center gap-2"
+            data-testid="food-search-empty-submit"
+          >
+            <svg className="w-4 h-4 text-yellow-400 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+              <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
+            </svg>
+            <span className="text-xs text-yellow-400 font-medium">
+              Enter a food name to search (at least 2 characters)
             </span>
           </div>
         )}
