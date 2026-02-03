@@ -26,7 +26,7 @@ export async function POST() {
         userId: user.id,
         currentStep: 6,
         completed: true,
-        stepData: {}
+        stepData: "{}"
       }
     })
 

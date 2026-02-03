@@ -25,8 +25,8 @@ export async function GET() {
   return NextResponse.json({
     userId: user.id,
     totalProfiles: user.profiles.length,
-    activeProfiles: user.profiles.filter(p => p.isActive).length,
-    profiles: user.profiles.map(p => ({
+    activeProfiles: user.profiles.filter((p: any) => p.isActive).length,
+    profiles: user.profiles.map((p: any) => ({
       id: p.id,
       name: p.name,
       isActive: p.isActive,

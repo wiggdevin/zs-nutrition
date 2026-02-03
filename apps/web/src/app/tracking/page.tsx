@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
+import { useState, useEffect, useRef, Suspense } from 'react'
 import { useSearchParams } from 'next/navigation'
 import NavBar from '@/components/navigation/NavBar'
 import FoodSearch from '@/components/tracking/FoodSearch'
@@ -10,7 +10,9 @@ import FoodScan from '@/components/tracking/FoodScan'
 import { useTrackingStore } from '@/lib/stores/useTrackingStore'
 import Link from 'next/link'
 
-export default function TrackingPage() {
+export const dynamic = 'force-dynamic'
+
+function TrackingPageContent() {
   const searchParams = useSearchParams()
   const mode = searchParams.get('mode') // 'plan', 'search', 'quick', or null (show all)
   const foodSearchRef = useRef<HTMLDivElement>(null)
@@ -171,4 +173,19 @@ export default function TrackingPage() {
       </div>
     </>
   );
+}
+
+export default function TrackingPage() {
+  return (
+    <Suspense fallback={
+      <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f97316] mx-auto mb-4"></div>
+          <p className="text-sm text-[#a1a1aa]">Loading...</p>
+        </div>
+      </div>
+    }>
+      <TrackingPageContent />
+    </Suspense>
+  )
 }

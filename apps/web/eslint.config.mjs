@@ -37,9 +37,16 @@ export default [
     },
   },
 
-  // Next.js plugin
-  ...nextPlugin.configs.recommended,
-  ...nextPlugin.configs["core-web-vitals"],
+  // Next.js plugin (using object format for flat config)
+  {
+    plugins: {
+      "@next/next": nextPlugin,
+    },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+    },
+  },
 
   // Prettier integration (must be last to override other configs)
   {

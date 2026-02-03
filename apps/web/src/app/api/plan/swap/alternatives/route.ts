@@ -163,8 +163,8 @@ export async function POST(req: NextRequest) {
     });
 
     const dietaryStyle = userProfile?.dietaryStyle || null;
-    const allergies = (userProfile?.allergies as string[]) || [];
-    const exclusions = (userProfile?.exclusions as string[]) || [];
+    const allergies = userProfile?.allergies ? JSON.parse(userProfile.allergies) : [];
+    const exclusions = userProfile?.exclusions ? JSON.parse(userProfile.exclusions) : [];
 
     // Parse the validated plan
     let validatedPlan: { days: PlanDay[] };

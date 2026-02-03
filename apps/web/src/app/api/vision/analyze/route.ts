@@ -1,4 +1,4 @@
-import { NextResponse } from 'next/server'
+import { NextResponse, NextRequest } from 'next/server'
 import { getAuth } from '@clerk/nextjs/server'
 import { getVisionClient, FoodAnalysisResult } from '@/lib/vision/claude-vision'
 import { prisma } from '@/lib/prisma'
@@ -14,10 +14,10 @@ interface AnalyzeRequest {
  *
  * Analyze a food photo using Claude Vision
  */
-export async function POST(request: Request) {
+export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const { userId } = await getAuth()
+    const { userId } = await getAuth(request)
 
     if (!userId) {
       return NextResponse.json(

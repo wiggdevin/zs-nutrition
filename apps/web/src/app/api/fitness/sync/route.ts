@@ -38,7 +38,7 @@ export async function POST(req: NextRequest) {
     }
 
     const syncDate = date ? new Date(date) : new Date();
-    const results = [];
+    const results: any[] = [];
 
     // Sync from each platform
     for (const connection of connections) {
@@ -115,7 +115,7 @@ async function syncFromPlatform(
 /**
  * Sync data from Fitbit
  */
-async function syncFitbitData(accessToken: string, syncDate: Date) {
+async function syncFitbitData(accessToken: string, syncDate: Date): Promise<any> {
   const dateStr = syncDate.toISOString().split('T')[0];
 
   // Fetch activity data
@@ -132,7 +132,7 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
     throw new Error(`Fitbit API error: ${activityResponse.statusText}`);
   }
 
-  const activityData = await activityResponse.json();
+  const activityData: any = await activityResponse.json();
 
   // Fetch sleep data
   const sleepResponse = await fetch(
@@ -144,7 +144,7 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
     },
   );
 
-  let sleepData = null;
+  let sleepData: any = null;
   if (sleepResponse.ok) {
     sleepData = await sleepResponse.json();
   }
@@ -166,7 +166,7 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
 /**
  * Sync data from Oura
  */
-async function syncOuraData(accessToken: string, syncDate: Date) {
+async function syncOuraData(accessToken: string, syncDate: Date): Promise<any> {
   const dateStr = syncDate.toISOString().split('T')[0];
 
   // Fetch activity data
@@ -195,7 +195,7 @@ async function syncOuraData(accessToken: string, syncDate: Date) {
     },
   );
 
-  let sleepData = null;
+  let sleepData: any = null;
   if (sleepResponse.ok) {
     sleepData = await sleepResponse.json();
   }
@@ -213,7 +213,7 @@ async function syncOuraData(accessToken: string, syncDate: Date) {
 /**
  * Sync data from Google Fit
  */
-async function syncGoogleFitData(accessToken: string, syncDate: Date) {
+async function syncGoogleFitData(accessToken: string, syncDate: Date): Promise<any> {
   const startTime = new Date(syncDate);
   startTime.setHours(0, 0, 0, 0);
   const endTime = new Date(syncDate);

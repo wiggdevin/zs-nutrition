@@ -81,7 +81,7 @@ export async function GET() {
     planDurationDays: 7,
   };
 
-  const results = [];
+  const results: any[] = [];
 
   for (const [idx, intake] of [testIntake, testIntake2, testIntake3].entries()) {
     try {

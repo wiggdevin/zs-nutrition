@@ -1,7 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
+
+export const dynamic = 'force-dynamic'
 
 /**
  * Test page for Feature #159: Plan generation failure shows retry option
@@ -12,7 +14,7 @@ import { useRouter, useSearchParams } from "next/navigation";
  * 3. Verifying the error UI appears with retry button
  * 4. Testing the retry functionality
  */
-export default function TestFeature159Page() {
+function TestFeature159Content() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const jobIdParam = searchParams.get("jobId");
@@ -240,5 +242,13 @@ export default function TestFeature159Page() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function TestFeature159Page() {
+  return (
+    <Suspense fallback={<div>Loading...</div>}>
+      <TestFeature159Content />
+    </Suspense>
   );
 }

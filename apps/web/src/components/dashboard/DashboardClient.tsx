@@ -44,6 +44,7 @@ interface TrackedMealEntry {
   portion: number
   source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual'
   mealSlot: string | null
+  confidenceScore?: number | null
   createdAt: string
 }
 
@@ -543,6 +544,7 @@ function LogEntry({
   fat,
   portion,
   source,
+  confidenceScore,
   time,
   onAdjust,
   isAdjusting,
@@ -555,25 +557,36 @@ function LogEntry({
   fat: number
   portion: number
   source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual'
+  confidenceScore?: number | null
   time: string
   onAdjust: (id: string, newPortion: number) => void
   isAdjusting: boolean
 }) {
   const [showAdjustModal, setShowAdjustModal] = useState(false)
-  const sourceBadge = {
-    plan_meal: { label: 'Plan', color: 'bg-[#3b82f6]/10 text-[#3b82f6]' },
-    fatsecret_search: {
-      label: 'Verified',
-      color: 'bg-[#22c55e]/10 text-[#22c55e]',
-    },
-    quick_add: {
-      label: 'Quick Add',
-      color: 'bg-[#f59e0b]/10 text-[#f59e0b]',
-    },
-    manual: { label: 'Manual', color: 'bg-[#a1a1aa]/10 text-[#a1a1aa]' },
+
+  // Determine confidence badge based on source and confidenceScore
+  // - FatSecret foods are always "Verified" (green)
+  // - Plan meals: confidenceScore >= 1.0 = "Verified", < 1.0 = "AI-Estimated"
+  // - Quick Add and Manual use their original badges
+  const getConfidenceBadge = () => {
+    if (source === 'fatsecret_search') {
+      return { label: 'Verified', color: 'bg-[#22c55e]/10 text-[#22c55e]' }
+    }
+    if (source === 'plan_meal') {
+      // confidenceScore >= 1.0 means verified, < 1.0 means ai_estimated
+      if (confidenceScore !== undefined && confidenceScore >= 1.0) {
+        return { label: 'Verified', color: 'bg-[#22c55e]/10 text-[#22c55e]' }
+      }
+      return { label: 'AI-Estimated', color: 'bg-[#f59e0b]/10 text-[#f59e0b]' }
+    }
+    if (source === 'quick_add') {
+      return { label: 'Quick Add', color: 'bg-[#f59e0b]/10 text-[#f59e0b]' }
+    }
+    // manual
+    return { label: 'Manual', color: 'bg-[#a1a1aa]/10 text-[#a1a1aa]' }
   }
 
-  const badge = sourceBadge[source]
+  const badge = getConfidenceBadge()
 
   const handleConfirmAdjust = (newPortion: number) => {
     onAdjust(id, newPortion)
@@ -1327,9 +1340,13 @@ export default function DashboardClient() {
   }
 
   const remaining = {
-    calories: Math.max(0, macros.calories.target - macros.calories.current),
-    protein: Math.max(0, macros.protein.target - macros.protein.current),
+    calories: macros.calories.target - macros.calories.current,
+    protein: macros.protein.target - macros.protein.current,
   }
+
+  // Determine if user is over budget for any macro
+  const isOverCalories = remaining.calories < 0
+  const isOverProtein = remaining.protein < 0
 
   // Determine which slots have already been logged today
   const loggedSlots = new Set(
@@ -1456,14 +1473,26 @@ export default function DashboardClient() {
           {/* Remaining Budget */}
           <div className="mt-6 text-center">
             <p className="text-sm text-[#a1a1aa]">
-              <span className="text-[#3b82f6] font-semibold">
-                {remaining.protein}g protein
-              </span>{' '}
-              ·{' '}
-              <span className="text-[#f97316] font-semibold">
-                {remaining.calories} kcal
-              </span>{' '}
-              remaining
+              {isOverProtein ? (
+                <span className="text-[#ef4444] font-semibold">
+                  {Math.abs(remaining.protein)}g protein over
+                </span>
+              ) : (
+                <span className="text-[#3b82f6] font-semibold">
+                  {remaining.protein}g protein
+                </span>
+              )}
+              {' '}·{' '}
+              {isOverCalories ? (
+                <span className="text-[#ef4444] font-semibold">
+                  {Math.abs(remaining.calories)} kcal over
+                </span>
+              ) : (
+                <span className="text-[#f97316] font-semibold">
+                  {remaining.calories} kcal
+                </span>
+              )}{' '}
+              {isOverCalories || isOverProtein ? '' : 'remaining'}
             </p>
           </div>
         </section>
@@ -1634,6 +1663,7 @@ export default function DashboardClient() {
                     fat={entry.fat}
                     portion={entry.portion || 1}
                     source={entry.source}
+                    confidenceScore={entry.confidenceScore}
                     time={formatTime(entry.createdAt)}
                     onAdjust={handleAdjustPortion}
                     isAdjusting={adjustingMealId === entry.id}

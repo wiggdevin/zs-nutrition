@@ -105,7 +105,7 @@ export async function GET(req: NextRequest) {
 
     // Use the calculator to determine adjustment
     const adjustment = calculateCalorieAdjustment(baseTarget, {
-      platform: 'aggregated',
+      platform: 'apple_health',
       syncDate: targetDate,
       activeCalories: totalActiveCalories,
       workouts: activities.flatMap((a) => a.workouts || []),

@@ -178,21 +178,21 @@ export default function WeeklyTrendContent() {
       {/* ── Weekly Average Display ── */}
       {weeklyAverage !== null && (
         <div
-          className="mb-6 bg-[#18181b] border border-[#27272a] rounded-lg p-6"
+          className="mb-4 md:mb-6 bg-[#18181b] border border-[#27272a] rounded-lg p-4 md:p-6"
           data-testid="weekly-average-display"
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-sm text-[#a1a1aa] uppercase tracking-wider mb-1">
+              <h3 className="text-xs md:text-sm text-[#a1a1aa] uppercase tracking-wider mb-1">
                 Weekly Average
               </h3>
-              <p className="text-xs text-[#a1a1aa]">
+              <p className="text-[10px] md:text-xs text-[#a1a1aa]">
                 Based on {daysWithScores.length} day{daysWithScores.length !== 1 ? 's' : ''} of data
               </p>
             </div>
             <div className="text-right">
               <div
-                className={`text-4xl font-bold ${
+                className={`text-2xl md:text-4xl font-bold ${
                   weeklyAverage >= 80
                     ? 'text-green-400'
                     : weeklyAverage >= 50
@@ -203,15 +203,15 @@ export default function WeeklyTrendContent() {
               >
                 {weeklyAverage}%
               </div>
-              <div className="text-sm text-[#a1a1aa]">adherence</div>
+              <div className="text-xs md:text-sm text-[#a1a1aa]">adherence</div>
             </div>
           </div>
         </div>
       )}
 
-      <div className="mb-4 flex flex-wrap gap-4">
-        <div>
-          <label htmlFor="start-date-input" className="text-sm text-[#a1a1aa] mr-2">
+      <div className="mb-4 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center">
+          <label htmlFor="start-date-input" className="text-xs sm:text-sm text-[#a1a1aa] sm:mr-2 mb-1 sm:mb-0">
             Start date:
           </label>
           <input
@@ -220,20 +220,20 @@ export default function WeeklyTrendContent() {
             value={startDate}
             max={todayStr}
             onChange={(e) => setStartDate(e.target.value)}
-            className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-sm text-white"
+            className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-xs sm:text-sm text-white w-full sm:w-auto"
             data-testid="start-date-input"
           />
         </div>
 
-        <div>
-          <label htmlFor="metric-selector" className="text-sm text-[#a1a1aa] mr-2">
+        <div className="flex flex-col sm:flex-row sm:items-center">
+          <label htmlFor="metric-selector" className="text-xs sm:text-sm text-[#a1a1aa] sm:mr-2 mb-1 sm:mb-0">
             Metric:
           </label>
           <select
             id="metric-selector"
             value={selectedMetric}
             onChange={(e) => setSelectedMetric(e.target.value as Metric)}
-            className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-sm text-white"
+            className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-xs sm:text-sm text-white w-full sm:w-auto"
             data-testid="metric-selector"
           >
             <option value="kcal">Calories</option>
@@ -244,40 +244,41 @@ export default function WeeklyTrendContent() {
         </div>
       </div>
 
-      <div className="mb-4 text-sm text-[#a1a1aa]">
+      <div className="mb-4 text-xs sm:text-sm text-[#a1a1aa]">
         <span>Period: </span>
         <span data-testid="trend-start-date">{formatUTCDateFull(data.startDate)}</span>
         <span> - </span>
         <span data-testid="trend-end-date">{data.days.length > 0 ? formatUTCDateFull(data.days[data.days.length - 1].date) : formatUTCDateFull(data.endDate)}</span>
-        <span className="ml-3">({data.totalDays} days)</span>
+        <span className="ml-2 sm:ml-3">({data.totalDays} days)</span>
       </div>
 
       {/* ── Recharts Line Chart: Actual vs Target for selected metric ── */}
       <div
         data-testid="weekly-trend-chart"
-        className="bg-[#18181b] border border-[#27272a] rounded-lg p-4 mb-6"
+        className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 md:p-4 mb-6"
       >
-        <h2 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
+        <h2 className="text-white font-semibold text-xs md:text-sm uppercase tracking-wider mb-3 md:mb-4">
           {metricConfig.label} — Actual vs Target
         </h2>
-        <div data-testid="chart-responsive-wrapper" style={{ width: '100%', minHeight: 300 }}>
-          <ResponsiveContainer width="100%" height={300}>
-            <LineChart data={chartData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
+        <div data-testid="chart-responsive-wrapper" style={{ width: '100%', minHeight: 250 }}>
+          <ResponsiveContainer width="100%" height={280}>
+            <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
               <XAxis
                 dataKey="label"
-                tick={{ fill: '#a1a1aa', fontSize: 12 }}
+                tick={{ fill: '#a1a1aa', fontSize: 10 }}
                 stroke="#27272a"
+                interval={0}
               />
               <YAxis
-                tick={{ fill: '#a1a1aa', fontSize: 12 }}
+                tick={{ fill: '#a1a1aa', fontSize: 10 }}
                 stroke="#27272a"
-                width={50}
-                label={{ value: metricConfig.unit, angle: -90, position: 'insideLeft', fill: '#a1a1aa', fontSize: 11 }}
+                width={40}
+                label={{ value: metricConfig.unit, angle: -90, position: 'insideLeft', fill: '#a1a1aa', fontSize: 10 }}
               />
               <Tooltip content={<CustomTooltip metric={selectedMetric} />} />
               <Legend
-                wrapperStyle={{ color: '#a1a1aa', fontSize: 13, paddingTop: 8 }}
+                wrapperStyle={{ color: '#a1a1aa', fontSize: '11px', paddingTop: 4 }}
               />
               <Line
                 type="monotone"
@@ -286,7 +287,7 @@ export default function WeeklyTrendContent() {
                 stroke={metricConfig.color}
                 strokeWidth={2}
                 strokeDasharray="6 3"
-                dot={{ fill: metricConfig.color, r: 4 }}
+                dot={{ fill: metricConfig.color, r: 3 }}
                 connectNulls
                 data-testid="target-line"
               />
@@ -296,8 +297,8 @@ export default function WeeklyTrendContent() {
                 name="Actual"
                 stroke="#22d3ee"
                 strokeWidth={2}
-                dot={{ fill: '#22d3ee', r: 4 }}
-                activeDot={{ r: 6 }}
+                dot={{ fill: '#22d3ee', r: 3 }}
+                activeDot={{ r: 5 }}
                 data-testid="actual-line"
               />
             </LineChart>
@@ -316,17 +317,17 @@ export default function WeeklyTrendContent() {
             <div
               key={day.date}
               data-testid={`day-summary-${i}`}
-              className="bg-[#18181b] border border-[#27272a] rounded-lg p-4"
+              className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 md:p-4"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center gap-2">
-                  <span className="text-white font-semibold">{dayName}</span>
-                  <span className="text-[#a1a1aa] text-sm">{dateStr}</span>
+                <div className="flex items-center gap-1 md:gap-2">
+                  <span className="text-white font-semibold text-sm md:text-base">{dayName}</span>
+                  <span className="text-[#a1a1aa] text-xs md:text-sm">{dateStr}</span>
                 </div>
                 {day.adherenceScore !== null && (
                   <span
                     data-testid={`adherence-score-${i}`}
-                    className={`text-sm font-medium px-2 py-0.5 rounded ${
+                    className={`text-xs md:text-sm font-medium px-2 py-0.5 rounded ${
                       day.adherenceScore >= 80
                         ? 'bg-green-900/50 text-green-400'
                         : day.adherenceScore >= 50
@@ -341,31 +342,31 @@ export default function WeeklyTrendContent() {
 
               {/* Targets */}
               <div className="mb-1">
-                <span className="text-xs text-[#a1a1aa] uppercase tracking-wider">Targets:</span>
+                <span className="text-[10px] md:text-xs text-[#a1a1aa] uppercase tracking-wider">Targets:</span>
                 {day.targets ? (
-                  <div className="flex gap-3 mt-1" data-testid={`day-targets-${i}`}>
-                    <span className="text-orange-400 text-sm">{day.targets.kcal ?? '-'} kcal</span>
-                    <span className="text-blue-400 text-sm">P {day.targets.proteinG ?? '-'}g</span>
-                    <span className="text-green-400 text-sm">C {day.targets.carbsG ?? '-'}g</span>
-                    <span className="text-yellow-400 text-sm">F {day.targets.fatG ?? '-'}g</span>
+                  <div className="flex gap-2 md:gap-3 mt-1 flex-wrap" data-testid={`day-targets-${i}`}>
+                    <span className="text-orange-400 text-xs md:text-sm">{day.targets.kcal ?? '-'} kcal</span>
+                    <span className="text-blue-400 text-xs md:text-sm">P {day.targets.proteinG ?? '-'}g</span>
+                    <span className="text-green-400 text-xs md:text-sm">C {day.targets.carbsG ?? '-'}g</span>
+                    <span className="text-yellow-400 text-xs md:text-sm">F {day.targets.fatG ?? '-'}g</span>
                   </div>
                 ) : (
-                  <span className="text-[#a1a1aa] text-sm ml-2">No targets set</span>
+                  <span className="text-[#a1a1aa] text-xs md:text-sm ml-2">No targets set</span>
                 )}
               </div>
 
               {/* Actuals */}
               <div>
-                <span className="text-xs text-[#a1a1aa] uppercase tracking-wider">Actuals:</span>
-                <div className="flex gap-3 mt-1" data-testid={`day-actuals-${i}`}>
-                  <span className="text-orange-400 text-sm">{day.actuals.kcal} kcal</span>
-                  <span className="text-blue-400 text-sm">P {day.actuals.proteinG}g</span>
-                  <span className="text-green-400 text-sm">C {day.actuals.carbsG}g</span>
-                  <span className="text-yellow-400 text-sm">F {day.actuals.fatG}g</span>
+                <span className="text-[10px] md:text-xs text-[#a1a1aa] uppercase tracking-wider">Actuals:</span>
+                <div className="flex gap-2 md:gap-3 mt-1 flex-wrap" data-testid={`day-actuals-${i}`}>
+                  <span className="text-orange-400 text-xs md:text-sm">{day.actuals.kcal} kcal</span>
+                  <span className="text-blue-400 text-xs md:text-sm">P {day.actuals.proteinG}g</span>
+                  <span className="text-green-400 text-xs md:text-sm">C {day.actuals.carbsG}g</span>
+                  <span className="text-yellow-400 text-xs md:text-sm">F {day.actuals.fatG}g</span>
                 </div>
               </div>
 
-              <div className="mt-1 text-xs text-[#a1a1aa]">{day.mealCount} meals logged</div>
+              <div className="mt-1 text-[10px] md:text-xs text-[#a1a1aa]">{day.mealCount} meals logged</div>
             </div>
           )
         })}

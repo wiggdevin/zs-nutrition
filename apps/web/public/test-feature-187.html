@@ -1,0 +1,385 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feature #187 Test: Weekly Adherence Average</title>
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #fafafa;
+      padding: 20px;
+      min-height: 100vh;
+    }
+    .container {
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    h1 {
+      font-size: 24px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 8px;
+    }
+    .subtitle {
+      color: #a1a1aa;
+      margin-bottom: 32px;
+    }
+    .section {
+      background: #18181b;
+      border: 1px solid #27272a;
+      border-radius: 8px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+    .section-title {
+      font-size: 14px;
+      color: #a1a1aa;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 16px;
+    }
+    .test-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .day-card {
+      background: #27272a;
+      border-radius: 6px;
+      padding: 12px;
+      text-align: center;
+    }
+    .day-label {
+      font-size: 12px;
+      color: #a1a1aa;
+      margin-bottom: 4px;
+    }
+    .score {
+      font-size: 24px;
+      font-weight: 700;
+    }
+    .score.green { color: #4ade80; }
+    .score.yellow { color: #facc15; }
+    .score.red { color: #f87171; }
+    .average-card {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .average-label {
+      flex: 1;
+    }
+    .average-label h3 {
+      font-size: 14px;
+      color: #a1a1aa;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+    .average-label p {
+      font-size: 12px;
+      color: #a1a1aa;
+    }
+    .average-value {
+      text-align: right;
+    }
+    .average-score {
+      font-size: 48px;
+      font-weight: 700;
+      line-height: 1;
+    }
+    .average-label-text {
+      font-size: 14px;
+      color: #a1a1aa;
+      margin-top: 4px;
+    }
+    .calculation {
+      font-family: 'Monaco', 'Menlo', monospace;
+      font-size: 13px;
+      color: #a1a1aa;
+      background: #0a0a0a;
+      padding: 12px;
+      border-radius: 4px;
+      margin-top: 12px;
+    }
+    .input-group {
+      margin-bottom: 16px;
+    }
+    label {
+      display: block;
+      font-size: 12px;
+      color: #a1a1aa;
+      margin-bottom: 8px;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+    }
+    input[type="number"] {
+      width: 100%;
+      background: #0a0a0a;
+      border: 1px solid #27272a;
+      border-radius: 4px;
+      padding: 8px 12px;
+      color: #fafafa;
+      font-size: 14px;
+    }
+    input[type="number"]:focus {
+      outline: none;
+      border-color: #f97316;
+    }
+    button {
+      background: #f97316;
+      color: #0a0a0a;
+      border: none;
+      border-radius: 6px;
+      padding: 10px 20px;
+      font-size: 14px;
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      cursor: pointer;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #ea580c;
+    }
+    .thresholds {
+      display: flex;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .threshold {
+      flex: 1;
+      text-align: center;
+      padding: 12px;
+      background: #27272a;
+      border-radius: 6px;
+    }
+    .threshold-range {
+      font-size: 18px;
+      font-weight: 700;
+      margin-bottom: 4px;
+    }
+    .threshold-label {
+      font-size: 11px;
+      color: #a1a1aa;
+      text-transform: uppercase;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>Feature #187 Test</h1>
+    <p class="subtitle">Weekly Adherence Average Calculation</p>
+
+    <!-- Test Case 1: Default Test Data -->
+    <div class="section">
+      <div class="section-title">Test Case: Mixed Adherence Scores</div>
+
+      <div class="test-grid" id="testGrid">
+        <div class="day-card">
+          <div class="day-label">Day 1</div>
+          <div class="score green">90%</div>
+        </div>
+        <div class="day-card">
+          <div class="day-label">Day 2</div>
+          <div class="score yellow">75%</div>
+        </div>
+        <div class="day-card">
+          <div class="day-label">Day 3</div>
+          <div class="score green">85%</div>
+        </div>
+        <div class="day-card">
+          <div class="day-label">Day 4</div>
+          <div class="score red">45%</div>
+        </div>
+        <div class="day-card">
+          <div class="day-label">Day 5</div>
+          <div class="score green">95%</div>
+        </div>
+        <div class="day-card">
+          <div class="day-label">Day 6</div>
+          <div class="score yellow">60%</div>
+        </div>
+        <div class="day-card">
+          <div class="day-label">Day 7</div>
+          <div class="score green">80%</div>
+        </div>
+      </div>
+
+      <div class="section">
+        <div class="average-card">
+          <div class="average-label">
+            <h3>Weekly Average</h3>
+            <p>Based on 7 days of data</p>
+          </div>
+          <div class="average-value">
+            <div class="average-score yellow" id="averageScore">76%</div>
+            <div class="average-label-text">adherence</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="calculation">
+        <strong>Calculation:</strong><br>
+        Sum: 90 + 75 + 85 + 45 + 95 + 60 + 80 = 530<br>
+        Count: 7 days<br>
+        Average: 530 / 7 = 75.71...<br>
+        Rounded: Math.round(75.71) = 76<br>
+        Color: 76% → Yellow (≥50% but &lt;80%)
+      </div>
+    </div>
+
+    <!-- Test Case 2: Custom Input -->
+    <div class="section">
+      <div class="section-title">Custom Test: Enter Your Own Scores</div>
+
+      <div class="test-grid" id="customGrid">
+        <div class="input-group">
+          <label>Day 1</label>
+          <input type="number" class="day-input" id="day1" value="90" min="0" max="100">
+        </div>
+        <div class="input-group">
+          <label>Day 2</label>
+          <input type="number" class="day-input" id="day2" value="75" min="0" max="100">
+        </div>
+        <div class="input-group">
+          <label>Day 3</label>
+          <input type="number" class="day-input" id="day3" value="85" min="0" max="100">
+        </div>
+        <div class="input-group">
+          <label>Day 4</label>
+          <input type="number" class="day-input" id="day4" value="45" min="0" max="100">
+        </div>
+        <div class="input-group">
+          <label>Day 5</label>
+          <input type="number" class="day-input" id="day5" value="95" min="0" max="100">
+        </div>
+        <div class="input-group">
+          <label>Day 6</label>
+          <input type="number" class="day-input" id="day6" value="60" min="0" max="100">
+        </div>
+        <div class="input-group">
+          <label>Day 7</label>
+          <input type="number" class="day-input" id="day7" value="80" min="0" max="100">
+        </div>
+      </div>
+
+      <button onclick="calculateCustom()">Calculate Average</button>
+
+      <div class="section" style="margin-top: 16px;">
+        <div class="average-card">
+          <div class="average-label">
+            <h3>Weekly Average</h3>
+            <p id="customDaysText">Based on 7 days of data</p>
+          </div>
+          <div class="average-value">
+            <div class="average-score yellow" id="customAverage">76%</div>
+            <div class="average-label-text">adherence</div>
+          </div>
+        </div>
+        <div class="calculation" id="customCalculation">
+          Click "Calculate Average" to see the calculation
+        </div>
+      </div>
+    </div>
+
+    <!-- Color Thresholds Reference -->
+    <div class="section">
+      <div class="section-title">Color Thresholds</div>
+      <div class="thresholds">
+        <div class="threshold">
+          <div class="threshold-range green">≥80%</div>
+          <div class="threshold-label">Green</div>
+        </div>
+        <div class="threshold">
+          <div class="threshold-range yellow">50-79%</div>
+          <div class="threshold-label">Yellow</div>
+        </div>
+        <div class="threshold">
+          <div class="threshold-range red">&lt;50%</div>
+          <div class="threshold-label">Red</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Code Reference -->
+    <div class="section">
+      <div class="section-title">Implementation Code (WeeklyTrendContent.tsx)</div>
+      <div class="calculation">
+<span style="color: #f97316;">// Calculate weekly adherence average (mean of daily scores)</span>
+<span style="color: #a1a1aa;">const</span> daysWithScores = data.days.<span style="color: #facc15;">filter</span>((d) => d.adherenceScore !== <span style="color: #facc15;">null</span>)
+<span style="color: #a1a1aa;">const</span> weeklyAverage =
+  daysWithScores.length > <span style="color: #2fb1c6;">0</span>
+    ? <span style="color: #a1a1aa;">Math</span>.<span style="color: #facc15;">round</span>(
+        daysWithScores.<span style="color: #facc15;">reduce</span>((sum, d) => sum + (d.adherenceScore ?? <span style="color: #2fb1c6;">0</span>), <span style="color: #2fb1c6;">0</span>) / daysWithScores.length
+      )
+    : <span style="color: #facc15;">null</span>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function calculateCustom() {
+      const inputs = document.querySelectorAll('.day-input');
+      const scores = [];
+      let validCount = 0;
+
+      inputs.forEach(input => {
+        const value = input.value;
+        if (value !== '' && value !== null) {
+          scores.push(parseFloat(value));
+          validCount++;
+        }
+      });
+
+      if (validCount === 0) {
+        document.getElementById('customAverage').textContent = 'N/A';
+        document.getElementById('customDaysText').textContent = 'No valid scores';
+        document.getElementById('customCalculation').textContent = 'Enter at least one score';
+        return;
+      }
+
+      const sum = scores.reduce((acc, val) => acc + val, 0);
+      const average = Math.round(sum / validCount);
+
+      let colorClass = 'red';
+      if (average >= 80) colorClass = 'green';
+      else if (average >= 50) colorClass = 'yellow';
+
+      const avgElement = document.getElementById('customAverage');
+      avgElement.textContent = average + '%';
+      avgElement.className = 'average-score ' + colorClass;
+
+      document.getElementById('customDaysText').textContent =
+        `Based on ${validCount} day${validCount !== 1 ? 's' : ''} of data`;
+
+      document.getElementById('customCalculation').innerHTML =
+        `<strong>Calculation:</strong><br>` +
+        `Scores: ${scores.join(', ')}<br>` +
+        `Sum: ${sum}<br>` +
+        `Count: ${validCount} day${validCount !== 1 ? 's' : ''}<br>` +
+        `Average: ${sum} / ${validCount} = ${(sum / validCount).toFixed(2)}...<br>` +
+        `Rounded: Math.round(${(sum / validCount).toFixed(2)}) = ${average}<br>` +
+        `Color: ${average}% → ${colorClass.charAt(0).toUpperCase() + colorClass.slice(1)} (${getThresholdText(average)})`;
+    }
+
+    function getThresholdText(score) {
+      if (score >= 80) return '≥80%';
+      if (score >= 50) return '≥50% but <80%';
+      return '<50%';
+    }
+
+    // Auto-calculate on page load
+    calculateCustom();
+  </script>
+</body>
+</html>

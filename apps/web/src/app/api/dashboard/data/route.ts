@@ -218,7 +218,7 @@ export async function GET(request: Request) {
       select: { adherenceScore: true },
     });
     const weeklyAverageAdherence = weeklyLogs.length > 0
-      ? Math.round(weeklyLogs.reduce((sum, l) => sum + (l.adherenceScore || 0), 0) / weeklyLogs.length)
+      ? Math.round(weeklyLogs.reduce((sum: number, l: { adherenceScore: number | null }) => sum + (l.adherenceScore || 0), 0) / weeklyLogs.length)
       : null;
 
     // Compute effective calorie target accounting for training day
@@ -236,7 +236,7 @@ export async function GET(request: Request) {
       hasCompletedOnboarding,
       planId,
       todayPlanMeals,
-      trackedMeals: trackedMeals.map(tm => ({
+      trackedMeals: trackedMeals.map((tm: any) => ({
         id: tm.id,
         name: tm.mealName,
         calories: tm.kcal,
@@ -246,6 +246,7 @@ export async function GET(request: Request) {
         portion: tm.portion || 1.0,
         source: tm.source,
         mealSlot: tm.mealSlot,
+        confidenceScore: tm.confidenceScore,
         createdAt: tm.createdAt.toISOString(),
       })),
       macros: {

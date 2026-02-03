@@ -57,7 +57,7 @@ export async function GET() {
     });
 
     return NextResponse.json({
-      plans: plans.map((plan) => ({
+      plans: plans.map((plan: any) => ({
         id: plan.id,
         dailyKcalTarget: plan.dailyKcalTarget,
         dailyProteinG: plan.dailyProteinG,

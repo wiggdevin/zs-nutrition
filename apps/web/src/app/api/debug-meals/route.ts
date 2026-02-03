@@ -10,7 +10,7 @@ export async function GET(request: NextRequest) {
 
   try {
     // Get the dev user ID from cookie
-    const cookieStore = cookies()
+    const cookieStore = await cookies()
     const devUserId = cookieStore.get('dev-user-id')?.value
 
     if (!devUserId) {
@@ -30,7 +30,7 @@ export async function GET(request: NextRequest) {
       success: true,
       devUserId,
       totalTrackedMeals: allMeals.length,
-      meals: allMeals.map(meal => ({
+      meals: allMeals.map((meal: any) => ({
         id: meal.id,
         mealName: meal.mealName,
         kcal: meal.kcal,
