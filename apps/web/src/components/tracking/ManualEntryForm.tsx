@@ -3,6 +3,8 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { toast } from '@/lib/toast-store'
 
+type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
+
 interface ManualEntryFormProps {
   onSuccess?: (meal: { id: string; mealName: string; kcal: number; proteinG: number; carbsG: number; fatG: number }) => void
 }
@@ -14,12 +16,18 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
   const [protein, setProtein] = useState('')
   const [carbs, setCarbs] = useState('')
   const [fat, setFat] = useState('')
+  const [mealSlot, setMealSlot] = useState<MealSlot | ''>('')
+  const [loggedDate, setLoggedDate] = useState<string>(() => {
+    // Initialize with today's date in YYYY-MM-DD format
+    const today = new Date()
+    return today.toISOString().split('T')[0]
+  })
   const [isSubmitting, setIsSubmitting] = useState(false)
   const [error, setError] = useState<string | null>(null)
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({})
   const [isNetworkError, setIsNetworkError] = useState(false)
   const [successMessage, setSuccessMessage] = useState<string | null>(null)
-  const lastSubmitPayloadRef = useRef<{ foodName: string; calories: number; protein: number; carbs: number; fat: number } | null>(null)
+  const lastSubmitPayloadRef = useRef<{ foodName: string; calories: number; protein: number; carbs: number; fat: number; mealSlot?: MealSlot; loggedDate?: string } | null>(null)
   const lastSubmissionTimestampRef = useRef<number>(0)
 
   // On mount / back-navigation, check if we just submitted (prevent back-resubmit)
@@ -37,11 +45,13 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
     setProtein('')
     setCarbs('')
     setFat('')
+    setMealSlot('')
+    setLoggedDate(new Date().toISOString().split('T')[0]) // Reset to today
     setError(null)
     setFieldErrors({})
   }
 
-  const submitEntry = useCallback(async (payload: { foodName: string; calories: number; protein: number; carbs: number; fat: number }) => {
+  const submitEntry = useCallback(async (payload: { foodName: string; calories: number; protein: number; carbs: number; fat: number; mealSlot?: MealSlot; loggedDate?: string }) => {
     setIsSubmitting(true)
     setError(null)
     setIsNetworkError(false)
@@ -52,7 +62,10 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
       const res = await fetch('/api/tracking/manual-entry', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
+        body: JSON.stringify({
+          ...payload,
+          loggedDate: payload.loggedDate || new Date().toISOString().split('T')[0]
+        }),
       })
 
       const data = await res.json()
@@ -126,6 +139,8 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
       protein: Number(protein) || 0,
       carbs: Number(carbs) || 0,
       fat: Number(fat) || 0,
+      mealSlot: mealSlot || undefined,
+      loggedDate: loggedDate,
     })
   }
 
@@ -202,6 +217,41 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                 {fieldErrors.foodName}
               </p>
             )}
+          </div>
+
+          {/* Meal Slot Selector */}
+          <div className="mb-4">
+            <label htmlFor="manual-meal-slot" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
+              Meal Slot <span className="text-[#666] normal-case font-normal">(optional)</span>
+            </label>
+            <select
+              id="manual-meal-slot"
+              value={mealSlot}
+              onChange={(e) => setMealSlot(e.target.value as MealSlot | '')}
+              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              data-testid="manual-meal-slot"
+            >
+              <option value="">No meal slot</option>
+              <option value="breakfast">Breakfast</option>
+              <option value="lunch">Lunch</option>
+              <option value="dinner">Dinner</option>
+              <option value="snack">Snack</option>
+            </select>
+          </div>
+
+          {/* Date Selector */}
+          <div className="mb-4">
+            <label htmlFor="manual-date" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
+              Date
+            </label>
+            <input
+              id="manual-date"
+              type="date"
+              value={loggedDate}
+              onChange={(e) => setLoggedDate(e.target.value)}
+              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              data-testid="manual-date"
+            />
           </div>
 
           {/* Macro Fields */}
