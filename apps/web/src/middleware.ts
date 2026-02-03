@@ -49,6 +49,12 @@ const publicPaths = [
   "/test-feature-464-badges",
   "/test-feature-503",
   "/test-feature-150",
+  "/test-feature-235",
+  "/api/test-feature-235",
+  "/test-feature-243",
+  "/api/test-feature-186",
+  "/test-feature-186",
+  "/api/test-grocery-rounding",
   "/api/trpc/test.hello",
 ];
 
@@ -90,6 +96,12 @@ const isPublicRoute = createRouteMatcher([
   "/test-feature-464-badges",
   "/test-feature-503",
   "/test-feature-150",
+  "/test-feature-235",
+  "/api/test-feature-235(.*)",
+  "/test-feature-243",
+  "/api/test-feature-186(.*)",
+  "/test-feature-186",
+  "/api/test-grocery-rounding(.*)",
   "/api/trpc/test.hello(.*)",
 ]);
 

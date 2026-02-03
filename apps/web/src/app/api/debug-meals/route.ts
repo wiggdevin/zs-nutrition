@@ -1,50 +1,45 @@
-import { NextResponse } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isDevMode } from '@/lib/auth'
+import { cookies } from 'next/headers'
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   if (!isDevMode) {
     return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
   }
 
   try {
-    const user = await prisma.user.findUnique({
-      where: { email: 'dev@zsnutrition.test' },
-    })
+    // Get the dev user ID from cookie
+    const cookieStore = cookies()
+    const devUserId = cookieStore.get('dev-user-id')?.value
 
-    if (!user) {
-      return NextResponse.json({ error: 'Dev user not found' }, { status: 404 })
+    if (!devUserId) {
+      return NextResponse.json({ error: 'Not authenticated' }, { status: 401 })
     }
 
-    // Get all tracked meals for this user
+    // Get all tracked meals for this user that contain "Feature 243"
     const allMeals = await prisma.trackedMeal.findMany({
-      where: { userId: user.id },
+      where: {
+        userId: devUserId,
+        mealName: { contains: 'Feature 243' },
+      },
       orderBy: { createdAt: 'desc' },
-    })
-
-    // Get all plans
-    const allPlans = await prisma.mealPlan.findMany({
-      where: { userId: user.id },
-      orderBy: { generatedAt: 'desc' },
     })
 
     return NextResponse.json({
       success: true,
+      devUserId,
       totalTrackedMeals: allMeals.length,
-      totalPlans: allPlans.length,
       meals: allMeals.map(meal => ({
         id: meal.id,
         mealName: meal.mealName,
         kcal: meal.kcal,
         proteinG: meal.proteinG,
-        loggedAt: meal.createdAt,
+        loggedDate: meal.loggedDate,
+        loggedDateISO: meal.loggedDate.toISOString(),
+        createdAt: meal.createdAt,
+        createdAtISO: meal.createdAt.toISOString(),
         mealPlanId: meal.mealPlanId,
-      })),
-      plans: allPlans.map(plan => ({
-        id: plan.id,
-        status: plan.status,
-        isActive: plan.isActive,
-        generatedAt: plan.generatedAt,
       })),
     })
   } catch (error) {

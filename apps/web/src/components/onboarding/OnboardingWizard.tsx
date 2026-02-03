@@ -17,6 +17,13 @@ import { ProgressBar } from "./ProgressBar";
 const STORAGE_KEY = "zsn_onboarding_data";
 const STEP_KEY = "zsn_onboarding_step";
 
+// API response types
+interface OnboardingStateResponse {
+  currentStep: number;
+  completed: boolean;
+  stepData: Partial<OnboardingData>;
+}
+
 // Validation functions for each step
 function isStepValid(step: number, data: OnboardingData): boolean {
   switch (step) {
@@ -39,28 +46,104 @@ export function OnboardingWizard() {
   const [showErrors, setShowErrors] = useState(false);
   const [isHydrated, setIsHydrated] = useState(false);
   const isSubmittingRef = useRef(false);
+  const isLoadingFromServerRef = useRef(false);
 
-  // Load saved state on mount
+  // Load saved state from database on mount, then fall back to localStorage
   useEffect(() => {
-    try {
-      const savedData = localStorage.getItem(STORAGE_KEY);
-      const savedStep = localStorage.getItem(STEP_KEY);
-      if (savedData) setData(JSON.parse(savedData));
-      if (savedStep) {
-        const step = parseInt(savedStep, 10);
-        if (step >= 1 && step <= TOTAL_STEPS) setCurrentStep(step);
+    const loadState = async () => {
+      isLoadingFromServerRef.current = true;
+
+      try {
+        // Try to load from database first (cross-session persistence)
+        const res = await fetch("/api/onboarding");
+        if (res.ok) {
+          const serverState: OnboardingStateResponse = await res.json();
+
+          // If onboarding is completed, redirect to generate
+          if (serverState.completed) {
+            window.location.href = "/generate";
+            return;
+          }
+
+          // Restore step and data from database
+          if (serverState.currentStep >= 1 && serverState.currentStep <= TOTAL_STEPS) {
+            setCurrentStep(serverState.currentStep);
+          }
+
+          // Merge server data with defaults (handle partial data)
+          if (serverState.stepData && Object.keys(serverState.stepData).length > 0) {
+            setData((prev) => ({
+              ...prev,
+              ...serverState.stepData,
+            }));
+          }
+        }
+      } catch (err) {
+        // If server request fails, fall back to localStorage
+        console.warn("Failed to load onboarding state from server, using localStorage:", err);
       }
-    } catch {
-      // Ignore parse errors
-    }
-    setIsHydrated(true);
+
+      // Fall back to localStorage if server didn't have data or request failed
+      try {
+        const savedData = localStorage.getItem(STORAGE_KEY);
+        const savedStep = localStorage.getItem(STEP_KEY);
+
+        // Only use localStorage if server didn't return data
+        if (savedData) {
+          const localData = JSON.parse(savedData);
+          setData((prev) => {
+            // Merge local data only if server data is empty
+            const hasServerData = Object.keys(localData).some(
+              (key) => localData[key] !== null && localData[key] !== ""
+            );
+            return hasServerData ? { ...prev, ...localData } : prev;
+          });
+        }
+
+        if (savedStep) {
+          const step = parseInt(savedStep, 10);
+          if (step >= 1 && step <= TOTAL_STEPS) {
+            setCurrentStep(step);
+          }
+        }
+      } catch {
+        // Ignore parse errors
+      }
+
+      setIsHydrated(true);
+      isLoadingFromServerRef.current = false;
+    };
+
+    loadState();
   }, []);
 
-  // Save state on change — only after initial hydration to avoid overwriting saved data
+  // Save state to database AND localStorage on change
   useEffect(() => {
-    if (!isHydrated) return;
+    if (!isHydrated || isLoadingFromServerRef.current) return;
+
+    // Save to localStorage for immediate UI responsiveness
     localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     localStorage.setItem(STEP_KEY, String(currentStep));
+
+    // Save to database for cross-session persistence (debounced)
+    const saveToDatabase = setTimeout(async () => {
+      try {
+        await fetch("/api/onboarding", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            step: currentStep,
+            data: data,
+            complete: false,
+          }),
+        });
+      } catch (err) {
+        // Silent fail - localStorage has the data
+        console.warn("Failed to save onboarding state to server:", err);
+      }
+    }, 500); // Debounce to avoid too many requests
+
+    return () => clearTimeout(saveToDatabase);
   }, [data, currentStep, isHydrated]);
 
   const updateData = (partial: Partial<OnboardingData>) => {
@@ -95,6 +178,17 @@ export function OnboardingWizard() {
     isSubmittingRef.current = true;
     setIsCompleting(true);
     try {
+      // First, update the onboarding state to mark completion
+      await fetch("/api/onboarding", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          step: currentStep,
+          data: data,
+          complete: true,
+        }),
+      });
+
       // Call API to persist profile to database
       const res = await fetch("/api/onboarding/complete", {
         method: "POST",
@@ -107,7 +201,7 @@ export function OnboardingWizard() {
     } catch (err) {
       console.error("Error saving profile:", err instanceof Error ? err.message : "Unknown error");
     }
-    // Clear onboarding state
+    // Clear onboarding state from localStorage
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(STEP_KEY);
     // Mark onboarding as complete

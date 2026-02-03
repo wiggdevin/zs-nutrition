@@ -15,6 +15,47 @@ import {
 
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+type Metric = 'kcal' | 'proteinG' | 'carbsG' | 'fatG'
+
+interface MetricConfig {
+  label: string
+  unit: string
+  color: string
+  dataKeyActual: string
+  dataKeyTarget: string
+}
+
+const metricConfigs: Record<Metric, MetricConfig> = {
+  kcal: {
+    label: 'Calories',
+    unit: 'kcal',
+    color: '#f97316',
+    dataKeyActual: 'actualKcal',
+    dataKeyTarget: 'targetKcal',
+  },
+  proteinG: {
+    label: 'Protein',
+    unit: 'g',
+    color: '#3b82f6',
+    dataKeyActual: 'actualProteinG',
+    dataKeyTarget: 'targetProteinG',
+  },
+  carbsG: {
+    label: 'Carbs',
+    unit: 'g',
+    color: '#22c55e',
+    dataKeyActual: 'actualCarbsG',
+    dataKeyTarget: 'targetCarbsG',
+  },
+  fatG: {
+    label: 'Fat',
+    unit: 'g',
+    color: '#eab308',
+    dataKeyActual: 'actualFatG',
+    dataKeyTarget: 'targetFatG',
+  },
+}
+
 // Helper to format UTC date as M/D (e.g., "1/28") without timezone shift
 function formatUTCDateShort(isoString: string): string {
   const d = new Date(isoString)
@@ -31,17 +72,24 @@ interface ChartDataPoint {
   label: string
   actualKcal: number
   targetKcal: number | null
+  actualProteinG: number
+  targetProteinG: number | null
+  actualCarbsG: number
+  targetCarbsG: number | null
+  actualFatG: number
+  targetFatG: number | null
 }
 
 // Custom tooltip for the chart
-function CustomTooltip({ active, payload, label }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string }) {
+function CustomTooltip({ active, payload, label, metric }: { active?: boolean; payload?: Array<{ value: number; name: string; color: string }>; label?: string; metric: Metric }) {
   if (!active || !payload || !payload.length) return null
+  const config = metricConfigs[metric]
   return (
     <div className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 shadow-xl">
       <p className="text-white font-semibold text-sm mb-1">{label}</p>
       {payload.map((entry, i) => (
         <p key={i} className="text-sm" style={{ color: entry.color }}>
-          {entry.name}: {Math.round(entry.value)} kcal
+          {entry.name}: {metric === 'kcal' ? Math.round(entry.value) : Math.round(entry.value * 10) / 10} {config.unit}
         </p>
       ))}
     </div>
@@ -59,6 +107,8 @@ export default function WeeklyTrendContent() {
     d.setDate(d.getDate() - 6)
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
   })
+
+  const [selectedMetric, setSelectedMetric] = useState<Metric>('kcal')
 
   const { data, isLoading, error, refetch } = trpc.tracking.getWeeklyTrend.useQuery({
     startDate,
@@ -103,24 +153,52 @@ export default function WeeklyTrendContent() {
       label: `${dayName} ${dateNum}`,
       actualKcal: day.actuals.kcal,
       targetKcal: day.targets?.kcal ?? null,
+      actualProteinG: day.actuals.proteinG,
+      targetProteinG: day.targets?.proteinG ?? null,
+      actualCarbsG: day.actuals.carbsG,
+      targetCarbsG: day.targets?.carbsG ?? null,
+      actualFatG: day.actuals.fatG,
+      targetFatG: day.targets?.fatG ?? null,
     }
   })
 
+  const metricConfig = metricConfigs[selectedMetric]
+
   return (
     <div data-testid="weekly-trend-container">
-      <div className="mb-4">
-        <label htmlFor="start-date-input" className="text-sm text-[#a1a1aa] mr-2">
-          Start date:
-        </label>
-        <input
-          id="start-date-input"
-          type="date"
-          value={startDate}
-          max={todayStr}
-          onChange={(e) => setStartDate(e.target.value)}
-          className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-sm text-white"
-          data-testid="start-date-input"
-        />
+      <div className="mb-4 flex flex-wrap gap-4">
+        <div>
+          <label htmlFor="start-date-input" className="text-sm text-[#a1a1aa] mr-2">
+            Start date:
+          </label>
+          <input
+            id="start-date-input"
+            type="date"
+            value={startDate}
+            max={todayStr}
+            onChange={(e) => setStartDate(e.target.value)}
+            className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-sm text-white"
+            data-testid="start-date-input"
+          />
+        </div>
+
+        <div>
+          <label htmlFor="metric-selector" className="text-sm text-[#a1a1aa] mr-2">
+            Metric:
+          </label>
+          <select
+            id="metric-selector"
+            value={selectedMetric}
+            onChange={(e) => setSelectedMetric(e.target.value as Metric)}
+            className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-sm text-white"
+            data-testid="metric-selector"
+          >
+            <option value="kcal">Calories</option>
+            <option value="proteinG">Protein</option>
+            <option value="carbsG">Carbs</option>
+            <option value="fatG">Fat</option>
+          </select>
+        </div>
       </div>
 
       <div className="mb-4 text-sm text-[#a1a1aa]">
@@ -131,13 +209,13 @@ export default function WeeklyTrendContent() {
         <span className="ml-3">({data.totalDays} days)</span>
       </div>
 
-      {/* ── Recharts Line Chart: Actual vs Target kcal ── */}
+      {/* ── Recharts Line Chart: Actual vs Target for selected metric ── */}
       <div
         data-testid="weekly-trend-chart"
         className="bg-[#18181b] border border-[#27272a] rounded-lg p-4 mb-6"
       >
         <h2 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
-          Calories — Actual vs Target
+          {metricConfig.label} — Actual vs Target
         </h2>
         <div data-testid="chart-responsive-wrapper" style={{ width: '100%', minHeight: 300 }}>
           <ResponsiveContainer width="100%" height={300}>
@@ -152,25 +230,26 @@ export default function WeeklyTrendContent() {
                 tick={{ fill: '#a1a1aa', fontSize: 12 }}
                 stroke="#27272a"
                 width={50}
+                label={{ value: metricConfig.unit, angle: -90, position: 'insideLeft', fill: '#a1a1aa', fontSize: 11 }}
               />
-              <Tooltip content={<CustomTooltip />} />
+              <Tooltip content={<CustomTooltip metric={selectedMetric} />} />
               <Legend
                 wrapperStyle={{ color: '#a1a1aa', fontSize: 13, paddingTop: 8 }}
               />
               <Line
                 type="monotone"
-                dataKey="targetKcal"
+                dataKey={metricConfig.dataKeyTarget}
                 name="Target"
-                stroke="#f97316"
+                stroke={metricConfig.color}
                 strokeWidth={2}
                 strokeDasharray="6 3"
-                dot={{ fill: '#f97316', r: 4 }}
+                dot={{ fill: metricConfig.color, r: 4 }}
                 connectNulls
                 data-testid="target-line"
               />
               <Line
                 type="monotone"
-                dataKey="actualKcal"
+                dataKey={metricConfig.dataKeyActual}
                 name="Actual"
                 stroke="#22d3ee"
                 strokeWidth={2}
