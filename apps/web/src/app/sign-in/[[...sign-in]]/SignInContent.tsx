@@ -1,13 +1,14 @@
 'use client'
 
 import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import { validateEmail } from '@/lib/validation'
 
 // Dev mode sign-in form that simulates the Clerk flow
 export function DevSignInForm() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const [email, setEmail] = useState('')
   const [isLoading, setIsLoading] = useState(false)
   const [error, setError] = useState('')
@@ -39,10 +40,11 @@ export function DevSignInForm() {
     setError('')
     setAccountDeactivated(false)
     try {
+      const redirectUrl = searchParams.get('redirect_url')
       const res = await fetch('/api/dev-auth/signin', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email }),
+        body: JSON.stringify({ email, redirectUrl }),
       })
       const data = await res.json()
       if (!res.ok) {

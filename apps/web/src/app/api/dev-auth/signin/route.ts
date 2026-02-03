@@ -3,6 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { safeLogError } from "@/lib/safe-logger";
 
+/**
+ * Validates that a redirect URL is safe (internal URL only)
+ * Prevents open redirect attacks
+ */
+function isValidRedirectUrl(url: string | null): boolean {
+  if (!url) return false;
+  // Must start with / and not contain // (to prevent protocol-relative URLs)
+  return url.startsWith('/') && !url.startsWith('//');
+}
+
 // Dev-only sign-in endpoint that authenticates an existing user
 // This simulates what Clerk would do when an existing user signs in
 export async function POST(request: NextRequest) {
@@ -21,7 +31,7 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const { email } = body;
+    const { email, redirectUrl } = body;
 
     if (!email || !email.includes("@")) {
       return NextResponse.json(
@@ -75,9 +85,17 @@ export async function POST(request: NextRequest) {
     const hasCompletedOnboarding = user.onboarding?.completed === true;
     const hasProfile = user.profiles.length > 0;
 
-    // Returning user with profile → dashboard
-    // User without completed onboarding → onboarding
-    const redirectTo = hasCompletedOnboarding || hasProfile ? "/dashboard" : "/onboarding";
+    // Determine redirect destination:
+    // 1. Use the provided redirect_url if it's valid (user was trying to access a protected page)
+    // 2. Otherwise, use default behavior based on onboarding status
+    let redirectTo: string;
+    if (isValidRedirectUrl(redirectUrl)) {
+      redirectTo = redirectUrl;
+    } else {
+      // Returning user with profile → dashboard
+      // User without completed onboarding → onboarding
+      redirectTo = hasCompletedOnboarding || hasProfile ? "/dashboard" : "/onboarding";
+    }
 
     return NextResponse.json({
       success: true,
