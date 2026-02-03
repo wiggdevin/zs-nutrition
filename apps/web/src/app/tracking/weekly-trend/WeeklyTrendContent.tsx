@@ -15,6 +15,18 @@ import {
 
 const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat']
 
+// Helper to format UTC date as M/D (e.g., "1/28") without timezone shift
+function formatUTCDateShort(isoString: string): string {
+  const d = new Date(isoString)
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}`
+}
+
+// Helper to format UTC date as locale date string without timezone shift
+function formatUTCDateFull(isoString: string): string {
+  const d = new Date(isoString)
+  return `${d.getUTCMonth() + 1}/${d.getUTCDate()}/${d.getUTCFullYear()}`
+}
+
 interface ChartDataPoint {
   label: string
   actualKcal: number
@@ -85,8 +97,8 @@ export default function WeeklyTrendContent() {
   // Build chart data from API response
   const chartData: ChartDataPoint[] = data.days.map((day) => {
     const d = new Date(day.date)
-    const dayName = dayNames[d.getDay()]
-    const dateNum = `${d.getMonth() + 1}/${d.getDate()}`
+    const dayName = dayNames[d.getUTCDay()] // Use getUTCDay() to avoid timezone shift
+    const dateNum = formatUTCDateShort(day.date) // Use UTC formatting
     return {
       label: `${dayName} ${dateNum}`,
       actualKcal: day.actuals.kcal,
@@ -113,9 +125,9 @@ export default function WeeklyTrendContent() {
 
       <div className="mb-4 text-sm text-[#a1a1aa]">
         <span>Period: </span>
-        <span data-testid="trend-start-date">{new Date(data.startDate).toLocaleDateString()}</span>
+        <span data-testid="trend-start-date">{formatUTCDateFull(data.startDate)}</span>
         <span> - </span>
-        <span data-testid="trend-end-date">{data.days.length > 0 ? new Date(data.days[data.days.length - 1].date).toLocaleDateString() : new Date(data.endDate).toLocaleDateString()}</span>
+        <span data-testid="trend-end-date">{data.days.length > 0 ? formatUTCDateFull(data.days[data.days.length - 1].date) : formatUTCDateFull(data.endDate)}</span>
         <span className="ml-3">({data.totalDays} days)</span>
       </div>
 
@@ -175,8 +187,8 @@ export default function WeeklyTrendContent() {
       <div className="space-y-3" data-testid="weekly-days-list">
         {data.days.map((day, i) => {
           const d = new Date(day.date)
-          const dayName = dayNames[d.getDay()]
-          const dateStr = d.toLocaleDateString()
+          const dayName = dayNames[d.getUTCDay()] // Use getUTCDay() to avoid timezone shift
+          const dateStr = formatUTCDateFull(day.date) // Use UTC formatting
 
           return (
             <div
