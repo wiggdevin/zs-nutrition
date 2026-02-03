@@ -1225,3 +1225,128 @@ CONCLUSION: Feature #238 is fully functional with all verification steps passing
 The Quick Add form correctly validates that calories is a required field and
 shows appropriate error messages for invalid values.
 ===========================================
+
+===========================================
+SESSION COMPLETE - Feature #159
+===========================================
+Feature: Plan generation failure shows retry option
+Status: ✅ PASSED
+Date: 2026-02-03
+
+SUMMARY:
+--------
+Successfully verified that failed plan generations show user-friendly error 
+messages with a functional retry button. The SSE stream properly emits failed 
+status, and the UI displays the error message with retry functionality.
+
+VERIFICATION STEPS COMPLETED:
+-----------------------------
+
+✅ Step 1: Simulate plan generation failure
+   - Created test endpoint: /api/dev-test/simulate-failed-job
+   - Creates PlanGenerationJob with status='failed'
+   - Sets error message and currentAgent
+   - Status: PASSING
+
+✅ Step 2: Verify SSE emits failed status with error
+   - SSE endpoint checks job.status === 'failed' (line 92 in route.ts)
+   - Emits: { status: 'failed', agent: currentAgent, message: error }
+   - Test confirmed SSE message received correctly
+   - Status: PASSING
+
+✅ Step 3: Verify user-friendly error message displayed
+   - GeneratePlanPage.tsx handles SSE failed status (lines 88-93)
+   - Sets errorMessage state from data.message
+   - Changes status to "failed" which triggers error UI
+   - Error UI shows: "Generation Failed" + error message
+   - Status: PASSING
+
+✅ Step 4: Verify retry button is available
+   - Error UI rendered when status === "failed" (lines 384-410)
+   - Retry button with data-testid="retry-plan-generation" (line 401)
+   - Button styled with orange accent (#f97316)
+   - Clicking button invokes handleRetry (line 400)
+   - Status: PASSING
+
+✅ Step 5: Click retry and verify new generation starts
+   - handleRetry function (lines 220-237):
+     * Closes existing SSE connection
+     * Clears polling interval
+     * Resets all state (status, currentAgent, jobId, errorMessage)
+     * Sets isSubmitting.current = false (allows new generation)
+   - Clicking retry navigated to /generate (verified via browser test)
+   - User can click "Generate Plan" button again
+   - Status: PASSING
+
+TECHNICAL VERIFICATION:
+----------------------
+
+SSE Error Handling (/api/plan-stream/[jobId]/route.ts):
+✅ Lines 92-99: Check if job.status === 'failed'
+✅ Sends: { status: 'failed', agent: currentAgent, message: error }
+✅ Closes SSE stream after sending failed status
+
+Client Error Handling (GeneratePlanPage.tsx):
+✅ Lines 88-93: SSE onmessage handler for status === 'failed'
+✅ Lines 143-148: Polling fallback for status === 'failed'
+✅ Sets errorMessage and status to "failed"
+✅ Closes EventSource and clears intervals
+
+Error UI (GeneratePlanPage.tsx lines 384-410):
+✅ Red border styling (#ef4444)
+✅ Error icon (❌)
+✅ "Generation Failed" heading
+✅ Dynamic error message display
+✅ Orange retry button (#f97316)
+
+Retry Handler (GeneratePlanPage.tsx lines 220-237):
+✅ Closes EventSource connection
+✅ Clears polling interval
+✅ Resets all state variables
+✅ Re-enables form submission
+
+BROWSER TESTING:
+---------------
+✅ Created test page: /test-feature-159
+✅ Created test API: /api/dev-test/simulate-failed-job
+✅ Created dev user: test-feature-159@example.com
+✅ Triggered failed job creation
+✅ Verified SSE emits failed status
+✅ Verified error UI renders with message
+✅ Verified retry button present and clickable
+✅ Verified retry navigates to /generate
+✅ Screenshot saved: verification/feature-159-error-ui-verification.png
+
+IMPLEMENTATION DETAILS:
+----------------------
+Files Modified:
+- Created: /api/dev-test/simulate-failed-job/route.ts
+- Created: /test-feature-159/page.tsx
+
+Files Verified (no changes needed):
+- GeneratePlanPage.tsx (error handling already complete)
+- /api/plan-stream/[jobId]/route.ts (SSE failed status already complete)
+
+The feature was already fully implemented in the codebase. This session
+verified the implementation works correctly through browser automation testing.
+
+PROJECT STATUS UPDATE:
+---------------------
+Previous: 420/515 features passing (81.6%)
+Current:  421/515 features passing (81.8%)
+Feature #159 marked as PASSING ✅
+
+NOTES:
+------
+The error handling for plan generation failures is comprehensive and handles
+both SSE and polling fallback scenarios. The retry functionality properly
+resets all state and allows users to attempt generation again without
+refreshing the page.
+
+The implementation follows the app specification requirements:
+- "On failure: friendly error + retry button" (app_spec.txt line 182)
+- "Plan generation failure: SSE emits failed status, user can retry" (app_spec.txt line 270)
+
+CONCLUSION: Feature #159 is fully functional with all verification steps passing.
+Failed plan generations show user-friendly error messages with functional retry button.
+===========================================

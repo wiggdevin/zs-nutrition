@@ -1,31 +1,22 @@
 'use client'
 
-import { api } from '@/lib/trpc'
-import { useState, useEffect } from 'react'
+import { trpc } from '@/lib/trpc'
+import { useState } from 'react'
 
 export default function TestFeature150Page() {
-  const [jobId, setJobId] = useState('a1e12dd2-081d-4b15-a22b-906fd031d6a9')
-  const [jobStatus, setJobStatus] = useState<any>(null)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [jobId, setJobId] = useState('')
 
-  const testGetJobStatus = async () => {
-    setLoading(true)
-    setError(null)
-    try {
-      const result = await api.plan.getJobStatus.query({ jobId })
-      setJobStatus(result)
-    } catch (err: any) {
-      setError(err.message || 'Failed to fetch job status')
-    } finally {
-      setLoading(false)
+  // Use tRPC query hook to fetch job status
+  const { data: jobStatus, isLoading, error, refetch } = trpc.plan.getJobStatus.useQuery(
+    { jobId },
+    {
+      enabled: !!jobId, // Only run query when jobId is not empty
     }
-  }
+  )
 
-  useEffect(() => {
-    // Auto-test on page load
-    testGetJobStatus()
-  }, [])
+  const testGetJobStatus = () => {
+    refetch()
+  }
 
   return (
     <div className="min-h-screen bg-[#0a0a0a] text-white p-8">
@@ -43,15 +34,16 @@ export default function TestFeature150Page() {
                 type="text"
                 value={jobId}
                 onChange={(e) => setJobId(e.target.value)}
+                placeholder="Enter a plan generation job ID"
                 className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded px-4 py-2 text-white"
               />
             </div>
             <button
               onClick={testGetJobStatus}
-              disabled={loading}
+              disabled={isLoading || !jobId}
               className="bg-[#f97316] hover:bg-[#ea580c] disabled:bg-gray-600 px-6 py-2 rounded font-semibold transition-colors"
             >
-              {loading ? 'Fetching...' : 'Fetch Job Status'}
+              {isLoading ? 'Fetching...' : 'Fetch Job Status'}
             </button>
           </div>
         </div>
@@ -60,7 +52,7 @@ export default function TestFeature150Page() {
         {error && (
           <div className="bg-red-900/30 border border-red-500 rounded-lg p-4 mb-6">
             <h3 className="text-red-400 font-semibold mb-2">Error</h3>
-            <p className="text-red-300">{error}</p>
+            <p className="text-red-300">{error.message}</p>
           </div>
         )}
 
@@ -96,12 +88,14 @@ export default function TestFeature150Page() {
               </div>
 
               {/* Progress Field */}
-              <div className="p-4 bg-[#0a0a0a] rounded">
-                <p className="text-sm text-gray-400 mb-2">Progress</p>
-                <pre className="text-sm text-gray-300 overflow-x-auto">
-                  {JSON.stringify(jobStatus.progress, null, 2)}
-                </pre>
-              </div>
+              {jobStatus.progress && (
+                <div className="p-4 bg-[#0a0a0a] rounded">
+                  <p className="text-sm text-gray-400 mb-2">Progress</p>
+                  <pre className="text-sm text-gray-300 overflow-x-auto">
+                    {JSON.stringify(jobStatus.progress, null, 2)}
+                  </pre>
+                </div>
+              )}
 
               {/* Plan ID Field (when completed) */}
               {jobStatus.planId && (
@@ -134,7 +128,7 @@ export default function TestFeature150Page() {
             </li>
             <li className={`flex items-center ${jobStatus?.currentAgent !== undefined ? 'text-green-400' : 'text-gray-400'}`}>
               <span className="mr-2">{jobStatus?.currentAgent !== undefined ? '✅' : '○'}</span>
-              currentAgent field during processing
+              currentAgent field present
             </li>
             <li className={`flex items-center ${jobStatus?.progress ? 'text-green-400' : 'text-gray-400'}`}>
               <span className="mr-2">{jobStatus?.progress ? '✅' : '○'}</span>

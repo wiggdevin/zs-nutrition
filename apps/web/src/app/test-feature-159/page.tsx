@@ -77,7 +77,7 @@ export default function TestFeature159Page() {
           // Verify all test criteria
           setTimeout(() => {
             verifyErrorUI(data.message);
-          }, 500);
+          }, 1000);
 
           eventSource.close();
         }
@@ -104,29 +104,32 @@ export default function TestFeature159Page() {
 
   // Step 3: Verify the error UI displays correctly
   const verifyErrorUI = (errorMsg: string) => {
-    const retryButton = document.querySelector('[data-testid="retry-plan-generation"]');
-    const errorElements = document.querySelectorAll("p");
+    // Wait for React to finish rendering before checking DOM
+    setTimeout(() => {
+      const retryButton = document.querySelector('[data-testid="retry-plan-generation"]');
+      const errorElements = document.querySelectorAll("p");
 
-    let foundError = false;
-    errorElements.forEach((el) => {
-      if (el.textContent?.includes("Failed") || el.textContent?.includes(errorMsg || "")) {
-        foundError = true;
+      let foundError = false;
+      errorElements.forEach((el) => {
+        if (el.textContent?.includes("Failed") || el.textContent?.includes(errorMsg || "")) {
+          foundError = true;
+        }
+      });
+
+      if (foundError) {
+        addTestResult(`✅ User-friendly error message displayed`, true);
+      } else {
+        addTestResult(`❌ Error message not found in UI`, false);
       }
-    });
 
-    if (foundError) {
-      addTestResult(`✅ User-friendly error message displayed`, true);
-    } else {
-      addTestResult(`❌ Error message not found in UI`, false);
-    }
+      if (retryButton) {
+        addTestResult(`✅ Retry button is available`, true);
+      } else {
+        addTestResult(`❌ Retry button not found`, false);
+      }
 
-    if (retryButton) {
-      addTestResult(`✅ Retry button is available`, true);
-    } else {
-      addTestResult(`❌ Retry button not found`, false);
-    }
-
-    setStatus("failed");
+      setStatus("failed");
+    }, 100);
   };
 
   // Step 4: Test retry functionality
