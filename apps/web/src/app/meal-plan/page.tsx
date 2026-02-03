@@ -519,37 +519,138 @@ function getCategoryIcon(category: string): string {
 
 function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] }) {
   const [expanded, setExpanded] = useState(true);
+  const [copySuccess, setCopySuccess] = useState(false);
   const totalItems = groceryList.reduce((sum, cat) => sum + cat.items.length, 0);
+
+  // Format grocery list as plain text for export
+  const formatGroceryListText = useCallback(() => {
+    const lines: string[] = [];
+    lines.push('ZERO SUM NUTRITION - GROCERY LIST');
+    lines.push('================================');
+    lines.push('');
+
+    for (const cat of groceryList) {
+      lines.push(`${cat.category} (${cat.items.length} items)`);
+      lines.push('-'.repeat(Math.min(cat.category.length + 15, 40)));
+      for (const item of cat.items) {
+        const amount = formatGroceryAmount(item.amount, item.unit);
+        lines.push(`  • ${item.name} - ${amount}`);
+      }
+      lines.push('');
+    }
+
+    lines.push('================================');
+    lines.push(`Total: ${totalItems} items across ${groceryList.length} categories`);
+
+    return lines.join('\n');
+  }, [groceryList, totalItems]);
+
+  // Copy grocery list to clipboard
+  const handleCopyToClipboard = useCallback(async () => {
+    try {
+      const text = formatGroceryListText();
+      await navigator.clipboard.writeText(text);
+      setCopySuccess(true);
+      setTimeout(() => setCopySuccess(false), 2000);
+    } catch (err) {
+      console.error('Failed to copy to clipboard:', err);
+    }
+  }, [formatGroceryListText]);
+
+  // Download grocery list as text file
+  const handleDownloadText = useCallback(() => {
+    const text = formatGroceryListText();
+    const blob = new Blob([text], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `grocery-list-${new Date().toISOString().split('T')[0]}.txt`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [formatGroceryListText]);
 
   return (
     <div className="mt-8 mx-auto max-w-[1600px] px-4 pb-8" data-testid="grocery-list-section">
       {/* Section header */}
-      <button
-        onClick={() => setExpanded(!expanded)}
-        className="flex w-full items-center justify-between rounded-lg border border-[#2a2a2a] bg-[#141414] px-5 py-4 transition-colors hover:bg-[#1a1a1a]"
-        data-testid="grocery-list-toggle"
-      >
-        <div className="flex items-center gap-3">
-          <span className="text-xl">🛒</span>
-          <div className="text-left">
-            <h2 className="text-lg font-bold uppercase tracking-wider text-[#fafafa]">
-              Grocery List
-            </h2>
-            <p className="text-xs text-[#a1a1aa]">
-              {totalItems} items across {groceryList.length} categories
-            </p>
+      <div className="rounded-lg border border-[#2a2a2a] bg-[#141414]">
+        <div className="flex items-center justify-between px-5 py-4">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-3 flex-1"
+            data-testid="grocery-list-toggle"
+          >
+            <span className="text-xl">🛒</span>
+            <div className="text-left">
+              <h2 className="text-lg font-bold uppercase tracking-wider text-[#fafafa]">
+                Grocery List
+              </h2>
+              <p className="text-xs text-[#a1a1aa]">
+                {totalItems} items across {groceryList.length} categories
+              </p>
+            </div>
+          </button>
+
+          {/* Export buttons - shown on right side */}
+          <div className="flex items-center gap-2 ml-4">
+            <button
+              onClick={handleCopyToClipboard}
+              className="flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:bg-[#2a2a2a] hover:text-[#fafafa]"
+              data-testid="grocery-copy-button"
+              aria-label="Copy grocery list to clipboard"
+              title="Copy to clipboard"
+            >
+              {copySuccess ? (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  </svg>
+                  Copied!
+                </>
+              ) : (
+                <>
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/>
+                    <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5" stroke="currentColor" strokeWidth="2"/>
+                  </svg>
+                  Copy
+                </>
+              )}
+            </button>
+            <button
+              onClick={handleDownloadText}
+              className="flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:bg-[#2a2a2a] hover:text-[#fafafa]"
+              data-testid="grocery-download-button"
+              aria-label="Download grocery list as text file"
+              title="Download as text"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path d="M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+              Download
+            </button>
+            <button
+              onClick={() => setExpanded(!expanded)}
+              className="ml-2 flex-shrink-0"
+              data-testid="grocery-list-expand-toggle"
+              aria-label={expanded ? 'Collapse grocery list' : 'Expand grocery list'}
+            >
+              <svg
+                width="20"
+                height="20"
+                viewBox="0 0 24 24"
+                fill="none"
+                className={`text-[#a1a1aa] transition-transform ${expanded ? 'rotate-180' : ''}`}
+              >
+                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              </svg>
+            </button>
           </div>
         </div>
-        <svg
-          width="20"
-          height="20"
-          viewBox="0 0 24 24"
-          fill="none"
-          className={`text-[#a1a1aa] transition-transform ${expanded ? 'rotate-180' : ''}`}
-        >
-          <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-        </svg>
-      </button>
+      </div>
 
       {/* Category grid */}
       {expanded && (
@@ -615,6 +716,11 @@ export default function MealPlanPage() {
   // Meal detail modal state
   const [selectedMeal, setSelectedMeal] = useState<{ meal: Meal; dayNumber: number; mealIdx: number } | null>(null);
 
+  // Plan replacement state
+  const [planReplaced, setPlanReplaced] = useState(false);
+  const [newerPlanId, setNewerPlanId] = useState<string | null>(null);
+  const planStatusCheckRef = useRef<AbortController | null>(null);
+
   // Track the current fetch request so we can abort stale ones
   const planAbortRef = useRef<AbortController | null>(null);
   const planFetchGenRef = useRef(0);
@@ -655,6 +761,37 @@ export default function MealPlanPage() {
     }
   }, []);
 
+  // Check if the current plan has been replaced (called when window regains focus)
+  const checkPlanStatus = useCallback(async () => {
+    if (!plan?.id) return;
+
+    // Abort any in-flight status check
+    if (planStatusCheckRef.current) {
+      planStatusCheckRef.current.abort();
+    }
+
+    const controller = new AbortController();
+    planStatusCheckRef.current = controller;
+
+    try {
+      const res = await fetch(`/api/plan/${plan.id}/status`, {
+        signal: controller.signal,
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        if (data.isReplaced || data.hasNewerPlan) {
+          setPlanReplaced(true);
+          setNewerPlanId(data.newerPlanId);
+        }
+      }
+    } catch (err) {
+      // Ignore aborted requests and errors - this is a non-critical check
+      if (err instanceof DOMException && err.name === 'AbortError') return;
+      console.debug('Error checking plan status (non-critical):', err);
+    }
+  }, [plan?.id]);
+
   useEffect(() => {
     fetchPlan();
     // Cleanup: abort any in-flight request when component unmounts
@@ -662,12 +799,38 @@ export default function MealPlanPage() {
       if (planAbortRef.current) {
         planAbortRef.current.abort();
       }
+      if (planStatusCheckRef.current) {
+        planStatusCheckRef.current.abort();
+      }
     };
   }, [fetchPlan]);
+
+  // Check plan status when window regains focus (user switched back to this tab)
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible' && plan && !planReplaced) {
+        checkPlanStatus();
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, [plan, planReplaced, checkPlanStatus]);
 
   // Handle swap icon click - open modal and fetch alternatives
   const handleSwapClick = useCallback(
     async (dayNumber: number, mealIdx: number, meal: Meal) => {
+      // Prevent interactions on replaced plans
+      if (planReplaced) {
+        // Check plan status again and show banner if still replaced
+        await checkPlanStatus();
+        if (planReplaced) {
+          return;
+        }
+      }
+
       // Synchronous ref-based guard prevents double-click (state updates are async)
       if (swapLockRef.current) return;
       swapLockRef.current = true;
@@ -691,14 +854,21 @@ export default function MealPlanPage() {
         if (res.ok) {
           const data = await res.json();
           setSwapAlternatives(data.alternatives || []);
+        } else if (res.status === 400) {
+          // Plan might be replaced or inactive
+          const data = await res.json();
+          if (data.error?.includes('not active') || data.error?.includes('replaced')) {
+            await checkPlanStatus();
+          }
         }
       } catch (err) {
         console.error("Failed to fetch swap alternatives:", err);
       } finally {
         setSwapLoading(false);
+        swapLockRef.current = false;
       }
     },
-    [plan?.id]
+    [plan?.id, planReplaced, checkPlanStatus]
   );
 
   // Handle selecting a swap alternative
@@ -765,6 +935,17 @@ export default function MealPlanPage() {
     setSwapAlternatives([]);
     setSwapLoading(false);
     swapLockRef.current = false;
+  }, []);
+
+  // Handle dismissing the plan replaced banner
+  const handleDismissReplacedBanner = useCallback(() => {
+    setPlanReplaced(false);
+  }, []);
+
+  // Handle viewing the newer plan
+  const handleViewNewerPlan = useCallback(() => {
+    // Reload the page which will fetch the active plan
+    window.location.reload();
   }, []);
 
   if (loading) {
@@ -903,7 +1084,52 @@ export default function MealPlanPage() {
   return (
     <>
     <NavBar />
-    <div className="md:pt-14 pb-20 md:pb-0">
+    {planReplaced && (
+      <div
+        className="fixed top-14 left-0 right-0 z-40 border-b border-[#f97316]/50 bg-[#1a1a1a] px-4 py-3 md:top-14"
+        role="alert"
+        aria-live="polite"
+        data-testid="plan-replaced-banner"
+      >
+        <div className="mx-auto max-w-[1600px]">
+          <div className="flex items-center justify-between gap-4">
+            <div className="flex items-center gap-3">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#f97316]/20">
+                <svg className="h-4 w-4 text-[#f97316]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+              </div>
+              <div>
+                <p className="text-sm font-semibold text-[#fafafa]" data-testid="plan-replaced-title">
+                  Plan Updated
+                </p>
+                <p className="text-xs text-[#a1a1aa]" data-testid="plan-replaced-description">
+                  A newer meal plan has been generated. You're viewing an outdated plan.
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={handleViewNewerPlan}
+                className="rounded-lg bg-[#f97316] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+                data-testid="view-newer-plan-button"
+              >
+                View New Plan
+              </button>
+              <button
+                onClick={handleDismissReplacedBanner}
+                className="rounded-lg border border-[#2a2a2a] px-3 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:bg-[#252525] hover:text-[#fafafa]"
+                data-testid="dismiss-replaced-banner"
+                aria-label="Dismiss notification"
+              >
+                Dismiss
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )}
+    <div className={`md:pt-14 pb-20 md:pb-0 ${planReplaced ? 'md:mt-12' : ''}`}>
     <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa]">
       {/* Header */}
       <div className="border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-6">
