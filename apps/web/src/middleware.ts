@@ -58,6 +58,8 @@ const publicPaths = [
   "/api/trpc/test.hello",
   "/api/dev-test-user-plan",
   "/api/dev-complete-onboarding",
+  "/api/dev-test-regenerate",
+  "/api/test-feature-141",
 ];
 
 function isPublicPath(pathname: string): boolean {
@@ -107,6 +109,8 @@ const isPublicRoute = createRouteMatcher([
   "/api/trpc/test.hello(.*)",
   "/api/dev-test-user-plan(.*)",
   "/api/dev-complete-onboarding(.*)",
+  "/api/dev-test-regenerate(.*)",
+  "/api/test-feature-141(.*)",
 ]);
 
 /**

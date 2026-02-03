@@ -133,6 +133,7 @@ export async function GET() {
         extremely_active: 300,
       };
       const expectedBonus = bonusMap[intake.activityLevel] ?? 200;
+      const expectedTrainingDayKcal = expectedGoalKcal + expectedBonus;
 
       const checks = {
         bmr: { expected: expectedBmr, actual: result.bmrKcal, pass: result.bmrKcal === expectedBmr },
@@ -144,6 +145,7 @@ export async function GET() {
         fiberTargetG: { expected: expectedFiber, actual: result.fiberTargetG, pass: result.fiberTargetG === expectedFiber },
         trainingDayBonus: { expected: expectedBonus, actual: result.trainingDayBonusKcal, pass: result.trainingDayBonusKcal === expectedBonus },
         restDayKcal: { expected: expectedGoalKcal, actual: result.restDayKcal, pass: result.restDayKcal === expectedGoalKcal },
+        trainingDayKcal: { expected: expectedTrainingDayKcal, actual: result.trainingDayKcal, pass: result.trainingDayKcal === expectedTrainingDayKcal },
         calculationMethod: { expected: 'mifflin_st_jeor', actual: result.calculationMethod, pass: result.calculationMethod === 'mifflin_st_jeor' },
         macroSplitProtein: { expected: split.protein * 100, actual: result.macroSplit.proteinPercent, pass: result.macroSplit.proteinPercent === split.protein * 100 },
         macroSplitCarbs: { expected: split.carbs * 100, actual: result.macroSplit.carbsPercent, pass: result.macroSplit.carbsPercent === split.carbs * 100 },
