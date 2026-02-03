@@ -5,6 +5,7 @@ import SettingsDietary from "@/components/settings/SettingsDietary";
 import SettingsActivity from "@/components/settings/SettingsActivity";
 import SettingsMealStructure from "@/components/settings/SettingsMealStructure";
 import SettingsAccount from "@/components/settings/SettingsAccount";
+import SettingsPlanHistory from "@/components/settings/SettingsPlanHistory";
 import FitnessConnections from "@/components/fitness/FitnessConnections";
 
 export default function SettingsPage() {
@@ -41,6 +42,9 @@ export default function SettingsPage() {
 
             {/* Meal Structure Section */}
             <SettingsMealStructure />
+
+            {/* Plan History Section */}
+            <SettingsPlanHistory />
 
             {/* Sign Out and Account Deactivation */}
             <SettingsAccount />
