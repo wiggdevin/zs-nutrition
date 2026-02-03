@@ -47,11 +47,13 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
         {showErrors && !data.goalType && (
           <p className="mb-2 text-xs text-red-500">Please select a goal type</p>
         )}
-        <div className="space-y-3">
+        <div className="space-y-3" role="group" aria-labelledby="onboarding-goal-type-label">
           {(["cut", "maintain", "bulk"] as GoalType[]).map((goal) => (
             <button
               key={goal}
               onClick={() => handleGoalSelect(goal)}
+              role="radio"
+              aria-checked={data.goalType === goal}
               className={`w-full rounded-lg border px-4 py-4 text-left transition-colors ${
                 data.goalType === goal
                   ? "border-[#f97316] bg-[#f97316]/10"
@@ -92,6 +94,10 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
             max={2}
             step={0.25}
             disabled={sliderDisabled}
+            aria-valuenow={displayRate}
+            aria-valuemin={0}
+            aria-valuemax={2}
+            aria-valuetext={`${displayRate} ${data.goalType === "cut" ? "lbs" : "lbs"} per week`}
             className={`w-full accent-[#f97316] ${sliderDisabled ? "opacity-40 cursor-not-allowed" : ""}`}
           />
           <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">

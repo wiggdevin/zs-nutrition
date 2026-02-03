@@ -51,11 +51,13 @@ export function Step6Preferences({ data, updateData }: Props) {
         <label id="onboarding-macro-split-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
           Macro Split
         </label>
-        <div className="space-y-2">
+        <div className="space-y-2" role="radiogroup" aria-labelledby="onboarding-macro-split-label">
           {macroStyles.map(({ value, label, desc }) => (
             <button
               key={value}
               onClick={() => updateData({ macroStyle: value })}
+              role="radio"
+              aria-checked={data.macroStyle === value}
               className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                 data.macroStyle === value
                   ? "border-[#f97316] bg-[#f97316]/10"
@@ -76,11 +78,12 @@ export function Step6Preferences({ data, updateData }: Props) {
         <label id="onboarding-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
           Cuisine Preferences (select favorites)
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-labelledby="onboarding-cuisine-label">
           {cuisineOptions.map((cuisine) => (
             <button
               key={cuisine}
               onClick={() => toggleCuisine(cuisine)}
+              aria-pressed={data.cuisinePreferences.includes(cuisine.toLowerCase())}
               className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate ${
                 data.cuisinePreferences.includes(cuisine.toLowerCase())
                   ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
@@ -108,6 +111,10 @@ export function Step6Preferences({ data, updateData }: Props) {
             min={2}
             max={6}
             step={1}
+            aria-valuenow={data.mealsPerDay}
+            aria-valuemin={2}
+            aria-valuemax={6}
+            aria-valuetext={`${data.mealsPerDay} meals per day`}
             className="w-full accent-[#f97316]"
           />
           <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
@@ -127,6 +134,10 @@ export function Step6Preferences({ data, updateData }: Props) {
             min={0}
             max={4}
             step={1}
+            aria-valuenow={data.snacksPerDay}
+            aria-valuemin={0}
+            aria-valuemax={4}
+            aria-valuetext={`${data.snacksPerDay} snacks per day`}
             className="w-full accent-[#f97316]"
           />
           <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">

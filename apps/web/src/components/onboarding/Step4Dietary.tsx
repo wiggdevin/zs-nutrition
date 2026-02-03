@@ -66,11 +66,13 @@ export function Step4Dietary({ data, updateData }: Props) {
         <label id="onboarding-dietary-style-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
           Dietary Style
         </label>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-labelledby="onboarding-dietary-style-label">
           {dietaryStyles.map(({ value, label }) => (
             <button
               key={value}
               onClick={() => updateData({ dietaryStyle: value })}
+              role="radio"
+              aria-checked={data.dietaryStyle === value}
               className={`rounded-lg border px-4 py-3 text-xs font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
                 data.dietaryStyle === value
                   ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
@@ -88,11 +90,12 @@ export function Step4Dietary({ data, updateData }: Props) {
         <label id="onboarding-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
           Allergies (select all that apply)
         </label>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-wrap gap-2" role="group" aria-labelledby="onboarding-allergies-label">
           {commonAllergies.map((allergy) => (
             <button
               key={allergy}
               onClick={() => toggleAllergy(allergy)}
+              aria-pressed={data.allergies.includes(allergy.toLowerCase())}
               className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[200px] truncate ${
                 data.allergies.includes(allergy.toLowerCase())
                   ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"

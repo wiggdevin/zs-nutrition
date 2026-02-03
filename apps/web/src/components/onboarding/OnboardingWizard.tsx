@@ -182,10 +182,11 @@ export function OnboardingWizard() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between" role="navigation" aria-label="Onboarding steps navigation">
           <button
             onClick={prevStep}
             disabled={currentStep === 1}
+            aria-label="Go to previous step"
             className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#fafafa] transition-colors hover:bg-[#252525] disabled:cursor-not-allowed disabled:opacity-30"
           >
             Back
@@ -194,6 +195,7 @@ export function OnboardingWizard() {
           {currentStep < TOTAL_STEPS ? (
             <button
               onClick={nextStep}
+              aria-label="Continue to next step"
               className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
             >
               Continue
@@ -203,11 +205,12 @@ export function OnboardingWizard() {
               onClick={handleComplete}
               disabled={isCompleting}
               data-testid="onboarding-complete-btn"
+              aria-label="Complete setup and generate meal plan"
               className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isCompleting ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
                   Completing...
                 </span>
               ) : (

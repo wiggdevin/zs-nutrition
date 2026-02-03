@@ -132,9 +132,10 @@ function QuickAction({
   return (
     <Link
       href={href}
+      aria-label={label}
       className="flex items-center gap-3 px-5 py-3 bg-[#111111] border border-[#2a2a2a] rounded-xl hover:bg-[#252525] hover:border-[#f97316]/30 transition-all duration-200 group"
     >
-      <span className="text-xl">{icon}</span>
+      <span className="text-xl" aria-hidden="true">{icon}</span>
       <span className="text-sm font-semibold uppercase tracking-wide text-[#a1a1aa] group-hover:text-[#fafafa] transition-colors">
         {label}
       </span>
@@ -186,6 +187,7 @@ function PlanMealCard({
               onClick={onLog}
               disabled={isLogging}
               data-testid={`log-btn-${mealSlot.toLowerCase()}`}
+              aria-label={`Log ${mealSlot}`}
               className="px-4 py-2 min-h-[44px] min-w-[44px] text-xs font-bold uppercase tracking-wide bg-[#f97316] hover:bg-[#ea580c] disabled:bg-[#f97316]/50 disabled:cursor-not-allowed text-[#0a0a0a] rounded-lg transition-colors"
             >
               {isLogging ? (
@@ -239,15 +241,21 @@ function LogConfirmModal({
   const adjustedFat = Math.round(meal.fat * portion * 10) / 10
 
   return (
-    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+    <div
+      className="fixed inset-0 z-[100] flex items-center justify-center bg-black/60 backdrop-blur-sm"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="log-meal-title"
+    >
       <div
         data-testid="log-confirm-modal"
         className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        role="document"
       >
         <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-1">
           /// Log Meal
         </p>
-        <h3 className="text-lg font-bold text-[#fafafa] mb-4">{meal.name}</h3>
+        <h3 id="log-meal-title" className="text-lg font-bold text-[#fafafa] mb-4">{meal.name}</h3>
 
         {/* Portion Slider */}
         <div className="mb-6">
@@ -331,6 +339,7 @@ function LogConfirmModal({
             onClick={() => onConfirm(portion)}
             disabled={isLogging}
             data-testid="confirm-log-btn"
+            aria-label={`Confirm logging ${meal.name}`}
             className="flex-1 px-4 py-2.5 text-sm font-bold uppercase tracking-wide bg-[#f97316] hover:bg-[#ea580c] disabled:bg-[#f97316]/50 disabled:cursor-not-allowed text-[#0a0a0a] rounded-xl transition-colors"
           >
             {isLogging ? (
@@ -756,9 +765,10 @@ export default function DashboardClient() {
           <button
             onClick={() => { setLoading(true); setError(null); fetchData() }}
             data-testid="retry-button"
+            aria-label="Retry loading dashboard"
             className="inline-flex items-center gap-2 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-sm font-bold uppercase tracking-wide rounded-xl transition-colors"
           >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
             </svg>
             Try Again
