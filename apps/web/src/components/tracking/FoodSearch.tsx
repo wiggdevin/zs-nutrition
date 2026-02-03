@@ -59,6 +59,7 @@ export default function FoodSearch() {
   const [showDropdown, setShowDropdown] = useState(false)
   const [isLoading, setIsLoading] = useState(false)
   const [isLoadingDetails, setIsLoadingDetails] = useState(false)
+  const [isLoadingMore, setIsLoadingMore] = useState(false)
   const [quantity, setQuantity] = useState(1)
   const [isLogging, setIsLogging] = useState(false)
   const [logSuccess, setLogSuccess] = useState<string | null>(null)
@@ -66,6 +67,9 @@ export default function FoodSearch() {
   const [isLogNetworkError, setIsLogNetworkError] = useState(false)
   const [isFocused, setIsFocused] = useState(false)
   const [queryTooLong, setQueryTooLong] = useState(false)
+  const [currentPage, setCurrentPage] = useState(0)
+  const [hasMore, setHasMore] = useState(false)
+  const [currentQuery, setCurrentQuery] = useState('')
   const inputRef = useRef<HTMLInputElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
   const debounceTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -99,13 +103,21 @@ export default function FoodSearch() {
   }, [])
 
   // Debounced autocomplete with abort controller for stale request protection
-  const fetchAutocomplete = useCallback(async (q: string) => {
+  const fetchAutocomplete = useCallback(async (q: string, page: number = 0) => {
     const trimmed = q.trim()
     if (trimmed.length < 2) {
       setSuggestions([])
       setSearchResults([])
       setShowDropdown(false)
+      setHasMore(false)
+      setCurrentPage(0)
       return
+    }
+
+    // Reset pagination on new search
+    if (page === 0) {
+      setCurrentPage(0)
+      setCurrentQuery(trimmed)
     }
 
     // Abort any in-flight search request
@@ -116,25 +128,57 @@ export default function FoodSearch() {
     searchAbortRef.current = controller
     const generation = ++searchGenRef.current
 
-    setIsLoading(true)
+    if (page === 0) {
+      setIsLoading(true)
+    } else {
+      setIsLoadingMore(true)
+    }
+
     try {
-      // Fetch both autocomplete suggestions and search results in parallel
-      const [autoRes, searchRes] = await Promise.all([
-        fetch(`/api/food-search?q=${encodeURIComponent(q)}&type=autocomplete`, { signal: controller.signal }),
-        fetch(`/api/food-search?q=${encodeURIComponent(q)}&type=search&max=8`, { signal: controller.signal }),
-      ])
+      // Fetch both autocomplete suggestions and search results in parallel (only for first page)
+      let results: FoodSearchResult[] = []
+      let hasMoreResults = false
 
-      // Discard stale responses
-      if (generation !== searchGenRef.current) return
+      if (page === 0) {
+        const [autoRes, searchRes] = await Promise.all([
+          fetch(`/api/food-search?q=${encodeURIComponent(q)}&type=autocomplete`, { signal: controller.signal }),
+          fetch(`/api/food-search?q=${encodeURIComponent(q)}&type=search&max=8&page=0`, { signal: controller.signal }),
+        ])
 
-      const autoData = await autoRes.json()
-      const searchData = await searchRes.json()
+        // Discard stale responses
+        if (generation !== searchGenRef.current) return
 
-      if (generation !== searchGenRef.current) return
+        const autoData = await autoRes.json()
+        const searchData = await searchRes.json()
 
-      setSuggestions(autoData.results || [])
-      setSearchResults(searchData.results || [])
-      setShowDropdown(true)
+        if (generation !== searchGenRef.current) return
+
+        setSuggestions(autoData.results || [])
+        results = searchData.results || []
+        hasMoreResults = searchData.hasMore || false
+        setSearchResults(results)
+        setHasMore(hasMoreResults)
+        setShowDropdown(true)
+      } else {
+        // Load more results
+        const searchRes = await fetch(`/api/food-search?q=${encodeURIComponent(q)}&type=search&max=8&page=${page}`, { signal: controller.signal })
+
+        // Discard stale responses
+        if (generation !== searchGenRef.current) return
+
+        const searchData = await searchRes.json()
+
+        if (generation !== searchGenRef.current) return
+
+        results = searchData.results || []
+        hasMoreResults = searchData.hasMore || false
+
+        // Append new results to existing results
+        setSearchResults(prev => [...prev, ...results])
+        setHasMore(hasMoreResults)
+        setCurrentPage(page)
+        setShowDropdown(true)
+      }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
       if (generation !== searchGenRef.current) return
@@ -142,6 +186,7 @@ export default function FoodSearch() {
     } finally {
       if (generation === searchGenRef.current) {
         setIsLoading(false)
+        setIsLoadingMore(false)
       }
     }
   }, [])
@@ -177,32 +222,14 @@ export default function FoodSearch() {
     setShowDropdown(false)
     setSuggestions([])
 
-    // Abort any in-flight search request
-    if (searchAbortRef.current) {
-      searchAbortRef.current.abort()
-    }
-    const controller = new AbortController()
-    searchAbortRef.current = controller
-    const generation = ++searchGenRef.current
+    // Reset pagination and fetch results
+    await fetchAutocomplete(suggestion, 0)
+  }
 
-    // Perform full search for the selected suggestion
-    setIsLoading(true)
-    try {
-      const res = await fetch(`/api/food-search?q=${encodeURIComponent(suggestion)}&type=search&max=10`, { signal: controller.signal })
-      if (generation !== searchGenRef.current) return
-      const data = await res.json()
-      if (generation !== searchGenRef.current) return
-      setSearchResults(data.results || [])
-      setShowDropdown(true)
-    } catch (err) {
-      if (err instanceof DOMException && err.name === 'AbortError') return
-      if (generation !== searchGenRef.current) return
-      console.error('Search error:', err)
-    } finally {
-      if (generation === searchGenRef.current) {
-        setIsLoading(false)
-      }
-    }
+  const handleLoadMore = async () => {
+    if (!currentQuery || isLoadingMore) return
+    const nextPage = currentPage + 1
+    await fetchAutocomplete(currentQuery, nextPage)
   }
 
   const handleFoodSelect = async (food: FoodSearchResult) => {
@@ -372,6 +399,9 @@ export default function FoodSearch() {
                 setQueryTooLong(false)
                 setQuantity(1)
                 setSelectedServingIdx(0)
+                setCurrentPage(0)
+                setHasMore(false)
+                setCurrentQuery('')
                 inputRef.current?.focus()
               }}
               className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#666] hover:text-[#fafafa] transition-colors rounded-full hover:bg-[#333]"
@@ -511,7 +541,7 @@ export default function FoodSearch() {
                         {food.name}
                       </div>
                       {food.verified && (
-                        <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-green-500/20 text-green-400 border border-green-500/30">
+                        <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -553,6 +583,28 @@ export default function FoodSearch() {
                     )}
                   </button>
                 ))}
+                {/* Load More Button */}
+                {hasMore && searchResults.length > 0 && (
+                  <button
+                    onClick={handleLoadMore}
+                    disabled={isLoadingMore}
+                    className="w-full px-4 py-3 text-center hover:bg-[#f97316]/10 transition-colors border-t border-[#222] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                  >
+                    {isLoadingMore ? (
+                      <>
+                        <div className="w-4 h-4 border-2 border-[#f97316] border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm text-[#a1a1aa]">Loading more...</span>
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4 text-[#a1a1aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+                        </svg>
+                        <span className="text-sm text-[#a1a1aa] font-medium">Load More Results</span>
+                      </>
+                    )}
+                  </button>
+                )}
               </div>
             )}
           </div>
