@@ -29,6 +29,8 @@ model User {
   foodScans          FoodScan[]
   onboarding         OnboardingState?
   planGenerationJobs PlanGenerationJob[]
+  weightEntries     WeightEntry[]
+  calorieAdjustments CalorieAdjustment[]
 }
 
 // ============================================================
@@ -226,4 +228,40 @@ model FoodScan {
   error          String?
   createdAt      DateTime  @default(now())
   completedAt    DateTime?
+}
+
+// ============================================================
+// Weight Entry (weekly weight logging for adaptive adjustments)
+// ============================================================
+model WeightEntry {
+  id              String    @id @default(uuid())
+  userId          String
+  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weightKg        Float     // weight in kg
+  weightLbs       Float     // weight in lbs (calculated for display)
+  logDate         DateTime  // date of the entry
+  notes           String?   // optional notes about the entry
+  createdAt       DateTime  @default(now())
+
+  @@index([userId, logDate])
+}
+
+// ============================================================
+// Calorie Adjustment (adaptive calorie target changes with audit log)
+// ============================================================
+model CalorieAdjustment {
+  id                String   @id @default(uuid())
+  userId            String
+  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  previousGoalKcal  Int      // previous calorie target
+  newGoalKcal       Int      // new calorie target
+  adjustmentReason  String   // JSON - detailed reasoning for the adjustment
+  weightChangeKg    Float?   // weight change that triggered adjustment
+  weightChangeLbs   Float?   // weight change in lbs for display
+  trendAnalysis     String?  // JSON - trend data that led to adjustment
+  milestoneAchieved String?  // milestone reached (e.g., "5lbs", "10lbs")
+  planRegenerated   Boolean  @default(false) // whether meal plan was regenerated
+  createdAt         DateTime @default(now())
+
+  @@index([userId, createdAt])
 }
