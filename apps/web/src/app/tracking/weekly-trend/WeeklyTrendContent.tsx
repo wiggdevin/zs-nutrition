@@ -164,8 +164,51 @@ export default function WeeklyTrendContent() {
 
   const metricConfig = metricConfigs[selectedMetric]
 
+  // Calculate weekly adherence average (mean of daily scores)
+  const daysWithScores = data.days.filter((d) => d.adherenceScore !== null)
+  const weeklyAverage =
+    daysWithScores.length > 0
+      ? Math.round(
+          daysWithScores.reduce((sum, d) => sum + (d.adherenceScore ?? 0), 0) / daysWithScores.length
+        )
+      : null
+
   return (
     <div data-testid="weekly-trend-container">
+      {/* ── Weekly Average Display ── */}
+      {weeklyAverage !== null && (
+        <div
+          className="mb-6 bg-[#18181b] border border-[#27272a] rounded-lg p-6"
+          data-testid="weekly-average-display"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <h3 className="text-sm text-[#a1a1aa] uppercase tracking-wider mb-1">
+                Weekly Average
+              </h3>
+              <p className="text-xs text-[#a1a1aa]">
+                Based on {daysWithScores.length} day{daysWithScores.length !== 1 ? 's' : ''} of data
+              </p>
+            </div>
+            <div className="text-right">
+              <div
+                className={`text-4xl font-bold ${
+                  weeklyAverage >= 80
+                    ? 'text-green-400'
+                    : weeklyAverage >= 50
+                    ? 'text-yellow-400'
+                    : 'text-red-400'
+                }`}
+                data-testid="weekly-average-score"
+              >
+                {weeklyAverage}%
+              </div>
+              <div className="text-sm text-[#a1a1aa]">adherence</div>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="mb-4 flex flex-wrap gap-4">
         <div>
           <label htmlFor="start-date-input" className="text-sm text-[#a1a1aa] mr-2">
