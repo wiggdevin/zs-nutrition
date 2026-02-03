@@ -4,7 +4,7 @@
  */
 
 // Set DATABASE_URL directly
-process.env.DATABASE_URL = "file:/Users/zero-suminc./Desktop/ZS-MAC/zero-sum-nutrition/apps/web/prisma/dev.db";
+process.env.DATABASE_URL = "file:/Users/zero-suminc./Desktop/ZS-MAC/zero-sum-nutrition/apps/web/dev.db";
 
 const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient();

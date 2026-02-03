@@ -118,6 +118,8 @@ export class MetabolicCalculator {
       });
     }
 
+    const trainingDayKcal = goalKcal + trainingDayBonusKcal;
+
     const result = {
       bmrKcal,
       tdeeKcal,
@@ -129,6 +131,7 @@ export class MetabolicCalculator {
       mealTargets,
       trainingDayBonusKcal,
       restDayKcal,
+      trainingDayKcal,
       calculationMethod: 'mifflin_st_jeor' as const,
       macroSplit: {
         proteinPercent: split.protein * 100,
