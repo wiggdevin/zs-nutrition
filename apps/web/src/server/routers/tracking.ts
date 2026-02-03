@@ -25,15 +25,7 @@ export const trackingRouter = router({
 
       // Parse date input or default to today
       // Use local day utilities to ensure consistent date boundaries
-      console.log('[DEBUG getDailySummary] input:', input)
-      console.log('[DEBUG getDailySummary] input?.date:', input?.date)
-
-      // When input is undefined (tRPC GET parsing issue), default to today
-      // When input exists but input.date is undefined, also default to today
       const dateOnly = input?.date ? parseLocalDay(input.date) : toLocalDay()
-
-      console.log('[DEBUG getDailySummary] dateOnly:', dateOnly)
-      console.log('[DEBUG getDailySummary] dateOnly.toISOString():', dateOnly.toISOString())
 
       // Fetch DailyLog and all TrackedMeals for this date in parallel
       const [dailyLog, trackedMeals] = await Promise.all([

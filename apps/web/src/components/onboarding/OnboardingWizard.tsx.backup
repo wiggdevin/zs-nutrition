@@ -88,10 +88,16 @@ export function OnboardingWizard() {
         const savedData = localStorage.getItem(STORAGE_KEY);
         const savedStep = localStorage.getItem(STEP_KEY);
 
-        // Merge localStorage data with server data (localStorage takes precedence for incomplete data)
+        // Only use localStorage if server didn't return data
         if (savedData) {
           const localData = JSON.parse(savedData);
-          setData((prev) => ({ ...prev, ...localData }));
+          setData((prev) => {
+            // Merge local data only if server data is empty
+            const hasServerData = Object.keys(localData).some(
+              (key) => localData[key] !== null && localData[key] !== ""
+            );
+            return hasServerData ? { ...prev, ...localData } : prev;
+          });
         }
 
         if (savedStep) {

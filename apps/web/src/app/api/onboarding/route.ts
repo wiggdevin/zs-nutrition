@@ -1,6 +1,6 @@
-import { auth } from '@clerk/nextjs/server'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
+import { getClerkUserId } from '@/lib/auth'
 
 async function getOrCreateUser(clerkUserId: string) {
   let user = await prisma.user.findUnique({ where: { clerkUserId } })
@@ -14,7 +14,7 @@ async function getOrCreateUser(clerkUserId: string) {
 
 // GET - fetch onboarding state
 export async function GET() {
-  const { userId: clerkUserId } = await auth()
+  const clerkUserId = await getClerkUserId()
   if (!clerkUserId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
@@ -39,7 +39,7 @@ export async function GET() {
 
 // POST - update onboarding step
 export async function POST(request: NextRequest) {
-  const { userId: clerkUserId } = await auth()
+  const clerkUserId = await getClerkUserId()
   if (!clerkUserId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
