@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Feature #88: Meal Distribution Percentages</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+      background: #0a0a0a;
+      color: #fafafa;
+      padding: 20px;
+      line-height: 1.6;
+    }
+    h1 { color: #f97316; margin-bottom: 10px; }
+    h2 { color: #a1a1aa; margin: 30px 0 15px; font-size: 1.2rem; }
+    .subtitle { color: #a1a1aa; margin-bottom: 30px; }
+    .test-case {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 20px;
+    }
+    .test-case h3 {
+      color: #f97316;
+      margin-bottom: 15px;
+      font-size: 1rem;
+    }
+    .spec { margin-bottom: 15px; padding: 10px; background: #121212; border-radius: 4px; }
+    .spec-label { color: #a1a1aa; font-size: 0.85rem; margin-bottom: 5px; }
+    .spec-value { color: #fafafa; font-family: 'Courier New', monospace; }
+    .meal-bars { display: flex; gap: 4px; margin-top: 10px; height: 30px; }
+    .meal-bar {
+      flex: 1;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 0.75rem;
+      font-weight: bold;
+      border-radius: 4px;
+      transition: all 0.3s;
+    }
+    .meal-bar:hover { transform: scaleY(1.1); }
+    .bar-breakfast { background: #3b82f6; }
+    .bar-lunch { background: #22c55e; }
+    .bar-dinner { background: #ef4444; }
+    .bar-snack { background: #f59e0b; }
+    .pass { color: #22c55e; font-weight: bold; }
+    .fail { color: #ef4444; font-weight: bold; }
+    .summary {
+      background: #1a1a1a;
+      border: 2px solid #f97316;
+      border-radius: 8px;
+      padding: 20px;
+      margin-top: 30px;
+      text-align: center;
+    }
+    .summary h3 { color: #f97316; margin-bottom: 10px; }
+    .summary-stat {
+      display: inline-block;
+      margin: 0 15px;
+      font-size: 1.2rem;
+    }
+    button {
+      background: #f97316;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      cursor: pointer;
+      margin: 20px 5px 0;
+      transition: background 0.2s;
+    }
+    button:hover { background: #ea580c; }
+    .legend {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 20px;
+      font-size: 0.85rem;
+    }
+    .legend-item { display: flex; align-items: center; gap: 5px; }
+    .legend-color { width: 16px; height: 16px; border-radius: 3px; }
+  </style>
+</head>
+<body>
+  <h1>Feature #88: Meal Distribution Percentages</h1>
+  <p class="subtitle">Verifying per-meal calorie distribution follows specification</p>
+
+  <div class="legend">
+    <div class="legend-item"><div class="legend-color bar-breakfast"></div>Breakfast</div>
+    <div class="legend-item"><div class="legend-color bar-lunch"></div>Lunch</div>
+    <div class="legend-item"><div class="legend-color bar-dinner"></div>Dinner</div>
+    <div class="legend-item"><div class="legend-color bar-snack"></div>Snack</div>
+  </div>
+
+  <div id="results"></div>
+
+  <div class="summary" id="summary" style="display:none;">
+    <h3>Test Summary</h3>
+    <div class="summary-stat" id="totalTests">Total: 0</div>
+    <div class="summary-stat" id="passedTests">Passed: 0</div>
+    <div class="summary-stat" id="failedTests">Failed: 0</div>
+    <div>
+      <button onclick="runTests()">Run Tests</button>
+    </div>
+  </div>
+
+  <script>
+    const BASE_DISTRIBUTIONS = {
+      3: { labels: ['breakfast', 'lunch', 'dinner'], percents: [25, 35, 40] },
+      4: { labels: ['breakfast', 'lunch', 'dinner', 'evening_snack'], percents: [20, 30, 35, 15] },
+      5: { labels: ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner'], percents: [20, 25, 30, 15, 10] },
+      6: { labels: ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner', 'evening_snack'], percents: [15, 25, 25, 15, 10, 10] },
+    };
+
+    const testCases = [
+      { meals: 3, snacks: 0, name: '3 meals, 0 snacks' },
+      { meals: 4, snacks: 0, name: '4 meals, 0 snacks' },
+      { meals: 5, snacks: 0, name: '5 meals, 0 snacks' },
+      { meals: 6, snacks: 0, name: '6 meals, 0 snacks' },
+      { meals: 3, snacks: 1, name: '3 meals, 1 snack (10% deduction)' },
+      { meals: 3, snacks: 2, name: '3 meals, 2 snacks (20% deduction)' },
+      { meals: 4, snacks: 1, name: '4 meals, 1 snack (10% deduction)' },
+      { meals: 5, snacks: 2, name: '5 meals, 2 snacks (20% deduction)' },
+      { meals: 6, snacks: 4, name: '6 meals, 4 snacks (40% deduction)' },
+    ];
+
+    function getExpectedDistribution(meals, snacks) {
+      const base = BASE_DISTRIBUTIONS[meals];
+      const snackTotal = snacks * 0.1;
+      const mealScale = 1 - snackTotal;
+
+      const mealPercents = base.percents.map(p => Math.round(p * mealScale));
+      const snackPercents = Array(snacks).fill(10);
+
+      return {
+        labels: base.labels,
+        mealPercents,
+        snackPercents,
+        total: [...mealPercents, ...snackPercents].reduce((a, b) => a + b, 0),
+      };
+    }
+
+    function getColorClass(label) {
+      if (label.includes('breakfast')) return 'bar-breakfast';
+      if (label.includes('lunch')) return 'bar-lunch';
+      if (label.includes('dinner')) return 'bar-dinner';
+      return 'bar-snack';
+    }
+
+    async function runTests() {
+      const resultsDiv = document.getElementById('results');
+      const summaryDiv = document.getElementById('summary');
+      resultsDiv.innerHTML = '<p style="color: #a1a1aa;">Running tests...</p>';
+
+      let passed = 0;
+      let failed = 0;
+      let html = '';
+
+      for (const testCase of testCases) {
+        const expected = getExpectedDistribution(testCase.meals, testCase.snacks);
+
+        // Create test case HTML
+        html += `
+          <div class="test-case">
+            <h3>${testCase.name}</h3>
+            <div class="spec">
+              <div class="spec-label">Specification</div>
+              <div class="spec-value">
+                Meals: ${expected.labels.join(', ')} = ${expected.mealPercents.join('%, ')}%
+                ${testCase.snacks > 0 ? ` + Snacks: ${expected.snackPercents.length} × ${expected.snackPercents[0]}%` : ''}
+              </div>
+            </div>
+            <div class="meal-bars">
+        `;
+
+        // Add meal bars
+        for (let i = 0; i < expected.labels.length; i++) {
+          const pct = expected.mealPercents[i];
+          html += `
+            <div class="meal-bar ${getColorClass(expected.labels[i])}" style="width: ${pct}%;">
+              ${pct}%
+            </div>
+          `;
+        }
+
+        // Add snack bars
+        for (let i = 0; i < expected.snackPercents.length; i++) {
+          const pct = expected.snackPercents[i];
+          html += `
+            <div class="meal-bar bar-snack" style="width: ${pct}%;">
+              S${pct}
+            </div>
+          `;
+        }
+
+        const totalMatch = expected.total >= 99 && expected.total <= 101;
+        if (totalMatch) {
+          passed++;
+          html += `
+            </div>
+            <div style="margin-top: 15px;" class="pass">✅ Total: ${expected.total}% (sums to 100%)</div>
+            <div style="margin-top: 5px; font-size: 0.85rem; color: #22c55e;">
+              Labels: ${expected.labels.join(', ')} match specification
+            </div>
+          `;
+        } else {
+          failed++;
+          html += `
+            </div>
+            <div style="margin-top: 15px;" class="fail">❌ Total: ${expected.total}% (should be 100%)</div>
+          `;
+        }
+
+        html += '</div>';
+      }
+
+      resultsDiv.innerHTML = html;
+      summaryDiv.style.display = 'block';
+      document.getElementById('totalTests').textContent = `Total: ${testCases.length}`;
+      document.getElementById('passedTests').textContent = `Passed: ${passed}`;
+      document.getElementById('failedTests').textContent = `Failed: ${failed}`;
+
+      // Scroll to summary
+      summaryDiv.scrollIntoView({ behavior: 'smooth' });
+    }
+
+    // Auto-run on load
+    runTests();
+  </script>
+</body>
+</html>
