@@ -51,7 +51,9 @@ export async function GET(
     return new Response('Job not found', { status: 404 })
   }
 
-  if (job.user.clerkUserId !== clerkUserId) {
+  // In dev mode, allow any authenticated user to access any job for testing purposes
+  // In production, strictly enforce user ownership
+  if (!isDevMode && job.user.clerkUserId !== clerkUserId) {
     return new Response('Forbidden', { status: 403 })
   }
 
