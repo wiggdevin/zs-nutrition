@@ -1,3 +1,4 @@
+import puppeteer from 'puppeteer';
 import { MealPlanValidated, CompiledDay, GroceryCategory } from '../types/schemas';
 
 /**
@@ -21,8 +22,8 @@ export class BrandRenderer {
     // 3. Generate grocery list HTML
     const groceryHtml = this.generateGroceryHtml(validated);
 
-    // 4. Generate PDF buffer (placeholder for now)
-    const pdfBuffer = Buffer.from('PDF generation not yet implemented');
+    // 4. Generate PDF buffer combining all deliverables
+    const pdfBuffer = await this.generatePdf(validated, summaryHtml, gridHtml, groceryHtml);
 
     return {
       summaryHtml,
@@ -30,6 +31,110 @@ export class BrandRenderer {
       groceryHtml,
       pdfBuffer,
     };
+  }
+
+  /**
+   * Generate a single PDF document combining all deliverables
+   */
+  private async generatePdf(
+    validated: MealPlanValidated,
+    summaryHtml: string,
+    gridHtml: string,
+    groceryHtml: string
+  ): Promise<Buffer> {
+    let browser;
+    try {
+      browser = await puppeteer.launch({
+        headless: true,
+        args: ['--no-sandbox', '--disable-setuid-sandbox'],
+      });
+
+      const page = await browser.newPage();
+
+      // Create a combined HTML document with all sections
+      const combinedHtml = this.generateCombinedPdfHtml(validated, summaryHtml, gridHtml, groceryHtml);
+
+      await page.setContent(combinedHtml, { waitUntil: 'networkidle0' });
+
+      // Generate PDF
+      const pdfBuffer = await page.pdf({
+        format: 'A4',
+        printBackground: true,
+        margin: {
+          top: '10mm',
+          bottom: '10mm',
+          left: '10mm',
+          right: '10mm',
+        },
+        displayHeaderFooter: false,
+      });
+
+      // Convert Uint8Array to Buffer
+      return Buffer.from(pdfBuffer);
+    } finally {
+      if (browser) {
+        await browser.close();
+      }
+    }
+  }
+
+  /**
+   * Generate combined HTML for PDF with page breaks between sections
+   */
+  private generateCombinedPdfHtml(
+    validated: MealPlanValidated,
+    summaryHtml: string,
+    gridHtml: string,
+    groceryHtml: string
+  ): string {
+    // Extract body content from each HTML document
+    const extractBody = (html: string) => {
+      const match = html.match(/<body>([\s\S]*)<\/body>/);
+      return match ? match[1] : html;
+    };
+
+    // Extract styles from each document
+    const extractStyles = (html: string) => {
+      const matches = html.match(/<style>([\s\S]*?)<\/style>/g);
+      return matches ? matches.join('\n') : '';
+    };
+
+    const allStyles = `
+      ${extractStyles(summaryHtml)}
+      ${extractStyles(gridHtml)}
+      ${extractStyles(groceryHtml)}
+      <style>
+        .pdf-section {
+          page-break-after: always;
+        }
+        .pdf-section:last-child {
+          page-break-after: avoid;
+        }
+      </style>
+    `;
+
+    return `
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <style>
+    ${allStyles}
+  </style>
+</head>
+<body>
+  <div class="pdf-section">
+    ${extractBody(summaryHtml)}
+  </div>
+  <div class="pdf-section">
+    ${extractBody(gridHtml)}
+  </div>
+  <div class="pdf-section">
+    ${extractBody(groceryHtml)}
+  </div>
+</body>
+</html>
+    `.trim();
   }
 
   /**

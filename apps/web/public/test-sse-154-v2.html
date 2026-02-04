@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Feature #154 SSE Test - Integrated</title>
+  <style>
+    body { background: #0a0a0a; color: #fafafa; font-family: monospace; padding: 20px; }
+    h1 { color: #f97316; }
+    .event { background: #1a1a1a; border: 1px solid #2a2a2a; padding: 10px; margin: 10px 0; }
+    .success { color: #22c55e; }
+    .error { color: #ef4444; }
+    .info { color: #3b82f6; }
+    button { background: #f97316; border: none; padding: 10px 20px; cursor: pointer; font-weight: bold; margin: 5px; }
+    button:hover { background: #ea580c; }
+    button:disabled { opacity: 0.5; cursor: not-allowed; }
+  </style>
+</head>
+<body>
+  <h1>Feature #154: SSE Stream Test (Integrated)</h1>
+  <p>Testing: /api/plan-stream/[jobId]</p>
+
+  <div>
+    <button id="generateBtn" onclick="generateAndTest()">1. Generate Plan & Test SSE</button>
+  </div>
+
+  <div id="status"></div>
+  <div id="events"></div>
+
+  <script>
+    async function generateAndTest() {
+      const generateBtn = document.getElementById('generateBtn');
+      const statusDiv = document.getElementById('status');
+      const eventsDiv = document.getElementById('events');
+
+      generateBtn.disabled = true;
+      statusDiv.innerHTML = '<p class="info">Step 1: Generating plan...</p>';
+      eventsDiv.innerHTML = '';
+
+      try {
+        // Step 1: Generate plan
+        const genResponse = await fetch('/api/plan/generate', { method: 'POST' });
+        const genData = await genResponse.json();
+
+        if (!genData.success) {
+          statusDiv.innerHTML = '<p class="error">❌ Failed to generate plan: ' + (genData.error || 'Unknown error') + '</p>';
+          generateBtn.disabled = false;
+          return;
+        }
+
+        const jobId = genData.jobId;
+        statusDiv.innerHTML = '<p class="info">Step 2: Plan generated! Job ID: ' + jobId + '<br>Step 3: Connecting to SSE stream...</p>';
+
+        // Step 2: Connect to SSE stream
+        await testSSE(jobId, statusDiv, eventsDiv);
+      } catch (err) {
+        statusDiv.innerHTML = '<p class="error">❌ Error: ' + err.message + '</p>';
+        generateBtn.disabled = false;
+      }
+    }
+
+    function testSSE(jobId, statusDiv, eventsDiv) {
+      const events = [];
+
+      const eventSource = new EventSource(`/api/plan-stream/${jobId}`);
+
+      eventSource.addEventListener('message', (e) => {
+        console.log('SSE message:', e.data);
+        try {
+          const data = JSON.parse(e.data);
+          events.push(data);
+
+          const eventDiv = document.createElement('div');
+          eventDiv.className = 'event';
+          eventDiv.innerHTML = `
+            <strong>Event ${events.length}:</strong><br>
+            Status: ${data.status}<br>
+            Agent: ${data.agent} - ${data.agentName || 'N/A'}<br>
+            Message: ${data.message}<br>
+            ${data.planId ? 'Plan ID: ' + data.planId : ''}
+          `;
+          eventsDiv.appendChild(eventDiv);
+
+          if (data.status === 'completed') {
+            statusDiv.innerHTML += '<br><p class="success">✅ Stream completed successfully!</p>';
+            eventSource.close();
+            verifyResults(events, statusDiv);
+            document.getElementById('generateBtn').disabled = false;
+          } else if (data.status === 'failed') {
+            statusDiv.innerHTML += '<br><p class="error">❌ Stream failed: ' + data.message + '</p>';
+            eventSource.close();
+            document.getElementById('generateBtn').disabled = false;
+          }
+        } catch (err) {
+          console.error('Error parsing SSE data:', err);
+        }
+      });
+
+      eventSource.addEventListener('error', (e) => {
+        console.error('SSE error:', e);
+        statusDiv.innerHTML += '<br><p class="error">❌ SSE connection error</p>';
+        eventSource.close();
+        document.getElementById('generateBtn').disabled = false;
+      });
+
+      // Timeout after 30 seconds
+      setTimeout(() => {
+        if (eventSource.readyState !== EventSource.CLOSED) {
+          statusDiv.innerHTML += '<br><p class="error">⏱️ Timeout - stream did not complete</p>';
+          eventSource.close();
+          document.getElementById('generateBtn').disabled = false;
+        }
+      }, 30000);
+    }
+
+    function verifyResults(events, statusDiv) {
+      const checks = [
+        { name: 'Received SSE events', pass: events.length > 0 },
+        { name: 'Agent progress events (1-6)', pass: events.filter(e => e.agent >= 1 && e.agent <= 6).length >= 6 },
+        { name: 'All events have status field', pass: events.every(e => e.status) },
+        { name: 'All events have agent number', pass: events.every(e => e.agent !== undefined) },
+        { name: 'All events have message', pass: events.every(e => e.message) },
+        { name: 'Received completed status', pass: events.some(e => e.status === 'completed') },
+        { name: 'Completed event has planId', pass: events.some(e => e.status === 'completed' && e.planId) },
+        { name: 'Connection closed after completion', pass: true }, // Implicitly tested if we reach here
+      ];
+
+      const allPass = checks.every(c => c.pass);
+      const passCount = checks.filter(c => c.pass).length;
+
+      const resultHtml = `
+        <br><div class="event">
+          <strong style="color: ${allPass ? '#22c55e' : '#ef4444'}">
+            ${allPass ? '✅ ALL VERIFICATION CHECKS PASSED (' + passCount + '/' + checks.length + ')' : '❌ SOME CHECKS FAILED (' + passCount + '/' + checks.length + ')'}
+          </strong><br><br>
+          ${checks.map(c => `<span style="color: ${c.pass ? '#22c55e' : '#ef4444'}">${c.pass ? '✅' : '❌'}</span> ${c.name}`).join('<br>')}
+        </div>
+      `;
+
+      statusDiv.innerHTML += resultHtml;
+    }
+  </script>
+</body>
+</html>

@@ -252,7 +252,10 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
         if (usePreferred) {
           // Try preferred cuisines (with relaxed variety check)
           for (const candidate of slotData.preferred) {
-            const recentPreferredMeals = recentMealNames.slice(-7); // Only 1 day for preferred cuisines
+            // Track meals by days: ~mealsPerDay * (days window + 1)
+            // Preferred: 1 day window (current day + 1 previous = 2 days)
+            const mealsPerDay = intake.mealsPerDay + intake.snacksPerDay;
+            const recentPreferredMeals = recentMealNames.slice(-(mealsPerDay * 2));
             if (recentPreferredMeals.includes(candidate.name)) {
               continue;
             }
@@ -270,9 +273,16 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
               'lentils',
               'soy',
             ];
-            const isExempt = exemptProteins.includes(candidate.primaryProtein.toLowerCase());
-            const wasUsedYesterday = previousDayProteins.includes(
-              candidate.primaryProtein.toLowerCase()
+            const candidateProteinLower = candidate.primaryProtein.toLowerCase();
+            const isExempt = exemptProteins.some((e) =>
+              candidateProteinLower === e || candidateProteinLower.includes(e) || e.includes(candidateProteinLower)
+            );
+
+            // Check if this protein (or a related protein) was used yesterday
+            const wasUsedYesterday = previousDayProteins.some((prevProtein) =>
+              prevProtein === candidateProteinLower ||
+              prevProtein.includes(candidateProteinLower) ||
+              candidateProteinLower.includes(prevProtein)
             );
 
             if (wasUsedYesterday && !isExempt) {
@@ -287,7 +297,10 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
         // If no suitable preferred meal (or we're using other pool), try other cuisines
         if (!selected && slotData.other.length > 0) {
           for (const candidate of slotData.other) {
-            const recentOtherMeals = recentMealNames.slice(-21); // 3 days for other cuisines
+            // Track meals by days: ~mealsPerDay * (days window + 1)
+            // Other: 3 day window (current day + 3 previous = 4 days)
+            const mealsPerDay = intake.mealsPerDay + intake.snacksPerDay;
+            const recentOtherMeals = recentMealNames.slice(-(mealsPerDay * 4));
             if (recentOtherMeals.includes(candidate.name)) {
               continue;
             }
@@ -304,9 +317,14 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
               'lentils',
               'soy',
             ];
-            const isExempt = exemptProteins.includes(candidate.primaryProtein.toLowerCase());
-            const wasUsedYesterday = previousDayProteins.includes(
-              candidate.primaryProtein.toLowerCase()
+            const candidateProteinLower = candidate.primaryProtein.toLowerCase();
+            const isExempt = exemptProteins.some((e) =>
+              candidateProteinLower === e || candidateProteinLower.includes(e) || e.includes(candidateProteinLower)
+            );
+            const wasUsedYesterday = previousDayProteins.some((prevProtein) =>
+              prevProtein === candidateProteinLower ||
+              prevProtein.includes(candidateProteinLower) ||
+              candidateProteinLower.includes(prevProtein)
             );
 
             if (wasUsedYesterday && !isExempt) {
@@ -318,9 +336,65 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
           }
         }
 
-        // Ultimate fallback: pick first available meal if variety constraints block everything
+        // Ultimate fallback: pick first available meal that doesn't violate consecutive protein rule
         if (!selected) {
-          selected = slotData.preferred[0] || slotData.other[0];
+          const exemptProteins = [
+            'mixed',
+            'dairy',
+            'eggs',
+            'whey',
+            'tofu',
+            'beans',
+            'chickpeas',
+            'lentils',
+            'soy',
+          ];
+
+          // Helper function to check if protein was used yesterday (with fuzzy matching)
+          const wasProteinUsedYesterday = (protein: string): boolean => {
+            const proteinLower = protein.toLowerCase();
+            return previousDayProteins.some((prevProtein) =>
+              prevProtein === proteinLower ||
+              prevProtein.includes(proteinLower) ||
+              proteinLower.includes(prevProtein)
+            );
+          };
+
+          // Helper function to check if protein is exempt
+          const isProteinExempt = (protein: string): boolean => {
+            const proteinLower = protein.toLowerCase();
+            return exemptProteins.some((e) =>
+              proteinLower === e || proteinLower.includes(e) || e.includes(proteinLower)
+            );
+          };
+
+          // Try to find any meal in preferred that doesn't violate consecutive protein rule
+          for (const candidate of slotData.preferred) {
+            const isExempt = isProteinExempt(candidate.primaryProtein);
+            const wasUsedYesterday = wasProteinUsedYesterday(candidate.primaryProtein);
+            if (!wasUsedYesterday || isExempt) {
+              selected = candidate;
+              break;
+            }
+          }
+
+          // If still not found, try other pool
+          if (!selected) {
+            for (const candidate of slotData.other) {
+              const isExempt = isProteinExempt(candidate.primaryProtein);
+              const wasUsedYesterday = wasProteinUsedYesterday(candidate.primaryProtein);
+              if (!wasUsedYesterday || isExempt) {
+                selected = candidate;
+                break;
+              }
+            }
+          }
+
+          // Absolute last resort: pick first available even if it violates the rule
+          // (better to have a plan than to fail completely)
+          if (!selected) {
+            selected = slotData.preferred[0] || slotData.other[0];
+          }
         }
 
         // Rotate the selected meal in its pool to ensure variety
