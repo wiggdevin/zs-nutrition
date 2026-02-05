@@ -10,6 +10,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * Used for feature #331 verification.
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId()
     if (!clerkUserId) {
@@ -165,6 +169,10 @@ export async function POST(request: Request) {
  * Clean up test meals created by the POST endpoint.
  */
 export async function DELETE(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId()
     if (!clerkUserId) {

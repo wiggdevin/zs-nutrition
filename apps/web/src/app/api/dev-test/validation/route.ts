@@ -85,6 +85,10 @@ function formatZodError(error: z.ZodError): { field: string; message: string }[]
 }
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 })
+  }
+
   const results: {
     test: string
     schema: string

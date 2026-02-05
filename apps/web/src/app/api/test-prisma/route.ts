@@ -2,6 +2,10 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     // Test 1: Basic connection - count users
     const userCount = await prisma.user.count()

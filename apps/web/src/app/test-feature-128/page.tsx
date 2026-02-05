@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 import MealDetailModal from "@/components/meal-plan/MealDetailModal";
 
@@ -29,6 +30,7 @@ interface Meal {
 }
 
 export default function TestFeature128Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [selectedMeal, setSelectedMeal] = useState<Meal | null>(null);
 
   // Sample meal with complete data

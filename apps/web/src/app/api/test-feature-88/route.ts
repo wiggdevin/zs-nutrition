@@ -11,6 +11,10 @@ import type { ClientIntake } from '@zero-sum/nutrition-engine';
  * Returns metabolic profile with meal targets for testing distribution percentages
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   try {
     const body = await request.json();
     const { mealsPerDay, snacksPerDay, goalKcal, proteinTargetG, carbsTargetG, fatTargetG } = body;

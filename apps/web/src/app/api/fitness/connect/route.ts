@@ -3,7 +3,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireActiveUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 /**
@@ -14,9 +14,14 @@ import { prisma } from '@/lib/db';
  */
 export async function POST(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
     const body = await req.json();

@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState, useRef } from "react";
 
 import { useEffect } from "react";
@@ -35,6 +36,7 @@ const quickDevAuth = async () => {
 };
 
 export default function TestFeature149() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [jobId, setJobId] = useState<string | null>(null);
   const [status, setStatus] = useState<string>("idle");
   const [currentAgent, setCurrentAgent] = useState<number>(0);

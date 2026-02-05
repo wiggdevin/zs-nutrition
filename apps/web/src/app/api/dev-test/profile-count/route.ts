@@ -4,6 +4,10 @@ import { getClerkUserId } from '@/lib/auth';
 
 // Dev-only: count all profiles for the current user (to detect duplicates)
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 });
+  }
+
   const clerkUserId = await getClerkUserId();
   if (!clerkUserId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

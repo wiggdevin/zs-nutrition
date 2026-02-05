@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState, useCallback } from 'react'
 
 /**
@@ -12,6 +13,7 @@ import { useState, useCallback } from 'react'
  * 4. A retry option is available
  */
 export default function Test500ErrorPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [testLog, setTestLog] = useState<string[]>([])
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
   const [rawResponse, setRawResponse] = useState<string | null>(null)

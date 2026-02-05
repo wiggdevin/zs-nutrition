@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState, useRef, useCallback } from 'react'
 
 /**
@@ -9,6 +10,7 @@ import { useState, useRef, useCallback } from 'react'
  * by intercepting fetch calls to simulate network failures.
  */
 export default function TestNetworkErrorPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [isNetworkBlocked, setIsNetworkBlocked] = useState(false)
   const [testLog, setTestLog] = useState<string[]>([])
   const originalFetchRef = useRef<typeof fetch | null>(null)

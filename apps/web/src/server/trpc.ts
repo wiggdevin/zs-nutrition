@@ -3,6 +3,7 @@ import { ZodError } from 'zod'
 import superjson from 'superjson'
 import { prisma } from '@/lib/prisma'
 import { getClerkUserId } from '@/lib/auth'
+import { generalLimiter, checkRateLimit } from '@/lib/rate-limit'
 
 export type Context = {
   userId: string | null
@@ -74,6 +75,13 @@ const enforceAuth = t.middleware(async ({ ctx, next }) => {
     })
   }
 
+  if (!user.isActive) {
+    throw new TRPCError({
+      code: 'FORBIDDEN',
+      message: 'Account is deactivated',
+    })
+  }
+
   return next({
     ctx: {
       ...ctx,
@@ -83,4 +91,22 @@ const enforceAuth = t.middleware(async ({ ctx, next }) => {
   })
 })
 
-export const protectedProcedure = t.procedure.use(enforceAuth)
+const rateLimit = t.middleware(async ({ ctx, next }) => {
+  if (ctx.userId && generalLimiter) {
+    const result = await checkRateLimit(generalLimiter, ctx.userId)
+    if (result && !result.success) {
+      const retryAfter = Math.max(1, Math.ceil(((result.reset || Date.now()) - Date.now()) / 1000))
+      throw new TRPCError({
+        code: 'TOO_MANY_REQUESTS',
+        message: JSON.stringify({
+          error: 'Rate limit exceeded',
+          retryAfter,
+          message: `Rate limit exceeded. Try again in ${retryAfter} seconds.`,
+        }),
+      })
+    }
+  }
+  return next()
+})
+
+export const protectedProcedure = t.procedure.use(enforceAuth).use(rateLimit)

@@ -6,6 +6,7 @@ import {
   DraftMeal,
   DraftDay,
 } from '../types/schemas';
+import { withRetry } from '../utils/retry';
 
 /**
  * Agent 3: Recipe Curator (LLM)
@@ -27,10 +28,13 @@ export class RecipeCurator {
       !this.anthropicApiKey.includes('YOUR_KEY')
     ) {
       try {
-        return await this.generateWithClaude(metabolicProfile, intake);
+        return await withRetry(
+          () => this.generateWithClaude(metabolicProfile, intake),
+          { maxRetries: 3, baseDelay: 2000, maxDelay: 15000 }
+        );
       } catch (error) {
         console.warn(
-          '[RecipeCurator] Claude generation failed, falling back to deterministic:',
+          '[RecipeCurator] Claude generation failed after retries, falling back to deterministic:',
           error instanceof Error ? error.message : 'Unknown error'
         );
       }

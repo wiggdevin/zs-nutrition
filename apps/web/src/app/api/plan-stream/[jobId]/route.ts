@@ -1,6 +1,6 @@
-import { NextRequest } from 'next/server'
+import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getClerkUserId, isDevMode } from '@/lib/auth'
+import { requireActiveUser, isDevMode } from '@/lib/auth'
 import { safeLogError } from '@/lib/safe-logger'
 
 /**
@@ -34,9 +34,14 @@ export async function GET(
   const { jobId } = await params
 
   // Auth check
-  const clerkUserId = await getClerkUserId()
-  if (!clerkUserId) {
-    return new Response('Unauthorized', { status: 401 })
+  let clerkUserId: string
+  let dbUserId: string
+  try {
+    ({ clerkUserId, dbUserId } = await requireActiveUser())
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unauthorized'
+    const status = message === 'Account is deactivated' ? 403 : 401
+    return new Response(message, { status })
   }
 
   // Verify job exists and belongs to user
@@ -51,9 +56,7 @@ export async function GET(
     return new Response('Job not found', { status: 404 })
   }
 
-  // In dev mode, allow any authenticated user to access any job for testing purposes
-  // In production, strictly enforce user ownership
-  if (!isDevMode && job.user.clerkUserId !== clerkUserId) {
+  if (job.user.clerkUserId !== clerkUserId) {
     return new Response('Forbidden', { status: 403 })
   }
 

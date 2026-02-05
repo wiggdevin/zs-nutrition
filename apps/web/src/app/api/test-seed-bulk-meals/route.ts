@@ -8,6 +8,10 @@ import { getClerkUserId } from '@/lib/auth'
  * Only used in development.
  */
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   const clerkId = await getClerkUserId()
   if (!clerkId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
@@ -142,6 +146,10 @@ export async function POST() {
  * Cleans up performance test data.
  */
 export async function DELETE() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   const clerkId = await getClerkUserId()
   if (!clerkId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

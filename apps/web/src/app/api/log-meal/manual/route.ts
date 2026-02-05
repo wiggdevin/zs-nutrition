@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getClerkUserId } from '@/lib/auth'
+import { requireActiveUser } from '@/lib/auth'
 import { safeLogError } from '@/lib/safe-logger'
 
 /**
@@ -10,9 +10,14 @@ import { safeLogError } from '@/lib/safe-logger'
  */
 export async function POST(request: Request) {
   try {
-    const clerkUserId = await getClerkUserId();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
     const user = await prisma.user.findUnique({ where: { clerkUserId } });

@@ -8,6 +8,10 @@ import { prisma } from '@/lib/prisma'
  * - Returns verification results for all metrics (kcal, protein, carbs, fat)
  */
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   const results = {
     step1_seeded: false,
     step2_caloriesChart: false,
@@ -186,6 +190,10 @@ export async function POST() {
  * Returns test status and data summary
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const user = await prisma.user.findFirst({
       where: { email: 'feature186-test@example.com' },
@@ -258,6 +266,10 @@ export async function GET() {
  * Cleans up test data
  */
 export async function DELETE() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const user = await prisma.user.findFirst({
       where: { email: 'feature186-test@example.com' },

@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import dynamic from 'next/dynamic'
 
 // Dynamic import with SSR disabled to prevent Recharts window/document errors during SSR
@@ -13,6 +14,7 @@ const TestChart = dynamic(() => import('@/components/charts/TestChart'), {
 })
 
 export default function TestChartsPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   return (
     <div className="min-h-screen bg-[#0a0a0a] py-8">
       <div className="max-w-4xl mx-auto">

@@ -8,6 +8,10 @@ import { QAValidator } from '@zero-sum/nutrition-engine';
  * Tests that the QA validator rounds grocery amounts UP for practical shopping.
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   try {
     const validator = new QAValidator();
 

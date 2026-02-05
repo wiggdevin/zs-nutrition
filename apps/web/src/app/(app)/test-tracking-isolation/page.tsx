@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 
 interface TestResult {
@@ -22,6 +23,7 @@ interface TestResponse {
 }
 
 export default function TestTrackingIsolationPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [testResponse, setTestResponse] = useState<TestResponse | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

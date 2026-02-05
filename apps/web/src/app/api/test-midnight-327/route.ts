@@ -11,6 +11,10 @@ import { toLocalDay, formatLocalDay } from '@/lib/date-utils'
  * This test verifies that meals logged near midnight are assigned to the correct day.
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId()
     if (!clerkUserId) {

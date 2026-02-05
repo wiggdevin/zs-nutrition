@@ -11,6 +11,10 @@ import type { MealPlanCompiled, CompiledDay, CompiledMeal } from '@zero-sum/nutr
  * 3. Verify adjustmentsMade count is accurate
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   const validator = new QAValidator();
   const results: any[] = [];
 

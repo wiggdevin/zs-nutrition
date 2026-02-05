@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getAuth } from '@clerk/nextjs/server'
+import { requireActiveUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
@@ -49,13 +49,14 @@ interface LogVisionMealRequest {
 export async function POST(request: Request) {
   try {
     // Authenticate user
-    const { userId } = await getAuth()
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
     // Parse and validate request
@@ -84,7 +85,7 @@ export async function POST(request: Request) {
     }
 
     // Verify ownership
-    if (foodScan.userId !== userId) {
+    if (foodScan.userId !== clerkUserId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }
@@ -118,7 +119,7 @@ export async function POST(request: Request) {
     await prisma.trackedMeal.create({
       data: {
         id: trackedMealId,
-        userId,
+        userId: clerkUserId,
         loggedDate,
         mealSlot: mealSlot || 'snack',
         mealName: nutritionData.meal_name,
@@ -146,7 +147,7 @@ export async function POST(request: Request) {
     const dailyLog = await prisma.dailyLog.findUnique({
       where: {
         userId_date: {
-          userId,
+          userId: clerkUserId,
           date: loggedDate,
         },
       },
@@ -198,13 +199,14 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
   try {
-    const { userId } = await getAuth()
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
     const { searchParams } = new URL(request.url)
@@ -229,7 +231,7 @@ export async function GET(request: Request) {
     }
 
     // Verify ownership
-    if (foodScan.userId !== userId) {
+    if (foodScan.userId !== clerkUserId) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 403 }

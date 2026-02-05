@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 
 interface AutocompleteResult {
@@ -14,6 +15,7 @@ interface AutocompleteResult {
 }
 
 export default function TestFeature148Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [result, setResult] = useState<AutocompleteResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [query, setQuery] = useState("chick");

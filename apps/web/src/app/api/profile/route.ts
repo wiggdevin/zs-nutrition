@@ -1,14 +1,19 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getClerkUserId } from '@/lib/auth';
+import { requireActiveUser } from '@/lib/auth';
 import { safeLogError } from '@/lib/safe-logger';
 
 // GET - Retrieve current user's profile
 export async function GET() {
   try {
-    const clerkUserId = await getClerkUserId();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
     const user = await prisma.user.findUnique({
@@ -25,10 +30,6 @@ export async function GET() {
 
     if (!user) {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
-    }
-
-    if (!user.isActive) {
-      return NextResponse.json({ error: 'Account deactivated' }, { status: 403 });
     }
 
     const profile = user.profiles[0] || null;

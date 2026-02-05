@@ -1,8 +1,10 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 
 export default function TestFeature235Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [result, setResult] = useState<any>(null)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

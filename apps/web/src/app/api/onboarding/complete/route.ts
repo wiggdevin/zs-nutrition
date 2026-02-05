@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { calculateMetabolicProfile } from '@/lib/metabolic';
-import { getClerkUserId } from '@/lib/auth';
+import { requireActiveUser } from '@/lib/auth';
 import { safeLogError } from '@/lib/safe-logger';
 import { profileSchemas, validateMealsPerDay, validateSnacksPerDay, validateCookingSkill, validatePrepTimeMax } from '@/lib/validation';
 import { ZodError } from 'zod';
@@ -9,9 +9,14 @@ import { ZodError } from 'zod';
 // POST - Complete onboarding, create UserProfile
 export async function POST(request: NextRequest) {
   try {
-    const clerkUserId = await getClerkUserId();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
     // In dev mode, accept profile data directly from request body

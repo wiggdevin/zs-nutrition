@@ -15,6 +15,10 @@ import {
  * Verifies that FatSecret API response schemas can be imported and used in the web app
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   const results: Array<{
     test: string;
     status: 'pass' | 'fail';

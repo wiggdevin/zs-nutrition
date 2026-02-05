@@ -11,6 +11,10 @@ import { getClerkUserId } from '@/lib/auth'
  * 4. Cleans up by completing the test job
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId()
     if (!clerkUserId) {

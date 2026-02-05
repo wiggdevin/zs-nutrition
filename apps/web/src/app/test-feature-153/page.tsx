@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 
 interface VerificationResult {
@@ -18,6 +19,7 @@ interface VerificationResult {
 }
 
 export default function TestFeature153Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [result, setResult] = useState<VerificationResult | null>(null);
   const [loading, setLoading] = useState(false);
   const [jobs, setJobs] = useState<unknown[]>([]);

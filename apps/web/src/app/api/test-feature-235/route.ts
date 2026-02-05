@@ -15,6 +15,10 @@ import { calculateAdherenceScore } from '@/lib/adherence'
  * In production, all endpoints should require authentication.
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     // Find or create test user
     let user = await prisma.user.findFirst({

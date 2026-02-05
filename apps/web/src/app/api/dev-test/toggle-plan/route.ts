@@ -9,6 +9,10 @@ import { safeLogError } from '@/lib/safe-logger';
  * DEV ONLY - not for production use.
  */
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 });
+  }
+
   try {
     const clerkUserId = await getClerkUserId();
     if (!clerkUserId) {

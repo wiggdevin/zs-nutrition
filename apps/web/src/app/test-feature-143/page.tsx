@@ -1,9 +1,11 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 import { Confetti } from "@/components/ui/Confetti";
 
 export default function TestFeature143Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [showConfetti, setShowConfetti] = useState(false);
 
   return (

@@ -7,6 +7,10 @@ import type { ClientIntake } from '@zero-sum/nutrition-engine';
  * Runs known test cases and compares actual vs expected values.
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   const calculator = new MetabolicCalculator();
 
   // Test Case 1: Male, 30yo, 180cm, 80kg, moderately_active, cut @1lb/wk, balanced, 3 meals, 1 snack

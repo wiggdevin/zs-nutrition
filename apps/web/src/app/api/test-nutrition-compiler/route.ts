@@ -18,6 +18,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * 8. Output matches MealPlanCompiledSchema
  */
 export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const adapter = new FatSecretAdapter(
       process.env.FATSECRET_CLIENT_ID || '',

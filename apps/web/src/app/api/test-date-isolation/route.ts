@@ -4,6 +4,10 @@ import { parseLocalDay } from '@/lib/date-utils'
 import { cookies } from 'next/headers'
 
 export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   const cookieStore = await cookies()
   const devUserId = cookieStore.get('dev-user-id')?.value
 

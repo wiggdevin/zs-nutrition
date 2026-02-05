@@ -1,0 +1,39 @@
+import { StateStorage } from 'zustand/middleware'
+
+function isLocalStorageAvailable(): boolean {
+  try {
+    const testKey = '__zsn_storage_test__'
+    localStorage.setItem(testKey, 'test')
+    localStorage.removeItem(testKey)
+    return true
+  } catch {
+    return false
+  }
+}
+
+export const safeStorage: StateStorage = {
+  getItem: (name) => {
+    if (!isLocalStorageAvailable()) return null
+    try {
+      return localStorage.getItem(name)
+    } catch {
+      return null
+    }
+  },
+  setItem: (name, value) => {
+    if (!isLocalStorageAvailable()) return
+    try {
+      localStorage.setItem(name, value)
+    } catch (e) {
+      console.warn('[Storage] Failed to save state:', e)
+    }
+  },
+  removeItem: (name) => {
+    if (!isLocalStorageAvailable()) return
+    try {
+      localStorage.removeItem(name)
+    } catch {
+      // Ignore
+    }
+  },
+}

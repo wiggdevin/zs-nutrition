@@ -12,6 +12,10 @@ import { prisma } from '@/lib/prisma'
 import { isDevMode } from '@/lib/auth'
 
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   if (!isDevMode) {
     return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
   }

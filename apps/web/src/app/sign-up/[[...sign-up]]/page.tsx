@@ -1,10 +1,6 @@
 import { SignUp } from "@clerk/nextjs";
 import { DevSignUpForm } from "./SignUpContent";
-
-const isDevMode =
-  !process.env.CLERK_SECRET_KEY ||
-  process.env.CLERK_SECRET_KEY === "sk_test_placeholder" ||
-  process.env.CLERK_SECRET_KEY === "";
+import { isDevMode } from "@/lib/dev-mode";
 
 export default function SignUpPage() {
   return (

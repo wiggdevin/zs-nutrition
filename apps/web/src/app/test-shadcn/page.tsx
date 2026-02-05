@@ -1,8 +1,10 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { Button } from "@/components/ui/button"
 
 export default function TestShadcnPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   return (
     <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-2xl mx-auto space-y-8">

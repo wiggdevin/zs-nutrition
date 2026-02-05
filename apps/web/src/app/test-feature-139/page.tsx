@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 
 interface RetryTestResult {
@@ -10,6 +11,7 @@ interface RetryTestResult {
 }
 
 export default function TestFeature139Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [testResults, setTestResults] = useState<RetryTestResult[]>([]);
   const [isRunning, setIsRunning] = useState(false);
 

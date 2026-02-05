@@ -3,6 +3,10 @@ import { prisma } from '@/lib/prisma'
 import { parseLocalDay } from '@/lib/date-utils'
 
 export async function POST(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const body = await request.json()
     const { date } = body

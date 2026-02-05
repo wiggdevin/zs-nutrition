@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 import { useToastStore } from '@/lib/toast-store'
 
@@ -66,6 +67,7 @@ function isRed500(color: string): boolean {
 }
 
 export default function TestFeature425Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [results, setResults] = useState<TestResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const addToast = useToastStore((s) => s.addToast)

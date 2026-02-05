@@ -1,10 +1,7 @@
 import { redirect } from 'next/navigation'
 import { cookies } from 'next/headers'
 import Link from 'next/link'
-
-const isDevMode = !process.env.CLERK_SECRET_KEY ||
-  process.env.CLERK_SECRET_KEY === 'sk_test_placeholder' ||
-  process.env.CLERK_SECRET_KEY === '';
+import { isDevMode } from '@/lib/dev-mode'
 
 export default async function HomePage() {
   let userId: string | null = null;

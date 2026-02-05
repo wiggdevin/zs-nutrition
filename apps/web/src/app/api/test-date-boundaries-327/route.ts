@@ -12,6 +12,10 @@ import { toLocalDay, parseLocalDay, formatLocalDay } from '@/lib/date-utils'
  * assigned to the correct day based on local time.
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId()
     if (!clerkUserId) {

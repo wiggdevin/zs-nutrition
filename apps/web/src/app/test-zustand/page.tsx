@@ -1,9 +1,11 @@
 'use client';
 
+import { notFound } from 'next/navigation';
 import { useUserStore } from '@/lib/stores/useUserStore';
 import { useState } from 'react';
 
 export default function TestZustandPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const { profile, isOnboarded, setProfile, updateProfile, clearProfile, setIsOnboarded } =
     useUserStore();
   const [renderCount, setRenderCount] = useState(0);

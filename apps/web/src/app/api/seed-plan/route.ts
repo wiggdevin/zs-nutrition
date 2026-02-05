@@ -10,6 +10,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * POST /api/seed-plan
  */
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   if (!isDevMode) {
     return NextResponse.json({ error: 'Not available in production' }, { status: 403 })
   }

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getClerkUserId } from '@/lib/auth';
-import { checkRateLimit, addRateLimitHeaders, rateLimitExceededResponse, RATE_LIMITS } from '@/lib/rate-limit';
+import { requireActiveUser } from '@/lib/auth';
+import { mealSwapLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
 import { safeLogError } from '@/lib/safe-logger';
 
 interface MealNutrition {
@@ -39,15 +39,20 @@ interface PlanDay {
  */
 export async function POST(req: NextRequest) {
   try {
-    const clerkUserId = await getClerkUserId();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
     // Rate limit: 10 meal swaps per hour per user
-    const rateLimitResult = checkRateLimit(clerkUserId, RATE_LIMITS.mealSwap);
-    if (!rateLimitResult.success) {
-      return rateLimitExceededResponse(rateLimitResult, RATE_LIMITS.mealSwap);
+    const rateLimitResult = await checkRateLimit(mealSwapLimiter, clerkUserId);
+    if (rateLimitResult && !rateLimitResult.success) {
+      return rateLimitExceededResponse(rateLimitResult.reset);
     }
 
     const body = await req.json();
@@ -128,7 +133,6 @@ export async function POST(req: NextRequest) {
       message: `Swapped ${originalMeal.name} with ${newMeal.name}`,
       updatedDay: validatedPlan.days[dayIdx],
     });
-    addRateLimitHeaders(response, rateLimitResult);
     return response;
   } catch (error) {
     safeLogError('Error swapping meal:', error);

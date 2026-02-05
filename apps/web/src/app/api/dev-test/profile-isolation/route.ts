@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getClerkUserId } from '@/lib/auth';
+import { isDevMode } from '@/lib/dev-mode';
 
 /**
  * Dev-only test endpoint to verify profile data isolation between users.
@@ -10,10 +11,9 @@ import { getClerkUserId } from '@/lib/auth';
  * 3. No endpoint accepts arbitrary userId parameter for profile access
  */
 export async function GET(request: NextRequest) {
-  const isDevMode =
-    !process.env.CLERK_SECRET_KEY ||
-    process.env.CLERK_SECRET_KEY === 'sk_test_placeholder' ||
-    process.env.CLERK_SECRET_KEY === '';
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
 
   if (!isDevMode) {
     return NextResponse.json({ error: 'Dev only' }, { status: 403 });

@@ -1,8 +1,30 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { requireActiveUser } from "@/lib/auth";
 
 export async function POST(request: NextRequest) {
   try {
+    // Auth check
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
+    }
+
+    // Look up the internal user
+    const user = await prisma.user.findUnique({
+      where: { clerkUserId },
+      select: { id: true },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
     const { planId } = await request.json();
 
     if (!planId) {
@@ -12,9 +34,21 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // First, set all plans to inactive
+    // Verify the target plan belongs to this user
+    const targetPlan = await prisma.mealPlan.findFirst({
+      where: { id: planId, userId: user.id },
+    });
+
+    if (!targetPlan) {
+      return NextResponse.json(
+        { error: "Plan not found" },
+        { status: 404 }
+      );
+    }
+
+    // Deactivate only this user's active plans
     await prisma.mealPlan.updateMany({
-      where: { isActive: true },
+      where: { userId: user.id, isActive: true },
       data: { isActive: false },
     });
 

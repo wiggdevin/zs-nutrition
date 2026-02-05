@@ -13,6 +13,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * Restores the dev cookie to a previous user ID.
  */
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const devClerkUserId = `dev_empty_${uuidv4()}`
     const email = `empty-test-${Date.now()}@test.com`
@@ -89,6 +93,10 @@ export async function POST() {
 }
 
 export async function GET(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   const url = new URL(request.url)
   const action = url.searchParams.get('action')
   const userId = url.searchParams.get('userId')

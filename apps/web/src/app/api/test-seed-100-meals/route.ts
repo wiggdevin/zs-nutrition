@@ -10,6 +10,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * DEV MODE: If NEXT_PUBLIC_DEV_MODE is set, allows unauthenticated access for testing
  */
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     // DEV MODE: Skip auth for testing performance with large datasets
     const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true' || process.env.NODE_ENV === 'development'
@@ -117,6 +121,10 @@ export async function POST() {
  * DELETE: Remove all test meals (cleanup)
  */
 export async function DELETE() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     // DEV MODE: Skip auth for testing
     const isDevMode = process.env.NEXT_PUBLIC_DEV_MODE === 'true' || process.env.NODE_ENV === 'development'

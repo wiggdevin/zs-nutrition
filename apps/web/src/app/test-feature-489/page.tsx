@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 import { trpc } from '@/lib/trpc'
 
@@ -57,6 +58,7 @@ function TestResultCard({ result }: { result: TestResult }) {
  * 5. Client can switch on error codes
  */
 export default function TestFeature489Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [results, setResults] = useState<TestResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
 

@@ -3,16 +3,16 @@ import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
 import { safeLogError } from "@/lib/safe-logger";
+import { isDevMode } from "@/lib/dev-mode";
 
 // Dev-only sign-up endpoint that creates a user in the database
 // This simulates what Clerk would do when a new user signs up
 export async function POST(request: NextRequest) {
-  // Only allow in dev mode
-  const isDevMode =
-    !process.env.CLERK_SECRET_KEY ||
-    process.env.CLERK_SECRET_KEY === "sk_test_placeholder" ||
-    process.env.CLERK_SECRET_KEY === "";
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
 
+  // Only allow in dev mode
   if (!isDevMode) {
     return NextResponse.json(
       { error: "Dev auth is only available in development mode" },

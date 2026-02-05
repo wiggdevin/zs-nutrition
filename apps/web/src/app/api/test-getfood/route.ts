@@ -16,6 +16,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * 5. Verify all macro values present (kcal, protein, carbs, fat)
  */
 export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const foodId = searchParams.get('foodId')

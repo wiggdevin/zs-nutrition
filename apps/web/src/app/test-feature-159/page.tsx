@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useEffect, useState, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 
@@ -246,6 +247,7 @@ function TestFeature159Content() {
 }
 
 export default function TestFeature159Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   return (
     <Suspense fallback={<div>Loading...</div>}>
       <TestFeature159Content />

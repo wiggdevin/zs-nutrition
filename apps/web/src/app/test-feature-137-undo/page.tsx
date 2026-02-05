@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useEffect, useState } from "react";
 import NavBar from "@/components/navigation/NavBar";
 
@@ -13,6 +14,7 @@ interface SwapRecord {
 }
 
 export default function TestFeature137Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [status, setStatus] = useState("Setting up test environment...");
   const [error, setError] = useState<string | null>(null);
   const [swapHistory, setSwapHistory] = useState<SwapRecord[]>([]);

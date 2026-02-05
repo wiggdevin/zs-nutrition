@@ -3,7 +3,7 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireActiveUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 
 /**
@@ -13,10 +13,18 @@ import { prisma } from '@/lib/db';
  */
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
+
+    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
+    const userId = clerkUserId
 
     const connections = await prisma.fitnessConnection.findMany({
       where: {
@@ -57,10 +65,18 @@ export async function GET(req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
+
+    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
+    const userId = clerkUserId
 
     const body = await req.json();
     const { platform } = body;
@@ -104,10 +120,18 @@ export async function DELETE(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
+
+    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
+    const userId = clerkUserId
 
     const body = await req.json();
     const { platform, syncFrequency, settings } = body;
