@@ -11,7 +11,7 @@
  * - Output matches MealPlanValidatedSchema
  */
 
-import assert from 'assert';
+import { describe, it, expect } from 'vitest';
 import { QAValidator } from './qa-validator';
 import {
   MealPlanCompiledSchema,
@@ -131,19 +131,13 @@ function createCompiledPlan(days: any[]): any {
   };
 }
 
-async function runTests() {
-  console.log('='.repeat(60));
-  console.log('FEATURE #95: Agent 5 QA Validator Tests');
-  console.log('='.repeat(60));
-
+describe('QAValidator - Feature #95', () => {
   const validator = new QAValidator();
-  let passed = 0;
-  let failed = 0;
 
   // ============================================================
   // TEST 1: Input compiled meal plan within tolerance → PASS status and score near 100
   // ============================================================
-  try {
+  it('returns PASS status and high score for plan within tolerance', async () => {
     console.log('\n[TEST 1] Input compiled meal plan within tolerance');
     console.log('  Creating plan with ±2% variance (within ±3% tolerance)...');
 

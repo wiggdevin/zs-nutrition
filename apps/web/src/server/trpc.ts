@@ -1,6 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { ZodError } from 'zod';
 import superjson from 'superjson';
+import { headers } from 'next/headers';
 import { prisma } from '@/lib/prisma';
 import { getClerkUserId, getAuthenticatedUser } from '@/lib/auth';
 import { generalLimiter, checkRateLimit } from '@/lib/rate-limit';
@@ -8,6 +9,7 @@ import { generalLimiter, checkRateLimit } from '@/lib/rate-limit';
 export type Context = {
   userId: string | null;
   prisma: typeof prisma;
+  requestId: string;
 };
 
 export type AuthedContext = Context & {
@@ -17,9 +19,13 @@ export type AuthedContext = Context & {
 
 export async function createContext(): Promise<Context> {
   const userId = await getClerkUserId();
+  const headersList = await headers();
+  const requestId = headersList.get('x-request-id') || crypto.randomUUID();
+
   return {
     userId,
     prisma,
+    requestId,
   };
 }
 

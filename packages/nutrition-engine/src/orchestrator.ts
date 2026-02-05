@@ -64,30 +64,56 @@ export class NutritionPipelineOrchestrator {
       });
     };
 
+    const timings: Record<string, number> = {};
+    const pipelineStart = Date.now();
+
     try {
       // Agent 1: Intake Normalizer
       emit(1, 'Intake Normalizer', 'Validating and normalizing your input...');
+      let start = Date.now();
       const clientIntake = this.intakeNormalizer.normalize(input);
+      timings['intakeNormalizer'] = Date.now() - start;
 
       // Agent 2: Metabolic Calculator
       emit(2, 'Metabolic Calculator', 'Calculating your metabolic targets...');
+      start = Date.now();
       const metabolicProfile = this.metabolicCalculator.calculate(clientIntake);
+      timings['metabolicCalculator'] = Date.now() - start;
 
       // Agent 3: Recipe Curator
       emit(3, 'Recipe Curator', 'Generating personalized meal ideas...');
+      start = Date.now();
       const draft = await this.recipeCurator.generate(metabolicProfile, clientIntake);
+      timings['recipeCurator'] = Date.now() - start;
 
       // Agent 4: Nutrition Compiler
       emit(4, 'Nutrition Compiler', 'Verifying nutrition data via FatSecret...');
+      start = Date.now();
       const compiled = await this.nutritionCompiler.compile(draft);
+      timings['nutritionCompiler'] = Date.now() - start;
 
       // Agent 5: QA Validator
       emit(5, 'QA Validator', 'Running quality assurance checks...');
+      start = Date.now();
       const validated = await this.qaValidator.validate(compiled);
+      timings['qaValidator'] = Date.now() - start;
 
       // Agent 6: Brand Renderer
       emit(6, 'Brand Renderer', 'Generating your meal plan deliverables...');
+      start = Date.now();
       const deliverables = await this.brandRenderer.render(validated);
+      timings['brandRenderer'] = Date.now() - start;
+
+      const totalTime = Date.now() - pipelineStart;
+
+      // Log structured timing data
+      console.log(JSON.stringify({
+        level: 'info',
+        message: 'Pipeline completed',
+        timings,
+        totalTime,
+        timestamp: new Date().toISOString(),
+      }));
 
       onProgress?.({
         status: 'completed',
@@ -103,6 +129,17 @@ export class NutritionPipelineOrchestrator {
       };
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown pipeline error';
+      const totalTime = Date.now() - pipelineStart;
+
+      // Log structured error data with timings
+      console.error(JSON.stringify({
+        level: 'error',
+        message: 'Pipeline failed',
+        error: errorMessage,
+        timings,
+        totalTime,
+        timestamp: new Date().toISOString(),
+      }));
 
       onProgress?.({
         status: 'failed',
