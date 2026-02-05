@@ -47,19 +47,19 @@ export async function GET() {
 
     // No profile and no onboarding state - start fresh onboarding
     const newOnboarding = await prisma.onboardingState.create({
-      data: { userId: user.id, currentStep: 1, stepData: '{}' },
+      data: { userId: user.id, currentStep: 1, stepData: {} },
     });
     return NextResponse.json({
       currentStep: newOnboarding.currentStep,
       completed: newOnboarding.completed,
-      stepData: JSON.parse(newOnboarding.stepData),
+      stepData: newOnboarding.stepData,
     });
   }
 
   return NextResponse.json({
     currentStep: onboarding.currentStep,
     completed: onboarding.completed,
-    stepData: JSON.parse(onboarding.stepData),
+    stepData: onboarding.stepData,
   });
 }
 
@@ -91,12 +91,12 @@ export async function POST(request: NextRequest) {
 
   if (!onboarding) {
     onboarding = await prisma.onboardingState.create({
-      data: { userId: user.id, currentStep: 1, stepData: '{}' },
+      data: { userId: user.id, currentStep: 1, stepData: {} },
     });
   }
 
-  // Merge new step data with existing
-  const existingData = JSON.parse(onboarding.stepData);
+  // Merge new step data with existing (stepData is already an object from Prisma Json type)
+  const existingData = (onboarding.stepData as Record<string, unknown>) || {};
   const mergedData = { ...existingData, ...data };
 
   if (complete) {
@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
       data: {
         currentStep: 6,
         completed: true,
-        stepData: JSON.stringify(mergedData),
+        stepData: mergedData,
       },
     });
 
@@ -117,6 +117,7 @@ export async function POST(request: NextRequest) {
     const weightKg = mergedData.weightKg || (mergedData.weightLbs || 0) * 0.453592;
 
     // Create user profile from onboarding data
+    // Json fields (allergies, exclusions, cuisinePrefs, trainingDays) accept arrays directly
     const profile = await prisma.userProfile.create({
       data: {
         userId: user.id,
@@ -130,10 +131,10 @@ export async function POST(request: NextRequest) {
         goalRate: mergedData.goalRate || 0,
         activityLevel: mergedData.activityLevel || 'moderately_active',
         dietaryStyle: mergedData.dietaryStyle || 'omnivore',
-        allergies: JSON.stringify(mergedData.allergies || []),
-        exclusions: JSON.stringify(mergedData.exclusions || []),
-        cuisinePrefs: JSON.stringify(mergedData.cuisinePreferences || []),
-        trainingDays: JSON.stringify(mergedData.trainingDays || []),
+        allergies: mergedData.allergies || [],
+        exclusions: mergedData.exclusions || [],
+        cuisinePrefs: mergedData.cuisinePreferences || [],
+        trainingDays: mergedData.trainingDays || [],
         trainingTime: mergedData.trainingTime || null,
         mealsPerDay: mergedData.mealsPerDay || 3,
         snacksPerDay: mergedData.snacksPerDay || 1,
@@ -156,7 +157,7 @@ export async function POST(request: NextRequest) {
     where: { userId: user.id },
     data: {
       currentStep: step,
-      stepData: JSON.stringify(mergedData),
+      stepData: mergedData,
     },
   });
 

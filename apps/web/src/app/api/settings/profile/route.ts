@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
-import { calculateMetabolicProfile } from '@/lib/metabolic';
+import { calculateMetabolicProfile } from '@/lib/metabolic-utils';
 import { logger } from '@/lib/safe-logger';
 import { profileUpdateSchema } from '@/lib/validation';
 import { ZodError } from 'zod';
@@ -43,32 +43,12 @@ export async function GET() {
       );
     }
 
-    // Parse JSON fields safely
-    let allergies: string[] = [];
-    let exclusions: string[] = [];
-    let cuisinePrefs: string[] = [];
-    let trainingDays: string[] = [];
-
-    try {
-      allergies = JSON.parse(profile.allergies);
-    } catch {
-      allergies = [];
-    }
-    try {
-      exclusions = JSON.parse(profile.exclusions);
-    } catch {
-      exclusions = [];
-    }
-    try {
-      cuisinePrefs = JSON.parse(profile.cuisinePrefs);
-    } catch {
-      cuisinePrefs = [];
-    }
-    try {
-      trainingDays = JSON.parse(profile.trainingDays);
-    } catch {
-      trainingDays = [];
-    }
+    // Json fields are now natively handled by Prisma - no parsing needed
+    // Just ensure they're arrays (fallback to empty array if null/undefined)
+    const allergies = (Array.isArray(profile.allergies) ? profile.allergies : []) as string[];
+    const exclusions = (Array.isArray(profile.exclusions) ? profile.exclusions : []) as string[];
+    const cuisinePrefs = (Array.isArray(profile.cuisinePrefs) ? profile.cuisinePrefs : []) as string[];
+    const trainingDays = (Array.isArray(profile.trainingDays) ? profile.trainingDays : []) as string[];
 
     return NextResponse.json({
       profile: {
@@ -177,29 +157,25 @@ export async function PUT(request: NextRequest) {
     if (validatedData.goalType !== undefined) updateData.goalType = validatedData.goalType;
     if (validatedData.goalRate !== undefined) updateData.goalRate = validatedData.goalRate;
 
-    // Dietary
+    // Dietary - Json fields accept arrays directly
     if (validatedData.dietaryStyle !== undefined)
       updateData.dietaryStyle = validatedData.dietaryStyle;
-    if (validatedData.allergies !== undefined)
-      updateData.allergies = JSON.stringify(validatedData.allergies);
-    if (validatedData.exclusions !== undefined)
-      updateData.exclusions = JSON.stringify(validatedData.exclusions);
+    if (validatedData.allergies !== undefined) updateData.allergies = validatedData.allergies;
+    if (validatedData.exclusions !== undefined) updateData.exclusions = validatedData.exclusions;
 
-    // Activity
+    // Activity - Json fields accept arrays directly
     if (validatedData.activityLevel !== undefined)
       updateData.activityLevel = validatedData.activityLevel;
-    if (validatedData.trainingDays !== undefined)
-      updateData.trainingDays = JSON.stringify(validatedData.trainingDays);
+    if (validatedData.trainingDays !== undefined) updateData.trainingDays = validatedData.trainingDays;
     if (validatedData.trainingTime !== undefined)
       updateData.trainingTime = validatedData.trainingTime;
     if (validatedData.cookingSkill !== undefined)
       updateData.cookingSkill = validatedData.cookingSkill;
     if (validatedData.prepTimeMax !== undefined) updateData.prepTimeMax = validatedData.prepTimeMax;
 
-    // Meal structure
+    // Meal structure - Json fields accept arrays directly
     if (validatedData.macroStyle !== undefined) updateData.macroStyle = validatedData.macroStyle;
-    if (validatedData.cuisinePrefs !== undefined)
-      updateData.cuisinePrefs = JSON.stringify(validatedData.cuisinePrefs);
+    if (validatedData.cuisinePrefs !== undefined) updateData.cuisinePrefs = validatedData.cuisinePrefs;
     if (validatedData.mealsPerDay !== undefined) updateData.mealsPerDay = validatedData.mealsPerDay;
     if (validatedData.snacksPerDay !== undefined)
       updateData.snacksPerDay = validatedData.snacksPerDay;

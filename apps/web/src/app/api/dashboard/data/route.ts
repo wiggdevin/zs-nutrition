@@ -47,12 +47,10 @@ export async function GET(request: Request) {
     ];
     const dayOfWeek = clientDayOfWeek ? parseInt(clientDayOfWeek, 10) : new Date().getDay();
     const todayDayName = DAY_NAMES[dayOfWeek];
-    let trainingDays: string[] = [];
-    try {
-      trainingDays = activeProfile?.trainingDays ? JSON.parse(activeProfile.trainingDays) : [];
-    } catch {
-      trainingDays = [];
-    }
+    // trainingDays is now a Prisma Json type - no parsing needed
+    const trainingDays: string[] = (
+      Array.isArray(activeProfile?.trainingDays) ? activeProfile.trainingDays : []
+    ) as string[];
     // Normalize: trainingDays may have short forms (Mon, Tue) or full names - check both
     const normalizedTrainingDays = trainingDays.map((d: string) => d.toLowerCase().trim());
     const isTrainingDay = normalizedTrainingDays.some((d: string) => {
@@ -60,9 +58,9 @@ export async function GET(request: Request) {
       return d === todayDayName || d === todayDayName.substring(0, 3) || todayDayName.startsWith(d);
     });
 
-    // Get active meal plan
+    // Get active meal plan (exclude soft-deleted)
     const activePlan = await prisma.mealPlan.findFirst({
-      where: { userId: user.id, isActive: true, status: 'active' },
+      where: { userId: user.id, isActive: true, status: 'active', deletedAt: null },
       orderBy: { generatedAt: 'desc' },
     });
 
@@ -111,39 +109,36 @@ export async function GET(request: Request) {
         fatG: activePlan.dailyFatG || 65,
       };
 
-      try {
-        const validatedPlan = JSON.parse(activePlan.validatedPlan);
-        // Get current day of week as plan day number (1=Mon, 7=Sun)
-        const dow = today.getDay();
-        const dayNumber = dow === 0 ? 7 : dow;
+      // validatedPlan is now a Prisma Json type - no parsing needed
+      const validatedPlan = activePlan.validatedPlan as { days?: Array<{ dayNumber: number; meals?: Array<any> }> } | null;
+      // Get current day of week as plan day number (1=Mon, 7=Sun)
+      const dow = today.getDay();
+      const dayNumber = dow === 0 ? 7 : dow;
 
-        const todayDay = validatedPlan.days?.find(
-          (d: { dayNumber: number }) => d.dayNumber === dayNumber
+      const todayDay = validatedPlan?.days?.find(
+        (d: { dayNumber: number }) => d.dayNumber === dayNumber
+      );
+
+      if (todayDay && todayDay.meals) {
+        todayPlanMeals = todayDay.meals.map(
+          (m: {
+            slot: string;
+            name: string;
+            nutrition: { kcal: number; proteinG: number; carbsG: number; fatG: number };
+            prepTimeMin: number;
+            confidenceLevel?: string;
+          }) => ({
+            slot: m.slot,
+            name: m.name,
+            calories: m.nutrition.kcal,
+            protein: m.nutrition.proteinG,
+            carbs: m.nutrition.carbsG,
+            fat: m.nutrition.fatG,
+            prepTime: `${m.prepTimeMin} min`,
+            dayNumber,
+            confidenceLevel: m.confidenceLevel || 'ai_estimated',
+          })
         );
-
-        if (todayDay && todayDay.meals) {
-          todayPlanMeals = todayDay.meals.map(
-            (m: {
-              slot: string;
-              name: string;
-              nutrition: { kcal: number; proteinG: number; carbsG: number; fatG: number };
-              prepTimeMin: number;
-              confidenceLevel?: string;
-            }) => ({
-              slot: m.slot,
-              name: m.name,
-              calories: m.nutrition.kcal,
-              protein: m.nutrition.proteinG,
-              carbs: m.nutrition.carbsG,
-              fat: m.nutrition.fatG,
-              prepTime: `${m.prepTimeMin} min`,
-              dayNumber,
-              confidenceLevel: m.confidenceLevel || 'ai_estimated',
-            })
-          );
-        }
-      } catch {
-        // Failed to parse plan JSON
       }
     }
 

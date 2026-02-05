@@ -31,9 +31,11 @@ export async function GET() {
     }
 
     // Find all meal plans for the user, ordered by most recent first
+    // Exclude soft-deleted plans from history
     const plans = await prisma.mealPlan.findMany({
       where: {
         userId: user.id,
+        deletedAt: null, // Exclude soft-deleted plans
       },
       orderBy: { generatedAt: 'desc' },
       select: {

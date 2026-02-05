@@ -162,6 +162,7 @@ export async function POST(req: NextRequest) {
       where: {
         id: planId,
         userId: user.id,
+        deletedAt: null, // Exclude soft-deleted plans
       },
     });
 
@@ -179,18 +180,18 @@ export async function POST(req: NextRequest) {
     });
 
     const dietaryStyle = userProfile?.dietaryStyle || null;
-    const allergies = userProfile?.allergies ? JSON.parse(userProfile.allergies) : [];
-    const exclusions = userProfile?.exclusions ? JSON.parse(userProfile.exclusions) : [];
+    // allergies and exclusions are now Prisma Json types - no parsing needed
+    const allergies = (
+      Array.isArray(userProfile?.allergies) ? userProfile.allergies : []
+    ) as string[];
+    const exclusions = (
+      Array.isArray(userProfile?.exclusions) ? userProfile.exclusions : []
+    ) as string[];
 
-    // Parse the validated plan
-    let validatedPlan: { days: PlanDay[] };
-    try {
-      validatedPlan =
-        typeof mealPlan.validatedPlan === 'string'
-          ? JSON.parse(mealPlan.validatedPlan)
-          : (mealPlan.validatedPlan as { days: PlanDay[] });
-    } catch {
-      return NextResponse.json({ error: 'Failed to parse plan data' }, { status: 500 });
+    // validatedPlan is now a Prisma Json type - cast through unknown for type safety
+    const validatedPlan = mealPlan.validatedPlan as unknown as { days: PlanDay[] };
+    if (!validatedPlan?.days) {
+      return NextResponse.json({ error: 'Invalid plan data' }, { status: 500 });
     }
 
     // Find the current day and the meal being swapped

@@ -1,19 +1,10 @@
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
-import { Prisma } from '@prisma/client';
 import { recalculateDailyLog, calculateAdherenceScore } from '../utils/daily-log';
 import { safeJsonParse } from '@/lib/utils/safe-json';
 import { ValidatedPlanSchema } from '@/lib/schemas/plan';
-
-/**
- * Check if an error is a Prisma unique constraint violation (P2002).
- * Used to gracefully handle race conditions where duplicate inserts
- * slip past the application-level duplicate check.
- */
-function isUniqueConstraintError(error: unknown): boolean {
-  return error instanceof Prisma.PrismaClientKnownRequestError && error.code === 'P2002';
-}
+import { isUniqueConstraintError } from '@/lib/prisma-utils';
 
 /**
  * Meal Router — handles logging meals from plan, tracking, and daily logs.
@@ -26,18 +17,40 @@ export const mealRouter = router({
     const { prisma } = ctx;
     const dbUserId = ctx.dbUserId;
 
+    // Use select to only fetch needed fields for optimal performance
     const plan = await prisma.mealPlan.findFirst({
       where: {
         userId: dbUserId,
         isActive: true,
         status: 'active',
+        deletedAt: null, // Exclude soft-deleted plans
       },
       orderBy: { generatedAt: 'desc' },
+      select: {
+        id: true,
+        dailyKcalTarget: true,
+        dailyProteinG: true,
+        dailyCarbsG: true,
+        dailyFatG: true,
+        trainingBonusKcal: true,
+        planDays: true,
+        startDate: true,
+        endDate: true,
+        qaScore: true,
+        qaStatus: true,
+        status: true,
+        generatedAt: true,
+        validatedPlan: true,
+        // Excluded: metabolicProfile, profileId, userId, isActive (not returned)
+      },
     });
 
     if (!plan) return null;
 
-    const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] });
+    // validatedPlan is now a Prisma Json type - no parsing needed
+    const parsedPlan = ValidatedPlanSchema.safeParse(plan.validatedPlan).success
+      ? (plan.validatedPlan as z.infer<typeof ValidatedPlanSchema>)
+      : { days: [] };
 
     return {
       id: plan.id,
@@ -67,18 +80,31 @@ export const mealRouter = router({
       const { prisma } = ctx;
       const dbUserId = ctx.dbUserId;
 
+      // Use select to only fetch needed fields for optimal performance
       const plan = await prisma.mealPlan.findFirst({
         where: {
           userId: dbUserId,
           isActive: true,
           status: 'active',
+          deletedAt: null, // Exclude soft-deleted plans
         },
         orderBy: { generatedAt: 'desc' },
+        select: {
+          id: true,
+          validatedPlan: true,
+          startDate: true,
+          generatedAt: true,
+          planDays: true,
+          // Excluded: large fields not needed for extracting today's meals
+        },
       });
 
       if (!plan) return { meals: [], planId: null };
 
-      const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] });
+      // validatedPlan is now a Prisma Json type - no parsing needed
+      const parsedPlan = ValidatedPlanSchema.safeParse(plan.validatedPlan).success
+        ? (plan.validatedPlan as z.infer<typeof ValidatedPlanSchema>)
+        : { days: [] };
       if (!parsedPlan.days.length) return { meals: [], planId: plan.id };
 
       // Figure out which day of the plan we're on
@@ -136,11 +162,12 @@ export const mealRouter = router({
       const { prisma } = ctx;
       const dbUserId = ctx.dbUserId;
 
-      // Verify the plan belongs to this user
+      // Verify the plan belongs to this user (exclude soft-deleted)
       const plan = await prisma.mealPlan.findFirst({
         where: {
           id: input.planId,
           userId: dbUserId,
+          deletedAt: null, // Exclude soft-deleted plans
         },
       });
 
@@ -664,6 +691,7 @@ export const mealRouter = router({
             loggedDate: dateOnly,
           },
           orderBy: { createdAt: 'desc' },
+          take: 50, // Safety limit - users won't have more than 50 meals per day
         }),
       ]);
 

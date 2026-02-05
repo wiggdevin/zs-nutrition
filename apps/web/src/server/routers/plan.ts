@@ -1,9 +1,11 @@
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue';
 import { logger } from '@/lib/safe-logger';
 import { safeJsonParse } from '@/lib/utils/safe-json';
+import { isUniqueConstraintError } from '@/lib/plan-utils';
 import {
   ValidatedPlanSchema,
   MetabolicProfileSchema as MetabolicProfileDbSchema,
@@ -90,19 +92,45 @@ export const planRouter = router({
     const { prisma } = ctx;
     const dbUserId = ctx.dbUserId;
 
+    // Use select to only fetch needed fields for optimal performance
     const plan = await prisma.mealPlan.findFirst({
       where: {
         userId: dbUserId,
         isActive: true,
         status: 'active',
+        deletedAt: null, // Exclude soft-deleted plans
       },
       orderBy: { generatedAt: 'desc' },
+      select: {
+        id: true,
+        dailyKcalTarget: true,
+        dailyProteinG: true,
+        dailyCarbsG: true,
+        dailyFatG: true,
+        trainingBonusKcal: true,
+        planDays: true,
+        startDate: true,
+        endDate: true,
+        qaScore: true,
+        qaStatus: true,
+        status: true,
+        isActive: true,
+        validatedPlan: true,
+        metabolicProfile: true,
+        // Excluded: generatedAt, profileId, userId (not returned)
+      },
     });
 
     if (!plan) return null;
 
-    const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] });
-    const parsedMetabolic = safeJsonParse(plan.metabolicProfile, MetabolicProfileDbSchema, {});
+    // validatedPlan and metabolicProfile are now Prisma Json types - no parsing needed
+    // Use schema validation to ensure correct structure
+    const parsedPlan = ValidatedPlanSchema.safeParse(plan.validatedPlan).success
+      ? (plan.validatedPlan as z.infer<typeof ValidatedPlanSchema>)
+      : { days: [] };
+    const parsedMetabolic = MetabolicProfileDbSchema.safeParse(plan.metabolicProfile).success
+      ? (plan.metabolicProfile as z.infer<typeof MetabolicProfileDbSchema>)
+      : {};
 
     return {
       id: plan.id,
@@ -141,6 +169,7 @@ export const planRouter = router({
         where: {
           id: input.planId,
           userId: dbUserId, // Security: only return plans owned by this user
+          deletedAt: null, // Exclude soft-deleted plans
         },
       });
 
@@ -151,8 +180,13 @@ export const planRouter = router({
         });
       }
 
-      const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] });
-      const parsedMetabolic = safeJsonParse(plan.metabolicProfile, MetabolicProfileDbSchema, {});
+      // validatedPlan and metabolicProfile are now Prisma Json types - no parsing needed
+      const parsedPlan = ValidatedPlanSchema.safeParse(plan.validatedPlan).success
+        ? (plan.validatedPlan as z.infer<typeof ValidatedPlanSchema>)
+        : { days: [] };
+      const parsedMetabolic = MetabolicProfileDbSchema.safeParse(plan.metabolicProfile).success
+        ? (plan.metabolicProfile as z.infer<typeof MetabolicProfileDbSchema>)
+        : {};
 
       return {
         id: plan.id,
@@ -183,12 +217,12 @@ export const planRouter = router({
     const dbUserId = ctx.dbUserId;
 
     // Create PlanGenerationJob record in DB with status 'pending'
-    // SQLite stores JSON as string, so stringify the intake data
+    // intakeData is now a Prisma Json type - cast to InputJsonValue
     const job = await prisma.planGenerationJob.create({
       data: {
         userId: dbUserId,
         status: 'pending',
-        intakeData: JSON.stringify(input),
+        intakeData: input as Prisma.InputJsonValue,
       },
     });
 
@@ -238,11 +272,9 @@ export const planRouter = router({
         });
       }
 
-      // Parse JSON string fields for SQLite compatibility
-      const parsedProgress = job.progress
-        ? safeJsonParse(job.progress, JobProgressSchema, {} as Record<string, unknown>)
-        : null;
-      const parsedResult = safeJsonParse(job.result, JobResultSchema, {});
+      // progress and result are now Prisma Json types - no parsing needed
+      const parsedProgress = job.progress as Record<string, unknown> | null;
+      const parsedResult = (job.result as { planId?: string } | null) || {};
       const parsedPlanId = parsedResult.planId;
 
       return {
@@ -308,40 +340,84 @@ export const planRouter = router({
       const endDate = new Date(startDate);
       endDate.setDate(endDate.getDate() + input.planResult.planDays);
 
-      // Deactivate existing active plans for this user
-      await prisma.mealPlan.updateMany({
-        where: { userId: dbUserId, isActive: true },
-        data: { isActive: false, status: 'replaced' },
-      });
+      // Use a transaction to atomically deactivate old plans and create new one
+      // The partial unique index (MealPlan_userId_active_unique) enforces only one active plan per user
+      let mealPlan;
+      try {
+        mealPlan = await prisma.$transaction(async (tx) => {
+          // Deactivate existing active plans for this user (only non-deleted ones)
+          await tx.mealPlan.updateMany({
+            where: { userId: dbUserId, isActive: true, deletedAt: null },
+            data: { isActive: false, status: 'replaced' },
+          });
 
-      // Create the MealPlan with all denormalized fields
-      const mealPlan = await prisma.mealPlan.create({
-        data: {
-          userId: dbUserId,
-          profileId: profile.id,
-          validatedPlan: JSON.stringify(input.planResult.validatedPlan),
-          metabolicProfile: JSON.stringify(input.planResult.metabolicProfile),
-          dailyKcalTarget: input.planResult.dailyKcalTarget,
-          dailyProteinG: input.planResult.dailyProteinG,
-          dailyCarbsG: input.planResult.dailyCarbsG,
-          dailyFatG: input.planResult.dailyFatG,
-          trainingBonusKcal: input.planResult.trainingBonusKcal,
-          planDays: input.planResult.planDays,
-          startDate,
-          endDate,
-          qaScore: input.planResult.qaScore,
-          qaStatus: input.planResult.qaStatus,
-          status: 'active',
-          isActive: true,
-        },
-      });
+          // Create the MealPlan with all denormalized fields
+          // validatedPlan and metabolicProfile are now Prisma Json types - cast to InputJsonValue
+          return tx.mealPlan.create({
+            data: {
+              userId: dbUserId,
+              profileId: profile.id,
+              validatedPlan: input.planResult.validatedPlan as Prisma.InputJsonValue,
+              metabolicProfile: input.planResult.metabolicProfile as Prisma.InputJsonValue,
+              dailyKcalTarget: input.planResult.dailyKcalTarget,
+              dailyProteinG: input.planResult.dailyProteinG,
+              dailyCarbsG: input.planResult.dailyCarbsG,
+              dailyFatG: input.planResult.dailyFatG,
+              trainingBonusKcal: input.planResult.trainingBonusKcal,
+              planDays: input.planResult.planDays,
+              startDate,
+              endDate,
+              qaScore: input.planResult.qaScore,
+              qaStatus: input.planResult.qaStatus,
+              status: 'active',
+              isActive: true,
+            },
+          });
+        });
+      } catch (error) {
+        // Handle unique constraint violation from partial unique index
+        // This can occur in rare race conditions despite the transaction
+        if (isUniqueConstraintError(error)) {
+          logger.warn(`[completeJob] Unique constraint hit, retrying with forced deactivation`);
+
+          // Force deactivate all active plans and retry
+          await prisma.mealPlan.updateMany({
+            where: { userId: dbUserId, isActive: true, deletedAt: null },
+            data: { isActive: false, status: 'replaced' },
+          });
+
+          mealPlan = await prisma.mealPlan.create({
+            data: {
+              userId: dbUserId,
+              profileId: profile.id,
+              validatedPlan: input.planResult.validatedPlan as Prisma.InputJsonValue,
+              metabolicProfile: input.planResult.metabolicProfile as Prisma.InputJsonValue,
+              dailyKcalTarget: input.planResult.dailyKcalTarget,
+              dailyProteinG: input.planResult.dailyProteinG,
+              dailyCarbsG: input.planResult.dailyCarbsG,
+              dailyFatG: input.planResult.dailyFatG,
+              trainingBonusKcal: input.planResult.trainingBonusKcal,
+              planDays: input.planResult.planDays,
+              startDate,
+              endDate,
+              qaScore: input.planResult.qaScore,
+              qaStatus: input.planResult.qaStatus,
+              status: 'active',
+              isActive: true,
+            },
+          });
+        } else {
+          throw error;
+        }
+      }
 
       // Update the PlanGenerationJob as completed
+      // result is now a Prisma Json type - pass object directly
       await prisma.planGenerationJob.update({
         where: { id: input.jobId },
         data: {
           status: 'completed',
-          result: JSON.stringify({ planId: mealPlan.id }),
+          result: { planId: mealPlan.id },
           completedAt: new Date(),
         },
       });
@@ -379,11 +455,11 @@ export const planRouter = router({
       });
     }
 
-    // Parse JSON array fields from profile
-    const allergies = safeJsonParse(profile.allergies, StringArraySchema, []);
-    const exclusions = safeJsonParse(profile.exclusions, StringArraySchema, []);
-    const cuisinePreferences = safeJsonParse(profile.cuisinePrefs, StringArraySchema, []);
-    const trainingDays = safeJsonParse(profile.trainingDays, StringArraySchema, []);
+    // Json fields are now native arrays - no parsing needed
+    const allergies = (Array.isArray(profile.allergies) ? profile.allergies : []) as string[];
+    const exclusions = (Array.isArray(profile.exclusions) ? profile.exclusions : []) as string[];
+    const cuisinePreferences = (Array.isArray(profile.cuisinePrefs) ? profile.cuisinePrefs : []) as string[];
+    const trainingDays = (Array.isArray(profile.trainingDays) ? profile.trainingDays : []) as string[];
 
     // Construct intake data from active profile (matching RawIntakeFormSchema)
     const intakeData = {
@@ -424,11 +500,12 @@ export const planRouter = router({
     };
 
     // Create PlanGenerationJob record in DB with status 'pending'
+    // intakeData is now a Prisma Json type - cast to InputJsonValue
     const job = await prisma.planGenerationJob.create({
       data: {
         userId: dbUserId,
         status: 'pending',
-        intakeData: JSON.stringify(intakeData),
+        intakeData: intakeData as Prisma.InputJsonValue,
       },
     });
 

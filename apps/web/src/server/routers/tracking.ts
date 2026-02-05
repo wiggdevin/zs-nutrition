@@ -30,6 +30,7 @@ export const trackingRouter = router({
       const dateOnly = input?.date ? parseLocalDay(input.date) : toLocalDay();
 
       // Fetch DailyLog and all TrackedMeals for this date in parallel
+      // Use select to only fetch needed fields for optimal performance
       const [dailyLog, trackedMeals] = await Promise.all([
         prisma.dailyLog.findUnique({
           where: {
@@ -38,6 +39,18 @@ export const trackingRouter = router({
               date: dateOnly,
             },
           },
+          select: {
+            id: true,
+            targetKcal: true,
+            targetProteinG: true,
+            targetCarbsG: true,
+            targetFatG: true,
+            actualKcal: true,
+            actualProteinG: true,
+            actualCarbsG: true,
+            actualFatG: true,
+            adherenceScore: true,
+          },
         }),
         prisma.trackedMeal.findMany({
           where: {
@@ -45,6 +58,21 @@ export const trackingRouter = router({
             loggedDate: dateOnly,
           },
           orderBy: { createdAt: 'asc' },
+          select: {
+            id: true,
+            mealPlanId: true,
+            mealSlot: true,
+            mealName: true,
+            portion: true,
+            kcal: true,
+            proteinG: true,
+            carbsG: true,
+            fatG: true,
+            fiberG: true,
+            source: true,
+            confidenceScore: true,
+            createdAt: true,
+          },
         }),
       ]);
 
@@ -143,6 +171,7 @@ export const trackingRouter = router({
       });
 
       // Also fetch TrackedMeals for this range to compute totals for days without DailyLog
+      // Limit to 100 meals per week (very generous - prevents unbounded queries)
       const trackedMeals = await prisma.trackedMeal.findMany({
         where: {
           userId: dbUserId,
@@ -152,6 +181,7 @@ export const trackingRouter = router({
           },
         },
         orderBy: { loggedDate: 'asc' },
+        take: 100, // Max 100 meals per week is very generous
       });
 
       // Group tracked meals by date string

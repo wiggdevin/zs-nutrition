@@ -1,3 +1,4 @@
+import pLimit from 'p-limit';
 import {
   MealPlanDraft,
   MealPlanCompiled,
@@ -5,50 +6,37 @@ import {
   CompiledMeal,
   CompiledDay,
   DraftMeal,
+  DraftDay,
   Ingredient,
   VerifiedNutritionSchema,
 } from '../types/schemas';
 import { FatSecretAdapter, FoodSearchResult, FoodDetails } from '../adapters/fatsecret';
 import { engineLogger } from '../utils/logger';
 
+/** Maximum concurrent FatSecret API calls to respect rate limits */
+const FATSECRET_CONCURRENCY_LIMIT = 5;
+
 /**
  * Agent 4: Nutrition Compiler
  * Verifies nutrition via FatSecret API, gets full recipes, scales portions.
  * Tags meals as "verified" or "ai_estimated" based on FatSecret match.
+ *
+ * Performance optimization: Uses p-limit to parallelize FatSecret API calls
+ * with a concurrency limit to respect rate limits.
  */
 export class NutritionCompiler {
+  private readonly limit = pLimit(FATSECRET_CONCURRENCY_LIMIT);
+
   constructor(private fatSecretAdapter: FatSecretAdapter) {}
 
   async compile(draft: MealPlanDraft): Promise<MealPlanCompiled> {
-    const compiledDays: CompiledDay[] = [];
+    const startTime = Date.now();
+    engineLogger.info('[NutritionCompiler] Starting compilation with parallel processing');
 
-    for (const day of draft.days) {
-      const compiledMeals: CompiledMeal[] = [];
-
-      for (const meal of day.meals) {
-        const compiled = await this.compileMeal(meal);
-        compiledMeals.push(compiled);
-      }
-
-      // Calculate daily totals
-      const dailyTotals = this.calculateDailyTotals(compiledMeals);
-
-      // Calculate variance from target
-      const varianceKcal = dailyTotals.kcal - day.targetKcal;
-      const variancePercent =
-        day.targetKcal > 0 ? Math.round((varianceKcal / day.targetKcal) * 10000) / 100 : 0;
-
-      compiledDays.push({
-        dayNumber: day.dayNumber,
-        dayName: day.dayName,
-        isTrainingDay: day.isTrainingDay,
-        targetKcal: day.targetKcal,
-        meals: compiledMeals,
-        dailyTotals,
-        varianceKcal: Math.round(varianceKcal),
-        variancePercent,
-      });
-    }
+    // Process all days in parallel (each day's meals are processed concurrently with rate limiting)
+    const compiledDays = await Promise.all(
+      draft.days.map(day => this.compileDay(day))
+    );
 
     // Calculate weekly averages
     const weeklyAverages = this.calculateWeeklyAverages(compiledDays);
@@ -58,8 +46,40 @@ export class NutritionCompiler {
       weeklyAverages,
     };
 
+    const elapsedMs = Date.now() - startTime;
+    engineLogger.info(`[NutritionCompiler] Compilation completed in ${elapsedMs}ms`);
+
     // Validate against schema
     return MealPlanCompiledSchema.parse(result);
+  }
+
+  /**
+   * Compile a single day's meals concurrently with rate limiting.
+   */
+  private async compileDay(day: DraftDay): Promise<CompiledDay> {
+    // Process all meals in this day concurrently, limited by p-limit
+    const compiledMeals = await Promise.all(
+      day.meals.map(meal => this.limit(() => this.compileMeal(meal)))
+    );
+
+    // Calculate daily totals
+    const dailyTotals = this.calculateDailyTotals(compiledMeals);
+
+    // Calculate variance from target
+    const varianceKcal = dailyTotals.kcal - day.targetKcal;
+    const variancePercent =
+      day.targetKcal > 0 ? Math.round((varianceKcal / day.targetKcal) * 10000) / 100 : 0;
+
+    return {
+      dayNumber: day.dayNumber,
+      dayName: day.dayName,
+      isTrainingDay: day.isTrainingDay,
+      targetKcal: day.targetKcal,
+      meals: compiledMeals,
+      dailyTotals,
+      varianceKcal: Math.round(varianceKcal),
+      variancePercent,
+    };
   }
 
   /**

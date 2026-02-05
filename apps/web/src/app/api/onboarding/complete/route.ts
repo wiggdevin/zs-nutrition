@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { calculateMetabolicProfile } from '@/lib/metabolic';
+import { calculateMetabolicProfile } from '@/lib/metabolic-utils';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
 import {
@@ -53,11 +53,12 @@ export async function POST(request: NextRequest) {
     }
 
     // Get step data from profileData (request body) or onboarding state
+    // stepData is now a Prisma Json type, no need to parse
     let stepData: Record<string, unknown>;
     if (profileData) {
       stepData = profileData;
     } else if (user.onboarding?.stepData) {
-      stepData = JSON.parse(user.onboarding.stepData);
+      stepData = user.onboarding.stepData as Record<string, unknown>;
     } else {
       return NextResponse.json({ error: 'No profile data available' }, { status: 400 });
     }
@@ -164,6 +165,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create UserProfile
+    // Json fields (allergies, exclusions, cuisinePrefs, trainingDays) accept arrays directly
     const profile = await prisma.userProfile.create({
       data: {
         userId: user.id,
@@ -177,10 +179,10 @@ export async function POST(request: NextRequest) {
         goalRate: Number(stepData.goalRate) || 1,
         activityLevel: (stepData.activityLevel as string) || 'moderately_active',
         dietaryStyle: (stepData.dietaryStyle as string) || 'omnivore',
-        allergies: JSON.stringify(stepData.allergies || []),
-        exclusions: JSON.stringify(stepData.exclusions || []),
-        cuisinePrefs: JSON.stringify(stepData.cuisinePreferences || []),
-        trainingDays: JSON.stringify(stepData.trainingDays || []),
+        allergies: stepData.allergies || [],
+        exclusions: stepData.exclusions || [],
+        cuisinePrefs: stepData.cuisinePreferences || [],
+        trainingDays: stepData.trainingDays || [],
         trainingTime: (stepData.trainingTime as string) || null,
         mealsPerDay: Number(stepData.mealsPerDay) || 3,
         snacksPerDay: Number(stepData.snacksPerDay) || 1,

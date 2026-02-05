@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
   try {
     if (planId) {
       const plan = await prisma.mealPlan.findFirst({
-        where: { id: planId, userId: user.id },
+        where: { id: planId, userId: user.id, deletedAt: null },
         include: {
           profile: {
             select: { name: true, sex: true, age: true, goalType: true },
@@ -45,15 +45,17 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'MealPlan not found' }, { status: 404 });
       }
 
+      // validatedPlan and metabolicProfile are now Prisma Json types
+      const validatedPlanObj = plan.validatedPlan as { days?: unknown[] } | null;
+      const metabolicProfileObj = plan.metabolicProfile as Record<string, unknown> | null;
       return NextResponse.json({
         id: plan.id,
         userId: plan.userId,
         profileId: plan.profileId,
         profileInfo: plan.profile,
-        validatedPlanLength: plan.validatedPlan?.length || 0,
-        validatedPlanHasDays: plan.validatedPlan?.includes('"days"') || false,
-        metabolicProfileLength: plan.metabolicProfile?.length || 0,
-        metabolicProfileHasData: plan.metabolicProfile !== '{}',
+        validatedPlanHasDays: Array.isArray(validatedPlanObj?.days),
+        validatedPlanDaysCount: validatedPlanObj?.days?.length || 0,
+        metabolicProfileHasData: metabolicProfileObj !== null && Object.keys(metabolicProfileObj || {}).length > 0,
         dailyKcalTarget: plan.dailyKcalTarget,
         dailyProteinG: plan.dailyProteinG,
         dailyCarbsG: plan.dailyCarbsG,
@@ -79,17 +81,18 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'Job not found' }, { status: 404 });
       }
 
+      // result is now a Prisma Json type - no parsing needed
       return NextResponse.json({
         id: job.id,
         status: job.status,
-        result: job.result ? JSON.parse(job.result) : null,
+        result: job.result,
         completedAt: job.completedAt,
       });
     }
 
-    // Return latest plans for the current user only
+    // Return latest plans for the current user only (exclude soft-deleted)
     const plans = await prisma.mealPlan.findMany({
-      where: { userId: user.id },
+      where: { userId: user.id, deletedAt: null },
       orderBy: { generatedAt: 'desc' },
       take: 5,
       select: {

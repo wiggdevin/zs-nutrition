@@ -34,9 +34,9 @@ export async function GET(request: NextRequest) {
     let mealPlan;
 
     if (planId) {
-      // Get specific plan
+      // Get specific plan (exclude soft-deleted)
       mealPlan = await prisma.mealPlan.findFirst({
-        where: { id: planId, userId: user.id },
+        where: { id: planId, userId: user.id, deletedAt: null },
         select: {
           id: true,
           pdfUrl: true,
@@ -51,9 +51,9 @@ export async function GET(request: NextRequest) {
         },
       });
     } else {
-      // Get the active plan
+      // Get the active plan (exclude soft-deleted)
       mealPlan = await prisma.mealPlan.findFirst({
-        where: { userId: user.id, isActive: true },
+        where: { userId: user.id, isActive: true, deletedAt: null },
         select: {
           id: true,
           pdfUrl: true,

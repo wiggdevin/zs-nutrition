@@ -42,18 +42,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Get the meal plan
+    // Get the meal plan (exclude soft-deleted)
     const mealPlan = await prisma.mealPlan.findFirst({
-      where: { id: planId, userId: user.id },
+      where: { id: planId, userId: user.id, deletedAt: null },
     });
 
     if (!mealPlan) {
       return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });
     }
 
-    // Parse the validated plan to find the specific meal
-    const validatedPlan = JSON.parse(mealPlan.validatedPlan);
-    const day = validatedPlan.days?.find((d: { dayNumber: number }) => d.dayNumber === dayNumber);
+    // validatedPlan is now a Prisma Json type - no parsing needed
+    const validatedPlan = mealPlan.validatedPlan as { days?: Array<{ dayNumber: number; meals?: Array<{ slot: string; name: string; nutrition: { kcal: number; proteinG: number; carbsG: number; fatG: number; fiberG?: number }; confidenceLevel?: string }> }> };
+    const day = validatedPlan?.days?.find((d) => d.dayNumber === dayNumber);
 
     if (!day) {
       return NextResponse.json({ error: 'Day not found in plan' }, { status: 404 });

@@ -35,31 +35,6 @@ export async function getClerkUserId(): Promise<string | null> {
   return userId;
 }
 
-export async function getOrCreateUser() {
-  const clerkUserId = await getClerkUserId();
-  if (!clerkUserId) return null;
-
-  let user = await prisma.user.findUnique({
-    where: { clerkUserId },
-    include: { onboarding: true, profiles: { where: { isActive: true } } },
-  });
-
-  if (!user) {
-    user = await prisma.user.create({
-      data: {
-        clerkUserId,
-        email: `${clerkUserId}@placeholder.com`,
-      },
-      include: { onboarding: true, profiles: { where: { isActive: true } } },
-    });
-  }
-
-  // Block deactivated accounts from accessing the app
-  if (!user.isActive) return null;
-
-  return user;
-}
-
 /**
  * Check if the authenticated user's account is deactivated.
  * Returns true if the account exists and is deactivated (isActive=false).
@@ -100,4 +75,113 @@ export async function isAccountDeactivated(): Promise<boolean> {
   });
 
   return user ? !user.isActive : false;
+}
+
+// ============================================================================
+// Lightweight Auth Functions (Task 3.8 - Architecture Consolidation)
+// ============================================================================
+
+/**
+ * Lightweight auth - only get/create the user ID.
+ * Use this for most endpoints that just need to verify the user exists.
+ *
+ * This function is optimized for the ~61% of tRPC procedures that only need
+ * the user ID (ctx.dbUserId) and don't require profile or onboarding data.
+ *
+ * @param clerkUserId - The Clerk user ID from authentication
+ * @returns User object with id and isActive, or null if user is deactivated
+ */
+export async function getAuthenticatedUser(clerkUserId: string): Promise<{
+  id: string;
+  isActive: boolean;
+  deactivatedAt: Date | null;
+} | null> {
+  let user = await prisma.user.findUnique({
+    where: { clerkUserId },
+    select: { id: true, isActive: true, deactivatedAt: true },
+  });
+
+  if (!user) {
+    // Create user with minimal data - email will be updated later
+    user = await prisma.user.create({
+      data: {
+        clerkUserId,
+        email: `pending-${clerkUserId}@placeholder.com`,
+      },
+      select: { id: true, isActive: true, deactivatedAt: true },
+    });
+  }
+
+  if (!user.isActive) return null;
+  return user;
+}
+
+/**
+ * Full profile - only call when you need profile/onboarding data.
+ * Use this for profile updates, plan generation, etc.
+ *
+ * This function is for the ~26% of procedures that actually need
+ * the full user profile with onboarding state and active profile data.
+ *
+ * @param userId - The internal database user ID (not Clerk ID)
+ * @returns Full user object with onboarding and active profiles
+ */
+export async function getUserWithProfile(userId: string) {
+  return prisma.user.findUnique({
+    where: { id: userId },
+    include: {
+      onboarding: true,
+      profiles: {
+        where: { isActive: true },
+        take: 1,
+      },
+    },
+  });
+}
+
+/**
+ * Get just the active profile for a user.
+ * More efficient than getUserWithProfile when you only need profile data.
+ *
+ * @param userId - The internal database user ID (not Clerk ID)
+ * @returns The active UserProfile or null
+ */
+export async function getActiveProfile(userId: string) {
+  return prisma.userProfile.findFirst({
+    where: { userId, isActive: true },
+  });
+}
+
+/**
+ * @deprecated Use getAuthenticatedUser() for most cases.
+ * This function loads full profile data on every request, which is unnecessary
+ * for ~61% of tRPC procedures that only need the user ID.
+ *
+ * Migration guide:
+ * - For procedures that only need userId: use getAuthenticatedUser()
+ * - For procedures that need profile: call getActiveProfile() or getUserWithProfile() explicitly
+ */
+export async function getOrCreateUser() {
+  const clerkUserId = await getClerkUserId();
+  if (!clerkUserId) return null;
+
+  let user = await prisma.user.findUnique({
+    where: { clerkUserId },
+    include: { onboarding: true, profiles: { where: { isActive: true } } },
+  });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        clerkUserId,
+        email: `${clerkUserId}@placeholder.com`,
+      },
+      include: { onboarding: true, profiles: { where: { isActive: true } } },
+    });
+  }
+
+  // Block deactivated accounts from accessing the app
+  if (!user.isActive) return null;
+
+  return user;
 }

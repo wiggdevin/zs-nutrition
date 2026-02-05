@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { requireActiveUser } from '@/lib/auth';
 import { mealSwapLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/safe-logger';
@@ -75,6 +76,7 @@ export async function POST(req: NextRequest) {
       where: {
         id: planId,
         userId: user.id,
+        deletedAt: null, // Exclude soft-deleted plans
       },
     });
 
@@ -82,15 +84,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });
     }
 
-    // Parse the validated plan
-    let validatedPlan: { days: PlanDay[]; [key: string]: unknown };
-    try {
-      validatedPlan =
-        typeof mealPlan.validatedPlan === 'string'
-          ? JSON.parse(mealPlan.validatedPlan)
-          : (mealPlan.validatedPlan as { days: PlanDay[]; [key: string]: unknown });
-    } catch {
-      return NextResponse.json({ error: 'Failed to parse plan data' }, { status: 500 });
+    // validatedPlan is now a Prisma Json type - no parsing needed
+    const validatedPlan = mealPlan.validatedPlan as { days: PlanDay[]; [key: string]: unknown };
+    if (!validatedPlan?.days) {
+      return NextResponse.json({ error: 'Invalid plan data' }, { status: 500 });
     }
 
     // Find the day and replace the meal
@@ -111,20 +108,22 @@ export async function POST(req: NextRequest) {
     };
 
     // Save MealSwap record and update plan in a transaction
+    // originalMeal, newMeal, and validatedPlan are now Prisma Json types - pass objects directly
+    // Cast to Prisma.InputJsonValue to satisfy type checker
     await prisma.$transaction([
       prisma.mealSwap.create({
         data: {
           mealPlanId: planId,
           dayNumber,
           slot,
-          originalMeal: JSON.stringify(originalMeal),
-          newMeal: JSON.stringify(newMeal),
+          originalMeal: originalMeal as Prisma.InputJsonValue,
+          newMeal: newMeal as Prisma.InputJsonValue,
         },
       }),
       prisma.mealPlan.update({
         where: { id: planId },
         data: {
-          validatedPlan: JSON.stringify(validatedPlan),
+          validatedPlan: validatedPlan as Prisma.InputJsonValue,
         },
       }),
     ]);

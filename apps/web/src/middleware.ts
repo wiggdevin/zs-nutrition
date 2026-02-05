@@ -68,7 +68,6 @@ const devOnlyPublicPaths = [
   '/api/test-',
   '/api/debug-',
   '/api/seed-',
-  '/api/get-latest-job',
   '/api/trpc/test.',
   // Page: test, dev routes (prefix-matched)
   '/test-',
@@ -103,7 +102,6 @@ const devOnlyPublicRoutes = [
   '/api/test-(.*)',
   '/api/debug-(.*)',
   '/api/seed-(.*)',
-  '/api/get-latest-job(.*)',
   '/api/trpc/test\\.(.*)',
   // Page: test, dev routes
   '/test-(.*)',

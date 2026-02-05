@@ -3,11 +3,14 @@
 import { useState } from 'react';
 import { clearAllStores } from '@/lib/stores/clearStores';
 import { ClerkSignOutHandler } from '@/hooks/useClerkSignOut';
+import { trpc } from '@/lib/trpc';
 
 export default function SettingsAccount() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
   const [deactivating, setDeactivating] = useState(false);
   const [signingOut, setSigningOut] = useState(false);
+
+  const deactivateAccountMutation = trpc.user.deactivateAccount.useMutation();
 
   async function handleSignOut(clerkSignOut?: () => Promise<void>) {
     try {
@@ -33,11 +36,8 @@ export default function SettingsAccount() {
   async function handleDeactivate(clerkSignOut?: () => Promise<void>) {
     try {
       setDeactivating(true);
-      const res = await fetch('/api/account/deactivate', { method: 'POST' });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || 'Failed to deactivate account');
-      }
+      // Use tRPC mutation instead of REST endpoint
+      await deactivateAccountMutation.mutateAsync();
       // Clear all stores before signing out
       clearAllStores();
       // Sign out after successful deactivation
