@@ -6,6 +6,8 @@ import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast-store';
 import { useTrackingStore, MacroTargets, MacroCurrent } from '@/lib/stores/useTrackingStore';
 import { shallow } from 'zustand/shallow';
+import { AdaptiveNutritionBanner } from './AdaptiveNutritionBanner';
+import { ActivitySyncStatus } from './ActivitySyncStatus';
 
 const defaultTargets: MacroTargets = {
   calories: 2000,
@@ -1488,6 +1490,12 @@ export default function DashboardClient() {
           </h2>
           <p className="text-muted-foreground">Your nutrition protocol is ready.</p>
         </div>
+
+        {/* ═══ ADAPTIVE NUTRITION BANNER ═══ */}
+        <AdaptiveNutritionBanner />
+
+        {/* ═══ ACTIVITY SYNC STATUS ═══ */}
+        <ActivitySyncStatus />
 
         {/* ═══ MACRO RINGS SECTION ═══ */}
         <section
