@@ -70,10 +70,10 @@ export default function MealPlanByIdPage() {
       <>
         <NavBar />
         <div className="md:pt-14 pb-20 md:pb-0">
-          <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+          <div className="flex min-h-screen items-center justify-center bg-background">
             <div className="text-center">
-              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-              <p className="mt-4 text-sm text-[#a1a1aa]">Loading meal plan...</p>
+              <div className="mx-auto h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <p className="mt-4 text-sm text-muted-foreground">Loading meal plan...</p>
             </div>
           </div>
         </div>
@@ -86,28 +86,28 @@ export default function MealPlanByIdPage() {
       <>
         <NavBar />
         <div className="md:pt-14 pb-20 md:pb-0">
-          <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+          <div className="flex min-h-screen items-center justify-center bg-background px-4">
             <div className="w-full max-w-md text-center" data-testid="plan-access-denied">
-              <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#ef4444]/10">
+              <div className="rounded-lg border border-border bg-card p-8">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
                   <span className="text-2xl">
                     {statusCode === 401 ? "🔒" : "🚫"}
                   </span>
                 </div>
                 <h2
-                  className="text-xl font-bold text-[#fafafa]"
+                  className="text-xl font-bold text-foreground"
                   data-testid="access-denied-title"
                 >
                   {statusCode === 401 ? "Authentication Required" : "Plan Not Found"}
                 </h2>
                 <p
-                  className="mt-2 text-sm text-[#a1a1aa]"
+                  className="mt-2 text-sm text-muted-foreground"
                   data-testid="access-denied-message"
                 >
                   {error}
                 </p>
                 <p
-                  className="mt-1 text-xs text-[#a1a1aa]"
+                  className="mt-1 text-xs text-muted-foreground"
                   data-testid="access-denied-detail"
                 >
                   {statusCode === 404
@@ -117,7 +117,7 @@ export default function MealPlanByIdPage() {
                 <div className="mt-6 flex flex-col gap-3 items-center">
                   <button
                     onClick={() => router.push("/meal-plan")}
-                    className="inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+                    className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                     data-testid="back-to-plans-button"
                   >
                     Go to My Plans
@@ -125,7 +125,7 @@ export default function MealPlanByIdPage() {
                   {statusCode === 401 && (
                     <button
                       onClick={() => router.push("/sign-in")}
-                      className="inline-block rounded-lg border border-[#2a2a2a] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#a1a1aa] transition-colors hover:bg-[#252525]"
+                      className="inline-block rounded-lg border border-border px-6 py-3 text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary"
                     >
                       Sign In
                     </button>
@@ -145,38 +145,38 @@ export default function MealPlanByIdPage() {
       <>
         <NavBar />
         <div className="md:pt-14 pb-20 md:pb-0">
-          <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+          <div className="flex min-h-screen items-center justify-center bg-background px-4">
             <div className="w-full max-w-md text-center" data-testid="plan-replaced-state">
-              <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f59e0b]/10">
+              <div className="rounded-lg border border-border bg-card p-8">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning/10">
                   <span className="text-2xl">📋</span>
                 </div>
                 <h2
-                  className="text-xl font-bold text-[#fafafa]"
+                  className="text-xl font-bold text-foreground"
                   data-testid="plan-replaced-title"
                 >
                   Plan No Longer Active
                 </h2>
                 <p
-                  className="mt-2 text-sm text-[#a1a1aa]"
+                  className="mt-2 text-sm text-muted-foreground"
                   data-testid="plan-replaced-message"
                 >
                   This meal plan has been replaced by a newer plan.
                 </p>
-                <p className="mt-1 text-xs text-[#71717a]">
+                <p className="mt-1 text-xs text-muted-foreground">
                   {plan.planDays}-day plan &middot; {plan.dailyKcalTarget} kcal/day
                 </p>
                 <div className="mt-6 flex flex-col gap-3 items-center">
                   <button
                     onClick={() => router.push("/meal-plan")}
-                    className="inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+                    className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                     data-testid="view-current-plan-button"
                   >
                     View Current Plan
                   </button>
                   <button
                     onClick={() => router.push("/generate")}
-                    className="inline-block rounded-lg border border-[#2a2a2a] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#a1a1aa] transition-colors hover:bg-[#252525]"
+                    className="inline-block rounded-lg border border-border px-6 py-3 text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary"
                     data-testid="generate-new-plan-button"
                   >
                     Generate New Plan
@@ -196,23 +196,23 @@ export default function MealPlanByIdPage() {
       <>
         <NavBar />
         <div className="md:pt-14 pb-20 md:pb-0">
-          <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+          <div className="flex min-h-screen items-center justify-center bg-background px-4">
             <div className="w-full max-w-md text-center">
-              <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#22c55e]/10">
+              <div className="rounded-lg border border-border bg-card p-8">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-success/10">
                   <span className="text-2xl">✅</span>
                 </div>
-                <h2 className="text-xl font-bold text-[#fafafa]" data-testid="plan-found-title">
+                <h2 className="text-xl font-bold text-foreground" data-testid="plan-found-title">
                   Meal Plan Found
                 </h2>
-                <p className="mt-2 text-sm text-[#a1a1aa]">
+                <p className="mt-2 text-sm text-muted-foreground">
                   {plan.planDays}-day plan &middot; {plan.dailyKcalTarget} kcal/day
                   {plan.qaScore !== null && ` · QA: ${plan.qaScore}%`}
                 </p>
                 <div className="mt-6">
                   <button
                     onClick={() => router.push("/meal-plan")}
-                    className="inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+                    className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                     data-testid="view-plan-button"
                   >
                     View Full Plan

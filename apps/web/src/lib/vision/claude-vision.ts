@@ -6,6 +6,7 @@
  */
 
 import Anthropic from '@anthropic-ai/sdk'
+import { logger } from '@/lib/safe-logger'
 
 // Nutrition analysis result structure
 export interface NutritionEstimate {
@@ -52,7 +53,7 @@ export class ClaudeVisionClient {
     const apiKey = process.env.ANTHROPIC_API_KEY
 
     if (!apiKey) {
-      console.warn('ANTHROPIC_API_KEY not found - Vision analysis will not work')
+      logger.warn('ANTHROPIC_API_KEY not found - Vision analysis will not work')
       return
     }
 
@@ -62,7 +63,7 @@ export class ClaudeVisionClient {
         timeout: 60000, // 60 second timeout
       })
     } catch (error) {
-      console.error('Failed to initialize Claude Vision client:', error)
+      logger.error('Failed to initialize Claude Vision client:', error)
     }
   }
 
@@ -226,8 +227,8 @@ Respond ONLY with valid JSON, no additional text.`
 
       return parsed as FoodAnalysisResult
     } catch (error) {
-      console.error('Failed to parse Claude response:', error)
-      console.error('Response text:', text)
+      logger.error('Failed to parse Claude response:', error)
+      logger.debug('Response text:', text)
 
       // Return a fallback response
       return {

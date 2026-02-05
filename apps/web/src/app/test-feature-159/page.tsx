@@ -148,21 +148,21 @@ function TestFeature159Content() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] px-4 py-8">
+    <div className="min-h-screen bg-background px-4 py-8">
       <div className="mx-auto max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-heading uppercase tracking-wider text-[#fafafa]">
+          <h1 className="text-3xl font-heading uppercase tracking-wider text-foreground">
             Test Feature #159
           </h1>
-          <p className="mt-2 text-sm text-[#a1a1aa]">
+          <p className="mt-2 text-sm text-muted-foreground">
             Plan generation failure shows retry option
           </p>
         </div>
 
         {/* Test Steps */}
-        <div className="mb-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-          <h2 className="mb-4 text-xl font-bold text-[#fafafa]">Test Steps</h2>
-          <ol className="list-inside list-decimal space-y-2 text-sm text-[#a1a1aa]">
+        <div className="mb-8 rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-xl font-bold text-foreground">Test Steps</h2>
+          <ol className="list-inside list-decimal space-y-2 text-sm text-muted-foreground">
             <li>Simulate plan generation failure</li>
             <li>Verify SSE emits failed status with error</li>
             <li>Verify user-friendly error message displayed</li>
@@ -176,7 +176,7 @@ function TestFeature159Content() {
           {status === "idle" && (
             <button
               onClick={createFailedJob}
-              className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+              className="rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
             >
               Create Failed Job & Test
             </button>
@@ -184,8 +184,8 @@ function TestFeature159Content() {
 
           {(status === "creating" || status === "testing") && (
             <div className="flex items-center gap-3">
-              <div className="h-6 w-6 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-              <span className="text-sm text-[#a1a1aa]">
+              <div className="h-6 w-6 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+              <span className="text-sm text-muted-foreground">
                 {status === "creating" ? "Creating failed job..." : "Testing SSE stream..."}
               </span>
             </div>
@@ -194,11 +194,11 @@ function TestFeature159Content() {
 
         {/* Test Results */}
         {testResults.length > 0 && (
-          <div className="mb-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-            <h2 className="mb-4 text-xl font-bold text-[#fafafa]">Test Results</h2>
+          <div className="mb-8 rounded-lg border border-border bg-card p-6">
+            <h2 className="mb-4 text-xl font-bold text-foreground">Test Results</h2>
             <div className="space-y-2 font-mono text-sm">
               {testResults.map((result, idx) => (
-                <div key={idx} className={result.startsWith("✅") ? "text-[#22c55e]" : result.startsWith("❌") ? "text-[#ef4444]" : "text-[#a1a1aa]"}>
+                <div key={idx} className={result.startsWith("✅") ? "text-green-500" : result.startsWith("❌") ? "text-red-500" : "text-muted-foreground"}>
                   {result}
                 </div>
               ))}
@@ -208,18 +208,18 @@ function TestFeature159Content() {
 
         {/* Simulated Error UI */}
         {status === "failed" && !retryClicked && (
-          <div className="rounded-lg border border-[#ef4444]/30 bg-[#1a1a1a] p-8 shadow-xl">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#ef4444]/10">
+          <div className="rounded-lg border border-red-500/30 bg-card p-8 shadow-xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-red-500/10">
               <span className="text-2xl">❌</span>
             </div>
-            <h2 className="text-xl font-bold text-[#fafafa]">Generation Failed</h2>
-            <p className="mt-2 text-sm text-[#a1a1aa]">
+            <h2 className="text-xl font-bold text-foreground">Generation Failed</h2>
+            <p className="mt-2 text-sm text-muted-foreground">
               {errorMessage || "Something went wrong while generating your plan. Please try again."}
             </p>
             <button
               onClick={handleRetry}
               data-testid="retry-plan-generation"
-              className="mt-6 rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+              className="mt-6 rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
             >
               Retry
             </button>
@@ -230,13 +230,13 @@ function TestFeature159Content() {
         <div className="mt-8 flex gap-4">
           <a
             href="/generate"
-            className="rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#a1a1aa] transition-colors hover:bg-[#252525]"
+            className="rounded-lg border border-border bg-card px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted"
           >
             Go to Generate Page
           </a>
           <a
             href="/dashboard"
-            className="rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#a1a1aa] transition-colors hover:bg-[#252525]"
+            className="rounded-lg border border-border bg-card px-4 py-2 text-sm text-muted-foreground transition-colors hover:bg-muted"
           >
             Dashboard
           </a>

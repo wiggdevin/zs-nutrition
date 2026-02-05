@@ -2,7 +2,15 @@ import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 import { TRPCError } from '@trpc/server'
 import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue'
-import { safeLogWarn } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
+import { safeJsonParse } from '@/lib/utils/safe-json'
+import {
+  ValidatedPlanSchema,
+  MetabolicProfileSchema as MetabolicProfileDbSchema,
+  JobProgressSchema,
+  JobResultSchema,
+  StringArraySchema,
+} from '@/lib/schemas/plan'
 
 /**
  * Zod schema for the raw intake form data passed to generatePlan.
@@ -79,7 +87,7 @@ export const planRouter = router({
   getActivePlan: protectedProcedure
     .query(async ({ ctx }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       const plan = await prisma.mealPlan.findFirst({
         where: {
@@ -92,15 +100,8 @@ export const planRouter = router({
 
       if (!plan) return null
 
-      let parsedPlan: Record<string, unknown> = {}
-      try {
-        parsedPlan = JSON.parse(plan.validatedPlan)
-      } catch { /* empty */ }
-
-      let parsedMetabolic: Record<string, unknown> = {}
-      try {
-        parsedMetabolic = JSON.parse(plan.metabolicProfile)
-      } catch { /* empty */ }
+      const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] })
+      const parsedMetabolic = safeJsonParse(plan.metabolicProfile, MetabolicProfileDbSchema, {})
 
       return {
         id: plan.id,
@@ -132,7 +133,7 @@ export const planRouter = router({
     .input(z.object({ planId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Find the plan by ID, filtered by userId for security
       const plan = await prisma.mealPlan.findFirst({
@@ -149,15 +150,8 @@ export const planRouter = router({
         })
       }
 
-      let parsedPlan: Record<string, unknown> = {}
-      try {
-        parsedPlan = JSON.parse(plan.validatedPlan)
-      } catch { /* empty */ }
-
-      let parsedMetabolic: Record<string, unknown> = {}
-      try {
-        parsedMetabolic = JSON.parse(plan.metabolicProfile)
-      } catch { /* empty */ }
+      const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] })
+      const parsedMetabolic = safeJsonParse(plan.metabolicProfile, MetabolicProfileDbSchema, {})
 
       return {
         id: plan.id,
@@ -187,7 +181,7 @@ export const planRouter = router({
     .input(RawIntakeFormSchema)
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Create PlanGenerationJob record in DB with status 'pending'
       // SQLite stores JSON as string, so stringify the intake data
@@ -217,7 +211,7 @@ export const planRouter = router({
       } catch (queueError) {
         // If Redis/BullMQ is unavailable (dev environment), log and continue
         // The job is still created in DB — worker will pick it up when available
-        safeLogWarn('BullMQ enqueue failed (Redis may be unavailable):', queueError)
+        logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError)
         // In dev mode, this is expected if Redis isn't running
         // The job record in DB still serves as the source of truth
       }
@@ -233,7 +227,7 @@ export const planRouter = router({
     .input(z.object({ jobId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       const job = await prisma.planGenerationJob.findFirst({
         where: {
@@ -250,17 +244,11 @@ export const planRouter = router({
       }
 
       // Parse JSON string fields for SQLite compatibility
-      let parsedProgress = null
-      let parsedPlanId: string | undefined = undefined
-      try {
-        if (job.progress) parsedProgress = JSON.parse(job.progress)
-      } catch { /* ignore parse errors */ }
-      try {
-        if (job.result) {
-          const resultObj = JSON.parse(job.result)
-          parsedPlanId = resultObj.planId as string | undefined
-        }
-      } catch { /* ignore parse errors */ }
+      const parsedProgress = job.progress
+        ? safeJsonParse(job.progress, JobProgressSchema, {} as Record<string, unknown>)
+        : null
+      const parsedResult = safeJsonParse(job.result, JobResultSchema, {})
+      const parsedPlanId = parsedResult.planId
 
       return {
         status: job.status,
@@ -289,7 +277,7 @@ export const planRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Verify the job exists and belongs to this user
       const job = await prisma.planGenerationJob.findFirst({
@@ -382,7 +370,7 @@ export const planRouter = router({
   regeneratePlan: protectedProcedure
     .mutation(async ({ ctx }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Find user's active profile
       const profile = await prisma.userProfile.findFirst({
@@ -398,19 +386,10 @@ export const planRouter = router({
       }
 
       // Parse JSON array fields from profile
-      let allergies: string[] = []
-      let exclusions: string[] = []
-      let cuisinePreferences: string[] = []
-      let trainingDays: string[] = []
-
-      try {
-        allergies = profile.allergies ? JSON.parse(profile.allergies) : []
-        exclusions = profile.exclusions ? JSON.parse(profile.exclusions) : []
-        cuisinePreferences = profile.cuisinePrefs ? JSON.parse(profile.cuisinePrefs) : []
-        trainingDays = profile.trainingDays ? JSON.parse(profile.trainingDays) : []
-      } catch (parseError) {
-        safeLogWarn('Failed to parse profile JSON arrays:', parseError)
-      }
+      const allergies = safeJsonParse(profile.allergies, StringArraySchema, [])
+      const exclusions = safeJsonParse(profile.exclusions, StringArraySchema, [])
+      const cuisinePreferences = safeJsonParse(profile.cuisinePrefs, StringArraySchema, [])
+      const trainingDays = safeJsonParse(profile.trainingDays, StringArraySchema, [])
 
       // Construct intake data from active profile (matching RawIntakeFormSchema)
       const intakeData = {
@@ -474,7 +453,7 @@ export const planRouter = router({
         )
       } catch (queueError) {
         // If Redis/BullMQ is unavailable (dev environment), log and continue
-        safeLogWarn('BullMQ enqueue failed (Redis may be unavailable):', queueError)
+        logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError)
       }
 
       // Return jobId immediately - client will open SSE to track progress

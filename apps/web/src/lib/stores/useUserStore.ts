@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { z } from 'zod';
 import { safeStorage } from './storage';
+import { logger } from '@/lib/safe-logger';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -113,7 +114,7 @@ export const useUserStore = create<UserState>()(
       migrate: (persisted: unknown) => {
         const parsed = userPersistedSchema.safeParse(persisted);
         if (!parsed.success) {
-          console.warn('[UserStore] Migration failed, resetting to defaults:', parsed.error);
+          logger.warn('[UserStore] Migration failed, resetting to defaults:', parsed.error);
           return {
             profile: null,
             isOnboarded: false,
@@ -124,7 +125,7 @@ export const useUserStore = create<UserState>()(
       onRehydrateStorage: () => {
         return (_state, error) => {
           if (error) {
-            console.warn('[UserStore] Rehydration error:', error);
+            logger.warn('[UserStore] Rehydration error:', error);
           }
         };
       },

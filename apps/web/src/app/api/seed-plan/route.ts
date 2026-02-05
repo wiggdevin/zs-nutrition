@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { isDevMode } from '@/lib/auth'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 
 /**
  * SEED ENDPOINT — Development only.
@@ -241,7 +241,7 @@ export async function POST() {
       message: 'Seed data created. Visit /dashboard to see the meal plan.',
     })
   } catch (error) {
-    safeLogError('Seed error:', error)
+    logger.error('Seed error:', error)
     return NextResponse.json(
       { success: false, error: (error as Error).message },
       { status: 500 }

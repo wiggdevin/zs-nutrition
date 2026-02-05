@@ -46,6 +46,9 @@ const trpcClient = trpc.createClient({
     httpBatchLink({
       url: `${getBaseUrl()}/api/trpc`,
       transformer: superjson,
+      headers() {
+        return { 'x-trpc-source': 'nextjs-react' }
+      },
     }),
   ],
 })

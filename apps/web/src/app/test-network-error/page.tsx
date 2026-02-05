@@ -111,18 +111,18 @@ export default function TestNetworkErrorPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] p-6">
+    <div className="min-h-screen bg-background text-foreground p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold uppercase tracking-wider">
           Feature #259: Network Error Test
         </h1>
-        <p className="text-[#a1a1aa] text-sm">
+        <p className="text-muted-foreground text-sm">
           This page tests that network failures during meal logging show a friendly error message with a retry button.
         </p>
 
         {/* Network Toggle Control */}
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-3">Network Control</h2>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">Network Control</h2>
           <button
             onClick={toggleNetworkBlock}
             className={`px-5 py-2.5 font-bold rounded-lg uppercase tracking-wider text-sm transition-colors ${
@@ -140,46 +140,46 @@ export default function TestNetworkErrorPage() {
         </div>
 
         {/* Manual Entry Form (simplified for testing) */}
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-5">
+        <div className="bg-card border border-border rounded-xl p-5">
           <h2 className="text-lg font-bold mb-4">Log a Meal (Manual Entry)</h2>
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-[#a1a1aa] uppercase mb-1.5">Food Name</label>
+              <label className="block text-xs font-semibold text-muted-foreground uppercase mb-1.5">Food Name</label>
               <input
                 type="text"
                 value={foodName}
                 onChange={e => setFoodName(e.target.value)}
-                className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316]"
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
                 data-testid="test-food-name"
               />
             </div>
             <div className="grid grid-cols-4 gap-3">
               <div>
-                <label className="block text-xs font-semibold text-[#f97316] uppercase mb-1.5">Calories *</label>
+                <label className="block text-xs font-semibold text-primary uppercase mb-1.5">Calories *</label>
                 <input type="number" value={calories} onChange={e => setCalories(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316]"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-primary"
                   data-testid="test-calories" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-blue-400 uppercase mb-1.5">Protein (g)</label>
                 <input type="number" value={protein} onChange={e => setProtein(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-blue-400" />
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-blue-400" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-green-400 uppercase mb-1.5">Carbs (g)</label>
                 <input type="number" value={carbs} onChange={e => setCarbs(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-green-400" />
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-green-400" />
               </div>
               <div>
                 <label className="block text-xs font-semibold text-yellow-400 uppercase mb-1.5">Fat (g)</label>
                 <input type="number" value={fat} onChange={e => setFat(e.target.value)}
-                  className="w-full px-3 py-2 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-yellow-400" />
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-yellow-400" />
               </div>
             </div>
             <button
               type="submit"
               disabled={isSubmitting}
-              className="w-full py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:opacity-50 text-[#0a0a0a] font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+              className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-background font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
               data-testid="test-submit"
             >
               {isSubmitting ? (
@@ -237,11 +237,11 @@ export default function TestNetworkErrorPage() {
         </div>
 
         {/* Test Log */}
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-3">Test Log</h2>
-          <div className="space-y-1 text-xs font-mono text-[#a1a1aa] max-h-60 overflow-y-auto" data-testid="test-log">
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">Test Log</h2>
+          <div className="space-y-1 text-xs font-mono text-muted-foreground max-h-60 overflow-y-auto" data-testid="test-log">
             {testLog.length === 0 ? (
-              <p className="text-[#666]">No actions yet. Block network, then try to log a meal.</p>
+              <p className="text-muted-foreground">No actions yet. Block network, then try to log a meal.</p>
             ) : (
               testLog.map((entry, i) => <p key={i}>{entry}</p>)
             )}
@@ -249,11 +249,11 @@ export default function TestNetworkErrorPage() {
         </div>
 
         {/* Instructions */}
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4 text-sm text-[#a1a1aa]">
-          <h2 className="font-bold text-[#fafafa] uppercase tracking-wider mb-2">Test Steps</h2>
+        <div className="bg-card border border-border rounded-xl p-4 text-sm text-muted-foreground">
+          <h2 className="font-bold text-foreground uppercase tracking-wider mb-2">Test Steps</h2>
           <ol className="list-decimal list-inside space-y-1.5">
             <li>Click <span className="text-red-400 font-medium">&ldquo;Block Network&rdquo;</span> to simulate offline</li>
-            <li>Click <span className="text-[#f97316] font-medium">&ldquo;Log Meal&rdquo;</span> to attempt submission</li>
+            <li>Click <span className="text-primary font-medium">&ldquo;Log Meal&rdquo;</span> to attempt submission</li>
             <li>Verify <span className="text-red-400 font-medium">friendly error message</span> appears</li>
             <li>Verify <span className="text-red-400 font-medium">Retry button</span> is visible</li>
             <li>Click <span className="text-green-400 font-medium">&ldquo;Restore Network&rdquo;</span></li>

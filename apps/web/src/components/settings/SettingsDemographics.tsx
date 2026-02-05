@@ -200,10 +200,10 @@ export default function SettingsDemographics() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+      <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-          <span className="text-sm text-[#a1a1aa]">Loading profile...</span>
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-sm text-muted-foreground">Loading profile...</span>
         </div>
       </div>
     );
@@ -211,11 +211,11 @@ export default function SettingsDemographics() {
 
   if (error && !profile) {
     return (
-      <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+      <div className="rounded-2xl border border-border bg-card p-6">
         <p className="text-sm text-red-400">{error}</p>
         <button
           onClick={fetchProfile}
-          className="mt-3 rounded-lg border border-[#2a2a2a] px-4 py-2 text-sm text-[#a1a1aa] hover:bg-[#252525] transition-colors"
+          className="mt-3 rounded-lg border border-border px-4 py-2 text-sm text-muted-foreground hover:bg-secondary transition-colors"
         >
           Retry
         </button>
@@ -224,13 +224,13 @@ export default function SettingsDemographics() {
   }
 
   return (
-    <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6" data-testid="demographics-section">
+    <div className="rounded-2xl border border-border bg-card p-6" data-testid="demographics-section">
       {/* Section Header */}
       <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
-          <span className="text-[#f97316]">///</span> Demographics
+        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
+          <span className="text-primary">///</span> Demographics
         </h2>
-        <p className="mt-1 text-sm text-[#a1a1aa]">
+        <p className="mt-1 text-sm text-muted-foreground">
           Update your basic profile information
         </p>
       </div>
@@ -238,8 +238,8 @@ export default function SettingsDemographics() {
       <div className="space-y-5">
         {/* Name Field */}
         <div>
-          <label htmlFor="settings-name" className="mb-1 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-            Name <span className="text-[#f97316]">*</span>
+          <label htmlFor="settings-name" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            Name <span className="text-primary">*</span>
           </label>
           <input
             id="settings-name"
@@ -255,10 +255,10 @@ export default function SettingsDemographics() {
             data-testid="settings-name-input"
             aria-invalid={!!validationErrors.name}
             aria-describedby={validationErrors.name ? "settings-name-error" : undefined}
-            className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
+            className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card ${
               validationErrors.name
                 ? "border-red-500 focus:border-red-500"
-                : "border-[#2a2a2a] focus:border-[#f97316]"
+                : "border-border focus:border-primary"
             }`}
           />
           {validationErrors.name && (
@@ -270,8 +270,8 @@ export default function SettingsDemographics() {
 
         {/* Sex Field */}
         <div>
-          <label id="settings-sex-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-            Biological Sex <span className="text-[#f97316]">*</span>
+          <label id="settings-sex-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            Biological Sex <span className="text-primary">*</span>
           </label>
           <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="settings-sex-label" aria-invalid={!!validationErrors.sex}>
             {(["male", "female"] as Sex[]).map((sex) => (
@@ -287,10 +287,10 @@ export default function SettingsDemographics() {
                 aria-describedby={validationErrors.sex ? "settings-sex-error" : undefined}
                 className={`rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
                   editSex === sex
-                    ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
+                    ? "border-primary bg-primary/10 text-primary"
                     : validationErrors.sex
-                      ? "border-red-500 bg-[#1e1e1e] text-[#a1a1aa] hover:border-red-400"
-                      : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                      ? "border-red-500 bg-card text-muted-foreground hover:border-red-400"
+                      : "border-border bg-card text-muted-foreground hover:border-border/80"
                 }`}
               >
                 {sex}
@@ -306,8 +306,8 @@ export default function SettingsDemographics() {
 
         {/* Age Field */}
         <div>
-          <label htmlFor="settings-age" className="mb-1 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-            Age <span className="text-[#f97316]">*</span>
+          <label htmlFor="settings-age" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            Age <span className="text-primary">*</span>
           </label>
           <input
             id="settings-age"
@@ -328,10 +328,10 @@ export default function SettingsDemographics() {
             data-testid="settings-age-input"
             aria-invalid={!!validationErrors.age}
             aria-describedby={validationErrors.age ? "settings-age-error" : undefined}
-            className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
+            className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card ${
               validationErrors.age
                 ? "border-red-500 focus:border-red-500"
-                : "border-[#2a2a2a] focus:border-[#f97316]"
+                : "border-border focus:border-primary"
             }`}
           />
           {validationErrors.age && (
@@ -343,8 +343,8 @@ export default function SettingsDemographics() {
 
         {/* Height Field */}
         <div>
-          <label htmlFor="settings-height" className="mb-1 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-            Height (cm) <span className="text-[#f97316]">*</span>
+          <label htmlFor="settings-height" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            Height (cm) <span className="text-primary">*</span>
           </label>
           <input
             id="settings-height"
@@ -366,10 +366,10 @@ export default function SettingsDemographics() {
             data-testid="settings-height-input"
             aria-invalid={!!validationErrors.height}
             aria-describedby={validationErrors.height ? "settings-height-error" : undefined}
-            className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
+            className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card ${
               validationErrors.height
                 ? "border-red-500 focus:border-red-500"
-                : "border-[#2a2a2a] focus:border-[#f97316]"
+                : "border-border focus:border-primary"
             }`}
           />
           {validationErrors.height && (
@@ -381,8 +381,8 @@ export default function SettingsDemographics() {
 
         {/* Weight Field */}
         <div>
-          <label htmlFor="settings-weight" className="mb-1 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-            Weight (kg) <span className="text-[#f97316]">*</span>
+          <label htmlFor="settings-weight" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            Weight (kg) <span className="text-primary">*</span>
           </label>
           <input
             id="settings-weight"
@@ -404,10 +404,10 @@ export default function SettingsDemographics() {
             data-testid="settings-weight-input"
             aria-invalid={!!validationErrors.weight}
             aria-describedby={validationErrors.weight ? "settings-weight-error" : undefined}
-            className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] ${
+            className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card ${
               validationErrors.weight
                 ? "border-red-500 focus:border-red-500"
-                : "border-[#2a2a2a] focus:border-[#f97316]"
+                : "border-border focus:border-primary"
             }`}
           />
           {validationErrors.weight && (
@@ -425,11 +425,11 @@ export default function SettingsDemographics() {
         </div>
       )}
       {success && (
-        <div className="mt-4 rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-3 flex items-center gap-2" data-testid="save-success">
-          <svg className="w-5 h-5 flex-shrink-0 text-[#22c55e]" fill="currentColor" viewBox="0 0 20 20">
+        <div className="mt-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3 flex items-center gap-2" data-testid="save-success">
+          <svg className="w-5 h-5 flex-shrink-0 text-success" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
-          <p className="text-sm text-[#22c55e]">Profile updated successfully!</p>
+          <p className="text-sm text-success">Profile updated successfully!</p>
         </div>
       )}
 
@@ -441,8 +441,8 @@ export default function SettingsDemographics() {
           data-testid="settings-save-btn"
           className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
-              ? "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] cursor-pointer"
-              : "bg-[#f97316]/30 text-white/50 cursor-not-allowed"
+              ? "bg-primary hover:bg-primary/90 text-background cursor-pointer"
+              : "bg-primary/30 text-white/50 cursor-not-allowed"
           }`}
         >
           {saving ? (
@@ -457,7 +457,7 @@ export default function SettingsDemographics() {
         {dirty && (
           <button
             onClick={handleReset}
-            className="rounded-lg border border-[#2a2a2a] px-4 py-2.5 text-sm text-[#a1a1aa] hover:bg-[#252525] transition-colors"
+            className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors"
             data-testid="settings-reset-btn"
           >
             Reset

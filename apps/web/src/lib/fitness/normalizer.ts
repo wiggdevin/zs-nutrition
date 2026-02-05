@@ -146,8 +146,9 @@ export function normalizeGoogleFitData(
           const durationMinutes = Math.round((endTime.getTime() - startTime.getTime()) / 60000);
 
           // Try to determine workout type from data source
-          const activityType = value.fpVal
-            ? mapGoogleFitActivityType(Math.round(value.fpVal))
+          const firstValue = point.value[0];
+          const activityType = firstValue?.fpVal
+            ? mapGoogleFitActivityType(Math.round(firstValue.fpVal))
             : 'other';
 
           workouts.push({
@@ -230,7 +231,6 @@ export function normalizeFitbitData(
     distanceKm: summary.distance,
     distanceMiles: summary.distances.find((d) => d.activity === 'total')?.distance,
     activeMinutes: summary.veryActiveMinutes + summary.fairlyActiveMinutes,
-    workoutCount: activityData.activities.length,
     workouts: workouts.length > 0 ? workouts : undefined,
     sleepData: sleepDataNormalized,
   };
@@ -292,7 +292,7 @@ export function normalizeOuraData(
     distanceKm: activity.distance_km,
     distanceMiles: activity.distance_km * 0.621371,
     activeMinutes: activity.medium_activity_met_minutes
-      ? Math.round(activity.medium_activity_met_minutes + activity.high_activity_met_minutes)
+      ? Math.round(activity.medium_activity_met_minutes + (activity.high_activity_met_minutes ?? 0))
       : undefined,
     workouts: workouts.length > 0 ? workouts : undefined,
     sleepData: sleepDataNormalized,

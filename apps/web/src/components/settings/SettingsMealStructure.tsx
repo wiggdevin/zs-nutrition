@@ -190,22 +190,22 @@ export default function SettingsMealStructure() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+      <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-          <span className="text-sm text-[#a1a1aa]">Loading meal structure...</span>
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-sm text-muted-foreground">Loading meal structure...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6" data-testid="meal-structure-section">
+    <div className="rounded-2xl border border-border bg-card p-6" data-testid="meal-structure-section">
       <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
-          <span className="text-[#f97316]">///</span> Meal Structure
+        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
+          <span className="text-primary">///</span> Meal Structure
         </h2>
-        <p className="mt-1 text-sm text-[#a1a1aa]">
+        <p className="mt-1 text-sm text-muted-foreground">
           Configure your macro split, cuisine preferences, and meal frequency
         </p>
       </div>
@@ -213,7 +213,7 @@ export default function SettingsMealStructure() {
       <div className="space-y-5">
         {/* Macro Style */}
         <div>
-          <label id="settings-macro-split-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label id="settings-macro-split-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Macro Split
           </label>
           <div className="space-y-2">
@@ -224,14 +224,14 @@ export default function SettingsMealStructure() {
                 data-testid={`settings-macro-${value}`}
                 className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                   macroStyle === value
-                    ? "border-[#f97316] bg-[#f97316]/10"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-card hover:border-border/80"
                 }`}
               >
-                <span className={`block text-sm font-bold ${macroStyle === value ? "text-[#f97316]" : "text-[#fafafa]"}`}>
+                <span className={`block text-sm font-bold ${macroStyle === value ? "text-primary" : "text-foreground"}`}>
                   {label}
                 </span>
-                <span className="block text-xs text-[#a1a1aa]">{desc}</span>
+                <span className="block text-xs text-muted-foreground">{desc}</span>
               </button>
             ))}
           </div>
@@ -239,7 +239,7 @@ export default function SettingsMealStructure() {
 
         {/* Cuisine Preferences */}
         <div>
-          <label id="settings-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label id="settings-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Cuisine Preferences
           </label>
           <div className="flex flex-wrap gap-2">
@@ -249,8 +249,8 @@ export default function SettingsMealStructure() {
                 onClick={() => toggleCuisine(cuisine)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors min-h-[36px] ${
                   cuisinePrefs.includes(cuisine.toLowerCase())
-                    ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-border/80"
                 }`}
               >
                 {cuisine}
@@ -262,7 +262,7 @@ export default function SettingsMealStructure() {
         {/* Meals & Snacks */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="settings-meals-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+            <label htmlFor="settings-meals-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Meals/Day: {mealsPerDay}
             </label>
             <input
@@ -274,15 +274,15 @@ export default function SettingsMealStructure() {
               max={6}
               step={1}
               data-testid="settings-meals-per-day"
-              className="w-full accent-[#f97316]"
+              className="w-full accent-primary"
             />
-            <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
               <span>2</span>
               <span>6</span>
             </div>
           </div>
           <div>
-            <label htmlFor="settings-snacks-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+            <label htmlFor="settings-snacks-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
               Snacks/Day: {snacksPerDay}
             </label>
             <input
@@ -294,9 +294,9 @@ export default function SettingsMealStructure() {
               max={4}
               step={1}
               data-testid="settings-snacks-per-day"
-              className="w-full accent-[#f97316]"
+              className="w-full accent-primary"
             />
-            <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
               <span>0</span>
               <span>4</span>
             </div>
@@ -305,7 +305,7 @@ export default function SettingsMealStructure() {
 
         {/* Cooking Skill */}
         <div>
-          <label htmlFor="settings-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label htmlFor="settings-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Cooking Skill: {cookingSkillLabels[cookingSkill]}
           </label>
           <input
@@ -317,9 +317,9 @@ export default function SettingsMealStructure() {
             max={10}
             step={1}
             data-testid="settings-cooking-skill"
-            className="w-full accent-[#f97316]"
+            className="w-full accent-primary"
           />
-          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
             <span>Beginner</span>
             <span>Professional Chef</span>
           </div>
@@ -327,7 +327,7 @@ export default function SettingsMealStructure() {
 
         {/* Max Prep Time */}
         <div>
-          <label htmlFor="settings-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label htmlFor="settings-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Max Prep Time: {prepTimeMax} minutes
           </label>
           <input
@@ -339,9 +339,9 @@ export default function SettingsMealStructure() {
             max={120}
             step={5}
             data-testid="settings-prep-time-max"
-            className="w-full accent-[#f97316]"
+            className="w-full accent-primary"
           />
-          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
             <span>10 min</span>
             <span>120 min</span>
           </div>
@@ -354,8 +354,8 @@ export default function SettingsMealStructure() {
         </div>
       )}
       {success && (
-        <div className="mt-4 rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-3">
-          <p className="text-sm text-[#22c55e]">Meal structure updated!</p>
+        <div className="mt-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
+          <p className="text-sm text-success">Meal structure updated!</p>
         </div>
       )}
 
@@ -366,8 +366,8 @@ export default function SettingsMealStructure() {
           data-testid="settings-meal-save"
           className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
-              ? "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] cursor-pointer"
-              : "bg-[#f97316]/30 text-white/50 cursor-not-allowed"
+              ? "bg-primary hover:bg-primary/90 text-background cursor-pointer"
+              : "bg-primary/30 text-white/50 cursor-not-allowed"
           }`}
         >
           {saving ? (
@@ -380,7 +380,7 @@ export default function SettingsMealStructure() {
           )}
         </button>
         {dirty && (
-          <button onClick={handleReset} className="rounded-lg border border-[#2a2a2a] px-4 py-2.5 text-sm text-[#a1a1aa] hover:bg-[#252525] transition-colors">
+          <button onClick={handleReset} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors">
             Reset
           </button>
         )}

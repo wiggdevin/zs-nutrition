@@ -20,7 +20,7 @@ export const adaptiveNutritionRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       const targetDate = input.logDate ? new Date(input.logDate) : new Date()
       const dateOnly = new Date(targetDate.getFullYear(), targetDate.getMonth(), targetDate.getDate())
@@ -76,7 +76,7 @@ export const adaptiveNutritionRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       const limit = input?.limit || 12 // Default to 12 weeks
 
@@ -104,7 +104,7 @@ export const adaptiveNutritionRouter = router({
    */
   analyzeWeightTrend: protectedProcedure.query(async ({ ctx }) => {
     const { prisma } = ctx
-    const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+    const dbUserId = ctx.dbUserId
 
     // Get user's active profile for goal context
     const profile = await prisma.userProfile.findFirst({
@@ -226,7 +226,7 @@ export const adaptiveNutritionRouter = router({
    */
   suggestCalorieAdjustment: protectedProcedure.query(async ({ ctx }) => {
     const { prisma } = ctx
-    const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+    const dbUserId = ctx.dbUserId
 
     // Get user's active profile
     const profile = await prisma.userProfile.findFirst({
@@ -266,13 +266,14 @@ export const adaptiveNutritionRouter = router({
 
     // Determine if adjustment is needed
     const goalRateLbs = profile.goalRate
-    let suggestedKcal = profile.goalKcal
+    const currentGoalKcal = profile.goalKcal ?? 0
+    let suggestedKcal: number = currentGoalKcal
     let adjustmentReason = 'No adjustment needed - on track'
     let shouldAdjust = false
 
     // Safe bounds: BMR + 200 to BMR + 1500
-    const minSafeKcal = profile.bmrKcal! + 200
-    const maxSafeKcal = profile.bmrKcal! + 1500
+    const minSafeKcal = (profile.bmrKcal ?? 0) + 200
+    const maxSafeKcal = (profile.bmrKcal ?? 0) + 1500
 
     if (profile.goalType === 'cut') {
       const expectedRate = -goalRateLbs
@@ -281,14 +282,14 @@ export const adaptiveNutritionRouter = router({
       // Losing too slowly or gaining (need to cut more)
       if (deviation > 0.5) {
         const decrease = Math.round(deviation * 100) // ~100 kcal per 0.5 lb/week deviation
-        suggestedKcal = Math.max(minSafeKcal, profile.goalKcal - decrease)
+        suggestedKcal = Math.max(minSafeKcal, currentGoalKcal - decrease)
         shouldAdjust = true
         adjustmentReason = `Weight loss slower than target (${weeklyRateLbs.toFixed(2)} vs ${expectedRate.toFixed(2)} lbs/week). Decreasing calories to maintain progress.`
       }
       // Losing too fast (risk of muscle loss or metabolic adaptation)
       else if (deviation < -1) {
         const increase = Math.round(Math.abs(deviation) * 100)
-        suggestedKcal = Math.min(maxSafeKcal, profile.goalKcal + increase)
+        suggestedKcal = Math.min(maxSafeKcal, currentGoalKcal + increase)
         shouldAdjust = true
         adjustmentReason = `Weight loss faster than target (${weeklyRateLbs.toFixed(2)} vs ${expectedRate.toFixed(2)} lbs/week). Increasing calories to prevent metabolic adaptation and preserve muscle.`
       }
@@ -299,14 +300,14 @@ export const adaptiveNutritionRouter = router({
       // Gaining too slowly or losing
       if (deviation < -0.5) {
         const increase = Math.round(Math.abs(deviation) * 150) // Bulks need more kcal surplus
-        suggestedKcal = Math.min(maxSafeKcal, profile.goalKcal + increase)
+        suggestedKcal = Math.min(maxSafeKcal, currentGoalKcal + increase)
         shouldAdjust = true
         adjustmentReason = `Weight gain slower than target (${weeklyRateLbs.toFixed(2)} vs ${expectedRate.toFixed(2)} lbs/week). Increasing calories to support growth.`
       }
       // Gaining too fast (likely fat, not muscle)
       else if (deviation > 1) {
         const decrease = Math.round(deviation * 100)
-        suggestedKcal = Math.max(minSafeKcal, profile.goalKcal - decrease)
+        suggestedKcal = Math.max(minSafeKcal, currentGoalKcal - decrease)
         shouldAdjust = true
         adjustmentReason = `Weight gain faster than target (${weeklyRateLbs.toFixed(2)} vs ${expectedRate.toFixed(2)} lbs/week). Decreasing calories to minimize fat gain.`
       }
@@ -317,9 +318,9 @@ export const adaptiveNutritionRouter = router({
 
     return {
       hasSuggestion: shouldAdjust,
-      currentGoalKcal: profile.goalKcal,
+      currentGoalKcal,
       suggestedGoalKcal: suggestedKcal,
-      calorieDifference: suggestedKcal - profile.goalKcal,
+      calorieDifference: suggestedKcal - currentGoalKcal,
       adjustmentReason,
       safeBounds: {
         min: minSafeKcal,
@@ -345,7 +346,7 @@ export const adaptiveNutritionRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       if (!input.confirmed) {
         throw new TRPCError({
@@ -415,7 +416,7 @@ export const adaptiveNutritionRouter = router({
       const adjustment = await prisma.calorieAdjustment.create({
         data: {
           userId: dbUserId,
-          previousGoalKcal: profile.goalKcal,
+          previousGoalKcal: profile.goalKcal ?? 0,
           newGoalKcal: input.newGoalKcal,
           adjustmentReason: JSON.stringify({
             reason: `Adaptive adjustment based on ${trend.length} weight entries`,
@@ -480,7 +481,7 @@ export const adaptiveNutritionRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       const limit = input?.limit || 10
 

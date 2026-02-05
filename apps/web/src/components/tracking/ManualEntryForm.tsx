@@ -156,7 +156,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="w-full py-3 px-4 bg-[#1a1a1a] border border-dashed border-[#444] rounded-xl text-[#a1a1aa] hover:border-[#f97316] hover:text-[#f97316] transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 px-4 bg-card border border-dashed border-border rounded-xl text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
           data-testid="manual-entry-toggle"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -170,15 +170,15 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
       {isOpen && (
         <form
           onSubmit={handleSubmit}
-          className="bg-[#1a1a1a] border border-[#333] rounded-xl p-5"
+          className="bg-card border border-border rounded-xl p-5"
           data-testid="manual-entry-form"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-[#fafafa]">Manual Entry</h3>
+            <h3 className="text-lg font-bold text-foreground">Manual Entry</h3>
             <button
               type="button"
               onClick={() => { setIsOpen(false); resetForm() }}
-              className="text-[#666] hover:text-[#fafafa] transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -188,7 +188,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
 
           {/* Food Name */}
           <div className="mb-4">
-            <label htmlFor="manual-food-name" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
+            <label htmlFor="manual-food-name" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
               Food Name *
             </label>
             <input
@@ -204,10 +204,10 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
               placeholder="e.g. Grilled Chicken Breast"
               aria-invalid={!!fieldErrors.foodName}
               aria-describedby={fieldErrors.foodName ? "manual-food-name-error" : undefined}
-              className={`w-full px-3 py-2.5 bg-[#111] border rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none transition-colors ${
+              className={`w-full px-3 py-2.5 bg-background border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none transition-colors ${
                 fieldErrors.foodName
                   ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                  : 'border-[#333] focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]'
+                  : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
               }`}
               data-testid="manual-food-name"
               autoComplete="off"
@@ -221,14 +221,14 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
 
           {/* Meal Slot Selector */}
           <div className="mb-4">
-            <label htmlFor="manual-meal-slot" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
-              Meal Slot <span className="text-[#666] normal-case font-normal">(optional)</span>
+            <label htmlFor="manual-meal-slot" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Meal Slot <span className="text-muted-foreground normal-case font-normal">(optional)</span>
             </label>
             <select
               id="manual-meal-slot"
               value={mealSlot}
               onChange={(e) => setMealSlot(e.target.value as MealSlot | '')}
-              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
               data-testid="manual-meal-slot"
             >
               <option value="">No meal slot</option>
@@ -241,7 +241,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
 
           {/* Date Selector */}
           <div className="mb-4">
-            <label htmlFor="manual-date" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
+            <label htmlFor="manual-date" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
               Date
             </label>
             <input
@@ -249,7 +249,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
               type="date"
               value={loggedDate}
               onChange={(e) => setLoggedDate(e.target.value)}
-              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
               data-testid="manual-date"
             />
           </div>
@@ -257,7 +257,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
           {/* Macro Fields */}
           <div className="grid grid-cols-2 gap-3 mb-4">
             <div>
-              <label htmlFor="manual-calories" className="block text-xs font-semibold text-[#f97316] uppercase tracking-wider mb-1.5">
+              <label htmlFor="manual-calories" className="block text-xs font-semibold text-primary uppercase tracking-wider mb-1.5">
                 Calories *
               </label>
               <input
@@ -275,10 +275,10 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                 placeholder="0"
                 aria-invalid={!!fieldErrors.calories}
                 aria-describedby={fieldErrors.calories ? "manual-calories-error" : undefined}
-                className={`w-full px-3 py-2.5 bg-[#111] border rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none transition-colors ${
+                className={`w-full px-3 py-2.5 bg-background border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none transition-colors ${
                   fieldErrors.calories
                     ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                    : 'border-[#333] focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]'
+                    : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
                 }`}
                 data-testid="manual-calories"
               />
@@ -300,7 +300,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                 value={protein}
                 onChange={(e) => setProtein(e.target.value)}
                 placeholder="0"
-                className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors"
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors"
                 data-testid="manual-protein"
               />
             </div>
@@ -316,7 +316,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                 value={carbs}
                 onChange={(e) => setCarbs(e.target.value)}
                 placeholder="0"
-                className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors"
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors"
                 data-testid="manual-carbs"
               />
             </div>
@@ -332,7 +332,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                 value={fat}
                 onChange={(e) => setFat(e.target.value)}
                 placeholder="0"
-                className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-colors"
+                className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-colors"
                 data-testid="manual-fat"
               />
             </div>
@@ -389,7 +389,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:bg-[#f97316]/50 text-[#0a0a0a] font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
+            className="w-full py-3 bg-primary hover:bg-primary/90 disabled:bg-primary/50 text-background font-semibold rounded-lg transition-colors flex items-center justify-center gap-2"
             data-testid="manual-entry-submit"
           >
             {isSubmitting ? (

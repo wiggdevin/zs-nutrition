@@ -3,6 +3,7 @@ import { requireActiveUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { v4 as uuidv4 } from 'uuid'
 import { z } from 'zod'
+import { logger } from '@/lib/safe-logger'
 
 // Request schema for confirming and logging a vision analysis
 const LogVisionMealSchema = z.object({
@@ -178,7 +179,7 @@ export async function POST(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Error in /api/vision/log-meal:', error)
+    logger.error('Error in /api/vision/log-meal:', error)
 
     const message = error instanceof Error ? error.message : 'Failed to log meal'
 
@@ -252,7 +253,7 @@ export async function GET(request: Request) {
       error: foodScan.error,
     })
   } catch (error) {
-    console.error('Error in GET /api/vision/log-meal:', error)
+    logger.error('Error in GET /api/vision/log-meal:', error)
 
     const message = error instanceof Error ? error.message : 'Failed to fetch scan'
 

@@ -6,8 +6,8 @@ import { toast } from '@/lib/toast-store'
 export default function TestToastPage() {
   if (process.env.NODE_ENV === 'production') { notFound() }
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8">
-      <h1 className="text-2xl font-bold text-[#fafafa] mb-6">Toast Notification Test</h1>
+    <div className="min-h-screen bg-background p-8">
+      <h1 className="text-2xl font-bold text-foreground mb-6">Toast Notification Test</h1>
       <div className="flex flex-col gap-4 max-w-xs">
         <button
           data-testid="trigger-success-toast"

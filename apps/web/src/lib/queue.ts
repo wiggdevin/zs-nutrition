@@ -1,5 +1,6 @@
 import { Queue } from 'bullmq'
 import { createNewRedisConnection } from './redis'
+import { logger } from '@/lib/safe-logger'
 
 const globalForQueue = globalThis as unknown as {
   planGenerationQueue: Queue | MockQueue | undefined
@@ -23,7 +24,7 @@ class MockQueue {
     this.name = name
   }
   async add(jobName: string, data: PlanGenerationJobData, opts?: { jobId?: string }) {
-    console.log(`[MockQueue] Job enqueued: ${jobName}`, {
+    logger.debug(`[MockQueue] Job enqueued: ${jobName}`, {
       queueName: this.name,
       jobId: opts?.jobId || data.jobId,
       intakeDataKeys: Object.keys(data.intakeData),
@@ -40,7 +41,7 @@ function createQueue(): Queue | MockQueue {
   const useMock = process.env.USE_MOCK_QUEUE === 'true'
 
   if (useMock) {
-    console.log('[Queue] Using MockQueue (USE_MOCK_QUEUE=true)')
+    logger.info('[Queue] Using MockQueue (USE_MOCK_QUEUE=true)')
     return new MockQueue(PLAN_GENERATION_QUEUE)
   }
 

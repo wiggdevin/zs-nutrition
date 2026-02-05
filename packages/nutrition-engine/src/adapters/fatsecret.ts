@@ -4,6 +4,8 @@
  * Falls back to a comprehensive local food database when FatSecret credentials are unavailable.
  */
 
+import { engineLogger } from '../utils/logger';
+
 export interface FoodSearchResult {
   foodId: string;
   name: string;
@@ -111,7 +113,7 @@ export class FatSecretAdapter {
               : Math.pow(2, attempt) * 1000 + Math.random() * 500;
 
             if (attempt < maxRetries) {
-              console.warn(
+              engineLogger.warn(
                 `[FatSecret] ${response.status} on attempt ${attempt + 1}, retrying in ${Math.round(delay)}ms`
               );
               await new Promise(resolve => setTimeout(resolve, delay));
@@ -128,7 +130,7 @@ export class FatSecretAdapter {
 
         if (attempt < maxRetries) {
           const delay = Math.pow(2, attempt) * 1000;
-          console.warn(
+          engineLogger.warn(
             `[FatSecret] Network error on attempt ${attempt + 1}, retrying in ${delay}ms: ${(error as Error).message}`
           );
           await new Promise(resolve => setTimeout(resolve, delay));
@@ -172,7 +174,7 @@ export class FatSecretAdapter {
 
         if (attempt < maxRetries) {
           const delay = (attempt + 1) * 1000;
-          console.warn(
+          engineLogger.warn(
             `[FatSecret] Auth error on attempt ${attempt + 1}, retrying in ${delay}ms: ${(error as Error).message}`
           );
           await new Promise(resolve => setTimeout(resolve, delay));

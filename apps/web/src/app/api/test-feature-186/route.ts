@@ -138,7 +138,7 @@ export async function POST() {
     }
 
     // Verify calories data
-    const allHaveCalories = dailyLogs.every((log) => log.targetKcal > 0 && log.actualKcal >= 0)
+    const allHaveCalories = dailyLogs.every((log) => (log.targetKcal ?? 0) > 0 && log.actualKcal >= 0)
     if (allHaveCalories && dailyLogs.length === 7) {
       results.step2_caloriesChart = true
     } else {

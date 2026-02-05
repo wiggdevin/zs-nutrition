@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server'
 import { requireActiveUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { logger } from '@/lib/safe-logger'
 
 /**
  * GET /api/vision/history
@@ -70,7 +71,7 @@ export async function GET(request: Request) {
       },
     })
   } catch (error) {
-    console.error('Error in GET /api/vision/history:', error)
+    logger.error('Error in GET /api/vision/history:', error)
 
     const message = error instanceof Error ? error.message : 'Failed to fetch history'
 

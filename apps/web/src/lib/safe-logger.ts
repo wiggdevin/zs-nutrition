@@ -64,3 +64,33 @@ export function safeLogError(label: string, error: unknown): void {
 export function safeLogWarn(label: string, error: unknown): void {
   console.warn(`${label}`, safeErrorMessage(error))
 }
+
+const isDev = process.env.NODE_ENV !== 'production'
+
+/**
+ * Structured logger with environment-aware log levels.
+ * - debug: Only logs in development (suppressed in production)
+ * - info: Only logs in development (suppressed in production)
+ * - warn: Always logs with PII redaction
+ * - error: Always logs with PII redaction
+ */
+export const logger = {
+  debug: (...args: unknown[]) => {
+    // eslint-disable-next-line no-console
+    if (isDev) console.log('[DEBUG]', ...args)
+  },
+  info: (...args: unknown[]) => {
+    // eslint-disable-next-line no-console
+    if (isDev) console.log('[INFO]', ...args)
+  },
+  warn: (label: string, ...args: unknown[]) => {
+    console.warn(`[WARN] ${label}`, ...args.map(a => {
+      if (a instanceof Error) return safeErrorMessage(a)
+      if (typeof a === 'string') return redactString(a)
+      return a
+    }))
+  },
+  error: (label: string, error?: unknown) => {
+    console.error(`[ERROR] ${label}`, error ? safeErrorMessage(error) : '')
+  },
+}

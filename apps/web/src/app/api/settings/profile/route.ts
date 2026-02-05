@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireActiveUser } from '@/lib/auth'
 import { calculateMetabolicProfile } from '@/lib/metabolic'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 import { profileUpdateSchema } from '@/lib/validation'
 import { ZodError } from 'zod'
 
@@ -76,7 +76,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    safeLogError('Settings profile GET error:', error);
+    logger.error('Settings profile GET error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -231,7 +231,7 @@ export async function PUT(request: NextRequest) {
       },
     });
   } catch (error) {
-    safeLogError('Settings profile PUT error:', error);
+    logger.error('Settings profile PUT error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

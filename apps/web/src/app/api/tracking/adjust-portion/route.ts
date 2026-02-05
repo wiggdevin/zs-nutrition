@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireActiveUser } from '@/lib/auth'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
+import { recalculateDailyLog, calculateAdherenceScore } from '@/server/utils/daily-log'
 
 /**
  * PUT /api/tracking/adjust-portion
@@ -82,28 +83,14 @@ export async function PUT(request: NextRequest) {
     })
 
     // Recalculate DailyLog totals from ALL tracked meals for this day
-    const loggedDate = new Date(
-      trackedMeal.loggedDate.getFullYear(),
-      trackedMeal.loggedDate.getMonth(),
-      trackedMeal.loggedDate.getDate()
-    )
+    const loggedDate = new Date(Date.UTC(
+      trackedMeal.loggedDate.getUTCFullYear(),
+      trackedMeal.loggedDate.getUTCMonth(),
+      trackedMeal.loggedDate.getUTCDate()
+    ))
 
-    const allMealsForDay = await prisma.trackedMeal.findMany({
-      where: {
-        userId: user.id,
-        loggedDate: loggedDate,
-      },
-    })
-
-    const totals = allMealsForDay.reduce(
-      (acc, meal) => ({
-        kcal: acc.kcal + meal.kcal,
-        proteinG: acc.proteinG + meal.proteinG,
-        carbsG: acc.carbsG + meal.carbsG,
-        fatG: acc.fatG + meal.fatG,
-      }),
-      { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }
-    )
+    // Recalculate DailyLog totals using database aggregate
+    const totals = await recalculateDailyLog(prisma, user.id, loggedDate)
 
     // Update DailyLog with recalculated totals
     const dailyLog = await prisma.dailyLog.findUnique({
@@ -113,18 +100,24 @@ export async function PUT(request: NextRequest) {
     })
 
     if (dailyLog) {
-      const adherenceScore =
-        dailyLog.targetKcal && dailyLog.targetKcal > 0
-          ? Math.min(100, Math.round((Math.round(totals.kcal) / dailyLog.targetKcal) * 100))
-          : 0
+      const adherenceScore = calculateAdherenceScore({
+        actualKcal: totals.actualKcal,
+        actualProteinG: totals.actualProteinG,
+        actualCarbsG: totals.actualCarbsG,
+        actualFatG: totals.actualFatG,
+        targetKcal: dailyLog.targetKcal,
+        targetProteinG: dailyLog.targetProteinG,
+        targetCarbsG: dailyLog.targetCarbsG,
+        targetFatG: dailyLog.targetFatG,
+      })
 
       await prisma.dailyLog.update({
         where: { id: dailyLog.id },
         data: {
-          actualKcal: Math.round(totals.kcal),
-          actualProteinG: Math.round(totals.proteinG),
-          actualCarbsG: Math.round(totals.carbsG),
-          actualFatG: Math.round(totals.fatG),
+          actualKcal: totals.actualKcal,
+          actualProteinG: totals.actualProteinG,
+          actualCarbsG: totals.actualCarbsG,
+          actualFatG: totals.actualFatG,
           adherenceScore,
         },
       })
@@ -142,14 +135,14 @@ export async function PUT(request: NextRequest) {
         fatG: updatedMeal.fatG,
       },
       dailyTotals: {
-        actualKcal: Math.round(totals.kcal),
-        actualProteinG: Math.round(totals.proteinG),
-        actualCarbsG: Math.round(totals.carbsG),
-        actualFatG: Math.round(totals.fatG),
+        actualKcal: totals.actualKcal,
+        actualProteinG: totals.actualProteinG,
+        actualCarbsG: totals.actualCarbsG,
+        actualFatG: totals.actualFatG,
       },
     })
   } catch (error) {
-    safeLogError('Adjust portion error:', error)
+    logger.error('Adjust portion error:', error)
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

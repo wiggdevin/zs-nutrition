@@ -65,7 +65,7 @@ const AlertDialogContent = React.forwardRef<
       />
       <div
         ref={ref}
-        className={`relative z-50 grid w-full max-w-lg gap-4 border border-[#2a2a2a] bg-[#1a1a1a] p-6 shadow-lg sm:rounded-lg ${className || ''}`}
+        className={`relative z-50 grid w-full max-w-lg gap-4 border border-border bg-card p-6 shadow-lg sm:rounded-lg ${className || ''}`}
         {...props}
       >
         {children}
@@ -97,7 +97,7 @@ const AlertDialogDescription = React.forwardRef<
   HTMLParagraphElement,
   React.HTMLAttributes<HTMLParagraphElement>
 >(({ className, ...props }, ref) => (
-  <p ref={ref} className={`text-sm text-[#a1a1aa] ${className || ''}`} {...props} />
+  <p ref={ref} className={`text-sm text-muted-foreground ${className || ''}`} {...props} />
 ))
 AlertDialogDescription.displayName = "AlertDialogDescription"
 
@@ -115,7 +115,7 @@ const AlertDialogAction = React.forwardRef<
         onClick?.(e)
         context.setOpen(false)
       }}
-      className={`inline-flex h-10 items-center justify-center rounded-md bg-[#f97316] px-4 py-2 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] focus:outline-none focus:ring-2 focus:ring-[#f97316] focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className || ''}`}
+      className={`inline-flex h-10 items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 ${className || ''}`}
       {...props}
     />
   )
@@ -136,7 +136,7 @@ const AlertDialogCancel = React.forwardRef<
         onClick?.(e)
         context.setOpen(false)
       }}
-      className={`mt-2 inline-flex h-10 items-center justify-center rounded-md border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm font-bold uppercase tracking-wide text-[#fafafa] transition-colors hover:bg-[#252525] focus:outline-none focus:ring-2 focus:ring-[#f97316] focus:ring-offset-2 sm:mt-0 ${className || ''}`}
+      className={`mt-2 inline-flex h-10 items-center justify-center rounded-md border border-border bg-card px-4 py-2 text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:bg-secondary focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2 sm:mt-0 ${className || ''}`}
       {...props}
     />
   )

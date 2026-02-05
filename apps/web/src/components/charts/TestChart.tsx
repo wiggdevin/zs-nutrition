@@ -37,83 +37,83 @@ const calorieData = [
 ]
 
 const pieData = [
-  { name: 'Protein', value: 35, color: '#3b82f6' },
-  { name: 'Carbs', value: 45, color: '#22c55e' },
-  { name: 'Fat', value: 20, color: '#eab308' },
+  { name: 'Protein', value: 35, color: 'var(--chart-3)' },
+  { name: 'Carbs', value: 45, color: 'var(--color-success)' },
+  { name: 'Fat', value: 20, color: 'var(--color-warning)' },
 ]
 
 export default function TestChart() {
   return (
     <div className="space-y-8 p-6" data-testid="recharts-test-container">
       <h1 className="text-2xl font-bold text-white">Recharts Test — Data Visualization</h1>
-      <p className="text-[#a1a1aa] text-sm">
+      <p className="text-muted-foreground text-sm">
         Verifying Recharts works with Next.js 15 App Router + React 19 (client component).
       </p>
 
       {/* Bar Chart — Macro Breakdown */}
-      <section data-testid="bar-chart-section" className="bg-[#18181b] border border-[#27272a] rounded-lg p-4">
+      <section data-testid="bar-chart-section" className="bg-card border border-secondary rounded-lg p-4">
         <h2 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
           Weekly Macro Breakdown (Bar Chart)
         </h2>
         <div data-testid="bar-chart-responsive" style={{ width: '100%', minHeight: 300 }}>
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={macroData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis dataKey="name" tick={{ fill: '#a1a1aa', fontSize: 12 }} stroke="#27272a" />
-              <YAxis tick={{ fill: '#a1a1aa', fontSize: 12 }} stroke="#27272a" unit="g" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--secondary)" />
+              <XAxis dataKey="name" tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} stroke="var(--secondary)" />
+              <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} stroke="var(--secondary)" unit="g" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #27272a',
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--secondary)',
                   borderRadius: '8px',
                   color: '#fff',
                 }}
               />
-              <Legend wrapperStyle={{ color: '#a1a1aa', fontSize: 13, paddingTop: 8 }} />
-              <Bar dataKey="protein" name="Protein (g)" fill="#3b82f6" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="carbs" name="Carbs (g)" fill="#22c55e" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="fat" name="Fat (g)" fill="#eab308" radius={[4, 4, 0, 0]} />
+              <Legend wrapperStyle={{ color: 'var(--muted-foreground)', fontSize: 13, paddingTop: 8 }} />
+              <Bar dataKey="protein" name="Protein (g)" fill="var(--chart-3)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="carbs" name="Carbs (g)" fill="var(--color-success)" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="fat" name="Fat (g)" fill="var(--color-warning)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
         </div>
       </section>
 
       {/* Line Chart — Calories Actual vs Target */}
-      <section data-testid="line-chart-section" className="bg-[#18181b] border border-[#27272a] rounded-lg p-4">
+      <section data-testid="line-chart-section" className="bg-card border border-secondary rounded-lg p-4">
         <h2 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
           Calories — Actual vs Target (Line Chart)
         </h2>
         <div data-testid="line-chart-responsive" style={{ width: '100%', minHeight: 300 }}>
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={calorieData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
-              <XAxis dataKey="name" tick={{ fill: '#a1a1aa', fontSize: 12 }} stroke="#27272a" />
-              <YAxis tick={{ fill: '#a1a1aa', fontSize: 12 }} stroke="#27272a" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--secondary)" />
+              <XAxis dataKey="name" tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} stroke="var(--secondary)" />
+              <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} stroke="var(--secondary)" />
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #27272a',
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--secondary)',
                   borderRadius: '8px',
                   color: '#fff',
                 }}
               />
-              <Legend wrapperStyle={{ color: '#a1a1aa', fontSize: 13, paddingTop: 8 }} />
+              <Legend wrapperStyle={{ color: 'var(--muted-foreground)', fontSize: 13, paddingTop: 8 }} />
               <Line
                 type="monotone"
                 dataKey="target"
                 name="Target"
-                stroke="#f97316"
+                stroke="var(--primary)"
                 strokeWidth={2}
                 strokeDasharray="6 3"
-                dot={{ fill: '#f97316', r: 4 }}
+                dot={{ fill: 'var(--primary)', r: 4 }}
               />
               <Line
                 type="monotone"
                 dataKey="actual"
                 name="Actual"
-                stroke="#22d3ee"
+                stroke="var(--chart-5)"
                 strokeWidth={2}
-                dot={{ fill: '#22d3ee', r: 4 }}
+                dot={{ fill: 'var(--chart-5)', r: 4 }}
                 activeDot={{ r: 6 }}
               />
             </LineChart>
@@ -122,7 +122,7 @@ export default function TestChart() {
       </section>
 
       {/* Pie Chart — Macro Distribution */}
-      <section data-testid="pie-chart-section" className="bg-[#18181b] border border-[#27272a] rounded-lg p-4">
+      <section data-testid="pie-chart-section" className="bg-card border border-secondary rounded-lg p-4">
         <h2 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
           Macro Distribution (Pie Chart)
         </h2>
@@ -145,13 +145,13 @@ export default function TestChart() {
               </Pie>
               <Tooltip
                 contentStyle={{
-                  backgroundColor: '#18181b',
-                  border: '1px solid #27272a',
+                  backgroundColor: 'var(--card)',
+                  border: '1px solid var(--secondary)',
                   borderRadius: '8px',
                   color: '#fff',
                 }}
               />
-              <Legend wrapperStyle={{ color: '#a1a1aa', fontSize: 13 }} />
+              <Legend wrapperStyle={{ color: 'var(--muted-foreground)', fontSize: 13 }} />
             </PieChart>
           </ResponsiveContainer>
         </div>

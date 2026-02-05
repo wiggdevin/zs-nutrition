@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { cookies } from "next/headers";
-import { safeLogError } from "@/lib/safe-logger";
+import { logger } from "@/lib/safe-logger";
 import { isDevMode } from "@/lib/dev-mode";
 
 // Dev-only sign-up endpoint that creates a user in the database
@@ -41,7 +41,7 @@ export async function POST(request: NextRequest) {
       const cookieStore = await cookies();
       cookieStore.set("dev-user-id", user.id, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === 'production',
+        secure: (process.env.NODE_ENV as string) === 'production',
         path: "/",
         maxAge: 60 * 60 * 24 * 7, // 1 week
         sameSite: "lax",
@@ -68,7 +68,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.set("dev-user-id", user.id, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: (process.env.NODE_ENV as string) === 'production',
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 1 week
       sameSite: "lax",
@@ -81,7 +81,7 @@ export async function POST(request: NextRequest) {
       message: "Account created successfully",
     });
   } catch (error: any) {
-    safeLogError("Dev auth signup error:", error);
+    logger.error("Dev auth signup error:", error);
     return NextResponse.json(
       { error: "Failed to create account" },
       { status: 500 }

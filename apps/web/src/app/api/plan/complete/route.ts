@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { savePlanToDatabase, type PlanCompletionData } from '@/lib/save-plan'
 import { prisma } from '@/lib/prisma'
 import { isDevMode } from '@/lib/auth'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 
 function safeCompare(a: string, b: string): boolean {
   if (a.length !== b.length) return false
@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
   const expectedSecret = process.env.INTERNAL_API_SECRET || (isDevMode ? 'dev-internal-secret' : null)
 
   if (!expectedSecret) {
-    console.error('[/api/plan/complete] INTERNAL_API_SECRET not configured')
+    logger.error('[/api/plan/complete] INTERNAL_API_SECRET not configured')
     return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 })
   }
 
@@ -76,7 +76,7 @@ export async function POST(request: NextRequest) {
       planId: result.planId,
     })
   } catch (error) {
-    safeLogError('[/api/plan/complete] Error:', error)
+    logger.error('[/api/plan/complete] Error:', error)
     return NextResponse.json(
       { success: false, error: 'Something went wrong. Please try again later.' },
       { status: 500 }

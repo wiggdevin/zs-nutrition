@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/safe-logger'
 
 export default function TrackingError({
   error,
@@ -11,7 +12,7 @@ export default function TrackingError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Tracking error:', error)
+    logger.error('Tracking error:', error)
   }, [error])
 
   return (

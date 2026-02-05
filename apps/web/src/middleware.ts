@@ -6,6 +6,56 @@ import { isDevMode } from "@/lib/dev-mode";
 
 const isProduction = process.env.NODE_ENV === "production";
 
+const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
+
+function validateOrigin(request: NextRequest): boolean {
+  const origin = request.headers.get("origin");
+
+  // Allow requests with no origin (same-origin navigations, server-to-server calls)
+  if (!origin) return true;
+
+  const host = request.headers.get("host");
+  const appUrl = process.env.NEXT_PUBLIC_APP_URL;
+
+  try {
+    const originHost = new URL(origin).host;
+    if (originHost === host) return true;
+    if (appUrl && originHost === new URL(appUrl).host) return true;
+  } catch {
+    return false;
+  }
+
+  return false;
+}
+
+function csrfCheck(request: NextRequest): NextResponse | null {
+  const { method } = request;
+  const { pathname } = request.nextUrl;
+
+  if (!STATE_CHANGING_METHODS.has(method)) return null;
+
+  if (!validateOrigin(request)) {
+    return NextResponse.json(
+      { error: "Forbidden", message: "Invalid origin" },
+      { status: 403 },
+    );
+  }
+
+  // For API routes, require a custom header that HTML forms cannot set
+  if (pathname.startsWith("/api/")) {
+    const contentType = request.headers.get("content-type") || "";
+    const trpcSource = request.headers.get("x-trpc-source");
+    if (!trpcSource && !contentType.includes("application/json")) {
+      return NextResponse.json(
+        { error: "Forbidden", message: "Missing required header" },
+        { status: 403 },
+      );
+    }
+  }
+
+  return null;
+}
+
 /**
  * Public routes that do not require authentication.
  * - Landing page
@@ -83,8 +133,8 @@ const isPublicRoute = createRouteMatcher(
 const protectedMiddleware = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
     await auth.protect({
-      // Fall back to dashboard if no redirect_url is present
-      fallbackRedirectUrl: '/dashboard',
+      // Redirect unauthenticated users to sign-in
+      unauthenticatedUrl: '/sign-in',
     });
   }
 });
@@ -134,6 +184,9 @@ export default function middleware(
   request: NextRequest,
   event: NextFetchEvent,
 ) {
+  const csrfResponse = csrfCheck(request);
+  if (csrfResponse) return csrfResponse;
+
   return handler(request, event);
 }
 

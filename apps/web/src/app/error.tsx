@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect } from 'react'
+import { logger } from '@/lib/safe-logger'
 
 /**
  * Global Error Boundary for Next.js App Router.
@@ -18,11 +19,11 @@ export default function GlobalError({
   useEffect(() => {
     // Log the error to the console for development debugging.
     // In production, this could be sent to an error reporting service.
-    console.error('[GlobalError] Unhandled error caught:', error.digest || 'no-digest')
+    logger.error('[GlobalError] Unhandled error caught:', error.digest || 'no-digest')
   }, [error])
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center" data-testid="global-error-boundary">
+    <div className="min-h-screen bg-background flex items-center justify-center" data-testid="global-error-boundary">
       <div className="text-center space-y-6 max-w-md mx-auto px-4">
         {/* Error Icon */}
         <div className="w-20 h-20 mx-auto rounded-full bg-red-500/10 border-2 border-red-500/20 flex items-center justify-center">
@@ -33,13 +34,13 @@ export default function GlobalError({
 
         {/* Message */}
         <div>
-          <p className="text-xs font-mono tracking-[0.2em] uppercase text-[#a1a1aa] mb-3">
+          <p className="text-xs font-mono tracking-[0.2em] uppercase text-muted-foreground mb-3">
             /// ERROR
           </p>
-          <h1 className="text-2xl font-bold text-[#fafafa] mb-3">
-            Something went wrong<span className="text-[#f97316]">.</span>
+          <h1 className="text-2xl font-bold text-foreground mb-3">
+            Something went wrong<span className="text-primary">.</span>
           </h1>
-          <p className="text-sm text-[#a1a1aa] leading-relaxed" data-testid="error-friendly-message">
+          <p className="text-sm text-muted-foreground leading-relaxed" data-testid="error-friendly-message">
             We encountered an unexpected error. Don&apos;t worry — your data is safe.
             Please try again, and if the problem persists, contact support.
           </p>
@@ -50,7 +51,7 @@ export default function GlobalError({
           <button
             onClick={reset}
             data-testid="error-retry-button"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-sm font-bold uppercase tracking-wide rounded-xl transition-colors shadow-lg shadow-[#f97316]/20"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-background text-sm font-bold uppercase tracking-wide rounded-xl transition-colors shadow-lg shadow-primary/20"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -59,7 +60,7 @@ export default function GlobalError({
           </button>
           <a
             href="/"
-            className="inline-flex items-center gap-2 px-6 py-3 border border-[#2a2a2a] text-[#a1a1aa] hover:text-[#fafafa] hover:bg-[#1a1a1a] text-sm font-bold uppercase tracking-wide rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 border border-border text-muted-foreground hover:text-foreground hover:bg-card text-sm font-bold uppercase tracking-wide rounded-xl transition-colors"
           >
             Go Home
           </a>

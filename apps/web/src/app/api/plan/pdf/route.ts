@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireActiveUser } from '@/lib/auth'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 
 /**
  * GET /api/plan/pdf?planId=xxx
@@ -89,7 +89,7 @@ export async function GET(request: NextRequest) {
       },
     })
   } catch (error) {
-    safeLogError('[/api/plan/pdf] Error:', error)
+    logger.error('[/api/plan/pdf] Error:', error)
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
   }
 }

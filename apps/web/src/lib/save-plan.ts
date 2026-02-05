@@ -1,7 +1,7 @@
 import { prisma } from '@/lib/prisma'
 import { generatePlanPdf } from '@/lib/generate-plan-pdf'
 import { uploadPlanPdf } from '@/lib/upload-pdf'
-import { safeLogError, safeLogWarn } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 
 /**
  * Saves a completed plan generation result to the MealPlan table.
@@ -225,13 +225,13 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
           where: { id: mealPlan.id },
           data: { pdfUrl },
         })
-        console.log(`[savePlanToDatabase] PDF uploaded: ${pdfUrl}`)
+        logger.info(`[savePlanToDatabase] PDF uploaded: ${pdfUrl}`)
       } else {
-        safeLogWarn('[savePlanToDatabase] PDF upload failed:', uploadResult.error)
+        logger.warn('[savePlanToDatabase] PDF upload failed:', uploadResult.error)
       }
     } catch (pdfError) {
       // PDF generation is non-blocking - plan is still saved
-      safeLogWarn('[savePlanToDatabase] PDF generation error:', pdfError)
+      logger.warn('[savePlanToDatabase] PDF generation error:', pdfError)
     }
 
     // 7. Update the PlanGenerationJob with result and status
@@ -247,7 +247,7 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
     return { success: true, planId: mealPlan.id }
   } catch (error) {
     const errorMessage = error instanceof Error ? error.message : 'Unknown error saving plan'
-    safeLogError('[savePlanToDatabase] Error:', error)
+    logger.error('[savePlanToDatabase] Error:', error)
 
     // Try to mark the job as failed
     try {
@@ -261,7 +261,7 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
       })
     } catch {
       // If we can't update the job, just log it
-      console.error('[savePlanToDatabase] Could not update job status')
+      logger.error('[savePlanToDatabase] Could not update job status')
     }
 
     return { success: false, error: errorMessage }

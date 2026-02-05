@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/plan/[id]/status
@@ -79,7 +79,7 @@ export async function GET(
       generatedAt: checkedPlan.generatedAt,
     });
   } catch (error) {
-    safeLogError('Error checking plan status:', error);
+    logger.error('Error checking plan status:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

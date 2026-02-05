@@ -6,6 +6,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { calculateCalorieAdjustment, aggregateActivityData } from '@/lib/fitness/calculator';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/fitness/activity?date=2024-01-15
@@ -132,7 +133,7 @@ export async function GET(req: NextRequest) {
       totalActiveMinutes,
     });
   } catch (error) {
-    console.error('Error fetching activity data:', error);
+    logger.error('Error fetching activity data:', error);
     return NextResponse.json(
       { error: 'Failed to fetch activity data' },
       { status: 500 },
@@ -244,7 +245,7 @@ export async function POST(req: NextRequest) {
       message: 'Activity data saved successfully',
     });
   } catch (error) {
-    console.error('Error saving activity data:', error);
+    logger.error('Error saving activity data:', error);
     return NextResponse.json(
       { error: 'Failed to save activity data' },
       { status: 500 },

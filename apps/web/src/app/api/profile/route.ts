@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 // GET - Retrieve current user's profile
 export async function GET() {
@@ -77,7 +77,7 @@ export async function GET() {
       } : null,
     });
   } catch (error) {
-    safeLogError('Profile fetch error:', error);
+    logger.error('Profile fetch error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

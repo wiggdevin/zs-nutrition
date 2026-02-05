@@ -387,16 +387,16 @@ export default function TestTRPCPage() {
   const failedCount = testResults.filter((t) => t.status === 'failed').length
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-4xl font-black uppercase tracking-wider mb-2">tRPC Communication Test</h1>
-        <p className="text-[#a1a1aa] mb-8">Feature #32: End-to-end tRPC client-server verification</p>
+        <p className="text-muted-foreground mb-8">Feature #32: End-to-end tRPC client-server verification</p>
 
-        <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6 mb-6">
+        <div className="bg-card border border-border rounded-xl p-6 mb-6">
           <div className="flex items-center justify-between mb-6">
             <div>
               <h2 className="text-xl font-bold uppercase tracking-wide">Test Suite</h2>
-              <p className="text-[#a1a1aa] text-sm mt-1">
+              <p className="text-muted-foreground text-sm mt-1">
                 {isRunning && `Running test ${currentStep}/6...`}
                 {!isRunning && allPassed && 'All tests passed ✓'}
                 {!isRunning && anyFailed && `${passedCount}/${testResults.length} tests passed`}
@@ -405,7 +405,7 @@ export default function TestTRPCPage() {
             <button
               onClick={runTests}
               disabled={isRunning}
-              className="px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] font-bold uppercase tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
+              className="px-6 py-3 bg-primary hover:bg-primary/90 text-background font-bold uppercase tracking-wide transition-colors disabled:opacity-50 disabled:cursor-not-allowed rounded-lg"
             >
               {isRunning ? 'Running...' : 'Run Tests'}
             </button>
@@ -415,7 +415,7 @@ export default function TestTRPCPage() {
             {testResults.map((test, index) => (
               <div
                 key={index}
-                className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-4 flex items-start gap-4"
+                className="bg-background border border-border rounded-lg p-4 flex items-start gap-4"
               >
                 <div className={`text-2xl ${getStatusColor(test.status)} font-bold`}>
                   {getStatusIcon(test.status)}
@@ -424,7 +424,7 @@ export default function TestTRPCPage() {
                   <div className="flex items-center justify-between">
                     <h3 className="font-bold text-sm uppercase tracking-wide">{test.name}</h3>
                     {test.duration > 0 && (
-                      <span className="text-[#a1a1aa] text-xs">{test.duration}ms</span>
+                      <span className="text-muted-foreground text-xs">{test.duration}ms</span>
                     )}
                   </div>
                   {test.message && (
@@ -438,29 +438,29 @@ export default function TestTRPCPage() {
 
         {/* Test Summary */}
         {!isRunning && (
-          <div className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
+          <div className="bg-card border border-border rounded-xl p-6">
             <h2 className="text-xl font-bold uppercase tracking-wide mb-4">Test Summary</h2>
             <div className="grid grid-cols-3 gap-4 text-center">
-              <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-4">
+              <div className="bg-background border border-border rounded-lg p-4">
                 <div className="text-3xl font-black text-green-500">{passedCount}</div>
-                <div className="text-xs uppercase tracking-wide text-[#a1a1aa] mt-1">Passed</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mt-1">Passed</div>
               </div>
-              <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-4">
+              <div className="bg-background border border-border rounded-lg p-4">
                 <div className="text-3xl font-black text-red-500">{failedCount}</div>
-                <div className="text-xs uppercase tracking-wide text-[#a1a1aa] mt-1">Failed</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mt-1">Failed</div>
               </div>
-              <div className="bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg p-4">
-                <div className="text-3xl font-black text-[#f97316]">
+              <div className="bg-background border border-border rounded-lg p-4">
+                <div className="text-3xl font-black text-primary">
                   {testResults.reduce((sum, t) => sum + t.duration, 0)}
                 </div>
-                <div className="text-xs uppercase tracking-wide text-[#a1a1aa] mt-1">Total ms</div>
+                <div className="text-xs uppercase tracking-wide text-muted-foreground mt-1">Total ms</div>
               </div>
             </div>
 
             {/* Type Safety Verification */}
-            <div className="mt-6 p-4 bg-[#0a0a0a] border border-[#2a2a2a] rounded-lg">
+            <div className="mt-6 p-4 bg-background border border-border rounded-lg">
               <h3 className="font-bold uppercase tracking-wide mb-2">Type Safety Verification</h3>
-              <ul className="text-sm text-[#a1a1aa] space-y-1">
+              <ul className="text-sm text-muted-foreground space-y-1">
                 <li>✓ End-to-end type safety via tRPC</li>
                 <li>✓ Zod schema validation on server</li>
                 <li>✓ Auto-completion in TypeScript</li>

@@ -13,14 +13,14 @@ export default function SettingsPage() {
     <>
       <NavBar />
       <div className="md:pt-14 pb-20 md:pb-0">
-        <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa]">
+        <div className="min-h-screen bg-background text-foreground">
           <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
             {/* Page Header */}
             <div>
               <h1 className="text-3xl font-heading uppercase tracking-wider">
-                <span className="text-[#f97316]">///</span> Settings
+                <span className="text-primary">///</span> Settings
               </h1>
-              <p className="text-sm text-[#a1a1aa] mt-1">
+              <p className="text-sm text-muted-foreground mt-1">
                 Manage your profile and preferences
               </p>
             </div>

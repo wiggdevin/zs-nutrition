@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 interface MealNutrition {
   kcal: number;
@@ -249,7 +249,7 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({ alternatives });
   } catch (error) {
-    safeLogError('Error fetching swap alternatives:', error);
+    logger.error('Error fetching swap alternatives:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

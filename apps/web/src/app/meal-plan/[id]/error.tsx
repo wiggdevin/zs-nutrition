@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/safe-logger'
 
 export default function MealPlanError({
   error,
@@ -11,7 +12,7 @@ export default function MealPlanError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Meal plan error:', error)
+    logger.error('Meal plan error:', error)
   }, [error])
 
   return (

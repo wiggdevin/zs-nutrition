@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
+import { logger } from "@/lib/safe-logger";
 
 interface PlanSummary {
   id: string;
@@ -42,7 +43,7 @@ export default function SettingsPlanHistory() {
           setError(data.error || "Failed to load plan history");
         }
       } catch (err) {
-        console.error("Error fetching plan history:", err);
+        logger.error("Error fetching plan history:", err);
         setError("Failed to load plan history");
       } finally {
         setLoading(false);
@@ -54,11 +55,11 @@ export default function SettingsPlanHistory() {
 
   if (loading) {
     return (
-      <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-[#fafafa]">Plan History</h2>
-            <p className="mt-1 text-sm text-[#a1a1aa]">Loading...</p>
+            <h2 className="text-lg font-semibold text-foreground">Plan History</h2>
+            <p className="mt-1 text-sm text-muted-foreground">Loading...</p>
           </div>
           <div className="h-6 w-24 rounded skeleton-shimmer" />
         </div>
@@ -68,11 +69,11 @@ export default function SettingsPlanHistory() {
 
   if (error) {
     return (
-      <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+      <div className="rounded-lg border border-border bg-card p-6">
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-lg font-semibold text-[#fafafa]">Plan History</h2>
-            <p className="mt-1 text-sm text-[#ef4444]">{error}</p>
+            <h2 className="text-lg font-semibold text-foreground">Plan History</h2>
+            <p className="mt-1 text-sm text-destructive">{error}</p>
           </div>
         </div>
       </div>
@@ -80,11 +81,11 @@ export default function SettingsPlanHistory() {
   }
 
   return (
-    <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+    <div className="rounded-lg border border-border bg-card p-6">
       <div className="flex items-center justify-between mb-4">
         <div>
-          <h2 className="text-lg font-semibold text-[#fafafa]">Plan History</h2>
-          <p className="mt-1 text-sm text-[#a1a1aa]">
+          <h2 className="text-lg font-semibold text-foreground">Plan History</h2>
+          <p className="mt-1 text-sm text-muted-foreground">
             {plans.length === 0
               ? "No plans generated yet"
               : `${plans.length} ${plans.length === 1 ? "plan" : "plans"} generated`}
@@ -93,7 +94,7 @@ export default function SettingsPlanHistory() {
         {plans.length > 0 && (
           <Link
             href="/meal-plan/history"
-            className="text-sm font-medium text-[#f97316] hover:text-[#ea580c] transition-colors"
+            className="text-sm font-medium text-primary hover:text-primary/90 transition-colors"
           >
             View All →
           </Link>
@@ -102,7 +103,7 @@ export default function SettingsPlanHistory() {
 
       {plans.length === 0 ? (
         <div className="py-8 text-center">
-          <p className="text-sm text-[#a1a1aa]">
+          <p className="text-sm text-muted-foreground">
             Generate your first meal plan to see it here
           </p>
         </div>
@@ -112,7 +113,7 @@ export default function SettingsPlanHistory() {
             <Link
               key={plan.id}
               href={`/meal-plan/${plan.id}`}
-              className="block rounded border border-[#2a2a2a] bg-[#0a0a0a] p-4 transition-all hover:border-[#3a3a3a] hover:bg-[#1a1a1a]"
+              className="block rounded border border-border bg-background p-4 transition-all hover:border-border/80 hover:bg-card"
               data-testid={`settings-plan-card-${plan.id}`}
             >
               <div className="flex items-start justify-between gap-3">
@@ -121,14 +122,14 @@ export default function SettingsPlanHistory() {
                   <div className="flex items-center gap-2 mb-2">
                     {plan.isActive ? (
                       <span
-                        className="rounded bg-[#22c55e]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#22c55e]"
+                        className="rounded bg-success/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-success"
                         data-testid={`settings-active-badge-${plan.id}`}
                       >
                         ✓ Active
                       </span>
                     ) : (
                       <span
-                        className="rounded bg-[#a1a1aa]/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-[#a1a1aa]"
+                        className="rounded bg-muted-foreground/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground"
                         data-testid={`settings-inactive-badge-${plan.id}`}
                       >
                         {plan.status === "replaced"
@@ -144,10 +145,10 @@ export default function SettingsPlanHistory() {
                       <span
                         className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                           plan.qaScore >= 80
-                            ? "bg-[#22c55e]/20 text-[#22c55e]"
+                            ? "bg-success/20 text-success"
                             : plan.qaScore >= 60
-                            ? "bg-[#f59e0b]/20 text-[#f59e0b]"
-                            : "bg-[#ef4444]/20 text-[#ef4444]"
+                            ? "bg-warning/20 text-warning"
+                            : "bg-destructive/20 text-destructive"
                         }`}
                         data-testid={`settings-qa-score-${plan.id}`}
                       >
@@ -158,7 +159,7 @@ export default function SettingsPlanHistory() {
 
                   {/* Plan Title */}
                   <h3
-                    className="text-sm font-semibold text-[#fafafa] truncate"
+                    className="text-sm font-semibold text-foreground truncate"
                     data-testid={`settings-plan-title-${plan.id}`}
                   >
                     {plan.planDays}-Day Plan
@@ -167,7 +168,7 @@ export default function SettingsPlanHistory() {
 
                   {/* Generated Date */}
                   <p
-                    className="mt-1 text-xs text-[#a1a1aa]"
+                    className="mt-1 text-xs text-muted-foreground"
                     data-testid={`settings-plan-date-${plan.id}`}
                   >
                     Generated{" "}
@@ -185,18 +186,18 @@ export default function SettingsPlanHistory() {
                   <div className="mt-2 flex flex-wrap gap-3 text-xs">
                     {plan.dailyKcalTarget && (
                       <div className="flex items-center gap-1">
-                        <span className="font-mono font-bold text-[#f97316]">
+                        <span className="font-mono font-bold text-primary">
                           {plan.dailyKcalTarget}
                         </span>
-                        <span className="text-[#a1a1aa]">kcal/day</span>
+                        <span className="text-muted-foreground">kcal/day</span>
                       </div>
                     )}
                     {plan.dailyProteinG && (
                       <div className="flex items-center gap-1">
-                        <span className="font-mono font-bold text-[#3b82f6]">
+                        <span className="font-mono font-bold text-chart-3">
                           {plan.dailyProteinG}g
                         </span>
-                        <span className="text-[#a1a1aa]">protein</span>
+                        <span className="text-muted-foreground">protein</span>
                       </div>
                     )}
                   </div>
@@ -204,7 +205,7 @@ export default function SettingsPlanHistory() {
 
                 {/* Arrow Icon */}
                 <svg
-                  className="w-4 h-4 flex-shrink-0 text-[#a1a1aa]"
+                  className="w-4 h-4 flex-shrink-0 text-muted-foreground"
                   fill="none"
                   viewBox="0 0 24 24"
                   stroke="currentColor"
@@ -223,7 +224,7 @@ export default function SettingsPlanHistory() {
           {plans.length > 3 && (
             <Link
               href="/meal-plan/history"
-              className="block rounded border border-[#2a2a2a] bg-[#0a0a0a] p-3 text-center text-sm text-[#a1a1aa] transition-all hover:border-[#3a3a3a] hover:bg-[#1a1a1a] hover:text-[#fafafa]"
+              className="block rounded border border-border bg-background p-3 text-center text-sm text-muted-foreground transition-all hover:border-border/80 hover:bg-card hover:text-foreground"
             >
               View {plans.length - 3} more {plans.length - 3 === 1 ? "plan" : "plans"} →
             </Link>

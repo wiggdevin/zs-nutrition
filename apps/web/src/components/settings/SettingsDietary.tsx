@@ -188,22 +188,22 @@ export default function SettingsDietary() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+      <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-          <span className="text-sm text-[#a1a1aa]">Loading dietary preferences...</span>
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-sm text-muted-foreground">Loading dietary preferences...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6" data-testid="dietary-section">
+    <div className="rounded-2xl border border-border bg-card p-6" data-testid="dietary-section">
       <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
-          <span className="text-[#f97316]">///</span> Dietary Preferences
+        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
+          <span className="text-primary">///</span> Dietary Preferences
         </h2>
-        <p className="mt-1 text-sm text-[#a1a1aa]">
+        <p className="mt-1 text-sm text-muted-foreground">
           Manage your dietary style, allergies, and exclusions
         </p>
       </div>
@@ -211,7 +211,7 @@ export default function SettingsDietary() {
       <div className="space-y-5">
         {/* Dietary Style */}
         <div>
-          <label id="settings-dietary-style-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label id="settings-dietary-style-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Dietary Style
           </label>
           <div className="grid grid-cols-3 gap-2">
@@ -222,8 +222,8 @@ export default function SettingsDietary() {
                 data-testid={`settings-diet-${value}`}
                 className={`rounded-lg border px-3 py-2.5 text-xs font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
                   dietaryStyle === value
-                    ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-border/80"
                 }`}
               >
                 {label}
@@ -234,7 +234,7 @@ export default function SettingsDietary() {
 
         {/* Allergies */}
         <div>
-          <label id="settings-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label id="settings-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Allergies
           </label>
 
@@ -244,10 +244,10 @@ export default function SettingsDietary() {
               <button
                 key={allergy}
                 onClick={() => toggleAllergy(allergy)}
-                className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+                className={`rounded-full border px-4 py-2.5 text-xs font-medium transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                   allergies.includes(allergy.toLowerCase())
-                    ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                    ? "border-destructive bg-destructive/10 text-destructive"
+                    : "border-border bg-card text-muted-foreground hover:border-border/80"
                 }`}
                 aria-pressed={allergies.includes(allergy.toLowerCase())}
               >
@@ -265,11 +265,11 @@ export default function SettingsDietary() {
               onChange={(e) => setAllergyInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addAllergy()}
               placeholder="Type custom allergy and press Enter"
-              className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-3 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+              className="flex-1 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder-muted-foreground/50 outline-none focus:border-primary min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             />
             <button
               onClick={addAllergy}
-              className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+              className="rounded-lg bg-border px-4 py-3 text-sm font-bold text-foreground hover:bg-secondary min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
             >
               Add
             </button>
@@ -281,12 +281,12 @@ export default function SettingsDietary() {
               {allergies.map((allergy) => (
                 <span
                   key={allergy}
-                  className="flex items-center gap-1 rounded-full border border-[#ef4444] bg-[#ef4444]/10 px-3 py-1 text-xs text-[#ef4444]"
+                  className="flex items-center gap-1 rounded-full border border-destructive bg-destructive/10 px-3 py-1 text-xs text-destructive"
                 >
                   {allergy}
                   <button
                     onClick={() => removeAllergy(allergy)}
-                    className="ml-1 hover:text-[#f87171] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] rounded"
+                    className="ml-1 hover:text-destructive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded"
                     aria-label={`Remove ${allergy}`}
                   >
                     &times;
@@ -299,7 +299,7 @@ export default function SettingsDietary() {
 
         {/* Exclusions */}
         <div>
-          <label htmlFor="settings-exclusions" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label htmlFor="settings-exclusions" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Food Exclusions
           </label>
           <div className="flex gap-2">
@@ -310,11 +310,11 @@ export default function SettingsDietary() {
               onChange={(e) => setExclusionInput(e.target.value)}
               onKeyDown={(e) => e.key === "Enter" && addExclusion()}
               placeholder="e.g., mushrooms, cilantro"
-              className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-3 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316] min-h-[44px]"
+              className="flex-1 rounded-lg border border-border bg-card px-4 py-3 text-sm text-foreground placeholder-muted-foreground/50 outline-none focus:border-primary min-h-[44px]"
             />
             <button
               onClick={addExclusion}
-              className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px]"
+              className="rounded-lg bg-border px-4 py-3 text-sm font-bold text-foreground hover:bg-secondary min-h-[44px]"
             >
               Add
             </button>
@@ -322,9 +322,9 @@ export default function SettingsDietary() {
           {exclusions.length > 0 && (
             <div className="mt-2 flex flex-wrap gap-2">
               {exclusions.map((item) => (
-                <span key={item} className="flex items-center gap-1 rounded-full border border-[#2a2a2a] bg-[#1e1e1e] px-3 py-1 text-xs text-[#a1a1aa]">
+                <span key={item} className="flex items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
                   {item}
-                  <button onClick={() => removeExclusion(item)} className="ml-1 text-[#ef4444] hover:text-[#f87171]">&times;</button>
+                  <button onClick={() => removeExclusion(item)} className="ml-1 text-destructive hover:text-destructive/80">&times;</button>
                 </span>
               ))}
             </div>
@@ -333,7 +333,7 @@ export default function SettingsDietary() {
 
         {/* Cuisine Preferences */}
         <div>
-          <label id="settings-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label id="settings-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Cuisine Preferences (select favorites)
           </label>
           <div className="flex flex-wrap gap-2" role="group" aria-labelledby="settings-cuisine-label">
@@ -349,10 +349,10 @@ export default function SettingsDietary() {
                   }
                 }}
                 aria-pressed={cuisinePrefs.includes(cuisine.toLowerCase())}
-                className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+                className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                   cuisinePrefs.includes(cuisine.toLowerCase())
-                    ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-border/80"
                 }`}
                 title={cuisine}
               >
@@ -369,8 +369,8 @@ export default function SettingsDietary() {
         </div>
       )}
       {success && (
-        <div className="mt-4 rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-3">
-          <p className="text-sm text-[#22c55e]">Dietary preferences updated!</p>
+        <div className="mt-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
+          <p className="text-sm text-success">Dietary preferences updated!</p>
         </div>
       )}
 
@@ -381,8 +381,8 @@ export default function SettingsDietary() {
           data-testid="settings-dietary-save"
           className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
-              ? "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] cursor-pointer"
-              : "bg-[#f97316]/30 text-white/50 cursor-not-allowed"
+              ? "bg-primary hover:bg-primary/90 text-background cursor-pointer"
+              : "bg-primary/30 text-white/50 cursor-not-allowed"
           }`}
         >
           {saving ? (
@@ -395,7 +395,7 @@ export default function SettingsDietary() {
           )}
         </button>
         {dirty && (
-          <button onClick={handleReset} className="rounded-lg border border-[#2a2a2a] px-4 py-2.5 text-sm text-[#a1a1aa] hover:bg-[#252525] transition-colors">
+          <button onClick={handleReset} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors">
             Reset
           </button>
         )}

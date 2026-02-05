@@ -26,19 +26,19 @@ function TestResultCard({ result }: { result: TestResult }) {
         <span className={`text-lg ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
           {result.passed ? '✅' : '❌'}
         </span>
-        <h3 className="font-bold text-[#fafafa]">{result.name}</h3>
+        <h3 className="font-bold text-foreground">{result.name}</h3>
       </div>
-      <p className="text-sm text-[#a1a1aa] mb-2">{result.details}</p>
+      <p className="text-sm text-muted-foreground mb-2">{result.details}</p>
       <div className="grid grid-cols-2 gap-2 mt-3 text-xs">
         <div>
-          <span className="text-[#666]">Error Code:</span>
-          <span className="ml-2 font-mono text-[#fafafa]" data-testid={`error-code-${result.name.replace(/\s+/g, '-')}`}>
+          <span className="text-muted-foreground">Error Code:</span>
+          <span className="ml-2 font-mono text-foreground" data-testid={`error-code-${result.name.replace(/\s+/g, '-')}`}>
             {result.errorCode || 'N/A'}
           </span>
         </div>
         <div>
-          <span className="text-[#666]">Message:</span>
-          <span className="ml-2 text-[#a1a1aa]" data-testid={`error-message-${result.name.replace(/\s+/g, '-')}`}>
+          <span className="text-muted-foreground">Message:</span>
+          <span className="ml-2 text-muted-foreground" data-testid={`error-message-${result.name.replace(/\s+/g, '-')}`}>
             {result.errorMessage || 'N/A'}
           </span>
         </div>
@@ -309,18 +309,18 @@ export default function TestFeature489Page() {
   const allPassed = results.length > 0 && results.every((r) => r.passed)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold text-[#fafafa] mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           tRPC Structured Error Handling Tests
         </h1>
-        <p className="text-[#a1a1aa] mb-6">
+        <p className="text-muted-foreground mb-6">
           Feature #489: tRPC errors include error codes and messages for client handling
         </p>
 
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-lg p-4 mb-6">
-          <h2 className="text-sm font-bold text-[#a1a1aa] mb-3">Test Scenarios</h2>
-          <ul className="space-y-1 text-xs text-[#888]">
+        <div className="bg-card border border-border rounded-lg p-4 mb-6">
+          <h2 className="text-sm font-bold text-muted-foreground mb-3">Test Scenarios</h2>
+          <ul className="space-y-1 text-xs text-muted-foreground">
             <li>1. Trigger validation error via tRPC → verify BAD_REQUEST code</li>
             <li>2. Trigger validation error → verify message field exists</li>
             <li>3. Trigger auth error → verify UNAUTHORIZED code</li>
@@ -332,7 +332,7 @@ export default function TestFeature489Page() {
         <button
           onClick={runTests}
           disabled={isRunning}
-          className="mb-6 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:opacity-50 text-[#0a0a0a] font-bold rounded-lg transition-colors"
+          className="mb-6 px-6 py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-background font-bold rounded-lg transition-colors"
           data-testid="run-tests"
         >
           {isRunning ? 'Running Tests...' : 'Run All Error Handling Tests'}

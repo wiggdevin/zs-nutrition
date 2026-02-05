@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * POST /api/fitness/connect
@@ -51,7 +52,7 @@ export async function POST(req: NextRequest) {
       platform,
     });
   } catch (error) {
-    console.error('Error initiating fitness platform connection:', error);
+    logger.error('Error initiating fitness platform connection:', error);
     return NextResponse.json(
       { error: 'Failed to initiate connection' },
       { status: 500 },

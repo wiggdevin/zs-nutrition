@@ -250,7 +250,7 @@ export function WeightTrackingCard() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">On Track:</span>
-                    <span className={`font-medium ${trend.isOnTrack ? 'text-green-600' : 'text-orange-600'}`}>
+                    <span className={`font-medium ${trend.isOnTrack ? 'text-green-600' : 'text-primary/90'}`}>
                       {trend.isOnTrack ? 'Yes ✓' : 'Not quite'}
                     </span>
                   </div>

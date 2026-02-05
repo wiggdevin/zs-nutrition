@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
 import { mealSwapLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 interface MealNutrition {
   kcal: number;
@@ -135,7 +135,7 @@ export async function POST(req: NextRequest) {
     });
     return response;
   } catch (error) {
-    safeLogError('Error swapping meal:', error);
+    logger.error('Error swapping meal:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

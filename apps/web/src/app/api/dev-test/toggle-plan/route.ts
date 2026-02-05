@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { getClerkUserId } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * POST /api/dev-test/toggle-plan
@@ -49,7 +49,7 @@ export async function POST(req: Request) {
       plansUpdated: plans.length,
     });
   } catch (error) {
-    safeLogError('Error toggling plan:', error);
+    logger.error('Error toggling plan:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

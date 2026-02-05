@@ -4,6 +4,7 @@ import { useEffect, useState, useCallback, useRef } from "react";
 import Link from "next/link";
 import NavBar from '@/components/navigation/NavBar';
 import MealDetailModal from '@/components/meal-plan/MealDetailModal';
+import { logger } from '@/lib/safe-logger';
 
 interface MealNutrition {
   kcal: number;
@@ -172,7 +173,7 @@ interface SwapTarget {
 function MealCardSkeleton() {
   return (
     <div
-      className="rounded-lg border border-[#2a2a2a] card-elevation p-3"
+      className="rounded-lg border border-border card-elevation p-3"
       data-testid="meal-swap-skeleton"
     >
       <div className="flex items-center gap-2 mb-2">
@@ -215,20 +216,20 @@ function SwapModal({
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="swap-modal">
-      <div className="relative mx-4 w-full max-w-lg rounded-xl border border-[#2a2a2a] card-elevation-modal">
+      <div className="relative mx-4 w-full max-w-lg rounded-xl border border-border card-elevation-modal">
         {/* Modal header */}
-        <div className="flex items-center justify-between border-b border-[#2a2a2a] px-5 py-4">
+        <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>
-            <h3 className="text-sm font-bold uppercase tracking-wider text-[#fafafa]">
+            <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
               Swap Meal
             </h3>
-            <p className="mt-0.5 text-xs text-[#a1a1aa]">
-              Replace <span className="text-[#f97316] font-semibold">{target.meal.name}</span>
+            <p className="mt-0.5 text-xs text-muted-foreground">
+              Replace <span className="text-primary font-semibold">{target.meal.name}</span>
             </p>
           </div>
           <button
             onClick={onClose}
-            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] text-[#a1a1aa] transition-colors hover:bg-[#2a2a2a] hover:text-[#fafafa]"
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-border hover:text-foreground"
             data-testid="swap-modal-close"
             aria-label="Close swap modal"
           >
@@ -243,7 +244,7 @@ function SwapModal({
           {loading ? (
             <div className="space-y-3" data-testid="swap-alternatives-loading">
               {[1, 2, 3].map((i) => (
-                <div key={i} className="rounded-lg border border-[#2a2a2a] card-elevation p-4">
+                <div key={i} className="rounded-lg border border-border card-elevation p-4">
                   <div className="h-4 w-2/3 rounded skeleton-shimmer" />
                   <div className="mt-2 h-3 w-1/2 rounded skeleton-shimmer" />
                   <div className="mt-2 flex gap-2">
@@ -256,7 +257,7 @@ function SwapModal({
             </div>
           ) : alternatives.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm text-[#a1a1aa]">No alternatives available for this meal slot.</p>
+              <p className="text-sm text-muted-foreground">No alternatives available for this meal slot.</p>
             </div>
           ) : (
             <div className="space-y-3" data-testid="swap-alternatives-list">
@@ -265,43 +266,43 @@ function SwapModal({
                   key={idx}
                   onClick={() => handleSelect(alt)}
                   disabled={selecting}
-                  className={`w-full rounded-lg border border-[#2a2a2a] card-elevation p-4 text-left transition-all ${
+                  className={`w-full rounded-lg border border-border card-elevation p-4 text-left transition-all ${
                     selecting
                       ? "opacity-50 cursor-not-allowed"
-                      : "hover:border-[#f97316]/50"
+                      : "hover:border-primary/50"
                   }`}
                   data-testid={`swap-alternative-${idx}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-[#fafafa] truncate" title={alt.name}>
+                      <h4 className="text-sm font-semibold text-foreground truncate" title={alt.name}>
                         {alt.name}
                       </h4>
                       {alt.cuisine && (
-                        <p className="mt-0.5 text-xs text-[#71717a]">{alt.cuisine}</p>
+                        <p className="mt-0.5 text-xs text-muted-foreground">{alt.cuisine}</p>
                       )}
-                      <div className="mt-1 text-[10px] text-[#71717a]">
+                      <div className="mt-1 text-[10px] text-muted-foreground">
                         {alt.prepTimeMin ? `${alt.prepTimeMin}m prep` : ""}
                         {alt.prepTimeMin && alt.cookTimeMin ? " + " : ""}
                         {alt.cookTimeMin ? `${alt.cookTimeMin}m cook` : ""}
                       </div>
                     </div>
-                    <span className="ml-2 rounded bg-[#f97316]/20 px-2 py-1 text-[10px] font-bold text-[#f97316]">
+                    <span className="ml-2 rounded bg-primary/20 px-2 py-1 text-[10px] font-bold text-primary">
                       SELECT
                     </span>
                   </div>
                   {/* Macro pills */}
                   <div className="mt-2 flex flex-wrap gap-1.5">
-                    <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-0.5 text-[10px] font-bold text-[#f97316]">
+                    <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
                       {alt.nutrition.kcal} kcal
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-0.5 text-[10px] font-bold text-[#3b82f6]">
+                    <span className="inline-flex items-center rounded-full bg-chart-3/15 px-2 py-0.5 text-[10px] font-bold text-chart-3">
                       P {alt.nutrition.proteinG}g
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-0.5 text-[10px] font-bold text-[#f59e0b]">
+                    <span className="inline-flex items-center rounded-full bg-warning/15 px-2 py-0.5 text-[10px] font-bold text-warning">
                       C {alt.nutrition.carbsG}g
                     </span>
-                    <span className="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-0.5 text-[10px] font-bold text-[#ef4444]">
+                    <span className="inline-flex items-center rounded-full bg-destructive/15 px-2 py-0.5 text-[10px] font-bold text-destructive">
                       F {alt.nutrition.fatG}g
                     </span>
                   </div>
@@ -348,30 +349,30 @@ function DayColumn({
   const dayTotalFat = day.meals.reduce((sum, m) => sum + m.nutrition.fatG, 0);
 
   return (
-    <div className="flex flex-col rounded-lg border border-[#2a2a2a] card-elevation overflow-hidden" data-testid={`day-column-${day.dayNumber}`}>
+    <div className="flex flex-col rounded-lg border border-border card-elevation overflow-hidden" data-testid={`day-column-${day.dayNumber}`}>
       {/* Day header - prominent and distinguishable */}
-      <div className="border-b border-[#2a2a2a] bg-gradient-to-b from-[#1a1a1a] to-[#141414] px-4 py-4 text-center">
-        <h3 className="text-base font-black uppercase tracking-widest text-[#fafafa]">
+      <div className="border-b border-border bg-gradient-to-b from-card to-card px-4 py-4 text-center">
+        <h3 className="text-base font-black uppercase tracking-widest text-foreground">
           {day.dayName}
           {day.isTrainingDay && (
             <span className="ml-2 text-xs" title="Training Day">&#x1F4AA;</span>
           )}
         </h3>
-        <p className="mt-1 font-mono text-xs font-semibold text-[#a1a1aa]">
+        <p className="mt-1 font-mono text-xs font-semibold text-muted-foreground">
           {day.targetKcal} kcal target
         </p>
       </div>
 
       {/* Day macro summary - visually distinct from cards */}
-      <div className="border-b border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 shadow-inner">
+      <div className="border-b border-border bg-background px-4 py-3 shadow-inner">
         <div className="text-center">
-          <span className="text-lg font-black text-[#f97316]">{dayTotalKcal}</span>
-          <span className="ml-1 text-xs font-semibold text-[#a1a1aa]">kcal</span>
+          <span className="text-lg font-black text-primary">{dayTotalKcal}</span>
+          <span className="ml-1 text-xs font-semibold text-muted-foreground">kcal</span>
         </div>
         <div className="mt-1.5 flex justify-center gap-3 text-xs font-semibold">
-          <span className="text-[#3b82f6]">P {dayTotalProtein}g</span>
-          <span className="text-[#f59e0b]">C {dayTotalCarbs}g</span>
-          <span className="text-[#ef4444]">F {dayTotalFat}g</span>
+          <span className="text-chart-3">P {dayTotalProtein}g</span>
+          <span className="text-warning">C {dayTotalCarbs}g</span>
+          <span className="text-destructive">F {dayTotalFat}g</span>
         </div>
       </div>
 
@@ -393,11 +394,11 @@ function DayColumn({
           return (
             <div
               key={mealIdx}
-              className={`group relative rounded-lg border border-[#2a2a2a] card-elevation p-3 transition-all outline-none ${
+              className={`group relative rounded-lg border border-border card-elevation p-3 transition-all outline-none ${
                 isSwapSuccess
                   ? "border-green-500/60 bg-green-500/5 ring-1 ring-green-500/30"
-                  : "hover:border-[#3a3a3a]"
-              } focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:border-[#f97316]`}
+                  : "hover:border-border/80"
+              } focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`}
               onClick={() => onMealClick(day.dayNumber, mealIdx, meal)}
               onKeyDown={(e) => handleMealKeyDown(e, day.dayNumber, mealIdx, meal)}
               tabIndex={0}
@@ -436,10 +437,10 @@ function DayColumn({
                   if (!swapInProgress) onSwapClick(day.dayNumber, mealIdx, meal);
                 }}
                 disabled={swapInProgress}
-                className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-[#a1a1aa] transition-all ${
+                className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-all ${
                   swapInProgress
                     ? "opacity-30 cursor-not-allowed"
-                    : "opacity-0 group-hover:opacity-100 hover:border-[#f97316]/50 hover:bg-[#f97316]/10 hover:text-[#f97316]"
+                    : "opacity-0 group-hover:opacity-100 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
                 }`}
                 data-testid={`swap-icon-${day.dayNumber}-${mealIdx}`}
                 aria-label={`Swap ${meal.name}`}
@@ -452,15 +453,15 @@ function DayColumn({
 
               {/* Slot label + Confidence badge */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="rounded-md bg-[#f97316]/20 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[#f97316] border border-[#f97316]/30">
+                <span className="rounded-md bg-primary/20 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-primary border border-primary/30">
                   {meal.slot}
                 </span>
                 <span
                   data-testid={`confidence-badge-${day.dayNumber}-${mealIdx}`}
                   className={`rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider border ${
                     meal.confidenceLevel === "verified"
-                      ? "bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/30"
-                      : "bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30"
+                      ? "bg-success/20 text-success border-success/30"
+                      : "bg-warning/20 text-warning border-warning/30"
                   }`}
                 >
                   {meal.confidenceLevel === "verified" ? "✓ Verified" : "⚡ AI-Estimated"}
@@ -469,7 +470,7 @@ function DayColumn({
 
               {/* Meal name - primary visual element in card */}
               <h4
-                className="text-sm font-bold text-[#fafafa] leading-snug pr-7 line-clamp-2"
+                className="text-sm font-bold text-foreground leading-snug pr-7 line-clamp-2"
                 data-testid={`meal-name-${day.dayNumber}-${mealIdx}`}
                 title={meal.name}
               >
@@ -477,11 +478,11 @@ function DayColumn({
               </h4>
 
               {meal.cuisine && (
-                <p className="mt-1 text-[11px] font-medium text-[#a1a1aa]">{meal.cuisine}</p>
+                <p className="mt-1 text-[11px] font-medium text-muted-foreground">{meal.cuisine}</p>
               )}
 
               {/* Prep time indicator */}
-              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-[#a1a1aa]" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
+              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
                 <span className="text-[12px]">🕒</span>
                 <span className="font-medium">
                   {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ""}
@@ -493,16 +494,16 @@ function DayColumn({
 
               {/* Macro pills */}
               <div className="mt-2.5 flex flex-wrap gap-1.5" data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}>
-                <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-1 text-[11px] font-bold text-[#f97316] border border-[#f97316]/20">
+                <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-1 text-[11px] font-bold text-primary border border-primary/20">
                   {meal.nutrition.kcal} kcal
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-1 text-[11px] font-bold text-[#3b82f6] border border-[#3b82f6]/20">
+                <span className="inline-flex items-center rounded-full bg-chart-3/15 px-2 py-1 text-[11px] font-bold text-chart-3 border border-chart-3/20">
                   P {meal.nutrition.proteinG}g
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-1 text-[11px] font-bold text-[#f59e0b] border border-[#f59e0b]/20">
+                <span className="inline-flex items-center rounded-full bg-warning/15 px-2 py-1 text-[11px] font-bold text-warning border border-warning/20">
                   C {meal.nutrition.carbsG}g
                 </span>
-                <span className="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-1 text-[11px] font-bold text-[#ef4444] border border-[#ef4444]/20">
+                <span className="inline-flex items-center rounded-full bg-destructive/15 px-2 py-1 text-[11px] font-bold text-destructive border border-destructive/20">
                   F {meal.nutrition.fatG}g
                 </span>
               </div>
@@ -597,7 +598,7 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
       setCopySuccess(true);
       setTimeout(() => setCopySuccess(false), 2000);
     } catch (err) {
-      console.error('Failed to copy to clipboard:', err);
+      logger.error('Failed to copy to clipboard:', err);
     }
   }, [formatGroceryListText]);
 
@@ -618,7 +619,7 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
   return (
     <div className="mx-auto max-w-[1600px] pb-8" data-testid="grocery-list-section">
       {/* Section header */}
-      <div className="rounded-lg border border-[#2a2a2a] bg-[#141414]">
+      <div className="rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between px-5 py-4">
           <button
             onClick={() => setExpanded(!expanded)}
@@ -627,10 +628,10 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
           >
             <span className="text-xl">🛒</span>
             <div className="text-left">
-              <h2 className="text-lg font-bold uppercase tracking-wider text-[#fafafa]">
+              <h2 className="text-lg font-bold uppercase tracking-wider text-foreground">
                 Grocery List
               </h2>
-              <p className="text-xs text-[#a1a1aa]">
+              <p className="text-xs text-muted-foreground">
                 {totalItems} items across {groceryList.length} categories
               </p>
             </div>
@@ -640,7 +641,7 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
           <div className="flex items-center gap-2 ml-4">
             <button
               onClick={handleCopyToClipboard}
-              className="flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:bg-[#2a2a2a] hover:text-[#fafafa]"
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-border hover:text-foreground"
               data-testid="grocery-copy-button"
               aria-label="Copy grocery list to clipboard"
               title="Copy to clipboard"
@@ -664,7 +665,7 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
             </button>
             <button
               onClick={handleDownloadText}
-              className="flex items-center gap-1.5 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:bg-[#2a2a2a] hover:text-[#fafafa]"
+              className="flex items-center gap-1.5 rounded-lg border border-border bg-card px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-border hover:text-foreground"
               data-testid="grocery-download-button"
               aria-label="Download grocery list as text file"
               title="Download as text"
@@ -687,7 +688,7 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
                 height="20"
                 viewBox="0 0 24 24"
                 fill="none"
-                className={`text-[#a1a1aa] transition-transform ${expanded ? 'rotate-180' : ''}`}
+                className={`text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
               >
                 <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
               </svg>
@@ -702,34 +703,34 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
           {groceryList.map((cat) => (
             <div
               key={cat.category}
-              className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden"
+              className="rounded-lg border border-border bg-card overflow-hidden"
               data-testid={`grocery-category-${cat.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
             >
               {/* Category header */}
-              <div className="border-b border-[#2a2a2a] bg-[#141414] px-4 py-3">
+              <div className="border-b border-border bg-card px-4 py-3">
                 <div className="flex items-center gap-2">
                   <span className="text-base">{getCategoryIcon(cat.category)}</span>
-                  <h3 className="text-sm font-bold uppercase tracking-wider text-[#fafafa]">
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-foreground">
                     {cat.category}
                   </h3>
-                  <span className="ml-auto rounded-full bg-[#f97316]/15 px-2 py-0.5 text-[10px] font-bold text-[#f97316]">
+                  <span className="ml-auto rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-bold text-primary">
                     {cat.items.length}
                   </span>
                 </div>
               </div>
 
               {/* Items */}
-              <div className="divide-y divide-[#2a2a2a]">
+              <div className="divide-y divide-border">
                 {cat.items.map((item, idx) => (
                   <div
                     key={idx}
-                    className="flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-[#222]"
+                    className="flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-secondary"
                     data-testid={`grocery-item-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                   >
-                    <span className="text-sm text-[#fafafa] break-words" title={item.name || 'Unknown Item'}>
+                    <span className="text-sm text-foreground break-words" title={item.name || 'Unknown Item'}>
                       {item.name || 'Unknown Item'}
                     </span>
-                    <span className="ml-3 flex-shrink-0 whitespace-nowrap rounded bg-[#2a2a2a] px-2 py-0.5 font-mono text-xs font-bold text-[#a1a1aa]" data-testid={`grocery-amount-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                    <span className="ml-3 flex-shrink-0 whitespace-nowrap rounded bg-border px-2 py-0.5 font-mono text-xs font-bold text-muted-foreground" data-testid={`grocery-amount-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
                       {formatGroceryAmount(item.amount, item.unit)}
                     </span>
                   </div>
@@ -800,7 +801,7 @@ export default function MealPlanPage() {
       // Ignore aborted requests (user navigated away or new fetch started)
       if (err instanceof DOMException && err.name === 'AbortError') return;
       if (generation !== planFetchGenRef.current) return;
-      console.error("Error fetching meal plan:", err);
+      logger.error("Error fetching meal plan:", err);
       setError("Failed to load meal plan. Please check your connection and try again.");
     } finally {
       if (generation === planFetchGenRef.current) {
@@ -836,7 +837,7 @@ export default function MealPlanPage() {
     } catch (err) {
       // Ignore aborted requests and errors - this is a non-critical check
       if (err instanceof DOMException && err.name === 'AbortError') return;
-      console.debug('Error checking plan status (non-critical):', err);
+      logger.debug('Error checking plan status (non-critical):', err);
     }
   }, [plan?.id]);
 
@@ -910,7 +911,7 @@ export default function MealPlanPage() {
           }
         }
       } catch (err) {
-        console.error("Failed to fetch swap alternatives:", err);
+        logger.error("Failed to fetch swap alternatives:", err);
       } finally {
         setSwapLoading(false);
         swapLockRef.current = false;
@@ -987,7 +988,7 @@ export default function MealPlanPage() {
 
             // If this is the last attempt, we'll handle it after the loop
             if (attempt < MAX_RETRIES - 1) {
-              console.log(`Swap attempt ${attempt + 1} failed, retrying... (${lastError.message})`);
+              logger.debug(`Swap attempt ${attempt + 1} failed, retrying... (${lastError.message})`);
               await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
             }
           }
@@ -996,14 +997,14 @@ export default function MealPlanPage() {
 
           // Network error or other exception - retry if attempts remain
           if (attempt < MAX_RETRIES - 1) {
-            console.log(`Swap attempt ${attempt + 1} failed with error, retrying... (${lastError.message})`);
+            logger.debug(`Swap attempt ${attempt + 1} failed with error, retrying... (${lastError.message})`);
             await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
           }
         }
       }
 
       // If we get here, all retries failed
-      console.error(`Failed to swap meal after ${MAX_RETRIES} attempts:`, lastError);
+      logger.error(`Failed to swap meal after ${MAX_RETRIES} attempts:`, lastError);
       setSwapError(`Failed to swap meal after ${MAX_RETRIES} attempts. Please try again.`);
 
       // Clear skeleton state and lock
@@ -1065,7 +1066,7 @@ export default function MealPlanPage() {
           setSwapSuccess(null);
         }
       } catch (err) {
-        console.error("Failed to undo swap:", err);
+        logger.error("Failed to undo swap:", err);
       } finally {
         swapLockRef.current = false;
       }
@@ -1089,9 +1090,9 @@ export default function MealPlanPage() {
       <>
         <NavBar />
         <div className="md:pt-14 pb-20 md:pb-0">
-          <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa]">
+          <div className="min-h-screen bg-background text-foreground">
             {/* Skeleton Header */}
-            <div className="border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-6">
+            <div className="border-b border-border bg-background px-4 py-6">
               <div className="mx-auto max-w-[1600px]">
                 <div className="flex items-center justify-between">
                   <div>
@@ -1100,8 +1101,8 @@ export default function MealPlanPage() {
                     <div className="mt-2 h-4 w-48 rounded skeleton-shimmer" />
                   </div>
                   <div className="flex items-center gap-4">
-                    <div className="h-14 w-20 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] skeleton-shimmer" />
-                    <div className="h-14 w-20 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] skeleton-shimmer" />
+                    <div className="h-14 w-20 rounded-lg border border-border bg-card skeleton-shimmer" />
+                    <div className="h-14 w-20 rounded-lg border border-border bg-card skeleton-shimmer" />
                   </div>
                 </div>
               </div>
@@ -1121,15 +1122,15 @@ export default function MealPlanPage() {
               >
                 {[1, 2, 3, 4, 5, 6, 7].map((dayNum) => (
                   <div key={dayNum} className="min-w-[280px] snap-start md:min-w-0">
-                    <div className="flex flex-col rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden" data-testid={`skeleton-day-${dayNum}`}>
+                    <div className="flex flex-col rounded-lg border border-border bg-card overflow-hidden" data-testid={`skeleton-day-${dayNum}`}>
                       {/* Skeleton day header */}
-                      <div className="border-b border-[#2a2a2a] bg-gradient-to-b from-[#1a1a1a] to-[#141414] px-4 py-4 text-center">
+                      <div className="border-b border-border bg-gradient-to-b from-card to-card px-4 py-4 text-center">
                         <div className="mx-auto h-5 w-24 rounded skeleton-shimmer" />
                         <div className="mx-auto mt-2 h-3.5 w-28 rounded skeleton-shimmer" />
                       </div>
 
                       {/* Skeleton day macro summary */}
-                      <div className="border-b border-[#2a2a2a] bg-[#0d0d0d] px-4 py-3 shadow-inner">
+                      <div className="border-b border-border bg-background px-4 py-3 shadow-inner">
                         <div className="mx-auto h-5 w-20 rounded skeleton-shimmer" />
                         <div className="mt-1.5 flex justify-center gap-3">
                           <div className="h-3.5 w-12 rounded skeleton-shimmer" />
@@ -1143,7 +1144,7 @@ export default function MealPlanPage() {
                         {[1, 2, 3, 4].map((mealNum) => (
                           <div
                             key={mealNum}
-                            className="rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] p-3"
+                            className="rounded-lg border border-border bg-background p-3"
                             data-testid={`skeleton-meal-card-${dayNum}-${mealNum}`}
                           >
                             {/* Slot label + confidence badge */}
@@ -1182,16 +1183,16 @@ export default function MealPlanPage() {
       <>
         <NavBar />
         <div className="md:pt-14 pb-20 md:pb-0">
-          <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+          <div className="flex min-h-screen items-center justify-center bg-background px-4">
             <div className="w-full max-w-md text-center" data-testid="meal-plan-empty-state">
-              <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8">
-                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f97316]/10">
+              <div className="rounded-lg border border-border bg-card p-8">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
                   <span className="text-2xl">{isNetworkError ? '⚠️' : '📋'}</span>
                 </div>
-                <h2 className="text-xl font-bold text-[#fafafa]" data-testid="empty-state-message">
+                <h2 className="text-xl font-bold text-foreground" data-testid="empty-state-message">
                   {isNetworkError ? 'Connection Error' : 'No Active Plan'}
                 </h2>
-                <p className="mt-2 text-sm text-[#a1a1aa]" data-testid="empty-state-description">
+                <p className="mt-2 text-sm text-muted-foreground" data-testid="empty-state-description">
                   {error || "You haven't generated a meal plan yet."}
                 </p>
                 <div className="mt-6 flex flex-col gap-3 items-center">
@@ -1199,7 +1200,7 @@ export default function MealPlanPage() {
                     <button
                       onClick={fetchPlan}
                       data-testid="retry-button"
-                      className="inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+                      className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                     >
                       Retry
                     </button>
@@ -1208,8 +1209,8 @@ export default function MealPlanPage() {
                     href="/generate"
                     className={`inline-block rounded-lg px-6 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
                       isNetworkError
-                        ? 'border border-[#2a2a2a] text-[#a1a1aa] hover:bg-[#252525]'
-                        : 'bg-[#f97316] text-[#0a0a0a] hover:bg-[#ea580c]'
+                        ? 'border border-border text-muted-foreground hover:bg-secondary'
+                        : 'bg-primary text-background hover:bg-primary/90'
                     }`}
                     data-testid="generate-plan-cta"
                   >
@@ -1231,7 +1232,7 @@ export default function MealPlanPage() {
     <NavBar />
     {planReplaced && (
       <div
-        className="fixed top-14 left-0 right-0 z-40 border-b border-[#f97316]/50 bg-[#1a1a1a] px-4 py-3 md:top-14"
+        className="fixed top-14 left-0 right-0 z-40 border-b border-primary/50 bg-card px-4 py-3 md:top-14"
         role="alert"
         aria-live="polite"
         data-testid="plan-replaced-banner"
@@ -1239,16 +1240,16 @@ export default function MealPlanPage() {
         <div className="mx-auto max-w-[1600px]">
           <div className="flex items-center justify-between gap-4">
             <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-[#f97316]/20">
-                <svg className="h-4 w-4 text-[#f97316]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/20">
+                <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
               </div>
               <div>
-                <p className="text-sm font-semibold text-[#fafafa]" data-testid="plan-replaced-title">
+                <p className="text-sm font-semibold text-foreground" data-testid="plan-replaced-title">
                   Plan Updated
                 </p>
-                <p className="text-xs text-[#a1a1aa]" data-testid="plan-replaced-description">
+                <p className="text-xs text-muted-foreground" data-testid="plan-replaced-description">
                   A newer meal plan has been generated. You're viewing an outdated plan.
                 </p>
               </div>
@@ -1256,14 +1257,14 @@ export default function MealPlanPage() {
             <div className="flex items-center gap-2">
               <button
                 onClick={handleViewNewerPlan}
-                className="rounded-lg bg-[#f97316] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+                className="rounded-lg bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                 data-testid="view-newer-plan-button"
               >
                 View New Plan
               </button>
               <button
                 onClick={handleDismissReplacedBanner}
-                className="rounded-lg border border-[#2a2a2a] px-3 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:bg-[#252525] hover:text-[#fafafa]"
+                className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
                 data-testid="dismiss-replaced-banner"
                 aria-label="Dismiss notification"
               >
@@ -1275,25 +1276,25 @@ export default function MealPlanPage() {
       </div>
     )}
     <div className={`md:pt-14 pb-20 md:pb-0 ${planReplaced ? 'md:mt-12' : ''}`}>
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa]">
+    <div className="min-h-screen bg-background text-foreground">
       {/* Header */}
-      <div className="border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-6">
+      <div className="border-b border-border bg-background px-4 py-6">
         <div className="mx-auto max-w-[1600px]">
           <div className="flex items-center justify-between">
             <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
                 /// ZERO SUM NUTRITION
               </p>
-              <h1 className="mt-1 text-2xl font-heading uppercase tracking-wider text-[#fafafa]">
+              <h1 className="mt-1 text-2xl font-heading uppercase tracking-wider text-foreground">
                 Your Meal Plan
               </h1>
               {plan.profile && (
-                <p className="mt-1 text-sm text-[#a1a1aa]">
+                <p className="mt-1 text-sm text-muted-foreground">
                   {plan.profile.name} &middot; {plan.profile.goalType} &middot; {plan.planDays}-day plan
                 </p>
               )}
               {plan.generatedAt && (
-                <p className="mt-1 text-xs text-[#a1a1aa]" data-testid="plan-generated-date">
+                <p className="mt-1 text-xs text-muted-foreground" data-testid="plan-generated-date">
                   Generated {new Date(plan.generatedAt).toLocaleDateString(undefined, {
                     year: 'numeric',
                     month: 'short',
@@ -1317,13 +1318,13 @@ export default function MealPlanPage() {
                   title={`QA Status: ${plan.qaStatus}${plan.qaScore !== null ? ` (${plan.qaScore}%)` : ''}`}
                   data-testid="qa-score-badge"
                 >
-                  <p className="font-mono text-xs text-[#a1a1aa]">QA Score</p>
+                  <p className="font-mono text-xs text-muted-foreground">QA Score</p>
                   <p
                     className="text-lg font-bold"
                     style={{
-                      color: plan.qaStatus === 'PASS' ? '#22c55e' :
-                             plan.qaStatus === 'WARN' ? '#f59e0b' :
-                             '#ef4444'
+                      color: plan.qaStatus === 'PASS' ? 'var(--color-success)' :
+                             plan.qaStatus === 'WARN' ? 'var(--color-warning)' :
+                             'var(--destructive)'
                     }}
                   >
                     {plan.qaScore !== null ? `${plan.qaScore}%` : 'N/A'}
@@ -1331,25 +1332,25 @@ export default function MealPlanPage() {
                 </div>
               )}
               {plan.dailyKcalTarget && (
-                <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-2">
-                  <p className="font-mono text-xs text-[#a1a1aa] text-center mb-1">Daily Targets</p>
+                <div className="rounded-lg border border-border bg-card px-4 py-2">
+                  <p className="font-mono text-xs text-muted-foreground text-center mb-1">Daily Targets</p>
                   <div className="flex items-center gap-3">
                     <div className="text-center">
-                      <p className="text-lg font-bold text-[#f97316]">{plan.dailyKcalTarget}</p>
-                      <p className="text-[10px] text-[#a1a1aa]">kcal</p>
+                      <p className="text-lg font-bold text-primary">{plan.dailyKcalTarget}</p>
+                      <p className="text-[10px] text-muted-foreground">kcal</p>
                     </div>
                     {(plan.dailyProteinG || plan.dailyCarbsG || plan.dailyFatG) && (
                       <>
-                        <div className="w-px h-8 bg-[#2a2a2a]"></div>
+                        <div className="w-px h-8 bg-border"></div>
                         <div className="flex items-center gap-2 text-xs font-semibold">
                           {plan.dailyProteinG && (
-                            <span className="text-[#3b82f6]" data-testid="daily-protein-target">P {plan.dailyProteinG}g</span>
+                            <span className="text-chart-3" data-testid="daily-protein-target">P {plan.dailyProteinG}g</span>
                           )}
                           {plan.dailyCarbsG && (
-                            <span className="text-[#f59e0b]" data-testid="daily-carbs-target">C {plan.dailyCarbsG}g</span>
+                            <span className="text-warning" data-testid="daily-carbs-target">C {plan.dailyCarbsG}g</span>
                           )}
                           {plan.dailyFatG && (
-                            <span className="text-[#ef4444]" data-testid="daily-fat-target">F {plan.dailyFatG}g</span>
+                            <span className="text-destructive" data-testid="daily-fat-target">F {plan.dailyFatG}g</span>
                           )}
                         </div>
                       </>
@@ -1362,7 +1363,7 @@ export default function MealPlanPage() {
                   href={plan.pdfUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:border-[#f97316]/50 hover:bg-[#f97316]/10 hover:text-[#f97316]"
+                  className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
                   data-testid="download-pdf-button"
                   aria-label="Download meal plan as PDF"
                   title="Download PDF"
@@ -1377,7 +1378,7 @@ export default function MealPlanPage() {
               )}
               <Link
                 href="/meal-plan/history"
-                className="flex items-center gap-2 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-4 py-2 text-xs font-semibold text-[#a1a1aa] transition-colors hover:border-[#3b82f6]/50 hover:bg-[#3b82f6]/10 hover:text-[#3b82f6]"
+                className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-chart-3/50 hover:bg-chart-3/10 hover:text-chart-3"
                 data-testid="view-history-button"
                 aria-label="View plan history"
                 title="View plan history"
@@ -1394,13 +1395,13 @@ export default function MealPlanPage() {
 
       {/* Tab Navigation */}
       <div className="mx-auto max-w-[1600px] px-4 pt-6">
-        <div className="flex gap-2 border-b border-[#2a2a2a]" data-testid="meal-plan-tabs">
+        <div className="flex gap-2 border-b border-border" data-testid="meal-plan-tabs">
           <button
             onClick={() => setActiveTab('meal-plan')}
             className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
               activeTab === 'meal-plan'
-                ? 'border-[#f97316] text-[#f97316]'
-                : 'border-transparent text-[#a1a1aa] hover:text-[#fafafa] hover:border-[#3a3a3a]'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/80'
             }`}
             data-testid="tab-meal-plan"
             aria-label="View meal plan"
@@ -1412,8 +1413,8 @@ export default function MealPlanPage() {
             onClick={() => setActiveTab('grocery-list')}
             className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
               activeTab === 'grocery-list'
-                ? 'border-[#f97316] text-[#f97316]'
-                : 'border-transparent text-[#a1a1aa] hover:text-[#fafafa] hover:border-[#3a3a3a]'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/80'
             }`}
             data-testid="tab-grocery-list"
             aria-label="View grocery list"
@@ -1468,7 +1469,7 @@ export default function MealPlanPage() {
 
         {days.length === 0 && (
           <div className="text-center py-12">
-            <p className="text-[#a1a1aa]">No meal plan data available.</p>
+            <p className="text-muted-foreground">No meal plan data available.</p>
           </div>
         )}
       </div>
@@ -1481,7 +1482,7 @@ export default function MealPlanPage() {
             <GroceryListSection groceryList={normalizeGroceryList(plan.validatedPlan.groceryList as unknown[])} />
           ) : (
             <div className="text-center py-12">
-              <p className="text-[#a1a1aa]">No grocery list available.</p>
+              <p className="text-muted-foreground">No grocery list available.</p>
             </div>
           )}
         </div>

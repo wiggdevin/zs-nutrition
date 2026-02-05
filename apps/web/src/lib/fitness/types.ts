@@ -5,7 +5,7 @@
 /**
  * Supported fitness platforms
  */
-export type FitnessPlatform = 'apple_health' | 'google_fit' | 'fitbit' | 'oura';
+export type FitnessPlatform = 'apple_health' | 'google_fit' | 'fitbit' | 'oura' | 'aggregated';
 
 /**
  * Sync frequency preferences

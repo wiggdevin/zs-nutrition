@@ -4,7 +4,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { savePlanToDatabase } from '@/lib/save-plan';
 import { requireActiveUser, isDevMode } from '@/lib/auth';
 import { planGenerationLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
-import { safeLogError, safeLogWarn } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 const useMockQueue = process.env.USE_MOCK_QUEUE === 'true';
 
@@ -135,12 +135,12 @@ export async function POST() {
 
         if (saveResult.success) {
           planId = saveResult.planId;
-          console.log(`[Dev Mode] Plan saved to database: ${planId}`);
+          logger.debug(`[Dev Mode] Plan saved to database: ${planId}`);
         } else {
-          console.warn('[Dev Mode] Failed to save plan:', saveResult.error);
+          logger.warn('[Dev Mode] Failed to save plan:', saveResult.error);
         }
       } catch (saveError) {
-        safeLogWarn('[Dev Mode] Error saving simulated plan:', saveError);
+        logger.warn('[Dev Mode] Error saving simulated plan:', saveError);
         // Non-blocking: job is still created, just won't have a MealPlan yet
       }
     }
@@ -153,7 +153,7 @@ export async function POST() {
     });
     return response;
   } catch (error) {
-    safeLogError('Plan generate error:', error);
+    logger.error('Plan generate error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }
@@ -458,7 +458,7 @@ function generateSimulatedPlan(profile: {
 
       // If no safe meals available, use a fallback
       if (safeMealOptions.length === 0) {
-        console.warn(`No safe meals available for ${slot} with restrictions:`, Array.from(restrictedFoods));
+        logger.warn(`No safe meals available for ${slot} with restrictions:`, Array.from(restrictedFoods));
       }
 
       // Select from safe options, cycling through them

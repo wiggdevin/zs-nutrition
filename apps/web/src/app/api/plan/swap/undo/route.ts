@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 interface MealNutrition {
   kcal: number;
@@ -154,7 +154,7 @@ export async function POST(req: NextRequest) {
       updatedDay: validatedPlan.days[dayIdx],
     });
   } catch (error) {
-    safeLogError('Error undoing meal swap:', error);
+    logger.error('Error undoing meal swap:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

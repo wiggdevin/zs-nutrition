@@ -17,18 +17,18 @@ export default function TestFeature145Page() {
   const [currentAgent, setCurrentAgent] = useState(0);
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="mx-auto max-w-4xl">
-        <h1 className="mb-8 text-3xl font-heading uppercase tracking-wider text-[#fafafa]">
+        <h1 className="mb-8 text-3xl font-heading uppercase tracking-wider text-foreground">
           Feature #145 Test: Animated Progress Indicators
         </h1>
 
-        <div className="mb-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-          <h2 className="mb-4 text-xl font-bold text-[#fafafa]">Controls</h2>
+        <div className="mb-8 rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-xl font-bold text-foreground">Controls</h2>
           <div className="flex flex-wrap gap-2">
             <button
               onClick={() => setCurrentAgent(0)}
-              className="rounded-lg bg-[#2a2a2a] px-4 py-2 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a]"
+              className="rounded-lg bg-muted px-4 py-2 text-sm font-bold text-foreground hover:bg-accent"
             >
               Idle (No Active Agent)
             </button>
@@ -36,28 +36,28 @@ export default function TestFeature145Page() {
               <button
                 key={num}
                 onClick={() => setCurrentAgent(num)}
-                className="rounded-lg bg-[#f97316] px-4 py-2 text-sm font-bold text-[#0a0a0a] hover:bg-[#ea580c]"
+                className="rounded-lg bg-primary px-4 py-2 text-sm font-bold text-background hover:bg-primary/90"
               >
                 Agent {num} Active
               </button>
             ))}
             <button
               onClick={() => setCurrentAgent(7)}
-              className="rounded-lg bg-[#22c55e] px-4 py-2 text-sm font-bold text-white hover:bg-[#16a34a]"
+              className="rounded-lg bg-green-500 px-4 py-2 text-sm font-bold text-white hover:bg-green-600"
             >
               All Complete
             </button>
           </div>
         </div>
 
-        <div className="mb-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-          <h2 className="mb-4 text-xl font-bold text-[#fafafa]">Generation Progress Display</h2>
+        <div className="mb-8 rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-xl font-bold text-foreground">Generation Progress Display</h2>
 
           <div className="text-center">
-            <h1 className="text-3xl font-heading uppercase tracking-wider text-[#fafafa]">
+            <h1 className="text-3xl font-heading uppercase tracking-wider text-foreground">
               Generating Plan
             </h1>
-            <p className="mt-2 font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+            <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               /// NUTRITION ENGINE ACTIVE
             </p>
           </div>
@@ -68,20 +68,20 @@ export default function TestFeature145Page() {
                 key={agent.number}
                 className={`rounded-lg border p-4 transition-all duration-500 ${
                   agent.number < currentAgent
-                    ? "border-[#22c55e]/30 bg-[#22c55e]/5"
+                    ? "border-green-500/30 bg-green-500/5"
                     : agent.number === currentAgent
-                    ? "border-[#f97316]/50 bg-[#f97316]/5"
-                    : "border-[#2a2a2a] bg-[#1a1a1a] opacity-40"
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border bg-card opacity-40"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
                       agent.number < currentAgent
-                        ? "bg-[#22c55e] text-white"
+                        ? "bg-green-500 text-white"
                         : agent.number === currentAgent
-                        ? "bg-[#f97316] text-[#0a0a0a]"
-                        : "bg-[#2a2a2a] text-[#a1a1aa]"
+                        ? "bg-primary text-background"
+                        : "bg-muted text-muted-foreground"
                     }`}
                   >
                     {agent.number < currentAgent ? "\u2713" : agent.number}
@@ -90,18 +90,18 @@ export default function TestFeature145Page() {
                     <p
                       className={`text-sm font-bold ${
                         agent.number <= currentAgent
-                          ? "text-[#fafafa]"
-                          : "text-[#a1a1aa]"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
                       }`}
                     >
                       Agent {agent.number}: {agent.name}
                     </p>
                     {agent.number === currentAgent && (
-                      <p className="text-xs text-[#a1a1aa]">{agent.desc}</p>
+                      <p className="text-xs text-muted-foreground">{agent.desc}</p>
                     )}
                   </div>
                   {agent.number === currentAgent && (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   )}
                 </div>
               </div>
@@ -109,23 +109,23 @@ export default function TestFeature145Page() {
           </div>
         </div>
 
-        <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-          <h2 className="mb-4 text-xl font-bold text-[#fafafa]">Verification Checklist</h2>
-          <ul className="space-y-2 text-sm text-[#a1a1aa]">
+        <div className="rounded-lg border border-border bg-card p-6">
+          <h2 className="mb-4 text-xl font-bold text-foreground">Verification Checklist</h2>
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Active stage has animation (spinner/pulse) - Line 381: animate-spin rounded-full
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Completed stages show checkmark - Line 364: {"\u2713"} when agent.number &lt; currentAgent
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Pending stages show dimmed/inactive state - Line 351: opacity-40
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Smooth transitions between stages - Line 346: transition-all duration-500
             </li>
           </ul>

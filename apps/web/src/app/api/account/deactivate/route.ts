@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getClerkUserId } from '@/lib/auth'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 
 /**
  * POST /api/account/deactivate
@@ -51,7 +51,7 @@ export async function POST() {
       message: 'Account deactivated successfully. All data has been preserved.',
     })
   } catch (error) {
-    safeLogError('Account deactivation error:', error)
+    logger.error('Account deactivation error:', error)
     return NextResponse.json(
       { error: 'Something went wrong. Please try again later.' },
       { status: 500 }

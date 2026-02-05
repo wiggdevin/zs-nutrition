@@ -7,6 +7,8 @@ import {
   DraftDay,
 } from '../types/schemas';
 import { withRetry } from '../utils/retry';
+import { estimateTokens, MAX_PROMPT_TOKENS } from '../utils/token-estimate';
+import { engineLogger } from '../utils/logger';
 
 /**
  * Agent 3: Recipe Curator (LLM)
@@ -33,7 +35,7 @@ export class RecipeCurator {
           { maxRetries: 3, baseDelay: 2000, maxDelay: 15000 }
         );
       } catch (error) {
-        console.warn(
+        engineLogger.warn(
           '[RecipeCurator] Claude generation failed after retries, falling back to deterministic:',
           error instanceof Error ? error.message : 'Unknown error'
         );
@@ -51,7 +53,15 @@ export class RecipeCurator {
     metabolicProfile: MetabolicProfile,
     intake: ClientIntake
   ): Promise<MealPlanDraft> {
-    const prompt = this.buildPrompt(metabolicProfile, intake);
+    let prompt = this.buildPrompt(metabolicProfile, intake);
+
+    const estimatedTokens = estimateTokens(prompt);
+    if (estimatedTokens > MAX_PROMPT_TOKENS) {
+      engineLogger.warn(
+        `[RecipeCurator] Prompt exceeds token limit (${estimatedTokens} estimated vs ${MAX_PROMPT_TOKENS} max), truncating`
+      );
+      prompt = prompt.slice(0, MAX_PROMPT_TOKENS * 4);
+    }
 
     const { default: Anthropic } = await import('@anthropic-ai/sdk');
     const client = new Anthropic({ apiKey: this.anthropicApiKey });

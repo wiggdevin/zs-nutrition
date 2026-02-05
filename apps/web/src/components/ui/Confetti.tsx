@@ -7,16 +7,25 @@ interface ConfettiProps {
   particleCount?: number;
 }
 
-const colors = [
-  "#f97316", // Orange (primary brand color)
-  "#22c55e", // Green (success color)
-  "#3b82f6", // Blue
-  "#a855f7", // Purple
-  "#f59e0b", // Amber
-  "#ef4444", // Red
-  "#06b6d4", // Cyan
-  "#ec4899", // Pink
-];
+// Confetti colors use CSS variable references resolved at render time via getComputedStyle.
+// Fallback hex values match the :root defaults in globals.css.
+function getConfettiColors(): string[] {
+  if (typeof window === "undefined") {
+    return ["#f97316", "#22c55e", "#3b82f6", "#a855f7", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899"];
+  }
+  const style = getComputedStyle(document.documentElement);
+  const get = (v: string, fallback: string) => style.getPropertyValue(v).trim() || fallback;
+  return [
+    get("--primary", "#f97316"),
+    get("--color-success", "#22c55e"),
+    get("--chart-3", "#3b82f6"),
+    get("--chart-4", "#a855f7"),
+    get("--color-warning", "#f59e0b"),
+    get("--destructive", "#ef4444"),
+    "#06b6d4", // Cyan (no semantic token)
+    "#ec4899", // Pink (no semantic token)
+  ];
+}
 
 interface Particle {
   id: number;
@@ -29,6 +38,7 @@ interface Particle {
 }
 
 function generateParticles(count: number): Particle[] {
+  const colors = getConfettiColors();
   return Array.from({ length: count }, (_, i) => ({
     id: i,
     x: Math.random() * 100,

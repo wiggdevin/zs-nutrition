@@ -1,73 +1,81 @@
 'use client';
 
 import { useEffect } from 'react';
+import { useClerk } from '@clerk/nextjs';
 import { clearAllStores } from '@/lib/stores/clearStores';
+
+/**
+ * ClerkSignOutListener
+ *
+ * Uses the Clerk SDK's `addListener` to detect sign-out events.
+ * Must be rendered inside a ClerkProvider.
+ */
+function ClerkSignOutListener() {
+  const clerk = useClerk();
+
+  useEffect(() => {
+    if (!clerk) return;
+
+    const unsubscribe = clerk.addListener(({ session }) => {
+      if (!session) {
+        clearAllStores();
+      }
+    });
+    return () => {
+      if (typeof unsubscribe === 'function') unsubscribe();
+    };
+  }, [clerk]);
+
+  return null;
+}
+
+/**
+ * DevSignOutListener
+ *
+ * Development mode fallback: clears stores when user navigates to sign-in/sign-up pages.
+ */
+function DevSignOutListener() {
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+
+    const currentPath = window.location.pathname;
+
+    if (currentPath === '/sign-in' || currentPath === '/sign-up') {
+      clearAllStores();
+    }
+
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'visible') {
+        const newPath = window.location.pathname;
+        if ((newPath === '/sign-in' || newPath === '/sign-up') && currentPath !== newPath) {
+          clearAllStores();
+        }
+      }
+    };
+
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => {
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
+    };
+  }, []);
+
+  return null;
+}
 
 /**
  * SignOutListener
  *
  * Monitors authentication state and clears all Zustand stores when the user signs out.
  *
- * In development mode: Uses MutationObserver to watch for DOM changes that indicate
- * sign-out (navigation to sign-in page).
- *
- * In production mode: Sets up a Clerk listener to detect sign-out events.
+ * In production mode (Clerk key present): Uses the Clerk SDK's addListener API.
+ * In development mode (no Clerk key): Watches for navigation to sign-in page.
  */
 export function SignOutListener() {
-  useEffect(() => {
-    // Only run on client
-    if (typeof window === 'undefined') return;
+  const isClerkMode = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
-    // Check if we're in Clerk mode
-    const isClerkMode = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
+  if (isClerkMode) {
+    return <ClerkSignOutListener />;
+  }
 
-    if (isClerkMode) {
-      // Production mode: Set up Clerk sign-out listener
-      // We use a polling approach to check if Clerk is loaded
-      const clerkCheckInterval = setInterval(() => {
-        // @ts-ignore - Clerk is loaded globally
-        if (window.Clerk && window.Clerk.listener) {
-          clearInterval(clerkCheckInterval);
-
-          // @ts-ignore
-          window.Clerk.addListener('tokenRemoved', () => {
-            // Clear all stores when token is removed (sign-out)
-            clearAllStores();
-          });
-        }
-      }, 100);
-
-      // Cleanup interval on unmount
-      return () => clearInterval(clerkCheckInterval);
-    } else {
-      // Development mode: Watch for navigation to sign-in page
-      // This indicates the user has signed out
-      const currentPath = window.location.pathname;
-
-      // If we're already on sign-in page, clear stores
-      if (currentPath === '/sign-in' || currentPath === '/sign-up') {
-        clearAllStores();
-      }
-
-      // Set up a visibility change listener to detect when user returns to tab
-      // after being redirected to sign-in
-      const handleVisibilityChange = () => {
-        if (document.visibilityState === 'visible') {
-          const newPath = window.location.pathname;
-          if ((newPath === '/sign-in' || newPath === '/sign-up') && currentPath !== newPath) {
-            // User was redirected to sign-in, clear stores
-            clearAllStores();
-          }
-        }
-      };
-
-      document.addEventListener('visibilitychange', handleVisibilityChange);
-
-      return () => {
-        document.removeEventListener('visibilitychange', handleVisibilityChange);
-      };
-    }
-  }, []);
-
-  return null;
+  return <DevSignOutListener />;
 }

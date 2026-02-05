@@ -119,18 +119,18 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
 
   const inputClass = (hasError: boolean) =>
     `w-full rounded-lg border ${
-      hasError ? "border-red-500" : "border-[#2a2a2a]"
-    } bg-[#1e1e1e] px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors focus:border-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]`;
+      hasError ? "border-red-500" : "border-border"
+    } bg-card px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card`;
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-[#a1a1aa]">
+      <p className="text-sm text-muted-foreground">
         Your body metrics help us calculate accurate calorie and macro targets.
       </p>
 
       {/* Unit System Toggle */}
       <div>
-        <label id="unit-system-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label id="unit-system-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Unit System
         </label>
         <div className="flex gap-2" role="group" aria-labelledby="unit-system-label">
@@ -145,10 +145,10 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
             }}
             role="radio"
             aria-checked={isImperial}
-            className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+            className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
               isImperial
-                ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:bg-[#252525]"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:bg-secondary"
             }`}
           >
             Imperial (ft/in, lbs)
@@ -164,10 +164,10 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
             }}
             role="radio"
             aria-checked={!isImperial}
-            className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+            className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
               !isImperial
-                ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:bg-[#252525]"
+                ? "border-primary bg-primary/10 text-primary"
+                : "border-border bg-card text-muted-foreground hover:bg-secondary"
             }`}
           >
             Metric (cm, kg)
@@ -177,13 +177,13 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
 
       {/* Height */}
       <div>
-        <label className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Height
         </label>
         {isImperial ? (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="onboarding-height-feet" className="mb-1 block text-xs text-[#a1a1aa]">Feet</label>
+              <label htmlFor="onboarding-height-feet" className="mb-1 block text-xs text-muted-foreground">Feet</label>
               <input
                 id="onboarding-height-feet"
                 type="number"
@@ -204,7 +204,7 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
               />
             </div>
             <div>
-              <label htmlFor="onboarding-height-inches" className="mb-1 block text-xs text-[#a1a1aa]">
+              <label htmlFor="onboarding-height-inches" className="mb-1 block text-xs text-muted-foreground">
                 Inches
               </label>
               <input
@@ -231,7 +231,7 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
           </div>
         ) : (
           <div>
-            <label htmlFor="onboarding-height-cm" className="mb-1 block text-xs text-[#a1a1aa]">
+            <label htmlFor="onboarding-height-cm" className="mb-1 block text-xs text-muted-foreground">
               Centimeters
             </label>
             <input
@@ -268,12 +268,12 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
 
       {/* Weight */}
       <div>
-        <label className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Weight
         </label>
         {isImperial ? (
           <div>
-            <label htmlFor="onboarding-weight-lbs" className="mb-1 block text-xs text-[#a1a1aa]">Pounds</label>
+            <label htmlFor="onboarding-weight-lbs" className="mb-1 block text-xs text-muted-foreground">Pounds</label>
             <input
               id="onboarding-weight-lbs"
               type="number"
@@ -295,7 +295,7 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
           </div>
         ) : (
           <div>
-            <label htmlFor="onboarding-weight-kg" className="mb-1 block text-xs text-[#a1a1aa]">
+            <label htmlFor="onboarding-weight-kg" className="mb-1 block text-xs text-muted-foreground">
               Kilograms
             </label>
             <input
@@ -332,8 +332,8 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
 
       {/* Body Fat Percentage (Optional) */}
       <div>
-        <label htmlFor="onboarding-body-fat" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-          Body Fat % <span className="normal-case tracking-normal text-[#555]">(optional)</span>
+        <label htmlFor="onboarding-body-fat" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          Body Fat % <span className="normal-case tracking-normal text-muted-foreground">(optional)</span>
         </label>
         <input
           id="onboarding-body-fat"
@@ -361,7 +361,7 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
             Body fat must be between 3% and 60%
           </p>
         )}
-        <p className="mt-1 text-xs text-[#555]">
+        <p className="mt-1 text-xs text-muted-foreground">
           If known, this helps us calculate your lean body mass for more accurate targets.
         </p>
       </div>

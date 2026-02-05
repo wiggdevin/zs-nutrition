@@ -68,18 +68,18 @@ export function DevSignInForm() {
 
   if (step === 'verify') {
     return (
-      <div className="w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-6 shadow-2xl">
+      <div className="w-full rounded-xl border border-border bg-card p-6 shadow-2xl">
         <div className="space-y-4 text-center">
-          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-[#f97316]/10">
-            <svg className="h-6 w-6 text-[#f97316]" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <div className="mx-auto flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+            <svg className="h-6 w-6 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 8l7.89 5.26a2 2 0 002.22 0L21 8M5 19h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
             </svg>
           </div>
-          <h2 className="text-lg font-bold text-[#fafafa]">Check your email</h2>
-          <p className="text-sm text-[#a1a1aa]">
-            We sent a sign-in link to <span className="text-[#fafafa]">{email}</span>
+          <h2 className="text-lg font-bold text-foreground">Check your email</h2>
+          <p className="text-sm text-muted-foreground">
+            We sent a sign-in link to <span className="text-foreground">{email}</span>
           </p>
-          <p className="text-xs text-[#a1a1aa]/60 font-mono">
+          <p className="text-xs text-muted-foreground/60 font-mono">
             [DEV MODE] Click below to simulate sign-in
           </p>
 
@@ -110,7 +110,7 @@ export function DevSignInForm() {
           <button
             onClick={handleVerify}
             disabled={isLoading || accountDeactivated}
-            className="w-full rounded-lg bg-[#f97316] px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] disabled:opacity-50"
+            className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90 disabled:opacity-50"
           >
             {isLoading ? (
               <span className="flex items-center justify-center gap-2">
@@ -130,10 +130,10 @@ export function DevSignInForm() {
   }
 
   return (
-    <div className="w-full rounded-xl border border-[#2a2a2a] bg-[#1a1a1a] p-6 shadow-2xl">
+    <div className="w-full rounded-xl border border-border bg-card p-6 shadow-2xl">
       <div className="space-y-1 mb-6">
-        <h2 className="text-xl font-bold text-[#fafafa]">Sign in</h2>
-        <p className="text-sm text-[#a1a1aa]">to continue to Zero Sum Nutrition</p>
+        <h2 className="text-xl font-bold text-foreground">Sign in</h2>
+        <p className="text-sm text-muted-foreground">to continue to Zero Sum Nutrition</p>
       </div>
 
       {/* OAuth buttons */}
@@ -144,7 +144,7 @@ export function DevSignInForm() {
             setTimeout(() => router.push('/dashboard'), 1500)
           }}
           disabled={isLoading}
-          className="flex w-full items-center justify-center gap-3 rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] px-4 py-2.5 text-sm font-medium text-[#fafafa] transition-colors hover:bg-[#1e1e1e]"
+          className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-background px-4 py-2.5 text-sm font-medium text-foreground transition-colors hover:bg-card"
         >
           <svg className="h-5 w-5" viewBox="0 0 24 24">
             <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
@@ -158,16 +158,16 @@ export function DevSignInForm() {
 
       <div className="relative my-4">
         <div className="absolute inset-0 flex items-center">
-          <div className="w-full border-t border-[#2a2a2a]"></div>
+          <div className="w-full border-t border-border"></div>
         </div>
         <div className="relative flex justify-center text-xs">
-          <span className="bg-[#1a1a1a] px-2 text-[#a1a1aa]">or</span>
+          <span className="bg-card px-2 text-muted-foreground">or</span>
         </div>
       </div>
 
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label htmlFor="email" className="mb-1.5 block text-sm text-[#a1a1aa]">
+          <label htmlFor="email" className="mb-1.5 block text-sm text-muted-foreground">
             Email address
           </label>
           <input
@@ -176,17 +176,17 @@ export function DevSignInForm() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@example.com"
-            className="w-full rounded-lg border border-[#2a2a2a] bg-[#0a0a0a] px-3 py-2.5 text-sm text-[#fafafa] placeholder-[#a1a1aa]/40 focus:border-[#f97316] focus:outline-none focus:ring-1 focus:ring-[#f97316]"
+            className="w-full rounded-lg border border-border bg-background px-3 py-2.5 text-sm text-foreground placeholder-muted-foreground/40 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary"
             required
           />
           {error && (
-            <p className="mt-1 text-xs text-[#ef4444]">{error}</p>
+            <p className="mt-1 text-xs text-destructive">{error}</p>
           )}
         </div>
         <button
           type="submit"
           disabled={isLoading}
-          className="w-full rounded-lg bg-[#f97316] px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] disabled:opacity-50"
+          className="w-full rounded-lg bg-primary px-4 py-2.5 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90 disabled:opacity-50"
         >
           {isLoading ? (
             <span className="flex items-center justify-center gap-2">
@@ -202,14 +202,14 @@ export function DevSignInForm() {
         </button>
       </form>
 
-      <p className="mt-4 text-center text-sm text-[#a1a1aa]">
+      <p className="mt-4 text-center text-sm text-muted-foreground">
         Don&apos;t have an account?{' '}
-        <Link href="/sign-up" className="font-medium text-[#f97316] hover:text-[#ea580c]">
+        <Link href="/sign-up" className="font-medium text-primary hover:text-primary/90">
           Sign up
         </Link>
       </p>
 
-      <p className="mt-3 text-center text-[10px] font-mono text-[#a1a1aa]/40 uppercase tracking-wider">
+      <p className="mt-3 text-center text-[10px] font-mono text-muted-foreground/40 uppercase tracking-wider">
         Dev Mode — Clerk keys not configured
       </p>
     </div>

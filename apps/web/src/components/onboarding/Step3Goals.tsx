@@ -34,14 +34,14 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-[#a1a1aa]">
+      <p className="text-sm text-muted-foreground">
         What&apos;s your primary nutrition goal? This determines your calorie
         target.
       </p>
 
       {/* Goal Type */}
       <div>
-        <label id="onboarding-goal-type-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label id="onboarding-goal-type-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Goal Type
         </label>
         {showErrors && !data.goalType && (
@@ -64,20 +64,20 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
               role="radio"
               aria-checked={data.goalType === goal}
               aria-describedby={showErrors && !data.goalType ? "onboarding-goal-type-error" : undefined}
-              className={`w-full rounded-lg border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+              className={`w-full rounded-lg border px-4 py-4 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.goalType === goal
-                  ? "border-[#f97316] bg-[#f97316]/10"
-                  : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-card hover:border-border/80"
               } ${showErrors && !data.goalType ? "border-red-500/50" : ""}`}
             >
               <span
                 className={`block text-sm font-bold uppercase tracking-wide ${
-                  data.goalType === goal ? "text-[#f97316]" : "text-[#fafafa]"
+                  data.goalType === goal ? "text-primary" : "text-foreground"
                 }`}
               >
                 {goal}
               </span>
-              <span className="mt-1 block text-xs text-[#a1a1aa]">
+              <span className="mt-1 block text-xs text-muted-foreground">
                 {goalDescriptions[goal]}
               </span>
             </button>
@@ -88,7 +88,7 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
       {/* Goal Rate - always shown when goal selected, disabled for maintain */}
       {data.goalType && (
         <div>
-          <label htmlFor="onboarding-goal-rate" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label htmlFor="onboarding-goal-rate" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             {isMaintain
               ? "Rate: N/A (maintaining weight)"
               : `${data.goalType === "cut" ? "Weight Loss" : "Weight Gain"} Rate: ${displayRate} lbs/week`}
@@ -108,9 +108,9 @@ export function Step3Goals({ data, updateData, showErrors }: Props) {
             aria-valuemin={0}
             aria-valuemax={2}
             aria-valuetext={`${displayRate} ${data.goalType === "cut" ? "lbs" : "lbs"} per week`}
-            className={`w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${sliderDisabled ? "opacity-40 cursor-not-allowed" : ""}`}
+            className={`w-full accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${sliderDisabled ? "opacity-40 cursor-not-allowed" : ""}`}
           />
-          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
             <span>0 lbs/wk</span>
             <span>2 lbs/wk (Aggressive)</span>
           </div>

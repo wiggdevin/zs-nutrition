@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * POST /api/fitness/sync
@@ -54,7 +55,7 @@ export async function POST(req: NextRequest) {
         const syncResult = await syncFromPlatform(connection, syncDate);
         results.push(syncResult);
       } catch (error) {
-        console.error(`Error syncing from ${connection.platform}:`, error);
+        logger.error(`Error syncing from ${connection.platform}:`, error);
         results.push({
           platform: connection.platform,
           success: false,
@@ -69,7 +70,7 @@ export async function POST(req: NextRequest) {
       results,
     });
   } catch (error) {
-    console.error('Error in fitness sync:', error);
+    logger.error('Error in fitness sync:', error);
     return NextResponse.json(
       { error: 'Failed to sync activity data' },
       { status: 500 },

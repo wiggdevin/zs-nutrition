@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireActiveUser } from '@/lib/auth'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 import { toLocalDay } from '@/lib/date-utils'
 
 export async function GET(request: Request) {
@@ -269,7 +269,7 @@ export async function GET(request: Request) {
         : (activeProfile?.goalKcal || 2100),
     });
   } catch (error) {
-    safeLogError('Dashboard data error:', error);
+    logger.error('Dashboard data error:', error);
     return NextResponse.json({ error: 'Something went wrong. Please try again later.' }, { status: 500 });
   }
 }

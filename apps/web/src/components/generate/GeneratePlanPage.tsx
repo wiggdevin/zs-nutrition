@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
 import { Confetti } from "../ui/Confetti";
+import { logger } from "@/lib/safe-logger";
 
 type GenerationStatus = "idle" | "generating" | "enqueued" | "completed" | "failed";
 
@@ -120,8 +121,8 @@ export function GeneratePlanPage() {
       // Try to reconnect with exponential backoff
       if (reconnectAttemptsRef.current <= maxReconnectAttempts) {
         const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
-        console.warn(
-          `SSE connection lost (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts}). ` +
+        logger.warn(
+          `SSE connection lost (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts}).`,
           `Reconnecting in ${backoffDelay}ms...`
         );
         setIsReconnecting(true);
@@ -129,15 +130,15 @@ export function GeneratePlanPage() {
         reconnectTimeoutRef.current = setTimeout(() => {
           // Only reconnect if we haven't completed/failed and still have the same job
           if ((status === "generating" || status === "enqueued") && jobId === streamJobId) {
-            console.log("Attempting SSE reconnection...");
+            logger.debug("Attempting SSE reconnection...");
             connectToSSE(streamJobId);
           }
         }, backoffDelay);
       } else {
         // Max reconnect attempts reached - fall back to polling
         setIsReconnecting(false);
-        console.warn(
-          `Max SSE reconnect attempts (${maxReconnectAttempts}) reached. ` +
+        logger.warn(
+          `Max SSE reconnect attempts (${maxReconnectAttempts}) reached.`,
           `Falling back to polling for job status`
         );
         isUsingPolling.current = true;
@@ -189,7 +190,7 @@ export function GeneratePlanPage() {
           }
         }
       } catch (error) {
-        console.error("Polling error:", error);
+        logger.error("Polling error:", error);
         // Continue polling on error - don't give up immediately
       }
     }, 2000);
@@ -248,7 +249,7 @@ export function GeneratePlanPage() {
       setStatus("failed");
       isSubmitting.current = false;
     } catch (err) {
-      console.error("Error starting plan generation:", err);
+      logger.error("Error starting plan generation:", err);
       setErrorMessage(
         "Network error while starting plan generation. Please check your connection and try again."
       );
@@ -286,21 +287,21 @@ export function GeneratePlanPage() {
   // Not completed onboarding
   if (!hasProfile) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-lg text-center">
-          <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8 shadow-xl">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-[#f59e0b] bg-[#f59e0b]/10">
+          <div className="rounded-lg border border-border bg-card p-8 shadow-xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-warning bg-warning/10">
               <span className="text-2xl">&#x26A0;&#xFE0F;</span>
             </div>
-            <h2 className="text-xl font-bold text-[#fafafa]">
+            <h2 className="text-xl font-bold text-foreground">
               Complete Onboarding First
             </h2>
-            <p className="mt-2 text-sm text-[#a1a1aa]">
+            <p className="mt-2 text-sm text-muted-foreground">
               You need to complete your profile setup before generating a meal plan.
             </p>
             <a
               href="/onboarding"
-              className="mt-6 inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+              className="mt-6 inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
             >
               Go to Onboarding
             </a>
@@ -313,27 +314,27 @@ export function GeneratePlanPage() {
   // Generating/enqueued state - full screen with agent progress
   if (status === "generating" || status === "enqueued") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-lg">
           <div className="text-center">
-            <h1 className="text-3xl font-heading uppercase tracking-wider text-[#fafafa]">
+            <h1 className="text-3xl font-heading uppercase tracking-wider text-foreground">
               Generating Plan
             </h1>
-            <p className="mt-2 font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+            <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
               /// NUTRITION ENGINE ACTIVE
             </p>
             {jobId && (
-              <p className="mt-1 font-mono text-[10px] text-[#a1a1aa]/50">
+              <p className="mt-1 font-mono text-[10px] text-muted-foreground/50">
                 Job: {jobId}
               </p>
             )}
             {isUsingPolling.current && (
-              <p className="mt-1 font-mono text-[10px] text-[#f97316]/80">
+              <p className="mt-1 font-mono text-[10px] text-primary/80">
                 /// POLLING MODE
               </p>
             )}
             {isReconnecting && (
-              <p className="mt-1 font-mono text-[10px] text-[#fbbf24]/80 animate-pulse">
+              <p className="mt-1 font-mono text-[10px] text-warning/80 animate-pulse">
                 /// RECONNECTING...
               </p>
             )}
@@ -345,20 +346,20 @@ export function GeneratePlanPage() {
                 key={agent.number}
                 className={`rounded-lg border p-4 transition-all duration-500 ${
                   agent.number < currentAgent
-                    ? "border-[#22c55e]/30 bg-[#22c55e]/5"
+                    ? "border-success/30 bg-success/5"
                     : agent.number === currentAgent
-                    ? "border-[#f97316]/50 bg-[#f97316]/5"
-                    : "border-[#2a2a2a] bg-[#1a1a1a] opacity-40"
+                    ? "border-primary/50 bg-primary/5"
+                    : "border-border bg-card opacity-40"
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
                       agent.number < currentAgent
-                        ? "bg-[#22c55e] text-white"
+                        ? "bg-success text-white"
                         : agent.number === currentAgent
-                        ? "bg-[#f97316] text-[#0a0a0a]"
-                        : "bg-[#2a2a2a] text-[#a1a1aa]"
+                        ? "bg-primary text-background"
+                        : "bg-border text-muted-foreground"
                     }`}
                   >
                     {agent.number < currentAgent ? "\u2713" : agent.number}
@@ -367,18 +368,18 @@ export function GeneratePlanPage() {
                     <p
                       className={`text-sm font-bold ${
                         agent.number <= currentAgent
-                          ? "text-[#fafafa]"
-                          : "text-[#a1a1aa]"
+                          ? "text-foreground"
+                          : "text-muted-foreground"
                       }`}
                     >
                       Agent {agent.number}: {agent.name}
                     </p>
                     {agent.number === currentAgent && (
-                      <p className="text-xs text-[#a1a1aa]">{agent.desc}</p>
+                      <p className="text-xs text-muted-foreground">{agent.desc}</p>
                     )}
                   </div>
                   {agent.number === currentAgent && (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
+                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
                   )}
                 </div>
               </div>
@@ -394,37 +395,37 @@ export function GeneratePlanPage() {
     return (
       <>
         <Confetti duration={2000} particleCount={60} />
-        <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+        <div className="flex min-h-screen items-center justify-center bg-background px-4">
           <div className="w-full max-w-lg text-center">
-            <div className="rounded-lg border border-[#22c55e]/30 bg-[#1a1a1a] p-8 shadow-xl">
-              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-[#22c55e]/10">
+            <div className="rounded-lg border border-success/30 bg-card p-8 shadow-xl">
+              <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
                 <span className="text-4xl">&#x1F389;</span>
               </div>
-              <h2 className="text-2xl font-heading uppercase tracking-wider text-[#fafafa]">
+              <h2 className="text-2xl font-heading uppercase tracking-wider text-foreground">
                 Plan Generated!
               </h2>
-              <p className="mt-2 font-mono text-xs uppercase tracking-widest text-[#22c55e]">
+              <p className="mt-2 font-mono text-xs uppercase tracking-widest text-success">
                 /// ALL 6 AGENTS COMPLETE
               </p>
-              <p className="mt-4 text-sm text-[#a1a1aa]">
+              <p className="mt-4 text-sm text-muted-foreground">
                 Your personalized 7-day meal plan is ready.
               </p>
               <div className="mt-4 flex items-center justify-center gap-2">
-                <div className="h-4 w-4 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-                <span className="text-sm text-[#f97316] font-mono uppercase tracking-wide">
+                <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+                <span className="text-sm text-primary font-mono uppercase tracking-wide">
                   Redirecting to your meal plan...
                 </span>
               </div>
               <div className="mt-6 flex flex-col gap-3">
                 <a
                   href="/meal-plan"
-                  className="inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+                  className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                 >
                   View Meal Plan
                 </a>
                 <a
                   href="/dashboard"
-                  className="inline-block rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#fafafa] transition-colors hover:bg-[#252525]"
+                  className="inline-block rounded-lg border border-border bg-card px-6 py-3 text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:bg-secondary"
                 >
                   View Dashboard
                 </a>
@@ -439,22 +440,22 @@ export function GeneratePlanPage() {
   // Failed state
   if (status === "failed") {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-lg text-center">
-          <div className="rounded-lg border border-[#ef4444]/30 bg-[#1a1a1a] p-8 shadow-xl">
-            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#ef4444]/10">
+          <div className="rounded-lg border border-destructive/30 bg-card p-8 shadow-xl">
+            <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
               <span className="text-2xl">&#x274C;</span>
             </div>
-            <h2 className="text-xl font-bold text-[#fafafa]">
+            <h2 className="text-xl font-bold text-foreground">
               Generation Failed
             </h2>
-            <p className="mt-2 text-sm text-[#a1a1aa]">
+            <p className="mt-2 text-sm text-muted-foreground">
               {errorMessage || "Something went wrong while generating your plan. Please try again."}
             </p>
             <button
               onClick={handleRetry}
               data-testid="retry-plan-generation"
-              className="mt-6 rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+              className="mt-6 rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
             >
               Retry
             </button>
@@ -466,20 +467,20 @@ export function GeneratePlanPage() {
 
   // Idle state - ready to generate
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-lg text-center">
         <div className="space-y-2">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             /// ZERO SUM NUTRITION
           </p>
-          <h1 className="text-4xl font-heading uppercase tracking-wider text-[#fafafa]">
+          <h1 className="text-4xl font-heading uppercase tracking-wider text-foreground">
             Generate Your
-            <span className="block text-[#f97316]">Protocol</span>
+            <span className="block text-primary">Protocol</span>
           </h1>
         </div>
 
-        <div className="mt-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8 shadow-xl">
-          <p className="text-sm text-[#a1a1aa]">
+        <div className="mt-8 rounded-lg border border-border bg-card p-8 shadow-xl">
+          <p className="text-sm text-muted-foreground">
             Your profile is ready. Our 6-agent AI pipeline will create a
             personalized 7-day meal plan with verified nutrition data, optimized
             for your goals.
@@ -489,12 +490,12 @@ export function GeneratePlanPage() {
             {agentStages.map((agent) => (
               <div
                 key={agent.number}
-                className="flex items-center gap-3 rounded border border-[#2a2a2a] bg-[#1e1e1e] px-3 py-2"
+                className="flex items-center gap-3 rounded border border-border bg-card px-3 py-2"
               >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-[#2a2a2a] text-xs font-bold text-[#a1a1aa]">
+                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-border text-xs font-bold text-muted-foreground">
                   {agent.number}
                 </span>
-                <span className="text-xs text-[#a1a1aa]">{agent.name}</span>
+                <span className="text-xs text-muted-foreground">{agent.name}</span>
               </div>
             ))}
           </div>
@@ -504,8 +505,8 @@ export function GeneratePlanPage() {
             disabled={status !== "idle"}
             className={`mt-6 w-full rounded-lg px-6 py-4 text-sm font-black uppercase tracking-wider text-white transition-colors ${
               status !== "idle"
-                ? "cursor-not-allowed bg-[#f97316]/50"
-                : "bg-[#f97316] hover:bg-[#ea580c]"
+                ? "cursor-not-allowed bg-primary/50"
+                : "bg-primary hover:bg-primary/90"
             }`}
           >
             {status !== "idle" ? (
@@ -518,7 +519,7 @@ export function GeneratePlanPage() {
             )}
           </button>
 
-          <p className="mt-3 font-mono text-[10px] text-[#a1a1aa]/50">
+          <p className="mt-3 font-mono text-[10px] text-muted-foreground/50">
             Estimated time: 30-120 seconds
           </p>
         </div>

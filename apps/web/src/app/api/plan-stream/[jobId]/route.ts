@@ -1,7 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireActiveUser, isDevMode } from '@/lib/auth'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
+import { safeJsonParse } from '@/lib/utils/safe-json'
+import { JobResultSchema } from '@/lib/schemas/plan'
 
 /**
  * SSE endpoint for streaming plan generation progress.
@@ -73,7 +75,7 @@ export async function GET(
 
       // Check if already completed or failed
       if (job.status === 'completed') {
-        const result = job.result ? JSON.parse(job.result) : {}
+        const result = safeJsonParse(job.result, JobResultSchema, {})
         // Send all agents as complete, then final event
         for (let i = 1; i <= 6; i++) {
           send({
@@ -153,7 +155,7 @@ export async function GET(
           where: { id: jobId },
         })
 
-        const result = completedJob?.result ? JSON.parse(completedJob.result) : {}
+        const result = safeJsonParse(completedJob?.result, JobResultSchema, {})
         const planId = result.planId || null
 
         send({
@@ -212,7 +214,7 @@ export async function GET(
 
             // Check terminal states
             if (currentJob.status === 'completed') {
-              const result = currentJob.result ? JSON.parse(currentJob.result) : {}
+              const result = safeJsonParse(currentJob.result, JobResultSchema, {})
               send({
                 status: 'completed',
                 agent: 6,
@@ -234,7 +236,7 @@ export async function GET(
               return
             }
           } catch (err) {
-            safeLogError('[plan-stream] Poll error:', err)
+            logger.error('[plan-stream] Poll error:', err)
           }
 
           // Wait 1 second between polls

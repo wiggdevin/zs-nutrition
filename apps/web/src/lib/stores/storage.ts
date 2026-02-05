@@ -1,4 +1,5 @@
 import { StateStorage } from 'zustand/middleware'
+import { logger } from '@/lib/safe-logger'
 
 function isLocalStorageAvailable(): boolean {
   try {
@@ -25,7 +26,7 @@ export const safeStorage: StateStorage = {
     try {
       localStorage.setItem(name, value)
     } catch (e) {
-      console.warn('[Storage] Failed to save state:', e)
+      logger.warn('[Storage] Failed to save state:', e)
     }
   },
   removeItem: (name) => {

@@ -42,13 +42,13 @@ export function Step6Preferences({ data, updateData }: Props) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-[#a1a1aa]">
+      <p className="text-sm text-muted-foreground">
         Final step! Choose your macro split and meal preferences.
       </p>
 
       {/* Macro Style */}
       <div>
-        <label id="onboarding-macro-split-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label id="onboarding-macro-split-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Macro Split
         </label>
         <div className="space-y-2" role="radiogroup" aria-labelledby="onboarding-macro-split-label">
@@ -65,16 +65,16 @@ export function Step6Preferences({ data, updateData }: Props) {
               }}
               role="radio"
               aria-checked={data.macroStyle === value}
-              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.macroStyle === value
-                  ? "border-[#f97316] bg-[#f97316]/10"
-                  : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-card hover:border-border/80"
               }`}
             >
-              <span className={`block text-sm font-bold ${data.macroStyle === value ? "text-[#f97316]" : "text-[#fafafa]"}`}>
+              <span className={`block text-sm font-bold ${data.macroStyle === value ? "text-primary" : "text-foreground"}`}>
                 {label}
               </span>
-              <span className="block text-xs text-[#a1a1aa]">{desc}</span>
+              <span className="block text-xs text-muted-foreground">{desc}</span>
             </button>
           ))}
         </div>
@@ -82,7 +82,7 @@ export function Step6Preferences({ data, updateData }: Props) {
 
       {/* Cuisine Preferences */}
       <div>
-        <label id="onboarding-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label id="onboarding-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Cuisine Preferences (select favorites)
         </label>
         <div className="flex flex-wrap gap-2" role="group" aria-labelledby="onboarding-cuisine-label">
@@ -98,10 +98,10 @@ export function Step6Preferences({ data, updateData }: Props) {
                 }
               }}
               aria-pressed={data.cuisinePreferences.includes(cuisine.toLowerCase())}
-              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.cuisinePreferences.includes(cuisine.toLowerCase())
-                  ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                  : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:border-border/80"
               }`}
               title={cuisine}
             >
@@ -114,7 +114,7 @@ export function Step6Preferences({ data, updateData }: Props) {
       {/* Meals Per Day */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="onboarding-meals-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label htmlFor="onboarding-meals-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Meals/Day: {data.mealsPerDay}
           </label>
           <input
@@ -129,15 +129,15 @@ export function Step6Preferences({ data, updateData }: Props) {
             aria-valuemin={2}
             aria-valuemax={6}
             aria-valuetext={`${data.mealsPerDay} meals per day`}
-            className="w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+            className="w-full accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           />
-          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
             <span>2</span>
             <span>6</span>
           </div>
         </div>
         <div>
-          <label htmlFor="onboarding-snacks-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label htmlFor="onboarding-snacks-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Snacks/Day: {data.snacksPerDay}
           </label>
           <input
@@ -152,9 +152,9 @@ export function Step6Preferences({ data, updateData }: Props) {
             aria-valuemin={0}
             aria-valuemax={4}
             aria-valuetext={`${data.snacksPerDay} snacks per day`}
-            className="w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+            className="w-full accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           />
-          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
             <span>0</span>
             <span>4</span>
           </div>
@@ -162,11 +162,11 @@ export function Step6Preferences({ data, updateData }: Props) {
       </div>
 
       {/* Ready message */}
-      <div className="rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/5 p-4 text-center">
-        <p className="text-sm font-bold text-[#22c55e]">
+      <div className="rounded-lg border border-success/30 bg-success/5 p-4 text-center">
+        <p className="text-sm font-bold text-success">
           You&apos;re all set!
         </p>
-        <p className="mt-1 text-xs text-[#a1a1aa]">
+        <p className="mt-1 text-xs text-muted-foreground">
           Click &quot;Complete Setup&quot; to generate your personalized meal plan.
         </p>
       </div>

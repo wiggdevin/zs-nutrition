@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { logger } from '@/lib/safe-logger';
 
 interface ActivityData {
   date: string;
@@ -96,7 +97,7 @@ export default function ActivityLog() {
         setActivityData(null);
       }
     } catch (error) {
-      console.error('Error loading activity data:', error);
+      logger.error('Error loading activity data:', error);
       toast.error('Failed to load activity data');
     } finally {
       setLoading(false);
@@ -126,97 +127,97 @@ export default function ActivityLog() {
 
   if (loading) {
     return (
-      <div className="bg-[#141414] border border-[#262626] rounded-lg p-6">
+      <div className="bg-card border border-border rounded-lg p-6">
         <h2 className="text-xl font-heading uppercase tracking-wider mb-4">
-          <span className="text-[#f97316]">///</span> Activity Log
+          <span className="text-primary">///</span> Activity Log
         </h2>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f97316]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#141414] border border-[#262626] rounded-lg p-6">
+    <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-heading uppercase tracking-wider">
-          <span className="text-[#f97316]">///</span> Activity Log
+          <span className="text-primary">///</span> Activity Log
         </h2>
 
         <input
           type="date"
           value={selectedDate}
           onChange={(e) => setSelectedDate(e.target.value)}
-          className="px-4 py-2 bg-[#1a1a1a] border border-[#262626] rounded-lg text-white text-sm focus:outline-none focus:border-[#f97316]"
+          className="px-4 py-2 bg-card border border-border rounded-lg text-white text-sm focus:outline-none focus:border-primary"
           max={new Date().toISOString().split('T')[0]}
         />
       </div>
 
       {!activityData ? (
         <div className="text-center py-8">
-          <p className="text-[#a1a1aa]">
+          <p className="text-muted-foreground">
             No activity data available for {formatDate(selectedDate)}
           </p>
         </div>
       ) : (
         <div className="space-y-6">
           {/* Calorie Adjustment Summary */}
-          <div className="bg-[#1a1a1a] border border-[#262626] rounded-lg p-4">
+          <div className="bg-card border border-border rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
                 <h3 className="text-lg font-semibold text-white">
                   Calorie Target Adjustment
                 </h3>
-                <p className="text-sm text-[#a1a1aa]">{formatDate(selectedDate)}</p>
+                <p className="text-sm text-muted-foreground">{formatDate(selectedDate)}</p>
               </div>
               {activityData.adjustment > 0 && (
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-[#f97316]">
+                  <div className="text-2xl font-bold text-primary">
                     +{activityData.adjustment}
                   </div>
-                  <div className="text-xs text-[#a1a1aa]">calories</div>
+                  <div className="text-xs text-muted-foreground">calories</div>
                 </div>
               )}
             </div>
 
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
-                <div className="text-xs text-[#a1a1aa] mb-1">Base Target</div>
+                <div className="text-xs text-muted-foreground mb-1">Base Target</div>
                 <div className="text-lg font-semibold text-white">
                   {activityData.baseTarget}
                 </div>
               </div>
               <div>
-                <div className="text-xs text-[#a1a1aa] mb-1">
+                <div className="text-xs text-muted-foreground mb-1">
                   Adjusted Target
                 </div>
-                <div className="text-lg font-semibold text-[#f97316]">
+                <div className="text-lg font-semibold text-primary">
                   {activityData.adjustedTarget}
                 </div>
               </div>
             </div>
 
             {activityData.reason && (
-              <div className="pt-3 border-t border-[#262626]">
-                <p className="text-sm text-[#a1a1aa]">{activityData.reason}</p>
+              <div className="pt-3 border-t border-border">
+                <p className="text-sm text-muted-foreground">{activityData.reason}</p>
               </div>
             )}
           </div>
 
           {/* Activity Summary */}
           <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-            <div className="bg-[#1a1a1a] border border-[#262626] rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <div className="text-2xl mb-1">👟</div>
-              <div className="text-xs text-[#a1a1aa] mb-1">Steps</div>
+              <div className="text-xs text-muted-foreground mb-1">Steps</div>
               <div className="text-lg font-semibold text-white">
                 {formatNumber(activityData.totalActiveCalories > 0 ? activityData.activities.find(a => a.steps)?.steps : 0)}
               </div>
             </div>
 
-            <div className="bg-[#1a1a1a] border border-[#262626] rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <div className="text-2xl mb-1">🔥</div>
-              <div className="text-xs text-[#a1a1aa] mb-1">
+              <div className="text-xs text-muted-foreground mb-1">
                 Active Calories
               </div>
               <div className="text-lg font-semibold text-white">
@@ -224,17 +225,17 @@ export default function ActivityLog() {
               </div>
             </div>
 
-            <div className="bg-[#1a1a1a] border border-[#262626] rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <div className="text-2xl mb-1">💪</div>
-              <div className="text-xs text-[#a1a1aa] mb-1">Workouts</div>
+              <div className="text-xs text-muted-foreground mb-1">Workouts</div>
               <div className="text-lg font-semibold text-white">
                 {activityData.totalWorkouts}
               </div>
             </div>
 
-            <div className="bg-[#1a1a1a] border border-[#262626] rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <div className="text-2xl mb-1">⏱️</div>
-              <div className="text-xs text-[#a1a1aa] mb-1">
+              <div className="text-xs text-muted-foreground mb-1">
                 Active Minutes
               </div>
               <div className="text-lg font-semibold text-white">
@@ -252,7 +253,7 @@ export default function ActivityLog() {
               {activityData.activities.map((activity, index) => (
                 <div
                   key={index}
-                  className="bg-[#1a1a1a] border border-[#262626] rounded-lg p-4"
+                  className="bg-card border border-border rounded-lg p-4"
                 >
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
@@ -263,7 +264,7 @@ export default function ActivityLog() {
                         <div className="font-semibold text-white capitalize">
                           {activity.platform.replace('_', ' ')}
                         </div>
-                        <div className="text-xs text-[#a1a1aa]">
+                        <div className="text-xs text-muted-foreground">
                           Synced at {formatSyncTime(activity.syncedAt)}
                         </div>
                       </div>
@@ -274,25 +275,25 @@ export default function ActivityLog() {
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                     {activity.steps !== undefined && (
                       <div>
-                        <span className="text-[#a1a1aa]">Steps:</span>{' '}
+                        <span className="text-muted-foreground">Steps:</span>{' '}
                         <span className="text-white">{formatNumber(activity.steps)}</span>
                       </div>
                     )}
                     {activity.activeCalories !== undefined && (
                       <div>
-                        <span className="text-[#a1a1aa]">Active Cals:</span>{' '}
+                        <span className="text-muted-foreground">Active Cals:</span>{' '}
                         <span className="text-white">{formatNumber(activity.activeCalories)}</span>
                       </div>
                     )}
                     {activity.distanceKm !== undefined && (
                       <div>
-                        <span className="text-[#a1a1aa]">Distance:</span>{' '}
+                        <span className="text-muted-foreground">Distance:</span>{' '}
                         <span className="text-white">{activity.distanceKm.toFixed(1)} km</span>
                       </div>
                     )}
                     {activity.sleepScore !== undefined && (
                       <div>
-                        <span className="text-[#a1a1aa]">Sleep Score:</span>{' '}
+                        <span className="text-muted-foreground">Sleep Score:</span>{' '}
                         <span className="text-white">{activity.sleepScore}/100</span>
                       </div>
                     )}
@@ -300,8 +301,8 @@ export default function ActivityLog() {
 
                   {/* Workouts */}
                   {activity.workouts.length > 0 && (
-                    <div className="mt-3 pt-3 border-t border-[#262626]">
-                      <div className="text-xs text-[#a1a1aa] mb-2">Workouts:</div>
+                    <div className="mt-3 pt-3 border-t border-border">
+                      <div className="text-xs text-muted-foreground mb-2">Workouts:</div>
                       <div className="space-y-2">
                         {activity.workouts.map((workout, wIndex) => (
                           <div
@@ -316,7 +317,7 @@ export default function ActivityLog() {
                                 {workout.type.replace('_', ' ')}
                               </span>
                             </div>
-                            <div className="text-[#a1a1aa]">
+                            <div className="text-muted-foreground">
                               {workout.durationMinutes} min • {workout.caloriesBurned} cal
                             </div>
                           </div>

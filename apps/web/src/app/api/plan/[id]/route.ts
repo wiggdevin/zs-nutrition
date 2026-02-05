@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/plan/[id]
@@ -112,7 +112,7 @@ export async function GET(
       },
     });
   } catch (error) {
-    safeLogError('Error fetching plan by ID:', error);
+    logger.error('Error fetching plan by ID:', error);
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

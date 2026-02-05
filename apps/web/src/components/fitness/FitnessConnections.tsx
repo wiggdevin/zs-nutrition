@@ -6,6 +6,7 @@
 
 import { useEffect, useState } from 'react';
 import { toast } from 'sonner';
+import { logger } from '@/lib/safe-logger';
 
 interface FitnessConnection {
   platform: string;
@@ -74,7 +75,7 @@ export default function FitnessConnections() {
         setConnections(data.connections || []);
       }
     } catch (error) {
-      console.error('Error loading fitness connections:', error);
+      logger.error('Error loading fitness connections:', error);
     } finally {
       setLoading(false);
     }
@@ -102,7 +103,7 @@ export default function FitnessConnections() {
         toast.error('No OAuth URL returned');
       }
     } catch (error) {
-      console.error('Error connecting platform:', error);
+      logger.error('Error connecting platform:', error);
       toast.error('Failed to connect. Please try again.');
     } finally {
       setConnecting(null);
@@ -124,7 +125,7 @@ export default function FitnessConnections() {
       toast.success('Platform disconnected successfully');
       loadConnections();
     } catch (error) {
-      console.error('Error disconnecting platform:', error);
+      logger.error('Error disconnecting platform:', error);
       toast.error('Failed to disconnect. Please try again.');
     }
   };
@@ -151,7 +152,7 @@ export default function FitnessConnections() {
         toast.error('Some platforms failed to sync');
       }
     } catch (error) {
-      console.error('Error syncing activity:', error);
+      logger.error('Error syncing activity:', error);
       toast.error('Failed to sync activity. Please try again.');
     } finally {
       setSyncing(false);
@@ -183,35 +184,35 @@ export default function FitnessConnections() {
 
   if (loading) {
     return (
-      <div className="bg-[#141414] border border-[#262626] rounded-lg p-6">
+      <div className="bg-card border border-border rounded-lg p-6">
         <h2 className="text-xl font-heading uppercase tracking-wider mb-4">
-          <span className="text-[#f97316]">///</span> Fitness Tracker Integration
+          <span className="text-primary">///</span> Fitness Tracker Integration
         </h2>
         <div className="flex items-center justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f97316]" />
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
         </div>
       </div>
     );
   }
 
   return (
-    <div className="bg-[#141414] border border-[#262626] rounded-lg p-6">
+    <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-heading uppercase tracking-wider">
-          <span className="text-[#f97316]">///</span> Fitness Tracker Integration
+          <span className="text-primary">///</span> Fitness Tracker Integration
         </h2>
         {connections.length > 0 && (
           <button
             onClick={handleSync}
             disabled={syncing}
-            className="px-4 py-2 bg-[#f97316] hover:bg-[#ea580c] text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+            className="px-4 py-2 bg-primary hover:bg-primary/90 text-white rounded-lg text-sm font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
           >
             {syncing ? 'Syncing...' : 'Sync Now'}
           </button>
         )}
       </div>
 
-      <p className="text-[#a1a1aa] text-sm mb-6">
+      <p className="text-muted-foreground text-sm mb-6">
         Connect your fitness tracker or wearable to automatically adjust your
         daily calorie targets based on real activity data.
       </p>
@@ -226,8 +227,8 @@ export default function FitnessConnections() {
               key={platform.id}
               className={`border rounded-lg p-4 transition-all ${
                 connected
-                  ? 'border-[#f97316] bg-[#f97316]/5'
-                  : 'border-[#262626] bg-[#1a1a1a]'
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border bg-card'
               }`}
             >
               <div className="flex items-start justify-between">
@@ -237,7 +238,7 @@ export default function FitnessConnections() {
                   </div>
                   <div>
                     <h3 className="font-semibold text-white">{platform.name}</h3>
-                    <p className="text-xs text-[#a1a1aa]">{platform.description}</p>
+                    <p className="text-xs text-muted-foreground">{platform.description}</p>
                   </div>
                 </div>
 
@@ -252,7 +253,7 @@ export default function FitnessConnections() {
                   <button
                     onClick={() => handleConnect(platform.id)}
                     disabled={connecting === platform.id}
-                    className="px-3 py-1.5 bg-[#262626] hover:bg-[#333333] text-white text-xs font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                    className="px-3 py-1.5 bg-secondary hover:bg-secondary text-white text-xs font-medium rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                   >
                     {connecting === platform.id ? 'Connecting...' : 'Connect'}
                   </button>
@@ -260,15 +261,15 @@ export default function FitnessConnections() {
               </div>
 
               {connected && connection && (
-                <div className="mt-4 pt-4 border-t border-[#262626]">
+                <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-center justify-between text-xs">
-                    <span className="text-[#a1a1aa]">Last sync:</span>
+                    <span className="text-muted-foreground">Last sync:</span>
                     <span className="text-white">
                       {formatLastSync(connection.lastSyncAt)}
                     </span>
                   </div>
                   <div className="flex items-center justify-between text-xs mt-1">
-                    <span className="text-[#a1a1aa]">Sync frequency:</span>
+                    <span className="text-muted-foreground">Sync frequency:</span>
                     <span className="text-white capitalize">
                       {connection.syncFrequency}
                     </span>
@@ -281,8 +282,8 @@ export default function FitnessConnections() {
       </div>
 
       {connections.length === 0 && (
-        <div className="mt-6 p-4 bg-[#1a1a1a] border border-[#262626] rounded-lg">
-          <p className="text-sm text-[#a1a1aa] text-center">
+        <div className="mt-6 p-4 bg-card border border-border rounded-lg">
+          <p className="text-sm text-muted-foreground text-center">
             No fitness trackers connected. Connect one above to enable automatic
             calorie adjustments based on your activity.
           </p>

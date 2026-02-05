@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { logger } from "@/lib/safe-logger";
 
 /**
  * Safe hook to check if Clerk is available and get the signOut function.
@@ -32,7 +33,7 @@ export function useClerkSignOut(): (() => Promise<void>) | undefined {
       return async () => {
         // The actual sign out will be handled by the SignOutListener
         // This is just a placeholder for type safety
-        console.warn("SignOut should be called through SignOutListener component");
+        logger.warn("SignOut should be called through SignOutListener component");
       };
     });
   }, []);
@@ -61,7 +62,7 @@ export function ClerkSignOutHandler({
     clerkSignOut = auth.signOut;
   } catch (e) {
     // Clerk not available, will use dev mode
-    console.debug("Clerk hooks not available in ClerkSignOutHandler");
+    logger.debug("Clerk hooks not available in ClerkSignOutHandler");
   }
 
   return <>{children(clerkSignOut)}</>;

@@ -26,18 +26,18 @@ function TestResultCard({ result }: { result: TestResult }) {
         <span className={`text-lg ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
           {result.passed ? '✅' : '❌'}
         </span>
-        <h3 className="font-bold text-[#fafafa]">{result.name}</h3>
+        <h3 className="font-bold text-foreground">{result.name}</h3>
       </div>
-      <p className="text-sm text-[#a1a1aa] mb-2">{result.details}</p>
+      <p className="text-sm text-muted-foreground mb-2">{result.details}</p>
       {result.errorMessage && (
         <div className="mt-2 px-3 py-2 bg-red-500/10 border border-red-500/20 rounded text-sm">
-          <p className="text-xs font-mono text-[#a1a1aa] mb-1">Error message:</p>
+          <p className="text-xs font-mono text-muted-foreground mb-1">Error message:</p>
           <p className="text-red-400" data-testid="validation-error-message">{result.errorMessage}</p>
         </div>
       )}
       {result.zodErrors && Object.keys(result.zodErrors).length > 0 && (
         <div className="mt-2 px-3 py-2 bg-orange-500/10 border border-orange-500/20 rounded text-sm">
-          <p className="text-xs font-mono text-[#a1a1aa] mb-1">Field-specific errors:</p>
+          <p className="text-xs font-mono text-muted-foreground mb-1">Field-specific errors:</p>
           {Object.entries(result.zodErrors).map(([field, messages]) => (
             <p key={field} className="text-orange-400" data-testid={`field-error-${field}`}>
               <span className="font-bold">{field}</span>: {messages.join(', ')}
@@ -209,19 +209,19 @@ export default function TestValidationPage() {
   const allPassed = results.length > 0 && results.every((r) => r.passed)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-3xl mx-auto">
-        <h1 className="text-2xl font-bold text-[#fafafa] mb-2">
+        <h1 className="text-2xl font-bold text-foreground mb-2">
           tRPC Zod Validation Error Tests
         </h1>
-        <p className="text-[#a1a1aa] mb-6">
+        <p className="text-muted-foreground mb-6">
           Feature #261: Invalid tRPC input returns validation error
         </p>
 
         <button
           onClick={runTests}
           disabled={isRunning}
-          className="mb-6 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:opacity-50 text-[#0a0a0a] font-bold rounded-lg transition-colors"
+          className="mb-6 px-6 py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-background font-bold rounded-lg transition-colors"
           data-testid="run-validation-tests"
         >
           {isRunning ? 'Running Tests...' : 'Run All Validation Tests'}
@@ -251,9 +251,9 @@ export default function TestValidationPage() {
         </div>
 
         {apiResults && (
-          <div className="mt-6 p-4 bg-[#1a1a1a] border border-[#333] rounded-lg">
-            <h3 className="text-sm font-mono text-[#a1a1aa] mb-2">API Test Details:</h3>
-            <pre className="text-xs text-[#888] overflow-auto max-h-60">
+          <div className="mt-6 p-4 bg-card border border-border rounded-lg">
+            <h3 className="text-sm font-mono text-muted-foreground mb-2">API Test Details:</h3>
+            <pre className="text-xs text-muted-foreground overflow-auto max-h-60">
               {JSON.stringify(apiResults, null, 2)}
             </pre>
           </div>

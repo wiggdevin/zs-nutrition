@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * Environment variable validation using Zod.
@@ -148,7 +149,7 @@ export function validateServerEnv() {
   const result = serverEnvSchema.safeParse(process.env);
 
   if (!result.success) {
-    console.error(formatZodError(result.error));
+    logger.error(formatZodError(result.error));
     throw new Error(
       `❌ Invalid server environment variables.\n${formatZodError(result.error)}`
     );
@@ -171,7 +172,7 @@ export function validateClientEnv() {
   });
 
   if (!result.success) {
-    console.error(formatZodError(result.error));
+    logger.error(formatZodError(result.error));
     throw new Error(
       `❌ Invalid client environment variables.\n${formatZodError(result.error)}`
     );

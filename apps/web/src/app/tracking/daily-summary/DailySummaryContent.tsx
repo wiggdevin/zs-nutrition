@@ -62,7 +62,7 @@ function PortionAdjuster({
     return (
       <button
         onClick={() => setIsEditing(true)}
-        className="text-xs text-[#a1a1aa] hover:text-orange-400 transition-colors border border-[#2a2a2a] hover:border-orange-500/50 rounded px-2 py-0.5"
+        className="text-xs text-muted-foreground hover:text-primary transition-colors border border-border hover:border-primary/50 rounded px-2 py-0.5"
         data-testid="adjust-portion-btn"
         title="Adjust portion"
       >
@@ -108,7 +108,7 @@ function PortionAdjuster({
       <button
         onClick={handleSave}
         disabled={isSaving || portion === currentPortion}
-        className="text-xs bg-orange-500 hover:bg-orange-600 disabled:opacity-50 text-[#0a0a0a] px-2 py-0.5 rounded font-medium"
+        className="text-xs bg-primary hover:bg-primary/90 disabled:opacity-50 text-background px-2 py-0.5 rounded font-medium"
         data-testid="portion-save"
       >
         {isSaving ? '...' : 'Save'}
@@ -116,7 +116,7 @@ function PortionAdjuster({
       <button
         onClick={handleCancel}
         disabled={isSaving}
-        className="text-xs text-[#a1a1aa] hover:text-white px-1"
+        className="text-xs text-muted-foreground hover:text-white px-1"
         data-testid="portion-cancel"
       >
         Cancel
@@ -171,7 +171,7 @@ function DeleteMealButton({
         <button
           onClick={() => { setConfirming(false); setError(null) }}
           disabled={isDeleting}
-          className="text-xs text-[#a1a1aa] hover:text-white px-1"
+          className="text-xs text-muted-foreground hover:text-white px-1"
           data-testid="delete-confirm-no"
         >
           No
@@ -184,7 +184,7 @@ function DeleteMealButton({
   return (
     <button
       onClick={() => setConfirming(true)}
-      className="text-xs text-[#a1a1aa] hover:text-red-400 transition-colors p-1"
+      className="text-xs text-muted-foreground hover:text-red-400 transition-colors p-1"
       data-testid="delete-meal-btn"
       title="Delete meal"
     >
@@ -220,7 +220,7 @@ export function DailySummaryContent() {
   }
 
   // Group meals by slot
-  const groupMealsBySlot = (meals: typeof data.trackedMeals) => {
+  const groupMealsBySlot = (meals: NonNullable<typeof data>['trackedMeals']) => {
     const groups: Record<string, typeof meals> = {
       breakfast: [],
       lunch: [],
@@ -242,7 +242,7 @@ export function DailySummaryContent() {
   }
 
   if (isLoading) {
-    return <div className="text-[#a1a1aa] animate-pulse">Loading daily summary...</div>
+    return <div className="text-muted-foreground animate-pulse">Loading daily summary...</div>
   }
 
   if (error) {
@@ -254,7 +254,7 @@ export function DailySummaryContent() {
           <button
             onClick={() => refetch()}
             data-testid="retry-button"
-            className="px-4 py-2 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-sm font-bold uppercase tracking-wide rounded-lg transition-colors"
+            className="px-4 py-2 bg-primary hover:bg-primary/90 text-background text-sm font-bold uppercase tracking-wide rounded-lg transition-colors"
           >
             Retry
           </button>
@@ -269,11 +269,11 @@ export function DailySummaryContent() {
     <div className="space-y-6">
       {/* Date Navigation */}
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-        <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase mb-3">Date</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Date</h2>
         <div className="flex items-center justify-between gap-3">
           <button
             onClick={() => navigateDate(-1)}
-            className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-[#fafafa] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="prev-day-btn"
             title="Previous day"
           >
@@ -283,12 +283,12 @@ export function DailySummaryContent() {
           </button>
           <div className="flex-1 text-center">
             <p className="text-lg font-medium" data-testid="summary-date">{formatDateDisplay(selectedDate)}</p>
-            <p className="text-sm text-[#a1a1aa]" data-testid="meal-count">{data.mealCount} meal{data.mealCount !== 1 ? 's' : ''} logged</p>
+            <p className="text-sm text-muted-foreground" data-testid="meal-count">{data.mealCount} meal{data.mealCount !== 1 ? 's' : ''} logged</p>
           </div>
           <button
             onClick={() => navigateDate(1)}
             disabled={new Date(selectedDate) >= new Date(new Date().toISOString().split('T')[0])}
-            className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-[#fafafa] transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+            className="px-3 py-2 bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-lg text-foreground transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             data-testid="next-day-btn"
             title="Next day"
           >
@@ -300,12 +300,12 @@ export function DailySummaryContent() {
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-        <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase mb-3">Daily Log</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-3">Daily Log</h2>
         {data.dailyLog ? (
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <h3 className="text-xs text-[#a1a1aa] uppercase">Targets</h3>
+                <h3 className="text-xs text-muted-foreground uppercase">Targets</h3>
                 <div className="mt-1 space-y-1">
                   <p data-testid="target-kcal">{data.dailyLog.targetKcal} kcal target</p>
                   <p data-testid="target-protein">{data.dailyLog.targetProteinG}g protein target</p>
@@ -314,7 +314,7 @@ export function DailySummaryContent() {
                 </div>
               </div>
               <div>
-                <h3 className="text-xs text-[#a1a1aa] uppercase">Consumed</h3>
+                <h3 className="text-xs text-muted-foreground uppercase">Consumed</h3>
                 <div className="mt-1 space-y-1">
                   <p data-testid="actual-kcal">{data.dailyLog.actualKcal} kcal consumed</p>
                   <p data-testid="actual-protein">{data.dailyLog.actualProteinG}g protein consumed</p>
@@ -326,20 +326,20 @@ export function DailySummaryContent() {
             {data.dailyLog.adherenceScore !== null && (
               <div className="pt-2 border-t border-zinc-700">
                 <p className="text-sm" data-testid="adherence-score">
-                  Adherence Score: <span className="text-orange-400 font-bold">{data.dailyLog.adherenceScore}%</span>
+                  Adherence Score: <span className="text-primary font-bold">{data.dailyLog.adherenceScore}%</span>
                 </p>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-[#a1a1aa]" data-testid="no-daily-log">No daily log yet - log some meals first!</p>
+          <p className="text-muted-foreground" data-testid="no-daily-log">No daily log yet - log some meals first!</p>
         )}
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-        <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase mb-2">Calculated Totals</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-2">Calculated Totals</h2>
         <div className="flex gap-3 flex-wrap">
-          <span className="bg-orange-500/20 text-orange-400 px-3 py-1 rounded-full text-sm" data-testid="total-kcal">
+          <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm" data-testid="total-kcal">
             {data.totals.kcal} kcal
           </span>
           <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm" data-testid="total-protein">
@@ -355,7 +355,7 @@ export function DailySummaryContent() {
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-        <h2 className="text-sm font-semibold text-[#a1a1aa] uppercase mb-3">
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-3">
           Tracked Meals ({data.trackedMeals.length})
         </h2>
         {data.trackedMeals.length > 0 ? (
@@ -377,7 +377,7 @@ export function DailySummaryContent() {
 
                 return (
                   <div key={slot} data-testid={`meal-slot-${slot}`}>
-                    <h3 className="text-xs font-semibold text-orange-400 uppercase tracking-wider mb-2">
+                    <h3 className="text-xs font-semibold text-primary uppercase tracking-wider mb-2">
                       {slotLabels[slot]} ({mealsInSlot.length})
                     </h3>
                     <div className="space-y-2">
@@ -390,7 +390,7 @@ export function DailySummaryContent() {
                           <div className="flex justify-between items-start">
                             <div>
                               <p className="font-medium" data-testid="meal-name">{meal.mealName}</p>
-                              <div className="flex items-center gap-1.5 text-xs text-[#a1a1aa]">
+                              <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <span>{meal.source}</span>
                                 <span>{'\u00B7'}</span>
                                 <PortionAdjuster
@@ -401,7 +401,7 @@ export function DailySummaryContent() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-orange-400 font-semibold text-sm" data-testid="meal-kcal">{meal.kcal} kcal</span>
+                              <span className="text-primary font-semibold text-sm" data-testid="meal-kcal">{meal.kcal} kcal</span>
                               <DeleteMealButton
                                 mealId={meal.id}
                                 mealName={meal.mealName}
@@ -423,7 +423,7 @@ export function DailySummaryContent() {
             })()}
           </div>
         ) : (
-          <p className="text-[#a1a1aa]" data-testid="no-meals">No meals tracked on this date.</p>
+          <p className="text-muted-foreground" data-testid="no-meals">No meals tracked on this date.</p>
         )}
       </div>
     </div>

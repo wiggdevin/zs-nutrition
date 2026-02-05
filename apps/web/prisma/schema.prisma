@@ -124,6 +124,7 @@ model MealPlan {
   trackedMeals TrackedMeal[]
 
   @@index([userId, isActive])
+  @@index([userId, status, isActive])
 }
 
 // ============================================================
@@ -212,6 +213,7 @@ model TrackedMeal {
   createdAt       DateTime  @default(now())
 
   @@index([userId, loggedDate])
+  @@index([loggedDate])
 }
 
 // ============================================================
@@ -324,4 +326,5 @@ model ActivitySync {
   @@unique([connectionId, syncDate])
   @@index([userId, syncDate])
   @@index([connectionId, syncDate])
+  @@index([processed])
 }
