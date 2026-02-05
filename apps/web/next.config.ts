@@ -65,11 +65,14 @@ const nextConfig: NextConfig = {
               // Allow fonts from self, data URIs, and Google Fonts
               "font-src 'self' data: https://fonts.gstatic.com",
 
-              // Allow connections to self, Clerk, and Anthropic API
-              "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com wss://*.clerk.com https://api.anthropic.com",
+              // Allow connections to self, Clerk, Anthropic API, and Clerk telemetry
+              "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com wss://*.clerk.com https://api.anthropic.com https://clerk-telemetry.com",
 
               // Allow frames from Clerk for OAuth
               "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com",
+
+              // Allow workers from self and blob (needed for Clerk)
+              "worker-src 'self' blob:",
 
               // Restrict form submissions to self
               "form-action 'self'",
