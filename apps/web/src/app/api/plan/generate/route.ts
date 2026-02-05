@@ -5,6 +5,16 @@ import { savePlanToDatabase } from '@/lib/save-plan';
 import { requireActiveUser, isDevMode } from '@/lib/auth';
 import { planGenerationLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/safe-logger';
+import {
+  ACTIVITY_MULTIPLIERS,
+  MACRO_SPLITS,
+  TRAINING_DAY_BONUS,
+  calculateBMR,
+  calculateTDEE,
+  calculateGoalCalories,
+  calculateMacroTargets,
+  getTrainingDayBonus,
+} from '@/lib/metabolic-utils';
 
 const useMockQueue = process.env.USE_MOCK_QUEUE === 'true';
 
@@ -64,9 +74,9 @@ export async function POST() {
       return NextResponse.json({ error: 'No active profile found' }, { status: 400 });
     }
 
-    // Parse allergies and exclusions from JSON strings in profile
-    const allergies = activeProfile.allergies ? JSON.parse(activeProfile.allergies) : [];
-    const exclusions = activeProfile.exclusions ? JSON.parse(activeProfile.exclusions) : [];
+    // allergies and exclusions are now Prisma Json types - no parsing needed
+    const allergies = (Array.isArray(activeProfile.allergies) ? activeProfile.allergies : []) as string[];
+    const exclusions = (Array.isArray(activeProfile.exclusions) ? activeProfile.exclusions : []) as string[];
 
     // Check for existing pending/running jobs to prevent duplicates
     const existingJob = await prisma.planGenerationJob.findFirst({
@@ -89,13 +99,14 @@ export async function POST() {
     }
 
     // Create a plan generation job
+    // intakeData is now a Prisma Json type - pass object directly
     const jobId = uuidv4();
     const job = await prisma.planGenerationJob.create({
       data: {
         id: jobId,
         userId: user.id,
         status: 'pending',
-        intakeData: JSON.stringify({
+        intakeData: {
           name: activeProfile.name,
           sex: activeProfile.sex,
           age: activeProfile.age,
@@ -110,7 +121,7 @@ export async function POST() {
           snacksPerDay: activeProfile.snacksPerDay,
           allergies,
           exclusions,
-        }),
+        },
       },
     });
 
@@ -194,49 +205,20 @@ function generateSimulatedPlan(
   exclusions: string[] = [],
   prepTimeMax: number = 30
 ) {
-  // Calculate approximate calorie target
-  const bmr =
-    profile.sex === 'male'
-      ? 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5
-      : 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age - 161;
-
-  const activityMultipliers: Record<string, number> = {
-    sedentary: 1.2,
-    lightly_active: 1.375,
-    moderately_active: 1.55,
-    very_active: 1.725,
-    extremely_active: 1.9,
-  };
-  const tdee = bmr * (activityMultipliers[profile.activityLevel] || 1.55);
-
-  let goalKcal = tdee;
-  if (profile.goalType === 'cut') goalKcal = tdee - profile.goalRate * 500;
-  if (profile.goalType === 'bulk') goalKcal = tdee + profile.goalRate * 500;
-  goalKcal = Math.round(goalKcal);
-
-  // Macro splits based on macroStyle
-  let proteinPct = 0.3,
-    carbsPct = 0.4,
-    fatPct = 0.3;
-  if (profile.macroStyle === 'high_protein') {
-    proteinPct = 0.4;
-    carbsPct = 0.3;
-    fatPct = 0.3;
-  }
-  if (profile.macroStyle === 'low_carb') {
-    proteinPct = 0.35;
-    carbsPct = 0.25;
-    fatPct = 0.4;
-  }
-  if (profile.macroStyle === 'keto') {
-    proteinPct = 0.25;
-    carbsPct = 0.05;
-    fatPct = 0.7;
-  }
-
-  const proteinG = Math.round((goalKcal * proteinPct) / 4);
-  const carbsG = Math.round((goalKcal * carbsPct) / 4);
-  const fatG = Math.round((goalKcal * fatPct) / 9);
+  // Calculate calorie and macro targets using canonical utilities
+  // FIXES: bulk surplus is 350 (not 500), correct macro splits for all styles
+  const bmr = calculateBMR({
+    sex: profile.sex,
+    weightKg: profile.weightKg,
+    heightCm: profile.heightCm,
+    age: profile.age,
+  });
+  const tdee = calculateTDEE(bmr, profile.activityLevel);
+  const goalKcal = calculateGoalCalories(tdee, profile.goalType, profile.goalRate);
+  const macros = calculateMacroTargets(goalKcal, profile.macroStyle);
+  const proteinG = macros.proteinG;
+  const carbsG = macros.carbsG;
+  const fatG = macros.fatG;
 
   // Day names array starting from Sunday (JavaScript getDay() convention)
   const dayNames = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
@@ -583,6 +565,8 @@ function generateSimulatedPlan(
 
 /**
  * Calculate simulated metabolic profile from user profile data.
+ * Uses canonical utilities to ensure correct calculations.
+ * FIXES: bulk surplus is 350 (not 500), uses proper training day bonus
  */
 function calculateSimulatedMetabolicProfile(profile: {
   sex: string;
@@ -592,36 +576,27 @@ function calculateSimulatedMetabolicProfile(profile: {
   goalType: string;
   goalRate: number;
   activityLevel: string;
+  macroStyle?: string;
 }) {
-  const bmrKcal =
-    profile.sex === 'male'
-      ? Math.round(10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5)
-      : Math.round(10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age - 161);
-
-  const activityMultipliers: Record<string, number> = {
-    sedentary: 1.2,
-    lightly_active: 1.375,
-    moderately_active: 1.55,
-    very_active: 1.725,
-    extremely_active: 1.9,
-  };
-  const tdeeKcal = Math.round(bmrKcal * (activityMultipliers[profile.activityLevel] || 1.55));
-
-  let goalKcal = tdeeKcal;
-  if (profile.goalType === 'cut') goalKcal = tdeeKcal - Math.round(profile.goalRate * 500);
-  if (profile.goalType === 'bulk') goalKcal = tdeeKcal + Math.round(profile.goalRate * 500);
-
-  const proteinTargetG = Math.round((goalKcal * 0.3) / 4);
-  const carbsTargetG = Math.round((goalKcal * 0.4) / 4);
-  const fatTargetG = Math.round((goalKcal * 0.3) / 9);
+  const bmr = calculateBMR({
+    sex: profile.sex,
+    weightKg: profile.weightKg,
+    heightCm: profile.heightCm,
+    age: profile.age,
+  });
+  const bmrKcal = Math.round(bmr);
+  const tdeeKcal = calculateTDEE(bmrKcal, profile.activityLevel);
+  const goalKcal = calculateGoalCalories(tdeeKcal, profile.goalType, profile.goalRate);
+  const macros = calculateMacroTargets(goalKcal, profile.macroStyle || 'balanced');
+  const trainingBonusKcal = getTrainingDayBonus(profile.activityLevel);
 
   return {
     bmrKcal,
     tdeeKcal,
     goalKcal,
-    proteinTargetG,
-    carbsTargetG,
-    fatTargetG,
-    trainingBonusKcal: Math.round(tdeeKcal * 0.1),
+    proteinTargetG: macros.proteinG,
+    carbsTargetG: macros.carbsG,
+    fatTargetG: macros.fatG,
+    trainingBonusKcal,
   };
 }

@@ -79,6 +79,7 @@ export async function GET(req: NextRequest) {
     // Aggregate activity data from all platforms
     const activities: any[] = [];
 
+    // workouts is now a Prisma Json type - no parsing needed
     for (const sync of activitySyncs) {
       activities.push({
         platform: sync.platform,
@@ -89,7 +90,7 @@ export async function GET(req: NextRequest) {
         distanceMiles: sync.distanceMiles,
         activeMinutes: sync.activeMinutes,
         workoutCount: sync.workoutCount,
-        workouts: JSON.parse(sync.workouts || '[]'),
+        workouts: (Array.isArray(sync.workouts) ? sync.workouts : []) as unknown[],
         sleepMinutes: sync.sleepMinutes,
         sleepScore: sync.sleepScore,
         heartRateAvg: sync.heartRateAvg,
@@ -167,6 +168,7 @@ export async function POST(req: NextRequest) {
 
     if (!connection) {
       // Create a manual connection (for Apple HealthKit or testing)
+      // settings is now a Prisma Json type - pass object directly
       connection = await prisma.fitnessConnection.create({
         data: {
           userId,
@@ -174,12 +176,13 @@ export async function POST(req: NextRequest) {
           accessToken: 'manual',
           isActive: true,
           syncFrequency: 'daily',
-          settings: '{}',
+          settings: {},
         },
       });
     }
 
     // Create or update activity sync
+    // workouts and rawSyncData are now Prisma Json types - pass objects directly
     const sync = await prisma.activitySync.upsert({
       where: {
         connectionId_syncDate: {
@@ -199,12 +202,12 @@ export async function POST(req: NextRequest) {
         distanceMiles: activityData.distanceMiles,
         activeMinutes: activityData.activeMinutes,
         workoutCount: activityData.workoutCount,
-        workouts: JSON.stringify(activityData.workouts || []),
+        workouts: activityData.workouts || [],
         sleepMinutes: activityData.sleepMinutes,
         sleepScore: activityData.sleepScore,
         heartRateAvg: activityData.heartRateAvg,
         heartRateMax: activityData.heartRateMax,
-        rawSyncData: JSON.stringify(activityData.raw || {}),
+        rawSyncData: activityData.raw || {},
         processed: false,
       },
       update: {
@@ -215,12 +218,12 @@ export async function POST(req: NextRequest) {
         distanceMiles: activityData.distanceMiles,
         activeMinutes: activityData.activeMinutes,
         workoutCount: activityData.workoutCount,
-        workouts: JSON.stringify(activityData.workouts || []),
+        workouts: activityData.workouts || [],
         sleepMinutes: activityData.sleepMinutes,
         sleepScore: activityData.sleepScore,
         heartRateAvg: activityData.heartRateAvg,
         heartRateMax: activityData.heartRateMax,
-        rawSyncData: JSON.stringify(activityData.raw || {}),
+        rawSyncData: activityData.raw || {},
       },
     });
 

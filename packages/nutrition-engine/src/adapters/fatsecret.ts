@@ -2,9 +2,100 @@
  * FatSecret Platform API Adapter
  * Provides typed interface for food and recipe search, autocomplete, and details.
  * Falls back to a comprehensive local food database when FatSecret credentials are unavailable.
+ *
+ * Performance optimization: Uses LRU caches for search and food details to avoid
+ * redundant API calls for common queries (e.g., "chicken breast").
  */
 
+import { LRUCache } from 'lru-cache';
 import { engineLogger } from '../utils/logger';
+
+// ============================================================================
+// FatSecret API Response Types
+// These types model the raw API responses to reduce `any` usage
+// ============================================================================
+
+/** Individual food item from FatSecret search results */
+interface FatSecretFoodItem {
+  food_id: string;
+  food_name: string;
+  food_type: string;
+  food_description?: string;
+  brand_name?: string;
+  food_url?: string;
+}
+
+/** Serving information from FatSecret food details */
+interface FatSecretServing {
+  serving_id: string;
+  serving_description?: string;
+  measurement_description?: string;
+  metric_serving_amount?: string;
+  metric_serving_unit?: string;
+  calories?: string;
+  protein?: string;
+  carbohydrate?: string;
+  fat?: string;
+  fiber?: string;
+}
+
+/** Food details response from FatSecret API */
+interface FatSecretFoodResponse {
+  food?: {
+    food_id: string;
+    food_name: string;
+    food_type: string;
+    brand_name?: string;
+    food_url?: string;
+    servings?: {
+      serving: FatSecretServing | FatSecretServing[];
+    };
+  };
+}
+
+/** Foods search response from FatSecret API */
+interface FatSecretSearchResponse {
+  foods?: {
+    food?: FatSecretFoodItem | FatSecretFoodItem[];
+    max_results?: string;
+    page_number?: string;
+    total_results?: string;
+  };
+}
+
+/** Recipe item from FatSecret recipe search */
+interface FatSecretRecipeItem {
+  recipe_id: string;
+  recipe_name: string;
+  recipe_description?: string;
+  preparation_time_min?: string;
+  cooking_time_min?: string;
+}
+
+/** Recipes search response from FatSecret API */
+interface FatSecretRecipeSearchResponse {
+  recipes?: {
+    recipe?: FatSecretRecipeItem | FatSecretRecipeItem[];
+  };
+}
+
+/** Autocomplete suggestions response from FatSecret API */
+interface FatSecretAutocompleteResponse {
+  suggestions?: {
+    suggestion?: string | string[] | { suggestion: string }[];
+  };
+}
+
+/** OAuth token response */
+interface FatSecretTokenResponse {
+  access_token: string;
+  expires_in: number;
+  token_type: string;
+}
+
+// ============================================================================
+// Public Types (exported for use by other modules)
+// ============================================================================
 
 export interface FoodSearchResult {
   foodId: string;
@@ -75,9 +166,59 @@ export class FatSecretAdapter {
   private accessToken: string | null = null;
   private tokenExpiry: number = 0;
 
+  // LRU caches for search results and food details
+  private searchCache: LRUCache<string, FoodSearchResult[]>;
+  private foodCache: LRUCache<string, FoodDetails>;
+
+  // Cache statistics for debugging
+  private cacheStats = {
+    searchHits: 0,
+    searchMisses: 0,
+    foodHits: 0,
+    foodMisses: 0,
+  };
+
   constructor(clientId: string, clientSecret: string) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
+
+    // Initialize search cache: 500 entries, 1-hour TTL
+    this.searchCache = new LRUCache<string, FoodSearchResult[]>({
+      max: 500,
+      ttl: 1000 * 60 * 60, // 1 hour
+    });
+
+    // Initialize food details cache: 1000 entries, 24-hour TTL
+    this.foodCache = new LRUCache<string, FoodDetails>({
+      max: 1000,
+      ttl: 1000 * 60 * 60 * 24, // 24 hours
+    });
+  }
+
+  /**
+   * Get current cache statistics for monitoring/debugging
+   */
+  getCacheStats() {
+    return {
+      ...this.cacheStats,
+      searchCacheSize: this.searchCache.size,
+      foodCacheSize: this.foodCache.size,
+    };
+  }
+
+  /**
+   * Clear all caches (useful for testing or forced refresh)
+   */
+  clearCaches() {
+    this.searchCache.clear();
+    this.foodCache.clear();
+    this.cacheStats = {
+      searchHits: 0,
+      searchMisses: 0,
+      foodHits: 0,
+      foodMisses: 0,
+    };
+    engineLogger.info('[FatSecret] Caches cleared');
   }
 
   private isConfigured(): boolean {
@@ -164,7 +305,7 @@ export class FatSecretAdapter {
           throw new Error(`FatSecret auth failed: ${response.status} ${response.statusText}`);
         }
 
-        const data: any = await response.json();
+        const data = await response.json() as FatSecretTokenResponse;
         this.accessToken = data.access_token;
         // Expire 60s early to avoid edge cases
         this.tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
@@ -214,24 +355,42 @@ export class FatSecretAdapter {
       return LocalFoodDatabase.searchFoods(query, maxResults, pageNumber);
     }
 
+    // Check cache first
+    const cacheKey = `${query.toLowerCase().trim()}:${maxResults}:${pageNumber}`;
+    const cached = this.searchCache.get(cacheKey);
+    if (cached) {
+      this.cacheStats.searchHits++;
+      engineLogger.debug(`[FatSecret] Search cache HIT for "${query}" (total hits: ${this.cacheStats.searchHits})`);
+      return cached;
+    }
+
+    this.cacheStats.searchMisses++;
+    engineLogger.debug(`[FatSecret] Search cache MISS for "${query}" (total misses: ${this.cacheStats.searchMisses})`);
+
     const data = await this.apiRequest('foods.search', {
       search_expression: query,
       max_results: String(maxResults),
       page_number: String(pageNumber),
-    });
+    }) as FatSecretSearchResponse;
 
     const foods = data?.foods?.food;
     if (!foods) {
+      // Cache empty results too to avoid repeated failed lookups
+      this.searchCache.set(cacheKey, []);
       return [];
     }
 
     const foodArray = Array.isArray(foods) ? foods : [foods];
-    return foodArray.map((f: any) => ({
+    const results = foodArray.map((f: FatSecretFoodItem) => ({
       foodId: String(f.food_id),
       name: f.food_name,
       description: f.food_description || '',
       brandName: f.brand_name || undefined,
     }));
+
+    // Store in cache
+    this.searchCache.set(cacheKey, results);
+    return results;
   }
 
   async getFood(foodId: string): Promise<FoodDetails> {
@@ -239,7 +398,18 @@ export class FatSecretAdapter {
       return LocalFoodDatabase.getFood(foodId);
     }
 
-    const data = await this.apiRequest('food.get.v4', { food_id: foodId });
+    // Check cache first
+    const cached = this.foodCache.get(foodId);
+    if (cached) {
+      this.cacheStats.foodHits++;
+      engineLogger.debug(`[FatSecret] Food cache HIT for ID "${foodId}" (total hits: ${this.cacheStats.foodHits})`);
+      return cached;
+    }
+
+    this.cacheStats.foodMisses++;
+    engineLogger.debug(`[FatSecret] Food cache MISS for ID "${foodId}" (total misses: ${this.cacheStats.foodMisses})`);
+
+    const data = await this.apiRequest('food.get.v4', { food_id: foodId }) as FatSecretFoodResponse;
     const food = data?.food;
     if (!food) {
       throw new Error(`Food ${foodId} not found`);
@@ -252,11 +422,11 @@ export class FatSecretAdapter {
         ? [servingsData]
         : [];
 
-    return {
+    const result: FoodDetails = {
       foodId: String(food.food_id),
       name: food.food_name,
       brandName: food.brand_name || undefined,
-      servings: servingsArray.map((s: any) => ({
+      servings: servingsArray.map((s: FatSecretServing) => ({
         servingId: String(s.serving_id),
         servingDescription: s.serving_description || s.measurement_description || '1 serving',
         metricServingAmount: s.metric_serving_amount ? Number(s.metric_serving_amount) : undefined,
@@ -268,6 +438,10 @@ export class FatSecretAdapter {
         fiber: s.fiber ? Number(s.fiber) : undefined,
       })),
     };
+
+    // Store in cache
+    this.foodCache.set(foodId, result);
+    return result;
   }
 
   async getFoodByBarcode(barcode: string): Promise<FoodDetails | null> {
@@ -295,7 +469,7 @@ export class FatSecretAdapter {
     const data = await this.apiRequest('recipes.search', {
       search_expression: query,
       max_results: String(maxResults),
-    });
+    }) as FatSecretRecipeSearchResponse;
 
     const recipes = data?.recipes?.recipe;
     if (!recipes) {
@@ -303,7 +477,7 @@ export class FatSecretAdapter {
     }
 
     const arr = Array.isArray(recipes) ? recipes : [recipes];
-    return arr.map((r: any) => ({
+    return arr.map((r: FatSecretRecipeItem) => ({
       recipeId: String(r.recipe_id),
       name: r.recipe_name,
       description: r.recipe_description || '',
@@ -358,7 +532,7 @@ export class FatSecretAdapter {
 
     const data = await this.apiRequest('foods.autocomplete', {
       expression: query,
-    });
+    }) as FatSecretAutocompleteResponse;
 
     const suggestions = data?.suggestions?.suggestion;
     if (!suggestions) {
@@ -366,7 +540,11 @@ export class FatSecretAdapter {
     }
 
     const arr = Array.isArray(suggestions) ? suggestions : [suggestions];
-    return arr.map((s: any) => (typeof s === 'string' ? s : s.suggestion || String(s)));
+    return arr.map((s) => {
+      if (typeof s === 'string') return s;
+      if (typeof s === 'object' && s !== null && 'suggestion' in s) return s.suggestion;
+      return String(s);
+    });
   }
 }
 

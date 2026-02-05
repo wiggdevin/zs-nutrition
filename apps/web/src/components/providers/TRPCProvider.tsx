@@ -4,6 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink, TRPCClientError } from '@trpc/client';
 import superjson from 'superjson';
 import { trpc } from '@/lib/trpc';
+import { CACHE_TIMES } from '@/lib/query-cache-config';
 
 function getBaseUrl() {
   if (typeof window !== 'undefined') return ''; // browser should use relative url
@@ -21,11 +22,27 @@ const shouldRetry = (failureCount: number, error: unknown): boolean => {
   return failureCount < 3;
 };
 
-// Create clients outside component to avoid hook issues
+/**
+ * Global React Query client configuration.
+ *
+ * Default staleTime of 5 minutes applies to all queries unless overridden.
+ * For specific cache durations, use the CACHE_TIMES constants from query-cache-config.ts:
+ *
+ * - FOOD_SEARCH: 1 hour (nutritional data rarely changes)
+ * - ACTIVE_PLAN: 5 minutes (only changes on generate/swap)
+ * - TODAYS_MEALS: 30 seconds (updates as user logs meals)
+ * - USER_PROFILE: 10 minutes (rarely changes)
+ * - WEIGHT_HISTORY: 5 minutes (logged weekly)
+ * - DAILY_SUMMARY: 30 seconds (updates frequently)
+ *
+ * Mutations should invalidate relevant queries in their onSuccess callbacks.
+ */
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5 * 60 * 1000,
+      // Default stale time for most queries - 5 minutes is a good balance
+      staleTime: CACHE_TIMES.ACTIVE_PLAN,
+      // Disable auto-refetch on window focus to reduce unnecessary requests
       refetchOnWindowFocus: false,
       retry: shouldRetry,
       retryDelay: (attemptIndex: number) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),

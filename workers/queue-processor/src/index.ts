@@ -2,6 +2,61 @@ import 'dotenv/config';
 import { Worker, Job } from 'bullmq';
 import { NutritionPipelineOrchestrator, PipelineConfig } from '@zero-sum/nutrition-engine';
 import { createRedisConnection, QUEUE_NAMES, createDeadLetterQueue } from './queues.js';
+import IORedis from 'ioredis';
+
+/**
+ * Redis publisher for SSE progress streaming.
+ * Publishing progress to Redis pub/sub allows the web app's SSE endpoint
+ * to receive real-time updates without polling the database.
+ */
+function createRedisPublisher(): IORedis {
+  const redisUrl = process.env.REDIS_URL;
+  if (!redisUrl) {
+    console.error('[Worker] REDIS_URL is required for pub/sub. Progress streaming disabled.');
+    // Return a dummy publisher that no-ops on publish
+    return new IORedis({
+      host: '127.0.0.1',
+      port: 6379,
+      maxRetriesPerRequest: null,
+      enableReadyCheck: false,
+      lazyConnect: true,
+      retryStrategy: () => null,
+    });
+  }
+  return new IORedis(redisUrl, {
+    maxRetriesPerRequest: null,
+    enableReadyCheck: false,
+    ...(redisUrl.startsWith('rediss://') ? { tls: {} } : {}),
+  });
+}
+
+// Dedicated publisher connection for pub/sub (separate from BullMQ connection)
+const publisher = createRedisPublisher();
+
+// Handle publisher errors to prevent unhandled rejections
+publisher.on('error', (err) => {
+  console.error('[Worker] Redis publisher error:', err.message);
+  // Don't crash - progress updates will fail silently and SSE falls back to polling
+});
+
+/**
+ * Publish progress update to Redis pub/sub channel for real-time SSE streaming.
+ * Channel format: job:{jobId}:progress
+ */
+async function publishProgress(jobId: string, progress: Record<string, unknown>): Promise<void> {
+  try {
+    const channel = `job:${jobId}:progress`;
+    const message = JSON.stringify({
+      ...progress,
+      jobId,
+      timestamp: Date.now(),
+    });
+    await publisher.publish(channel, message);
+  } catch (err) {
+    // Non-fatal: SSE can fall back to database polling if pub/sub fails
+    console.warn('[Worker] Failed to publish progress to Redis:', safeError(err));
+  }
+}
 
 /** Extract safe error message without PII or stack traces */
 function safeError(err: unknown): string {
@@ -91,11 +146,15 @@ async function startWorker() {
       const { intakeData, jobId } = job.data;
 
       try {
-        // Update job progress
-        await job.updateProgress({ status: 'running', agent: 1 });
+        // Update job progress and publish to Redis for real-time SSE streaming
+        const initialProgress = { status: 'running', agent: 1 };
+        await job.updateProgress(initialProgress);
+        await publishProgress(jobId, initialProgress);
 
         const result = await orchestrator.run(intakeData, async (progress) => {
           await job.updateProgress(progress);
+          // Spread progress first, then override status to ensure 'running' is set
+          await publishProgress(jobId, { ...progress, status: 'running' });
           console.log(`  Agent ${progress.agent} (${progress.agentName}): ${progress.message}`);
         });
 
@@ -106,7 +165,9 @@ async function startWorker() {
         console.log(`✅ Job ${job.id} completed successfully`);
 
         // Save the completed plan to the database via the web app's API endpoint
-        await job.updateProgress({ status: 'saving', message: 'Saving your meal plan...' });
+        const savingProgress = { status: 'saving', message: 'Saving your meal plan...' };
+        await job.updateProgress(savingProgress);
+        await publishProgress(jobId, savingProgress);
 
         const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3456';
         const secret = process.env.INTERNAL_API_SECRET;
@@ -135,8 +196,15 @@ async function startWorker() {
     }
   );
 
-  worker.on('completed', (job) => {
+  worker.on('completed', async (job) => {
     console.log(`✅ Job ${job?.id} completed`);
+    // Publish completion event for SSE subscribers
+    if (job?.data?.jobId) {
+      await publishProgress(job.data.jobId, {
+        status: 'completed',
+        message: 'Plan generation complete!',
+      });
+    }
   });
 
   worker.on('failed', async (job, err) => {
@@ -153,6 +221,16 @@ async function startWorker() {
       console.error(
         `💀 Job ${job.id} permanently failed after ${attemptsMade}/${maxAttempts} attempts: ${err.message}`
       );
+
+      // Publish failure event for SSE subscribers (only on final failure)
+      if (job.data?.jobId) {
+        await publishProgress(job.data.jobId, {
+          status: 'failed',
+          error: safeError(err),
+          message: 'Plan generation failed after all retries',
+        });
+      }
+
       try {
         await deadLetterQueue.add(
           `dlq:${job.name}`,
@@ -189,6 +267,7 @@ async function startWorker() {
     console.error('Uncaught Exception:', safeError(error));
     await worker.close();
     await deadLetterQueue.close();
+    await publisher.quit();
     await connection.quit();
     process.exit(1);
   });
@@ -198,6 +277,7 @@ async function startWorker() {
     console.log('\n🛑 Shutting down worker...');
     await worker.close();
     await deadLetterQueue.close();
+    await publisher.quit();
     await connection.quit();
     process.exit(0);
   };

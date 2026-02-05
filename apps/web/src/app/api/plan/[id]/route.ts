@@ -44,6 +44,7 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       where: {
         id: planId,
         userId: user.id, // <-- Security: ensures user can only access their own plans
+        deletedAt: null, // Exclude soft-deleted plans
       },
       include: {
         profile: {

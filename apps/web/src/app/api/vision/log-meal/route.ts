@@ -98,14 +98,22 @@ export async function POST(request: Request) {
     }
 
     // Use adjusted result if provided, otherwise use original analysis
-    const nutritionData = adjustedResult
-      ? ((foodScan.adjustedResult = JSON.stringify(adjustedResult)),
-        await prisma.foodScan.update({
-          where: { id: scanId },
-          data: { adjustedResult: JSON.stringify(adjustedResult) },
-        }),
-        adjustedResult)
-      : JSON.parse(foodScan.analysisResult || '{}');
+    // analysisResult and adjustedResult are now Prisma Json types - no parsing needed
+    let nutritionData: LogVisionMealRequest['adjustedResult'];
+    if (adjustedResult) {
+      // Update the scan with adjusted result (Json type - pass object directly)
+      await prisma.foodScan.update({
+        where: { id: scanId },
+        data: { adjustedResult: adjustedResult },
+      });
+      nutritionData = adjustedResult;
+    } else {
+      nutritionData = foodScan.analysisResult as LogVisionMealRequest['adjustedResult'];
+    }
+
+    if (!nutritionData?.estimated_nutrition) {
+      return NextResponse.json({ error: 'No nutrition data available' }, { status: 400 });
+    }
 
     // Create tracked meal
     const trackedMealId = uuidv4();
@@ -229,13 +237,14 @@ export async function GET(request: Request) {
     }
 
     // Return scan details
+    // analysisResult and adjustedResult are now Prisma Json types - no parsing needed
     return NextResponse.json({
       id: foodScan.id,
       status: foodScan.status,
       scanType: foodScan.scanType,
       photoUrl: foodScan.photoUrl,
-      analysisResult: foodScan.analysisResult ? JSON.parse(foodScan.analysisResult) : null,
-      adjustedResult: foodScan.adjustedResult ? JSON.parse(foodScan.adjustedResult) : null,
+      analysisResult: foodScan.analysisResult,
+      adjustedResult: foodScan.adjustedResult,
       userConfirmed: foodScan.userConfirmed,
       createdAt: foodScan.createdAt,
       completedAt: foodScan.completedAt,

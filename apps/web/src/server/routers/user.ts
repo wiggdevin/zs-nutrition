@@ -1,8 +1,15 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 import { router, protectedProcedure } from '../trpc';
 import { safeJsonParse } from '@/lib/utils/safe-json';
 import { StepDataSchema } from '@/lib/schemas/plan';
+import {
+  calculateBMR,
+  calculateTDEE,
+  calculateGoalCalories,
+  calculateMacroTargets,
+} from '@/lib/metabolic-utils';
 
 export const userRouter = router({
   getOnboardingState: protectedProcedure.query(async ({ ctx }) => {
@@ -26,25 +33,27 @@ export const userRouter = router({
         where: { userId: dbUserId },
       });
 
-      // Merge step data
-      const existingData = safeJsonParse(existing?.stepData, StepDataSchema, {});
+      // Merge step data - stepData is now a Prisma Json type
+      const existingData = (existing?.stepData as Record<string, unknown>) || {};
       const mergedData = { ...existingData, ...input.data };
 
       if (existing) {
+        // Json type - cast to InputJsonValue
         return ctx.prisma.onboardingState.update({
           where: { userId: dbUserId },
           data: {
             currentStep: input.step,
-            stepData: JSON.stringify(mergedData),
+            stepData: mergedData as Prisma.InputJsonValue,
           },
         });
       }
 
+      // Json type - cast to InputJsonValue
       return ctx.prisma.onboardingState.create({
         data: {
           userId: dbUserId,
           currentStep: input.step,
-          stepData: JSON.stringify(mergedData),
+          stepData: mergedData as Prisma.InputJsonValue,
         },
       });
     }),
@@ -82,38 +91,18 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const dbUserId = ctx.dbUserId;
 
-      // Calculate metabolic profile
-      const bmr =
-        input.sex === 'male'
-          ? 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age + 5
-          : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161;
+      // Calculate metabolic profile using canonical utilities
+      const bmr = calculateBMR({
+        sex: input.sex,
+        weightKg: input.weightKg,
+        heightCm: input.heightCm,
+        age: input.age,
+      });
+      const tdee = calculateTDEE(bmr, input.activityLevel);
+      const goalKcal = calculateGoalCalories(tdee, input.goalType, input.goalRate);
+      const macros = calculateMacroTargets(goalKcal, input.macroStyle);
 
-      const activityMultipliers: Record<string, number> = {
-        sedentary: 1.2,
-        lightly_active: 1.375,
-        moderately_active: 1.55,
-        very_active: 1.725,
-        extremely_active: 1.9,
-      };
-      const tdee = Math.round(bmr * activityMultipliers[input.activityLevel]);
-
-      let goalKcal = tdee;
-      if (input.goalType === 'cut') goalKcal = tdee - input.goalRate * 500;
-      if (input.goalType === 'bulk') goalKcal = tdee + input.goalRate * 350;
-      goalKcal = Math.round(goalKcal);
-
-      const macroSplits: Record<string, { p: number; c: number; f: number }> = {
-        balanced: { p: 0.3, c: 0.4, f: 0.3 },
-        high_protein: { p: 0.4, c: 0.35, f: 0.25 },
-        low_carb: { p: 0.35, c: 0.25, f: 0.4 },
-        keto: { p: 0.3, c: 0.05, f: 0.65 },
-      };
-      const split = macroSplits[input.macroStyle];
-      const proteinG = Math.round((goalKcal * split.p) / 4);
-      const carbsG = Math.round((goalKcal * split.c) / 4);
-      const fatG = Math.round((goalKcal * split.f) / 9);
-
-      // Create user profile
+      // Create user profile - Json fields accept arrays directly
       const profile = await ctx.prisma.userProfile.create({
         data: {
           userId: dbUserId,
@@ -127,10 +116,10 @@ export const userRouter = router({
           goalRate: input.goalRate,
           activityLevel: input.activityLevel,
           dietaryStyle: input.dietaryStyle,
-          allergies: JSON.stringify(input.allergies),
-          exclusions: JSON.stringify(input.exclusions),
-          cuisinePrefs: JSON.stringify(input.cuisinePreferences),
-          trainingDays: JSON.stringify(input.trainingDays),
+          allergies: input.allergies,
+          exclusions: input.exclusions,
+          cuisinePrefs: input.cuisinePreferences,
+          trainingDays: input.trainingDays,
           mealsPerDay: input.mealsPerDay,
           snacksPerDay: input.snacksPerDay,
           cookingSkill: input.cookingSkill,
@@ -139,9 +128,9 @@ export const userRouter = router({
           bmrKcal: Math.round(bmr),
           tdeeKcal: tdee,
           goalKcal,
-          proteinTargetG: proteinG,
-          carbsTargetG: carbsG,
-          fatTargetG: fatG,
+          proteinTargetG: macros.proteinG,
+          carbsTargetG: macros.carbsG,
+          fatTargetG: macros.fatG,
           isActive: true,
         },
       });
@@ -244,36 +233,16 @@ export const userRouter = router({
         });
       }
 
-      // Recalculate metabolic profile
-      const bmr =
-        existing.sex === 'male'
-          ? 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age + 5
-          : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161;
-
-      const activityMultipliers: Record<string, number> = {
-        sedentary: 1.2,
-        lightly_active: 1.375,
-        moderately_active: 1.55,
-        very_active: 1.725,
-        extremely_active: 1.9,
-      };
-      const tdee = Math.round(bmr * activityMultipliers[input.activityLevel]);
-
-      let goalKcal = tdee;
-      if (input.goalType === 'cut') goalKcal = tdee - input.goalRate * 500;
-      if (input.goalType === 'bulk') goalKcal = tdee + input.goalRate * 350;
-      goalKcal = Math.round(goalKcal);
-
-      const macroSplits: Record<string, { p: number; c: number; f: number }> = {
-        balanced: { p: 0.3, c: 0.4, f: 0.3 },
-        high_protein: { p: 0.4, c: 0.35, f: 0.25 },
-        low_carb: { p: 0.35, c: 0.25, f: 0.4 },
-        keto: { p: 0.3, c: 0.05, f: 0.65 },
-      };
-      const split = macroSplits[input.macroStyle];
-      const proteinG = Math.round((goalKcal * split.p) / 4);
-      const carbsG = Math.round((goalKcal * split.c) / 4);
-      const fatG = Math.round((goalKcal * split.f) / 9);
+      // Recalculate metabolic profile using canonical utilities
+      const bmr = calculateBMR({
+        sex: existing.sex,
+        weightKg: input.weightKg,
+        heightCm: input.heightCm,
+        age: input.age,
+      });
+      const tdee = calculateTDEE(bmr, input.activityLevel);
+      const goalKcal = calculateGoalCalories(tdee, input.goalType, input.goalRate);
+      const macros = calculateMacroTargets(goalKcal, input.macroStyle);
 
       // Update profile
       const updated = await ctx.prisma.userProfile.update({
@@ -296,12 +265,60 @@ export const userRouter = router({
           bmrKcal: Math.round(bmr),
           tdeeKcal: tdee,
           goalKcal,
-          proteinTargetG: proteinG,
-          carbsTargetG: carbsG,
-          fatTargetG: fatG,
+          proteinTargetG: macros.proteinG,
+          carbsTargetG: macros.carbsG,
+          fatTargetG: macros.fatG,
         },
       });
 
       return { profile: updated };
     }),
+
+  /**
+   * deactivateAccount: Soft-deletes the user's account by setting isActive=false.
+   * All data is preserved (no orphaned records). Client should sign out after.
+   */
+  deactivateAccount: protectedProcedure.mutation(async ({ ctx }) => {
+    const dbUserId = ctx.dbUserId;
+
+    // Get user record
+    const user = await ctx.prisma.user.findUnique({
+      where: { id: dbUserId },
+    });
+
+    if (!user) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'User not found',
+      });
+    }
+
+    if (!user.isActive) {
+      throw new TRPCError({
+        code: 'BAD_REQUEST',
+        message: 'Account is already deactivated',
+      });
+    }
+
+    // Soft-deactivate: set isActive=false, record deactivation timestamp
+    // All related data remains intact - NO orphaned records
+    await ctx.prisma.user.update({
+      where: { id: dbUserId },
+      data: {
+        isActive: false,
+        deactivatedAt: new Date(),
+      },
+    });
+
+    // Also deactivate any active meal plans (only non-deleted ones)
+    await ctx.prisma.mealPlan.updateMany({
+      where: { userId: dbUserId, isActive: true, deletedAt: null },
+      data: { isActive: false, status: 'replaced' },
+    });
+
+    return {
+      success: true,
+      message: 'Account deactivated successfully. All data has been preserved.',
+    };
+  }),
 });

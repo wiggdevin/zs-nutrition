@@ -1,8 +1,10 @@
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { generatePlanPdf } from '@/lib/generate-plan-pdf';
 import { uploadPlanPdf } from '@/lib/upload-pdf';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay, addDays } from '@/lib/date-utils';
+import { isUniqueConstraintError } from '@/lib/plan-utils';
 
 /**
  * Saves a completed plan generation result to the MealPlan table.
@@ -92,7 +94,8 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
 
     if (job.status === 'completed') {
       // Idempotent - already completed, find the existing plan
-      const existingResult = job.result ? JSON.parse(job.result) : null;
+      // result is now a Prisma Json type - no parsing needed
+      const existingResult = job.result as { planId?: string } | null;
       return {
         success: true,
         planId: existingResult?.planId || undefined,
@@ -107,38 +110,39 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
     });
 
     // If no active profile, create one from intake data
+    // intakeData is now a Prisma Json type - no parsing needed
     if (!profile) {
-      const intakeData =
-        typeof job.intakeData === 'string' ? JSON.parse(job.intakeData) : job.intakeData;
+      const intakeData = job.intakeData as Record<string, unknown>;
 
       profile = await prisma.userProfile.create({
         data: {
           userId,
-          name: intakeData.name || 'User',
-          sex: intakeData.sex || 'male',
-          age: intakeData.age || 30,
+          name: (intakeData.name as string) || 'User',
+          sex: (intakeData.sex as string) || 'male',
+          age: (intakeData.age as number) || 30,
           heightCm:
-            intakeData.heightCm ||
+            (intakeData.heightCm as number) ||
             (intakeData.heightFeet
-              ? intakeData.heightFeet * 30.48 + (intakeData.heightInches || 0) * 2.54
+              ? (intakeData.heightFeet as number) * 30.48 + ((intakeData.heightInches as number) || 0) * 2.54
               : 175),
           weightKg:
-            intakeData.weightKg || (intakeData.weightLbs ? intakeData.weightLbs * 0.4536 : 80),
-          bodyFatPercent: intakeData.bodyFatPercent || null,
-          goalType: intakeData.goalType || 'maintain',
-          goalRate: intakeData.goalRate || 0,
-          activityLevel: intakeData.activityLevel || 'moderately_active',
-          dietaryStyle: intakeData.dietaryStyle || 'omnivore',
-          allergies: JSON.stringify(intakeData.allergies || []),
-          exclusions: JSON.stringify(intakeData.exclusions || []),
-          cuisinePrefs: JSON.stringify(intakeData.cuisinePreferences || []),
-          trainingDays: JSON.stringify(intakeData.trainingDays || []),
-          trainingTime: intakeData.trainingTime || null,
-          mealsPerDay: intakeData.mealsPerDay || 3,
-          snacksPerDay: intakeData.snacksPerDay || 1,
-          cookingSkill: intakeData.cookingSkill || 5,
-          prepTimeMax: intakeData.prepTimeMaxMin || 30,
-          macroStyle: intakeData.macroStyle || 'balanced',
+            (intakeData.weightKg as number) || (intakeData.weightLbs ? (intakeData.weightLbs as number) * 0.4536 : 80),
+          bodyFatPercent: (intakeData.bodyFatPercent as number) || null,
+          goalType: (intakeData.goalType as string) || 'maintain',
+          goalRate: (intakeData.goalRate as number) || 0,
+          activityLevel: (intakeData.activityLevel as string) || 'moderately_active',
+          dietaryStyle: (intakeData.dietaryStyle as string) || 'omnivore',
+          // Json fields accept arrays directly
+          allergies: intakeData.allergies || [],
+          exclusions: intakeData.exclusions || [],
+          cuisinePrefs: intakeData.cuisinePreferences || [],
+          trainingDays: intakeData.trainingDays || [],
+          trainingTime: (intakeData.trainingTime as string) || null,
+          mealsPerDay: (intakeData.mealsPerDay as number) || 3,
+          snacksPerDay: (intakeData.snacksPerDay as number) || 1,
+          cookingSkill: (intakeData.cookingSkill as number) || 5,
+          prepTimeMax: (intakeData.prepTimeMaxMin as number) || 30,
+          macroStyle: (intakeData.macroStyle as string) || 'balanced',
           bmrKcal: metabolicProfile?.bmrKcal || null,
           tdeeKcal: metabolicProfile?.tdeeKcal || null,
           goalKcal: metabolicProfile?.goalKcal || null,
@@ -174,37 +178,79 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
 
     // 4. Deactivate old plans and create new plan atomically in a transaction
     // This prevents race conditions where plans could be left in an inconsistent state
-    const mealPlan = await prisma.$transaction(async (tx) => {
-      // Step 1: Deactivate any existing active plans for this user
-      await tx.mealPlan.updateMany({
-        where: { userId, isActive: true },
-        data: { isActive: false, status: 'replaced' },
-      });
+    // The partial unique index (MealPlan_userId_active_unique) enforces only one active plan per user
+    let mealPlan;
+    try {
+      mealPlan = await prisma.$transaction(async (tx) => {
+        // Step 1: Deactivate any existing active plans for this user (only non-deleted ones)
+        await tx.mealPlan.updateMany({
+          where: { userId, isActive: true, deletedAt: null },
+          data: { isActive: false, status: 'replaced' },
+        });
 
-      // Step 2: Create the MealPlan record (atomic with step 1)
-      return tx.mealPlan.create({
-        data: {
-          userId,
-          profileId: profile.id,
-          validatedPlan: JSON.stringify(planData),
-          metabolicProfile: JSON.stringify(metabolicProfile || {}),
-          dailyKcalTarget: dailyKcalTarget ? Math.round(dailyKcalTarget) : null,
-          dailyProteinG: dailyProteinG ? Math.round(dailyProteinG) : null,
-          dailyCarbsG: dailyCarbsG ? Math.round(dailyCarbsG) : null,
-          dailyFatG: dailyFatG ? Math.round(dailyFatG) : null,
-          trainingBonusKcal: metabolicProfile?.trainingBonusKcal
-            ? Math.round(metabolicProfile.trainingBonusKcal)
-            : null,
-          planDays,
-          startDate,
-          endDate,
-          qaScore: qaScore ? Math.round(qaScore) : null,
-          qaStatus: qaStatus || null,
-          status: 'active',
-          isActive: true,
-        },
+        // Step 2: Create the MealPlan record (atomic with step 1)
+        // validatedPlan and metabolicProfile are now Prisma Json types - pass objects directly
+        return tx.mealPlan.create({
+          data: {
+            userId,
+            profileId: profile.id,
+            validatedPlan: planData,
+            metabolicProfile: metabolicProfile || {},
+            dailyKcalTarget: dailyKcalTarget ? Math.round(dailyKcalTarget) : null,
+            dailyProteinG: dailyProteinG ? Math.round(dailyProteinG) : null,
+            dailyCarbsG: dailyCarbsG ? Math.round(dailyCarbsG) : null,
+            dailyFatG: dailyFatG ? Math.round(dailyFatG) : null,
+            trainingBonusKcal: metabolicProfile?.trainingBonusKcal
+              ? Math.round(metabolicProfile.trainingBonusKcal)
+              : null,
+            planDays,
+            startDate,
+            endDate,
+            qaScore: qaScore ? Math.round(qaScore) : null,
+            qaStatus: qaStatus || null,
+            status: 'active',
+            isActive: true,
+          },
+        });
       });
-    });
+    } catch (error) {
+      // Handle unique constraint violation from partial unique index
+      // This can occur in rare race conditions despite the transaction
+      if (isUniqueConstraintError(error)) {
+        logger.warn(`[savePlanToDatabase] Unique constraint hit, retrying with forced deactivation`);
+
+        // Force deactivate all active plans and retry
+        await prisma.mealPlan.updateMany({
+          where: { userId, isActive: true, deletedAt: null },
+          data: { isActive: false, status: 'replaced' },
+        });
+
+        mealPlan = await prisma.mealPlan.create({
+          data: {
+            userId,
+            profileId: profile.id,
+            validatedPlan: planData,
+            metabolicProfile: metabolicProfile || {},
+            dailyKcalTarget: dailyKcalTarget ? Math.round(dailyKcalTarget) : null,
+            dailyProteinG: dailyProteinG ? Math.round(dailyProteinG) : null,
+            dailyCarbsG: dailyCarbsG ? Math.round(dailyCarbsG) : null,
+            dailyFatG: dailyFatG ? Math.round(dailyFatG) : null,
+            trainingBonusKcal: metabolicProfile?.trainingBonusKcal
+              ? Math.round(metabolicProfile.trainingBonusKcal)
+              : null,
+            planDays,
+            startDate,
+            endDate,
+            qaScore: qaScore ? Math.round(qaScore) : null,
+            qaStatus: qaStatus || null,
+            status: 'active',
+            isActive: true,
+          },
+        });
+      } else {
+        throw error;
+      }
+    }
 
     // 6. Generate and upload PDF
     let pdfUrl: string | null = null;
@@ -239,11 +285,12 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
     }
 
     // 7. Update the PlanGenerationJob with result and status
+    // result is now a Prisma Json type - pass object directly
     await prisma.planGenerationJob.update({
       where: { id: jobId },
       data: {
         status: 'completed',
-        result: JSON.stringify({ planId: mealPlan.id, pdfUrl }),
+        result: { planId: mealPlan.id, pdfUrl },
         completedAt: new Date(),
       },
     });

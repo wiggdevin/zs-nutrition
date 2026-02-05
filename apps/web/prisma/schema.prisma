@@ -29,10 +29,10 @@ model User {
   foodScans          FoodScan[]
   onboarding         OnboardingState?
   planGenerationJobs PlanGenerationJob[]
-  weightEntries       WeightEntry[]
-  calorieAdjustments  CalorieAdjustment[]
-  fitnessConnections  FitnessConnection[]
-  activitySyncs       ActivitySync[]
+  weightEntries      WeightEntry[]
+  calorieAdjustments CalorieAdjustment[]
+  fitnessConnections FitnessConnection[]
+  activitySyncs      ActivitySync[]
 }
 
 // ============================================================
@@ -44,7 +44,7 @@ model OnboardingState {
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   currentStep Int      @default(1)
   completed   Boolean  @default(false)
-  stepData    String   @default("{}") // JSON string - Partial RawIntakeForm
+  stepData    Json? // Partial RawIntakeForm - defaults handled at app level
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
@@ -53,37 +53,37 @@ model OnboardingState {
 // User Profile (demographics, goals, preferences, cached metabolic)
 // ============================================================
 model UserProfile {
-  id              String   @id @default(uuid())
-  userId          String
-  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  name            String
-  sex             String   // male | female
-  age             Int
-  heightCm        Float
-  weightKg        Float
-  bodyFatPercent   Float?
-  goalType        String   // cut | maintain | bulk
-  goalRate        Float    // 0-2 lbs/week
-  activityLevel   String   // sedentary | lightly_active | moderately_active | very_active | extremely_active
-  dietaryStyle    String   // omnivore | vegetarian | vegan | pescatarian | keto | paleo
-  allergies       String   @default("[]") // JSON array string
-  exclusions      String   @default("[]") // JSON array string
-  cuisinePrefs    String   @default("[]") // JSON array string
-  trainingDays    String   @default("[]") // JSON array string of weekdays
-  trainingTime    String?  // morning | afternoon | evening
-  mealsPerDay     Int      @default(3)
-  snacksPerDay    Int      @default(1)
-  cookingSkill    Int      @default(5)
-  prepTimeMax     Int      @default(30)
-  macroStyle      String   @default("balanced")
+  id             String  @id @default(uuid())
+  userId         String
+  user           User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name           String
+  sex            String // male | female
+  age            Int
+  heightCm       Float
+  weightKg       Float
+  bodyFatPercent Float?
+  goalType       String // cut | maintain | bulk
+  goalRate       Float // 0-2 lbs/week
+  activityLevel  String // sedentary | lightly_active | moderately_active | very_active | extremely_active
+  dietaryStyle   String // omnivore | vegetarian | vegan | pescatarian | keto | paleo
+  allergies      Json? // Array of allergy strings - defaults handled at app level
+  exclusions     Json? // Array of exclusion strings - defaults handled at app level
+  cuisinePrefs   Json? // Array of cuisine preference strings - defaults handled at app level
+  trainingDays   Json? // Array of weekdays - defaults handled at app level
+  trainingTime   String? // morning | afternoon | evening
+  mealsPerDay    Int     @default(3)
+  snacksPerDay   Int     @default(1)
+  cookingSkill   Int     @default(5)
+  prepTimeMax    Int     @default(30)
+  macroStyle     String  @default("balanced")
 
   // Cached metabolic calculations
-  bmrKcal         Int?
-  tdeeKcal        Int?
-  goalKcal        Int?
-  proteinTargetG  Int?
-  carbsTargetG    Int?
-  fatTargetG      Int?
+  bmrKcal        Int?
+  tdeeKcal       Int?
+  goalKcal       Int?
+  proteinTargetG Int?
+  carbsTargetG   Int?
+  fatTargetG     Int?
 
   isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
@@ -98,33 +98,35 @@ model UserProfile {
 // Meal Plan
 // ============================================================
 model MealPlan {
-  id                String   @id @default(uuid())
+  id                String      @id @default(uuid())
   userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              User        @relation(fields: [userId], references: [id], onDelete: Cascade)
   profileId         String
   profile           UserProfile @relation(fields: [profileId], references: [id])
-  validatedPlan     String   @default("{}") // JSON - Full MealPlanValidated
-  metabolicProfile  String   @default("{}") // JSON - MetabolicProfile
+  validatedPlan     Json? // Full MealPlanValidated - defaults handled at app level
+  metabolicProfile  Json? // MetabolicProfile - defaults handled at app level
   dailyKcalTarget   Int?
   dailyProteinG     Int?
   dailyCarbsG       Int?
   dailyFatG         Int?
   trainingBonusKcal Int?
-  planDays          Int      @default(7)
+  planDays          Int         @default(7)
   startDate         DateTime?
   endDate           DateTime?
-  qaScore           Int?     // 0-100
-  qaStatus          String?  // PASS | WARN | FAIL
+  qaScore           Int? // 0-100
+  qaStatus          String? // PASS | WARN | FAIL
   pdfUrl            String?
-  status            String   @default("active") // active | expired | replaced
-  isActive          Boolean  @default(true)
-  generatedAt       DateTime @default(now())
+  status            String      @default("active") // active | expired | replaced | deleted
+  isActive          Boolean     @default(true)
+  deletedAt         DateTime? // Soft delete timestamp - null means not deleted
+  generatedAt       DateTime    @default(now())
 
   swaps        MealSwap[]
   trackedMeals TrackedMeal[]
 
   @@index([userId, isActive])
   @@index([userId, status, isActive])
+  @@index([userId, isActive, deletedAt])
 }
 
 // ============================================================
@@ -136,8 +138,8 @@ model MealSwap {
   mealPlan     MealPlan @relation(fields: [mealPlanId], references: [id], onDelete: Cascade)
   dayNumber    Int
   slot         String
-  originalMeal String   @default("{}") // JSON
-  newMeal      String   @default("{}") // JSON
+  originalMeal Json // Original meal data - required field
+  newMeal      Json // New meal data - required field
   createdAt    DateTime @default(now())
 
   @@index([mealPlanId, dayNumber, slot])
@@ -147,18 +149,18 @@ model MealSwap {
 // Plan Generation Job (BullMQ tracking)
 // ============================================================
 model PlanGenerationJob {
-  id           String   @id @default(uuid())
+  id           String    @id @default(uuid())
   userId       String
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  status       String   @default("pending") // pending | running | completed | failed
+  user         User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  status       String    @default("pending") // pending | running | completed | failed
   currentAgent Int?
-  progress     String?  // JSON
-  intakeData   String   @default("{}") // JSON - RawIntakeForm
-  result       String?  // JSON - Pipeline result on success
+  progress     Json? // Progress tracking data
+  intakeData   Json // RawIntakeForm - required field
+  result       Json? // Pipeline result on success
   error        String?
   startedAt    DateTime?
   completedAt  DateTime?
-  createdAt    DateTime @default(now())
+  createdAt    DateTime  @default(now())
 
   @@index([userId, status])
 }
@@ -179,7 +181,7 @@ model DailyLog {
   actualProteinG Int      @default(0)
   actualCarbsG   Int      @default(0)
   actualFatG     Int      @default(0)
-  adherenceScore Int?     // 0-100
+  adherenceScore Int? // 0-100
   createdAt      DateTime @default(now())
   updatedAt      DateTime @updatedAt
 
@@ -196,7 +198,7 @@ model TrackedMeal {
   user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   mealPlanId      String?
   mealPlan        MealPlan? @relation(fields: [mealPlanId], references: [id])
-  loggedDate      DateTime  // date field
+  loggedDate      DateTime // date field
   mealSlot        String?
   mealName        String
   portion         Float     @default(1.0)
@@ -205,21 +207,20 @@ model TrackedMeal {
   carbsG          Float
   fatG            Float
   fiberG          Float?
-  source          String    // plan_meal | fatsecret_search | manual | quick_add | food_scan
-  confidenceScore Float?    // 0-1
+  source          String // plan_meal | fatsecret_search | manual | quick_add | food_scan
+  confidenceScore Float? // 0-1
   fatsecretId     String?
   photoUrl        String?
   scanId          String?
   createdAt       DateTime  @default(now())
-
-  @@index([userId, loggedDate])
-  @@index([loggedDate])
 
   // Prevent duplicate plan meal entries: same user, plan, slot, date, source
   // This is the database-level guard against race conditions where two identical
   // requests pass the application-level duplicate check simultaneously.
   // NOTE: A migration is needed after this change (npx prisma migrate dev)
   @@unique([userId, mealPlanId, loggedDate, mealSlot, source], name: "TrackedMeal_plan_dedup")
+  @@index([userId, loggedDate])
+  @@index([loggedDate])
 }
 
 // ============================================================
@@ -229,11 +230,11 @@ model FoodScan {
   id             String    @id @default(uuid())
   userId         String
   user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  scanType       String    // food_plate | restaurant_menu
+  scanType       String // food_plate | restaurant_menu
   photoUrl       String
   status         String    @default("pending") // pending | processing | completed | failed
-  analysisResult String?   // JSON
-  adjustedResult String?   // JSON
+  analysisResult Json? // Vision analysis result
+  adjustedResult Json? // User-adjusted result
   userConfirmed  Boolean   @default(false)
   error          String?
   createdAt      DateTime  @default(now())
@@ -244,14 +245,14 @@ model FoodScan {
 // Weight Entry (weekly weight logging for adaptive adjustments)
 // ============================================================
 model WeightEntry {
-  id              String    @id @default(uuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  weightKg        Float     // weight in kg
-  weightLbs       Float     // weight in lbs (calculated for display)
-  logDate         DateTime  // date of the entry
-  notes           String?   // optional notes about the entry
-  createdAt       DateTime  @default(now())
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  weightKg  Float // weight in kg
+  weightLbs Float // weight in lbs (calculated for display)
+  logDate   DateTime // date of the entry
+  notes     String? // optional notes about the entry
+  createdAt DateTime @default(now())
 
   @@unique([userId, logDate])
   @@index([userId, logDate])
@@ -264,13 +265,13 @@ model CalorieAdjustment {
   id                String   @id @default(uuid())
   userId            String
   user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  previousGoalKcal  Int      // previous calorie target
-  newGoalKcal       Int      // new calorie target
-  adjustmentReason  String   // JSON - detailed reasoning for the adjustment
-  weightChangeKg    Float?   // weight change that triggered adjustment
-  weightChangeLbs   Float?   // weight change in lbs for display
-  trendAnalysis     String?  // JSON - trend data that led to adjustment
-  milestoneAchieved String?  // milestone reached (e.g., "5lbs", "10lbs")
+  previousGoalKcal  Int // previous calorie target
+  newGoalKcal       Int // new calorie target
+  adjustmentReason  Json // Detailed reasoning for the adjustment - required field
+  weightChangeKg    Float? // weight change that triggered adjustment
+  weightChangeLbs   Float? // weight change in lbs for display
+  trendAnalysis     Json? // Trend data that led to adjustment
+  milestoneAchieved String? // milestone reached (e.g., "5lbs", "10lbs")
   planRegenerated   Boolean  @default(false) // whether meal plan was regenerated
   createdAt         DateTime @default(now())
 
@@ -281,23 +282,23 @@ model CalorieAdjustment {
 // Fitness Connection (OAuth tokens for fitness platforms)
 // ============================================================
 model FitnessConnection {
-  id              String    @id @default(uuid())
-  userId          String
-  user            User      @relation(fields: [userId], references: [id], onDelete: Cascade)
-  platform        String    // apple_health | google_fit | fitbit | oura
-  accessToken     String    // encrypted OAuth access token
-  refreshToken    String?   // encrypted OAuth refresh token (if available)
-  tokenExpiresAt  DateTime? // token expiration timestamp
-  platformUserId  String?   // external user ID from the platform
-  scope           String?   // granted permissions scope
-  isActive        Boolean   @default(true)
-  lastSyncAt      DateTime? // last successful sync timestamp
-  syncFrequency   String    @default("daily") // hourly | daily | weekly
-  settings        String    @default("{}") // JSON - user preferences for this connection
-  createdAt       DateTime  @default(now())
-  updatedAt       DateTime  @updatedAt
+  id             String    @id @default(uuid())
+  userId         String
+  user           User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  platform       String // apple_health | google_fit | fitbit | oura
+  accessToken    String // encrypted OAuth access token
+  refreshToken   String? // encrypted OAuth refresh token (if available)
+  tokenExpiresAt DateTime? // token expiration timestamp
+  platformUserId String? // external user ID from the platform
+  scope          String? // granted permissions scope
+  isActive       Boolean   @default(true)
+  lastSyncAt     DateTime? // last successful sync timestamp
+  syncFrequency  String    @default("daily") // hourly | daily | weekly
+  settings       Json? // User preferences for this connection - defaults handled at app level
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
 
-  activitySyncs   ActivitySync[]
+  activitySyncs ActivitySync[]
 
   @@unique([userId, platform])
   @@index([userId, platform, isActive])
@@ -307,28 +308,28 @@ model FitnessConnection {
 // Activity Sync (normalized activity data from fitness platforms)
 // ============================================================
 model ActivitySync {
-  id                String   @id @default(uuid())
-  userId            String
-  user              User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  connectionId      String
-  connection        FitnessConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
-  platform          String   // apple_health | google_fit | fitbit | oura
-  syncDate          DateTime // date of the activity data (not sync time)
-  steps             Int?
-  activeCalories    Float?   // calories burned from activity
-  totalCalories     Float?   // total daily calories (BMR + active)
-  distanceKm        Float?
-  distanceMiles     Float?
-  activeMinutes     Int?     // minutes of moderate+ activity
-  workoutCount      Int?
-  workouts          String   @default("[]") // JSON array of workout details
-  sleepMinutes      Int?     // from Oura primarily
-  sleepScore        Int?     // 0-100 sleep quality score
-  heartRateAvg      Float?
-  heartRateMax      Int?
-  rawSyncData       String   @default("{}") // JSON - full platform response for debugging
-  syncedAt          DateTime @default(now())
-  processed         Boolean  @default(false) // whether calorie adjustment was applied
+  id             String            @id @default(uuid())
+  userId         String
+  user           User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  connectionId   String
+  connection     FitnessConnection @relation(fields: [connectionId], references: [id], onDelete: Cascade)
+  platform       String // apple_health | google_fit | fitbit | oura
+  syncDate       DateTime // date of the activity data (not sync time)
+  steps          Int?
+  activeCalories Float? // calories burned from activity
+  totalCalories  Float? // total daily calories (BMR + active)
+  distanceKm     Float?
+  distanceMiles  Float?
+  activeMinutes  Int? // minutes of moderate+ activity
+  workoutCount   Int?
+  workouts       Json? // Array of workout details - defaults handled at app level
+  sleepMinutes   Int? // from Oura primarily
+  sleepScore     Int? // 0-100 sleep quality score
+  heartRateAvg   Float?
+  heartRateMax   Int?
+  rawSyncData    Json? // Full platform response for debugging - defaults handled at app level
+  syncedAt       DateTime          @default(now())
+  processed      Boolean           @default(false) // whether calorie adjustment was applied
 
   @@unique([connectionId, syncDate])
   @@index([userId, syncDate])

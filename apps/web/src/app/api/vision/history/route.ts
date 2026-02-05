@@ -40,12 +40,12 @@ export async function GET(request: Request) {
       skip: offset,
     });
 
-    // Parse JSON fields and format response
+    // analysisResult is now a Prisma Json type - no parsing needed
     const formattedScans = scans.map((scan) => ({
       id: scan.id,
       status: scan.status,
       scanType: scan.scanType,
-      analysisResult: scan.analysisResult ? JSON.parse(scan.analysisResult) : null,
+      analysisResult: scan.analysisResult,
       userConfirmed: scan.userConfirmed,
       createdAt: scan.createdAt,
       completedAt: scan.completedAt,

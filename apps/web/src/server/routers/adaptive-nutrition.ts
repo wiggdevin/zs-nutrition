@@ -1,6 +1,8 @@
 import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
+import { Prisma } from '@prisma/client';
 import { protectedProcedure, router } from '../trpc';
+import { MACRO_SPLITS, calculateMacroTargets } from '@/lib/metabolic-utils';
 
 /**
  * Adaptive Nutrition Router — handles weight tracking, trend analysis,
@@ -115,11 +117,15 @@ export const adaptiveNutritionRouter = router({
       });
     }
 
-    // Get all weight entries, sorted by date
-    const weightEntries = await prisma.weightEntry.findMany({
+    // Get recent weight entries for trend analysis (90 days is sufficient)
+    // Fetch in descending order and reverse for chronological calculations
+    const weightEntriesDesc = await prisma.weightEntry.findMany({
       where: { userId: dbUserId },
-      orderBy: { logDate: 'asc' },
+      orderBy: { logDate: 'desc' },
+      take: 90, // Last 90 days is enough for trend analysis
     });
+    // Reverse to get chronological order for calculations
+    const weightEntries = weightEntriesDesc.reverse();
 
     if (weightEntries.length < 2) {
       return {
@@ -249,11 +255,14 @@ export const adaptiveNutritionRouter = router({
       });
     }
 
-    // Analyze weight trend
-    const trend = await ctx.prisma.weightEntry.findMany({
+    // Analyze weight trend (90 days is sufficient for adjustment calculations)
+    const trendDesc = await ctx.prisma.weightEntry.findMany({
       where: { userId: dbUserId },
-      orderBy: { logDate: 'asc' },
+      orderBy: { logDate: 'desc' },
+      take: 90, // Last 90 days is enough for trend analysis
     });
+    // Reverse to get chronological order for calculations
+    const trend = trendDesc.reverse();
 
     if (trend.length < 2) {
       return {
@@ -400,11 +409,14 @@ export const adaptiveNutritionRouter = router({
         });
       }
 
-      // Get trend data for audit log
-      const trend = await prisma.weightEntry.findMany({
+      // Get trend data for audit log (90 days is sufficient)
+      const trendDesc = await prisma.weightEntry.findMany({
         where: { userId: dbUserId },
-        orderBy: { logDate: 'asc' },
+        orderBy: { logDate: 'desc' },
+        take: 90, // Last 90 days is enough for trend analysis
       });
+      // Reverse to get chronological order for calculations
+      const trend = trendDesc.reverse();
 
       let weightChangeKg: number | null = null;
       let weightChangeLbs: number | null = null;
@@ -437,19 +449,23 @@ export const adaptiveNutritionRouter = router({
       }
 
       // Create calorie adjustment audit log
+      // adjustmentReason and trendAnalysis are now Prisma Json types - cast to InputJsonValue
+      // Use Prisma.JsonNull for null values in Json fields
       const adjustment = await prisma.calorieAdjustment.create({
         data: {
           userId: dbUserId,
           previousGoalKcal: profile.goalKcal ?? 0,
           newGoalKcal: input.newGoalKcal,
-          adjustmentReason: JSON.stringify({
+          adjustmentReason: {
             reason: `Adaptive adjustment based on ${trend.length} weight entries`,
             profileGoalType: profile.goalType,
             profileGoalRate: profile.goalRate,
-          }),
+          } as Prisma.InputJsonValue,
           weightChangeKg,
           weightChangeLbs,
-          trendAnalysis: trendAnalysis ? JSON.stringify(trendAnalysis) : null,
+          trendAnalysis: trendAnalysis
+            ? (trendAnalysis as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
           milestoneAchieved,
           planRegenerated: false,
         },
@@ -458,31 +474,23 @@ export const adaptiveNutritionRouter = router({
       // Update profile with new calorie targets
       const newGoalKcal = input.newGoalKcal;
 
-      // Recalculate macros based on new calories
-      const macroSplits: Record<string, { p: number; c: number; f: number }> = {
-        balanced: { p: 0.3, c: 0.4, f: 0.3 },
-        high_protein: { p: 0.4, c: 0.35, f: 0.25 },
-        low_carb: { p: 0.35, c: 0.25, f: 0.4 },
-        keto: { p: 0.3, c: 0.05, f: 0.65 },
-      };
-      const split = macroSplits[profile.macroStyle];
+      // Recalculate macros based on new calories using canonical utilities
+      const split = MACRO_SPLITS[profile.macroStyle];
       if (!split) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
           message: `Unknown macro style: ${profile.macroStyle}`,
         });
       }
-      const proteinG = Math.round((newGoalKcal * split.p) / 4);
-      const carbsG = Math.round((newGoalKcal * split.c) / 4);
-      const fatG = Math.round((newGoalKcal * split.f) / 9);
+      const macros = calculateMacroTargets(newGoalKcal, profile.macroStyle);
 
       const updatedProfile = await prisma.userProfile.update({
         where: { id: profile.id },
         data: {
           goalKcal: newGoalKcal,
-          proteinTargetG: proteinG,
-          carbsTargetG: carbsG,
-          fatTargetG: fatG,
+          proteinTargetG: macros.proteinG,
+          carbsTargetG: macros.carbsG,
+          fatTargetG: macros.fatG,
         },
       });
 

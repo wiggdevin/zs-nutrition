@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
 
@@ -69,6 +70,7 @@ export async function POST(req: NextRequest) {
       where: {
         id: planId,
         userId: user.id,
+        deletedAt: null, // Exclude soft-deleted plans
       },
     });
 
@@ -92,23 +94,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No swap found for this meal' }, { status: 404 });
     }
 
-    // Parse the validated plan
-    let validatedPlan: { days: PlanDay[]; [key: string]: unknown };
-    try {
-      validatedPlan =
-        typeof mealPlan.validatedPlan === 'string'
-          ? JSON.parse(mealPlan.validatedPlan)
-          : (mealPlan.validatedPlan as { days: PlanDay[]; [key: string]: unknown });
-    } catch {
-      return NextResponse.json({ error: 'Failed to parse plan data' }, { status: 500 });
+    // validatedPlan is now a Prisma Json type - no parsing needed
+    const validatedPlan = mealPlan.validatedPlan as { days: PlanDay[]; [key: string]: unknown };
+    if (!validatedPlan?.days) {
+      return NextResponse.json({ error: 'Invalid plan data' }, { status: 500 });
     }
 
-    // Parse original meal from swap record
-    let originalMeal: Meal;
-    try {
-      originalMeal = JSON.parse(swapRecord.originalMeal);
-    } catch {
-      return NextResponse.json({ error: 'Failed to parse original meal data' }, { status: 500 });
+    // originalMeal is now a Prisma Json type - cast through unknown for type safety
+    const originalMeal = swapRecord.originalMeal as unknown as Meal;
+    if (!originalMeal?.slot) {
+      return NextResponse.json({ error: 'Invalid original meal data' }, { status: 500 });
     }
 
     // Find the day and restore the original meal
@@ -135,6 +130,8 @@ export async function POST(req: NextRequest) {
     };
 
     // Delete the swap record and update plan in a transaction
+    // validatedPlan is now a Prisma Json type - pass object directly
+    // Cast to Prisma.InputJsonValue to satisfy type checker
     await prisma.$transaction([
       prisma.mealSwap.delete({
         where: { id: swapRecord.id },
@@ -142,7 +139,7 @@ export async function POST(req: NextRequest) {
       prisma.mealPlan.update({
         where: { id: planId },
         data: {
-          validatedPlan: JSON.stringify(validatedPlan),
+          validatedPlan: validatedPlan as Prisma.InputJsonValue,
         },
       }),
     ]);

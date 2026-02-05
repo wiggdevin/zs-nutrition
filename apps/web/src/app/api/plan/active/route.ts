@@ -30,11 +30,12 @@ export async function GET() {
       return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    // Find the active meal plan
+    // Find the active meal plan (exclude soft-deleted plans)
     const activePlan = await prisma.mealPlan.findFirst({
       where: {
         userId: user.id,
         isActive: true,
+        deletedAt: null, // Exclude soft-deleted plans
       },
       orderBy: { generatedAt: 'desc' },
       include: {
