@@ -121,9 +121,11 @@ const isPublicRoute = createRouteMatcher(
  */
 const protectedMiddleware = clerkMiddleware(async (auth, request) => {
   if (!isPublicRoute(request)) {
+    // Construct absolute URL for redirect (required by Next.js 15 middleware)
+    const signInUrl = new URL('/sign-in', request.url);
     await auth.protect({
       // Redirect unauthenticated users to sign-in
-      unauthenticatedUrl: '/sign-in',
+      unauthenticatedUrl: signInUrl.toString(),
     });
   }
 });
