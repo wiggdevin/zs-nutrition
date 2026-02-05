@@ -64,8 +64,45 @@
   }
 }
 
-/* Dark theme (default for this app) */
+/* Light theme variables */
 :root {
+  --background: #ffffff;
+  --foreground: #1a1a2e;
+  --card: #f8f9fa;
+  --card-foreground: #1a1a2e;
+  --popover: #ffffff;
+  --popover-foreground: #1a1a2e;
+  --primary: #ea580c;
+  --primary-foreground: #ffffff;
+  --secondary: #f1f3f5;
+  --secondary-foreground: #1a1a2e;
+  --muted: #f1f3f5;
+  --muted-foreground: #64748b;
+  --accent: #f1f3f5;
+  --accent-foreground: #1a1a2e;
+  --destructive: #dc2626;
+  --destructive-foreground: #ffffff;
+  --border: #e2e8f0;
+  --input: #e2e8f0;
+  --ring: #ea580c;
+  --radius: 0.625rem;
+  --chart-1: #ea580c;
+  --chart-2: #16a34a;
+  --chart-3: #2563eb;
+  --chart-4: #9333ea;
+  --chart-5: #d97706;
+  --sidebar: #f8f9fa;
+  --sidebar-foreground: #1a1a2e;
+  --sidebar-primary: #ea580c;
+  --sidebar-primary-foreground: #ffffff;
+  --sidebar-accent: #f1f3f5;
+  --sidebar-accent-foreground: #1a1a2e;
+  --sidebar-border: #e2e8f0;
+  --sidebar-ring: #ea580c;
+}
+
+/* Dark theme (default for this app) */
+.dark {
   --background: #0a0a0a;
   --foreground: #fafafa;
   --card: #1a1a1a;
@@ -144,7 +181,7 @@ body {
 .cl-formButtonPrimary { background-color: var(--primary) !important; }
 .cl-formButtonPrimary:hover { background-color: #ea580c !important; }
 .cl-footerActionLink { color: var(--primary) !important; }
-.cl-formFieldInput { background-color: #1e1e1e !important; border-color: var(--border) !important; color: var(--foreground) !important; }
+.cl-formFieldInput { background-color: var(--background) !important; border-color: var(--border) !important; color: var(--foreground) !important; }
 .cl-dividerLine { background-color: var(--border) !important; }
 .cl-dividerText { color: var(--muted-foreground) !important; }
 .cl-formFieldLabel { color: var(--muted-foreground) !important; }
@@ -183,7 +220,7 @@ body {
   }
 }
 
-/* Skeleton shimmer animation for dark theme */
+/* Skeleton shimmer animation */
 /* Creates a subtle gradient shine that moves from left to right */
 @keyframes shimmer {
   0% {
@@ -194,21 +231,21 @@ body {
   }
 }
 
-/* Dark theme skeleton base styles */
+/* Skeleton base styles — adapts to light/dark theme */
 .skeleton-shimmer {
   background: linear-gradient(
     90deg,
-    #1a1a1a 0%,
-    #2a2a2a 20%,
-    #333333 40%,
-    #2a2a2a 60%,
-    #1a1a1a 100%
+    var(--card) 0%,
+    var(--muted) 20%,
+    var(--border) 40%,
+    var(--muted) 60%,
+    var(--card) 100%
   );
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
 }
 
-/* Alternative skeleton pulse for dark theme */
+/* Alternative skeleton pulse */
 /* Uses opacity changes for a softer, more subtle animation */
 @keyframes skeleton-pulse {
   0%, 100% {
@@ -224,9 +261,15 @@ body {
 }
 
 /* Card elevation effect - subtle gradient background and shadow */
-/* Creates depth with background gradient from #1a1a1a to #1e1e1e and subtle shadow */
+/* Adapts to light/dark theme using CSS variables */
 .card-elevation {
-  background: linear-gradient(135deg, #1a1a1a 0%, #1e1e1e 100%);
+  background: linear-gradient(135deg, var(--card) 0%, var(--secondary) 100%);
+  box-shadow:
+    0 1px 3px 0 rgba(0, 0, 0, 0.1),
+    0 1px 2px -1px rgba(0, 0, 0, 0.06);
+}
+
+.dark .card-elevation {
   box-shadow:
     0 1px 3px 0 rgba(0, 0, 0, 0.4),
     0 1px 2px -1px rgba(0, 0, 0, 0.3);
@@ -234,7 +277,14 @@ body {
 
 /* Alternative card elevation with stronger shadow for modals */
 .card-elevation-modal {
-  background: linear-gradient(135deg, #1a1a1a 0%, #1e1e1e 100%);
+  background: linear-gradient(135deg, var(--card) 0%, var(--secondary) 100%);
+  box-shadow:
+    0 4px 6px -1px rgba(0, 0, 0, 0.15),
+    0 2px 4px -2px rgba(0, 0, 0, 0.1),
+    0 20px 25px -5px rgba(0, 0, 0, 0.08);
+}
+
+.dark .card-elevation-modal {
   box-shadow:
     0 4px 6px -1px rgba(0, 0, 0, 0.5),
     0 2px 4px -2px rgba(0, 0, 0, 0.4),

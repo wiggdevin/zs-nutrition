@@ -1,7 +1,7 @@
 import 'dotenv/config';
 import { Worker, Job } from 'bullmq';
 import { NutritionPipelineOrchestrator, PipelineConfig } from '@zero-sum/nutrition-engine';
-import { createRedisConnection, QUEUE_NAMES } from './queues.js';
+import { createRedisConnection, QUEUE_NAMES, createDeadLetterQueue } from './queues.js';
 
 /** Extract safe error message without PII or stack traces */
 function safeError(err: unknown): string {
@@ -77,6 +77,10 @@ async function startWorker() {
     process.exit(1);
   }
 
+  // Dead letter queue for jobs that exhaust all retry attempts
+  const deadLetterQueue = createDeadLetterQueue(connection);
+  console.log(`🪦 Dead letter queue ready: ${QUEUE_NAMES.DEAD_LETTER}`);
+
   const orchestrator = new NutritionPipelineOrchestrator(config);
 
   const worker = new Worker(
@@ -104,7 +108,7 @@ async function startWorker() {
         // Save the completed plan to the database via the web app's API endpoint
         await job.updateProgress({ status: 'saving', message: 'Saving your meal plan...' });
 
-        const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3000';
+        const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3456';
         const secret = process.env.INTERNAL_API_SECRET;
         if (!secret && process.env.NODE_ENV === 'production') {
           throw new Error('INTERNAL_API_SECRET is required in production.');
@@ -135,18 +139,65 @@ async function startWorker() {
     console.log(`✅ Job ${job?.id} completed`);
   });
 
-  worker.on('failed', (job, err) => {
-    console.error(`❌ Job ${job?.id} failed:`, err.message);
+  worker.on('failed', async (job, err) => {
+    if (!job) {
+      console.error('❌ Unknown job failed:', err.message);
+      return;
+    }
+
+    const maxAttempts = job.opts.attempts ?? 1;
+    const attemptsMade = job.attemptsMade;
+
+    if (attemptsMade >= maxAttempts) {
+      // Job exhausted all retries — move to dead letter queue
+      console.error(
+        `💀 Job ${job.id} permanently failed after ${attemptsMade}/${maxAttempts} attempts: ${err.message}`
+      );
+      try {
+        await deadLetterQueue.add(
+          `dlq:${job.name}`,
+          {
+            originalJobId: job.id,
+            originalQueue: QUEUE_NAMES.PLAN_GENERATION,
+            originalData: job.data,
+            failedReason: err.message,
+            attemptsMade,
+            failedAt: new Date().toISOString(),
+          },
+          { jobId: `dlq-${job.id}` },
+        );
+        console.log(`🪦 Job ${job.id} moved to dead letter queue`);
+      } catch (dlqErr) {
+        console.error(`❌ Failed to move job ${job.id} to DLQ:`, safeError(dlqErr));
+      }
+    } else {
+      console.warn(
+        `⚠️ Job ${job.id} failed (attempt ${attemptsMade}/${maxAttempts}), will retry: ${err.message}`
+      );
+    }
   });
 
   worker.on('error', (err) => {
     console.error('Worker error:', safeError(err));
   });
 
+  process.on('unhandledRejection', (reason, promise) => {
+    console.error('Unhandled Rejection at:', promise, 'reason:', safeError(reason));
+  });
+
+  process.on('uncaughtException', async (error) => {
+    console.error('Uncaught Exception:', safeError(error));
+    await worker.close();
+    await deadLetterQueue.close();
+    await connection.quit();
+    process.exit(1);
+  });
+
   // Graceful shutdown
   const shutdown = async () => {
     console.log('\n🛑 Shutting down worker...');
     await worker.close();
+    await deadLetterQueue.close();
     await connection.quit();
     process.exit(0);
   };

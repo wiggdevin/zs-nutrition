@@ -25,6 +25,7 @@ export function createRedisConnection(): IORedis {
  */
 export const QUEUE_NAMES = {
   PLAN_GENERATION: 'plan-generation',
+  DEAD_LETTER: 'dead-letter',
 } as const;
 
 // IMPORTANT: Keep in sync with apps/web/src/lib/queue.ts
@@ -56,5 +57,19 @@ export function createPlanGenerationQueue(connection: IORedis): Queue {
   return new Queue(QUEUE_NAMES.PLAN_GENERATION, {
     connection,
     ...defaultQueueOptions,
+  });
+}
+
+/**
+ * Create the dead-letter queue instance.
+ * Jobs that exhaust all retry attempts are moved here for investigation.
+ */
+export function createDeadLetterQueue(connection: IORedis): Queue {
+  return new Queue(QUEUE_NAMES.DEAD_LETTER, {
+    connection,
+    defaultJobOptions: {
+      removeOnComplete: false,
+      removeOnFail: false,
+    },
   });
 }

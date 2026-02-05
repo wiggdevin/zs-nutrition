@@ -38,6 +38,19 @@ export interface VisionAnalysisOptions {
   timeout?: number
 }
 
+const VISION_NUTRITION_BOUNDS = {
+  calories: { min: 5, max: 5000 },
+  protein_g: { min: 0, max: 300 },
+  carbs_g: { min: 0, max: 500 },
+  fat_g: { min: 0, max: 300 },
+  fiber_g: { min: 0, max: 100 },
+} as const
+
+function clampNutrition(value: number, field: keyof typeof VISION_NUTRITION_BOUNDS): number {
+  const bounds = VISION_NUTRITION_BOUNDS[field]
+  return Math.max(bounds.min, Math.min(bounds.max, value))
+}
+
 /**
  * Claude Vision client for food photo analysis
  */
@@ -216,13 +229,38 @@ Respond ONLY with valid JSON, no additional text.`
         throw new Error('Invalid response format: missing required fields')
       }
 
-      // Ensure nutrition values are numbers
-      parsed.estimated_nutrition = {
+      // Ensure nutrition values are numbers and within sane bounds
+      const rawNutrition = {
         calories: Number(parsed.estimated_nutrition.calories) || 0,
         protein_g: Number(parsed.estimated_nutrition.protein_g) || 0,
         carbs_g: Number(parsed.estimated_nutrition.carbs_g) || 0,
         fat_g: Number(parsed.estimated_nutrition.fat_g) || 0,
         fiber_g: parsed.estimated_nutrition.fiber_g ? Number(parsed.estimated_nutrition.fiber_g) : undefined,
+      }
+
+      parsed.estimated_nutrition = {
+        calories: clampNutrition(rawNutrition.calories, 'calories'),
+        protein_g: clampNutrition(rawNutrition.protein_g, 'protein_g'),
+        carbs_g: clampNutrition(rawNutrition.carbs_g, 'carbs_g'),
+        fat_g: clampNutrition(rawNutrition.fat_g, 'fat_g'),
+        fiber_g: rawNutrition.fiber_g !== undefined
+          ? clampNutrition(rawNutrition.fiber_g, 'fiber_g')
+          : undefined,
+      }
+
+      const clampedFields: string[] = []
+      for (const field of ['calories', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g'] as const) {
+        const raw = rawNutrition[field]
+        const clamped = parsed.estimated_nutrition[field]
+        if (raw !== undefined && clamped !== undefined && raw !== clamped) {
+          clampedFields.push(`${field}: ${raw} -> ${clamped}`)
+        }
+      }
+      if (clampedFields.length > 0) {
+        if (!Array.isArray(parsed.warnings)) {
+          parsed.warnings = []
+        }
+        parsed.warnings.push(`Nutrition values were clamped to sane bounds: ${clampedFields.join(', ')}`)
       }
 
       return parsed as FoodAnalysisResult

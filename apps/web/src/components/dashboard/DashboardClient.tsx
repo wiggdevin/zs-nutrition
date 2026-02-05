@@ -109,6 +109,7 @@ function MacroRing({
       role="progressbar"
       aria-label={`${label}`}
       aria-valuenow={current}
+      aria-valuemin={0}
       aria-valuemax={target}
       aria-valuetext={`${label}: ${current} of ${target} ${unit}, ${percentage}% complete`}
     >
@@ -617,6 +618,7 @@ function LogEntry({
         <button
           onClick={() => setShowAdjustModal(true)}
           disabled={isAdjusting}
+          aria-label={`Adjust portion for ${name}`}
           className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-primary border border-border hover:border-primary rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid={`adjust-btn-${id}`}
         >
@@ -653,7 +655,7 @@ function MacroRingSkeleton({ size = 120 }: { size?: number }) {
   const circumference = 2 * Math.PI * radius
 
   return (
-    <div className="flex flex-col items-center gap-2" data-testid="macro-ring-skeleton">
+    <div className="flex flex-col items-center gap-2" data-testid="macro-ring-skeleton" aria-hidden="true">
       <div className="relative" style={{ width: size, height: size }}>
         <svg width={size} height={size} className="-rotate-90">
           <circle
@@ -731,7 +733,7 @@ function LogEntrySkeleton() {
 /* ── Loading Skeleton ── */
 function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-background" data-testid="dashboard-skeleton">
+    <div className="min-h-screen bg-background" data-testid="dashboard-skeleton" role="status" aria-label="Loading dashboard">
       {/* Header */}
       <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between">
@@ -1200,9 +1202,9 @@ export default function DashboardClient() {
         <main className="max-w-7xl mx-auto px-4 py-8">
           {/* Error Banner */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm mb-8">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm mb-8" role="alert" aria-live="assertive">
               {error}
-              <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+              <button onClick={() => setError(null)} className="ml-2 underline" aria-label="Dismiss error message">Dismiss</button>
             </div>
           )}
 
@@ -1388,9 +1390,9 @@ export default function DashboardClient() {
       <main className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-8 space-y-8">
         {/* Error Banner */}
         {error && (
-          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm">
+          <div className="bg-red-500/10 border border-red-500/30 rounded-xl p-4 text-red-400 text-sm" role="alert" aria-live="assertive">
             {error}
-            <button onClick={() => setError(null)} className="ml-2 underline">Dismiss</button>
+            <button onClick={() => setError(null)} className="ml-2 underline" aria-label="Dismiss error message">Dismiss</button>
           </div>
         )}
 

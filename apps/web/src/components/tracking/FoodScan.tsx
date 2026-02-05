@@ -79,16 +79,28 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
     }
   }
 
+  const NUTRITION_BOUNDS: Record<string, { min: number; max: number }> = {
+    calories: { min: 0, max: 5000 },
+    protein_g: { min: 0, max: 300 },
+    carbs_g: { min: 0, max: 500 },
+    fat_g: { min: 0, max: 300 },
+    fiber_g: { min: 0, max: 100 },
+  }
+
   const handleAdjust = (field: keyof FoodAnalysisResult['estimated_nutrition'], value: string) => {
     if (!adjustedResult) return
 
     const numValue = parseFloat(value) || 0
+    const bounds = NUTRITION_BOUNDS[field]
+    const clampedValue = bounds
+      ? Math.max(bounds.min, Math.min(bounds.max, numValue))
+      : numValue
 
     setAdjustedResult({
       ...adjustedResult,
       estimated_nutrition: {
         ...adjustedResult.estimated_nutrition,
-        [field]: numValue,
+        [field]: clampedValue,
       },
     })
   }
@@ -143,7 +155,7 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
         <div className="flex items-center justify-between mb-4">
           <div>
             <h3 className="text-lg font-heading uppercase tracking-wider flex items-center gap-2">
-              <Camera className="w-5 h-5 text-primary" />
+              <Camera className="w-5 h-5 text-primary" aria-hidden="true" />
               Photo Analysis
             </h3>
             <p className="text-sm text-muted-foreground mt-1">
@@ -158,13 +170,15 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           accept="image/jpeg,image/png,image/webp"
           onChange={handleFileSelect}
           className="hidden"
+          aria-label="Select a food photo to analyze"
         />
 
         <button
           onClick={() => fileInputRef.current?.click()}
+          aria-label="Take or upload a food photo for nutritional analysis"
           className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-colors"
         >
-          <Camera className="w-5 h-5" />
+          <Camera className="w-5 h-5" aria-hidden="true" />
           Take or Upload Photo
         </button>
 
@@ -184,9 +198,9 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
   // Analyzing state - show loading
   if (state === 'analyzing') {
     return (
-      <div className="bg-card border border-border rounded-xl p-6 mb-6">
+      <div className="bg-card border border-border rounded-xl p-6 mb-6" role="status" aria-live="polite">
         <div className="flex flex-col items-center py-8">
-          <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" />
+          <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" aria-hidden="true" />
           <h3 className="text-lg font-heading uppercase tracking-wider mb-2">
             Analyzing Your Meal
           </h3>
@@ -217,16 +231,17 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
         : 'text-destructive'
 
     return (
-      <div className="bg-card border border-border rounded-xl p-6 mb-6">
+      <div className="bg-card border border-border rounded-xl p-6 mb-6" role="status" aria-live="polite">
         <div className="flex items-center justify-between mb-4">
           <h3 className="text-lg font-heading uppercase tracking-wider">
             Review Analysis
           </h3>
           <button
             onClick={reset}
+            aria-label="Discard analysis and start over"
             className="text-muted-foreground hover:text-foreground transition-colors"
           >
-            <X className="w-5 h-5" />
+            <X className="w-5 h-5" aria-hidden="true" />
           </button>
         </div>
 
@@ -243,10 +258,11 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
 
         {/* Meal Name */}
         <div className="mb-4">
-          <label className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-2 block">
+          <label htmlFor="scan-meal-name" className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-2 block">
             Meal Name
           </label>
           <input
+            id="scan-meal-name"
             type="text"
             value={adjustedResult.meal_name}
             onChange={(e) => setAdjustedResult({ ...adjustedResult, meal_name: e.target.value })}
@@ -278,36 +294,48 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Calories</label>
+              <label htmlFor="scan-calories" className="text-xs text-muted-foreground block mb-1">Calories</label>
               <input
+                id="scan-calories"
                 type="number"
+                min={0}
+                max={5000}
                 value={Math.round(adjustedResult.estimated_nutrition.calories)}
                 onChange={(e) => handleAdjust('calories', e.target.value)}
                 className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-primary"
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Protein (g)</label>
+              <label htmlFor="scan-protein" className="text-xs text-muted-foreground block mb-1">Protein (g)</label>
               <input
+                id="scan-protein"
                 type="number"
+                min={0}
+                max={300}
                 value={Math.round(adjustedResult.estimated_nutrition.protein_g)}
                 onChange={(e) => handleAdjust('protein_g', e.target.value)}
                 className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-chart-3"
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Carbs (g)</label>
+              <label htmlFor="scan-carbs" className="text-xs text-muted-foreground block mb-1">Carbs (g)</label>
               <input
+                id="scan-carbs"
                 type="number"
+                min={0}
+                max={500}
                 value={Math.round(adjustedResult.estimated_nutrition.carbs_g)}
                 onChange={(e) => handleAdjust('carbs_g', e.target.value)}
                 className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-success"
               />
             </div>
             <div>
-              <label className="text-xs text-muted-foreground block mb-1">Fat (g)</label>
+              <label htmlFor="scan-fat" className="text-xs text-muted-foreground block mb-1">Fat (g)</label>
               <input
+                id="scan-fat"
                 type="number"
+                min={0}
+                max={300}
                 value={Math.round(adjustedResult.estimated_nutrition.fat_g)}
                 onChange={(e) => handleAdjust('fat_g', e.target.value)}
                 className="w-full bg-background border border-border rounded-lg px-3 py-2 text-foreground focus:outline-none focus:border-warning"
@@ -355,15 +383,17 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
         <div className="flex gap-3">
           <button
             onClick={reset}
+            aria-label="Cancel analysis and start over"
             className="flex-1 bg-border hover:bg-secondary text-foreground font-semibold py-3 px-4 rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={handleConfirm}
+            aria-label="Confirm and log this meal"
             className="flex-1 bg-primary hover:bg-primary/90 text-white font-semibold py-3 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors"
           >
-            <Check className="w-4 h-4" />
+            <Check className="w-4 h-4" aria-hidden="true" />
             Log Meal
           </button>
         </div>
@@ -374,9 +404,9 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
   // Error state
   if (state === 'error') {
     return (
-      <div className="bg-card border border-destructive/30 rounded-xl p-6 mb-6">
+      <div className="bg-card border border-destructive/30 rounded-xl p-6 mb-6" role="alert" aria-live="assertive">
         <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
           <div className="flex-1">
             <h3 className="text-lg font-heading uppercase tracking-wider text-destructive mb-2">
               Analysis Failed
@@ -385,6 +415,7 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
             <div className="flex gap-3">
               <button
                 onClick={reset}
+                aria-label="Try again with a new photo"
                 className="bg-border hover:bg-secondary text-foreground font-semibold py-2 px-4 rounded-lg transition-colors"
               >
                 Try Again
@@ -399,9 +430,9 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
   // Success state
   if (state === 'success') {
     return (
-      <div className="bg-card border border-success/30 rounded-xl p-6 mb-6">
+      <div className="bg-card border border-success/30 rounded-xl p-6 mb-6" role="status" aria-live="polite">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center">
+          <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center" aria-hidden="true">
             <Check className="w-6 h-6 text-success" />
           </div>
           <div>

@@ -15,6 +15,7 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
         role="progressbar"
         aria-label="Onboarding progress"
         aria-valuenow={currentStep}
+        aria-valuemin={1}
         aria-valuemax={totalSteps}
         aria-valuetext={`Step ${currentStep} of ${totalSteps}`}
       >
@@ -27,6 +28,8 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
         {Array.from({ length: totalSteps }, (_, i) => (
           <div
             key={i}
+            aria-label={`Step ${i + 1} of ${totalSteps}`}
+            aria-current={i + 1 === currentStep ? "step" : undefined}
             className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors ${
               i + 1 <= currentStep
                 ? "bg-primary text-background"

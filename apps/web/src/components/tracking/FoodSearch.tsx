@@ -383,6 +383,7 @@ export default function FoodSearch() {
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
+            aria-hidden="true"
           >
             <path
               strokeLinecap="round"
@@ -396,7 +397,12 @@ export default function FoodSearch() {
             id="food-search-input"
             type="text"
             value={query}
+            role="combobox"
             aria-label="Search foods"
+            aria-expanded={showDropdown && (suggestions.length > 0 || searchResults.length > 0)}
+            aria-controls="food-search-listbox"
+            aria-autocomplete="list"
+            aria-haspopup="listbox"
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => {
@@ -455,6 +461,13 @@ export default function FoodSearch() {
               </svg>
             </button>
           )}
+        </div>
+
+        {/* Search Status (screen reader only) */}
+        <div className="sr-only" aria-live="polite" aria-atomic="true">
+          {isLoading && 'Searching for foods...'}
+          {!isLoading && showDropdown && searchResults.length > 0 && `${searchResults.length} food results found`}
+          {!isLoading && showDropdown && searchResults.length === 0 && query.trim().length >= 2 && 'No results found'}
         </div>
 
         {/* Query Too Long Warning */}
@@ -554,6 +567,9 @@ export default function FoodSearch() {
         {showDropdown && (suggestions.length > 0 || searchResults.length > 0) && (
           <div
             ref={dropdownRef}
+            id="food-search-listbox"
+            role="listbox"
+            aria-label="Food search results"
             className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto"
           >
             {/* Autocomplete suggestions */}
@@ -565,6 +581,8 @@ export default function FoodSearch() {
                 {suggestions.map((suggestion, idx) => (
                   <button
                     key={`sug-${idx}`}
+                    role="option"
+                    aria-selected={false}
                     onClick={() => handleSuggestionClick(suggestion)}
                     className="w-full px-4 py-2.5 text-left text-foreground hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
                     title={suggestion}
@@ -587,6 +605,9 @@ export default function FoodSearch() {
                 {searchResults.map((food) => (
                   <button
                     key={food.foodId}
+                    role="option"
+                    aria-selected={false}
+                    aria-label={`${food.name}${food.brandName ? `, ${food.brandName}` : ''}${food.nutrition ? `, ${food.nutrition.calories} calories` : ''}`}
                     onClick={() => handleFoodSelect(food)}
                     className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-border last:border-0"
                   >
@@ -692,9 +713,10 @@ export default function FoodSearch() {
                 setQuery('')
                 inputRef.current?.focus()
               }}
+              aria-label="Close food details"
               className="text-muted-foreground hover:text-foreground transition-colors"
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
@@ -863,7 +885,7 @@ export default function FoodSearch() {
 
           {/* Success Message */}
           {logSuccess && (
-            <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center gap-2 text-green-400">
+            <div className="mt-4 p-3 bg-green-500/10 border border-green-500/30 rounded-xl flex items-center gap-2 text-green-400" role="status" aria-live="polite">
               <svg className="w-5 h-5 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
               </svg>
@@ -873,7 +895,7 @@ export default function FoodSearch() {
 
           {/* Error Message */}
           {logError && (
-            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl" data-testid="food-search-log-error">
+            <div className="mt-4 p-3 bg-red-500/10 border border-red-500/30 rounded-xl" data-testid="food-search-log-error" role="alert" aria-live="assertive">
               <div className="flex items-start gap-2">
                 <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />

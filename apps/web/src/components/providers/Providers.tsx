@@ -2,6 +2,7 @@
 
 import { ClerkProvider } from '@clerk/nextjs'
 import { dark } from '@clerk/themes'
+import { ThemeProvider } from 'next-themes'
 import { TRPCProvider } from './TRPCProvider'
 import { Toaster } from '@/components/ui/Toaster'
 import { SignOutListener } from './SignOutListener'
@@ -37,24 +38,28 @@ export function Providers({ children }: { children: React.ReactNode }) {
   // Dev-mode bypass: skip ClerkProvider when no publishable key is configured
   if (!clerkPublishableKey) {
     return (
-      <TRPCProvider>
-        <SignOutListener />
-        {children}
-        <Toaster />
-      </TRPCProvider>
+      <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+        <TRPCProvider>
+          <SignOutListener />
+          {children}
+          <Toaster />
+        </TRPCProvider>
+      </ThemeProvider>
     )
   }
 
   return (
-    <ClerkProvider
-      publishableKey={clerkPublishableKey}
-      appearance={clerkAppearance}
-    >
-      <TRPCProvider>
-        <SignOutListener />
-        {children}
-        <Toaster />
-      </TRPCProvider>
-    </ClerkProvider>
+    <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
+      <ClerkProvider
+        publishableKey={clerkPublishableKey}
+        appearance={clerkAppearance}
+      >
+        <TRPCProvider>
+          <SignOutListener />
+          {children}
+          <Toaster />
+        </TRPCProvider>
+      </ClerkProvider>
+    </ThemeProvider>
   )
 }

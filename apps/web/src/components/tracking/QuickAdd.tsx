@@ -161,7 +161,7 @@ export default function QuickAdd() {
             </label>
             <div className="grid grid-cols-3 gap-3">
               <div>
-                <div className="text-xs text-blue-400 mb-1 font-medium">Protein (g)</div>
+                <label htmlFor="quick-add-protein" className="text-xs text-blue-400 mb-1 font-medium block">Protein (g)</label>
                 <input
                   id="quick-add-protein"
                   type="number"
@@ -174,7 +174,7 @@ export default function QuickAdd() {
                 />
               </div>
               <div>
-                <div className="text-xs text-green-400 mb-1 font-medium">Carbs (g)</div>
+                <label htmlFor="quick-add-carbs" className="text-xs text-green-400 mb-1 font-medium block">Carbs (g)</label>
                 <input
                   id="quick-add-carbs"
                   type="number"
@@ -187,7 +187,7 @@ export default function QuickAdd() {
                 />
               </div>
               <div>
-                <div className="text-xs text-yellow-400 mb-1 font-medium">Fat (g)</div>
+                <label htmlFor="quick-add-fat" className="text-xs text-yellow-400 mb-1 font-medium block">Fat (g)</label>
                 <input
                   id="quick-add-fat"
                   type="number"
@@ -204,7 +204,7 @@ export default function QuickAdd() {
 
           {/* Error Message */}
           {error && (
-            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm" data-testid="quick-add-standalone-error">
+            <div className="bg-red-500/10 border border-red-500/30 rounded-lg px-4 py-3 text-sm" data-testid="quick-add-standalone-error" role="alert" aria-live="assertive">
               <div className="flex items-start gap-2">
                 <svg className="w-5 h-5 text-red-400 flex-shrink-0 mt-0.5" fill="currentColor" viewBox="0 0 20 20">
                   <path fillRule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7 4a1 1 0 11-2 0 1 1 0 012 0zm-1-9a1 1 0 00-1 1v4a1 1 0 102 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
@@ -258,7 +258,7 @@ export default function QuickAdd() {
 
         {/* Success Result */}
         {result?.success && result.trackedMeal && (
-          <div className="mt-4 bg-success/10 border border-success/30 rounded-xl p-4">
+          <div className="mt-4 bg-success/10 border border-success/30 rounded-xl p-4" role="status" aria-live="polite">
             <div className="flex items-center gap-2 mb-2">
               <span className="text-success text-lg">✓</span>
               <span className="text-success font-bold text-sm uppercase tracking-wider">Added Successfully</span>
