@@ -6,6 +6,10 @@ import { prisma } from '@/lib/prisma'
  * GET /api/dev-test/verify-deactivation?email=test@example.com
  */
 export async function GET(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 })
+  }
+
   const { searchParams } = new URL(request.url)
   const email = searchParams.get('email')
 

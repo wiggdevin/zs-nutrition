@@ -6,6 +6,10 @@ import { IntakeNormalizer } from '@zero-sum/nutrition-engine';
  * Tests that IntakeNormalizer lowercases, trims, and deduplicates allergies and exclusions.
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   const normalizer = new IntakeNormalizer();
 
   const results: Array<{

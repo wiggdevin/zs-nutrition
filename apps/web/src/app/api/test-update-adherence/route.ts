@@ -8,6 +8,10 @@ import { getClerkUserId } from '@/lib/auth'
  * Only used in development for testing weekly average display.
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   const clerkId = await getClerkUserId()
   if (!clerkId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })

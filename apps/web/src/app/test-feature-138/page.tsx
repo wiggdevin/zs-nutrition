@@ -1,5 +1,6 @@
 'use client';
 
+import { notFound } from 'next/navigation';
 import { useState, useEffect } from 'react';
 
 interface TestResult {
@@ -13,6 +14,7 @@ interface TestResult {
 }
 
 export default function TestFeature138Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [results, setResults] = useState<TestResult[]>([]);
   const [testing, setTesting] = useState(false);
   const [signedIn, setSignedIn] = useState(false);

@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 
 /* ── Skeleton Pulse Block ── */
@@ -305,6 +306,7 @@ function ActionButtonLoadingDemo() {
 }
 
 export default function TestLoadingStatesPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [view, setView] = useState<"dashboard" | "mealplan" | "swap-modal" | "swap-card" | "buttons">("dashboard");
 
   return (

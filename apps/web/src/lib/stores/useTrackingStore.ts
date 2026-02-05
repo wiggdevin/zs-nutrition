@@ -1,7 +1,9 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { z } from 'zod';
+import { safeStorage } from './storage';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -78,6 +80,38 @@ const defaultCurrent: MacroCurrent = {
   carbs: 0,
   fat: 0,
 };
+
+// ── Persisted state schema ─────────────────────────────────────────────────
+
+const macroSchema = z.object({
+  calories: z.number().catch(0),
+  protein: z.number().catch(0),
+  carbs: z.number().catch(0),
+  fat: z.number().catch(0),
+});
+
+const trackedMealEntrySchema = z.object({
+  id: z.string().catch(''),
+  name: z.string().catch(''),
+  calories: z.number().catch(0),
+  protein: z.number().catch(0),
+  carbs: z.number().catch(0),
+  fat: z.number().catch(0),
+  portion: z.number().catch(1),
+  source: z.enum(['plan_meal', 'fatsecret_search', 'quick_add', 'manual']).catch('manual'),
+  mealSlot: z.string().nullable().catch(null),
+  createdAt: z.string().catch(''),
+});
+
+const trackingPersistedSchema = z.object({
+  targets: macroSchema.catch(defaultTargets),
+  current: macroSchema.catch(defaultCurrent),
+  trackedMeals: z.array(trackedMealEntrySchema).catch([]),
+  adherenceScore: z.number().catch(0),
+  weeklyAverageAdherence: z.number().nullable().catch(null),
+  planId: z.string().nullable().catch(null),
+  lastFetch: z.number().nullable().catch(null),
+});
 
 // ── Store ──────────────────────────────────────────────────────────────────
 
@@ -191,9 +225,10 @@ export const useTrackingStore = create<DailyLogState>()(
         }),
     }),
     {
-      name: 'zsn-tracking-store', // localStorage key
+      name: 'zsn-tracking-store',
+      version: 1,
+      storage: createJSONStorage(() => safeStorage),
       partialize: (state) => ({
-        // Only persist what we need across refreshes
         targets: state.targets,
         current: state.current,
         trackedMeals: state.trackedMeals,
@@ -201,8 +236,30 @@ export const useTrackingStore = create<DailyLogState>()(
         weeklyAverageAdherence: state.weeklyAverageAdherence,
         planId: state.planId,
         lastFetch: state.lastFetch,
-        // Don't persist loading state
       }),
+      migrate: (persisted: unknown) => {
+        const parsed = trackingPersistedSchema.safeParse(persisted);
+        if (!parsed.success) {
+          console.warn('[TrackingStore] Migration failed, resetting to defaults:', parsed.error);
+          return {
+            targets: defaultTargets,
+            current: defaultCurrent,
+            trackedMeals: [],
+            adherenceScore: 0,
+            weeklyAverageAdherence: null,
+            planId: null,
+            lastFetch: null,
+          };
+        }
+        return parsed.data;
+      },
+      onRehydrateStorage: () => {
+        return (_state, error) => {
+          if (error) {
+            console.warn('[TrackingStore] Rehydration error:', error);
+          }
+        };
+      },
     }
   )
 );

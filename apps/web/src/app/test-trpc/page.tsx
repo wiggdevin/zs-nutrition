@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 
 // Test results tracking
@@ -11,6 +12,7 @@ interface TestResult {
 }
 
 export default function TestTRPCPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [testResults, setTestResults] = useState<TestResult[]>([
     { name: 'API Endpoint: /api/trpc/user.getOnboardingState', status: 'pending', message: '', duration: 0 },
     { name: 'API Endpoint: /api/trpc/user.getProfile', status: 'pending', message: '', duration: 0 },

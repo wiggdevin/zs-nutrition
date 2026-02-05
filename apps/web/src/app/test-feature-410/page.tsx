@@ -1,8 +1,10 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 
 export default function TestFeature410Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [selectedFood, setSelectedFood] = useState<string | null>(null)
 
   // Mock foods with long names to test truncation

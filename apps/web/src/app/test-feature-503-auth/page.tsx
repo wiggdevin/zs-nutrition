@@ -1,8 +1,10 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { trpc } from '@/lib/trpc'
 
 export default function TestFeature503AuthPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   // Call the protected test procedure
   const { data, isLoading, error } = trpc.test.protectedHello.useQuery()
 

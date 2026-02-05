@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server'
-import { getAuth } from '@clerk/nextjs/server'
+import { requireActiveUser } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 /**
@@ -9,14 +9,18 @@ import { prisma } from '@/lib/prisma'
  */
 export async function GET(request: Request) {
   try {
-    const { userId } = await getAuth()
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
+
+    // Use clerkUserId as userId for foodScan queries (foodScan stores Clerk user IDs)
+    const userId = clerkUserId
 
     const { searchParams } = new URL(request.url)
     const limit = parseInt(searchParams.get('limit') || '20')

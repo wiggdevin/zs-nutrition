@@ -1,10 +1,12 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/lib/toast-store";
 
 export default function TestFeature450Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [inputValue, setInputValue] = useState("");
   const [selectValue, setSelectValue] = useState("option1");
   const [textAreaValue, setTextAreaValue] = useState("");

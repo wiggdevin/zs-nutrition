@@ -13,6 +13,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * 4. Empty query returns empty results
  */
 export async function GET(request: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q') || ''

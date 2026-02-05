@@ -1,8 +1,10 @@
 'use client';
 
+import { notFound } from 'next/navigation';
 import { toast } from '@/lib/toast-store';
 
 export default function ToastTestPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const triggerError = () => {
     toast.error('Something went wrong! Please try again.');
   };

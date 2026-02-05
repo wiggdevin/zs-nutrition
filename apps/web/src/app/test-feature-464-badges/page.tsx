@@ -7,7 +7,10 @@
 
 'use client'
 
+import { notFound } from 'next/navigation'
+
 export default function TestFeature464Badges() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const badges = [
     {
       status: 'PASS',

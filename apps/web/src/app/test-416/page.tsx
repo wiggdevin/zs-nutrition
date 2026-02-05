@@ -5,6 +5,7 @@
 
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
 
@@ -18,6 +19,7 @@ interface TestResult {
 }
 
 export default function Test416Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [results, setResults] = useState<TestResult[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)

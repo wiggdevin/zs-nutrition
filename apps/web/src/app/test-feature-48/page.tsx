@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 import { Weekday, OnboardingData } from "@/lib/onboarding-types";
 import { Step5Lifestyle } from "@/components/onboarding/Step5Lifestyle";
@@ -38,6 +39,7 @@ const defaultOnboardingData: OnboardingData = {
 };
 
 export default function TestFeature48Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [data, setData] = useState<OnboardingData>(defaultOnboardingData);
   const [selectedDays, setSelectedDays] = useState<string>("[]");
 

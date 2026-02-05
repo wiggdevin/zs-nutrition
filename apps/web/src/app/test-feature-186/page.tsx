@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 
 interface TestResult {
@@ -12,6 +13,7 @@ interface TestResult {
 }
 
 export default function TestFeature186Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [loading, setLoading] = useState(false)
   const [result, setResult] = useState<TestResult | null>(null)
   const [error, setError] = useState<string | null>(null)

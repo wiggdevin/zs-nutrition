@@ -12,6 +12,10 @@ import { prisma } from '@/lib/db';
  * DEV ONLY - This endpoint bypasses authentication
  */
 export async function POST(req: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 });
+  }
+
   try {
     const body = await req.json();
     const { email = 'test-416-adherence@example.com', date } = body;

@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
 import { safeLogError } from "@/lib/safe-logger";
+import { isDevMode } from "@/lib/dev-mode";
 
 /**
  * Validates that a redirect URL is safe (internal URL only)
@@ -16,12 +17,11 @@ function isValidRedirectUrl(url: string | null): boolean {
 // Dev-only sign-in endpoint that authenticates an existing user
 // This simulates what Clerk would do when an existing user signs in
 export async function POST(request: NextRequest) {
-  // Only allow in dev mode
-  const isDevMode =
-    !process.env.CLERK_SECRET_KEY ||
-    process.env.CLERK_SECRET_KEY === "sk_test_placeholder" ||
-    process.env.CLERK_SECRET_KEY === "";
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
 
+  // Only allow in dev mode
   if (!isDevMode) {
     return NextResponse.json(
       { error: "Dev auth is only available in development mode" },

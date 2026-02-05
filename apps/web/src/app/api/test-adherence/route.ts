@@ -14,6 +14,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * 'clear': Removes today's daily log and tracked meals
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId()
     if (!clerkUserId) {

@@ -6,6 +6,10 @@ import { safeLogError } from '@/lib/safe-logger'
  * Used for testing that the UI shows friendly error messages and no stack traces.
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 })
+  }
+
   try {
     // Simulate an unexpected internal error (e.g., database crash)
     throw new Error(

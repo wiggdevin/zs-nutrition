@@ -3,6 +3,10 @@ import { cookies } from "next/headers";
 import { safeLogError } from "@/lib/safe-logger";
 
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   try {
     const cookieStore = await cookies();
 

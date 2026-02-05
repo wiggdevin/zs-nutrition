@@ -2,128 +2,79 @@ import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 import type { NextFetchEvent } from "next/server";
 import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
+import { isDevMode } from "@/lib/dev-mode";
 
-const isDevMode =
-  !process.env.CLERK_SECRET_KEY ||
-  process.env.CLERK_SECRET_KEY === "sk_test_placeholder" ||
-  process.env.CLERK_SECRET_KEY === "" ||
-  process.env.CLERK_SECRET_KEY.startsWith("sk_...") ||
-  process.env.CLERK_SECRET_KEY === "sk_..." ||
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY?.startsWith("pk_...") ||
-  process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY === "pk_...";
+const isProduction = process.env.NODE_ENV === "production";
 
 /**
  * Public routes that do not require authentication.
  * - Landing page
  * - Sign-in / sign-up (including sub-routes like /sign-in/factor-one)
  * - Webhook endpoints (Clerk, Stripe, etc.)
- * - Dev auth endpoints (sign-in/sign-up API in dev mode)
  * - Static assets handled by Next.js (_next)
  */
-const publicPaths = [
+const productionPublicPaths = [
   "/",
   "/sign-in",
   "/sign-up",
   "/api/webhooks",
-  "/api/dev-auth",
-  "/api/test-empty-state",
-  "/api/test-dietary-style",
-  "/api/test-optimization-loop",
-  "/api/dev-test",
-  "/api/seed-plan",
-  "/api/test-411-ingredients",
   "/api/food-search",
-  "/test-network-error",
-  "/test-500-error",
-  "/test-loading-states",
-  "/test-skeleton",
-  "/dev-test",
-  "/test-416",
-  "/dev-signin",
-  "/test-feature-148",
-  "/test-feature-153",
-  "/test-feature-410",
-  "/test-feature-425",
-  "/api/test-feature-464",
-  "/api/set-active-plan",
-  "/test-feature-464-badges",
-  "/test-feature-503",
-  "/test-feature-150",
-  "/test-feature-235",
-  "/api/test-feature-235",
-  "/test-feature-243",
-  "/api/test-feature-186",
-  "/test-feature-186",
-  "/api/test-grocery-rounding",
-  "/api/test-feature-189",
-  "/api/trpc/test.hello",
-  "/api/dev-test-user-plan",
-  "/api/dev-complete-onboarding",
-  "/api/dev-test-regenerate",
-  "/api/test-feature-141",
-  "/api/test-feature-170-undo",
-  "/test-feature-128",
-  "/test-feature-48",
-  "/test-feature-138",
-  "/test-feature-139",
 ];
+
+const devOnlyPublicPaths = [
+  // API: dev, test, debug, seed routes (prefix-matched)
+  "/api/dev-",
+  "/api/test-",
+  "/api/debug-",
+  "/api/seed-",
+  "/api/get-latest-job",
+  "/api/trpc/test.",
+  // Page: test, dev routes (prefix-matched)
+  "/test-",
+  "/test",
+  "/dev-",
+];
+
+const publicPaths = isProduction
+  ? productionPublicPaths
+  : [...productionPublicPaths, ...devOnlyPublicPaths];
 
 function isPublicPath(pathname: string): boolean {
   // Exact match for root
   if (pathname === "/") return true;
-  // Prefix match for other public paths
-  return publicPaths.some(
-    (p) => p !== "/" && (pathname === p || pathname.startsWith(p + "/"))
-  );
+  // Prefix match for other public paths.
+  // Works for both exact paths (e.g. "/api/food-search") and prefix patterns
+  // (e.g. "/api/test-" matches "/api/test-prisma", "/api/test-fatsecret", etc.)
+  return publicPaths.some((p) => p !== "/" && pathname.startsWith(p));
 }
 
-const isPublicRoute = createRouteMatcher([
+const productionPublicRoutes = [
   "/",
   "/sign-in(.*)",
   "/sign-up(.*)",
   "/api/webhooks(.*)",
-  "/api/dev-auth(.*)",
-  "/api/test-empty-state(.*)",
-  "/api/test-dietary-style(.*)",
-  "/api/test-optimization-loop(.*)",
-  "/api/dev-test(.*)",
-  "/api/seed-plan(.*)",
-  "/api/test-411-ingredients(.*)",
   "/api/food-search(.*)",
-  "/test-network-error(.*)",
-  "/test-500-error(.*)",
-  "/test-loading-states(.*)",
-  "/test-skeleton(.*)",
-  "/dev-test(.*)",
-  "/test-416",
-  "/dev-signin",
-  "/test-feature-148",
-  "/test-feature-153",
-  "/test-feature-410",
-  "/test-feature-425",
-  "/api/test-feature-464(.*)",
-  "/api/set-active-plan(.*)",
-  "/test-feature-464-badges",
-  "/test-feature-503",
-  "/test-feature-150",
-  "/test-feature-235",
-  "/api/test-feature-235(.*)",
-  "/test-feature-243",
-  "/api/test-feature-186(.*)",
-  "/test-feature-186",
-  "/api/test-grocery-rounding(.*)",
-  "/api/test-feature-189(.*)",
-  "/api/trpc/test.hello(.*)",
-  "/api/dev-test-user-plan(.*)",
-  "/api/dev-complete-onboarding(.*)",
-  "/api/dev-test-regenerate(.*)",
-  "/api/test-feature-141(.*)",
-  "/api/test-feature-170-undo(.*)",
-  "/test-feature-128",
-  "/test-feature-48",
-  "/test-feature-138",
-  "/test-feature-139",
-]);
+];
+
+const devOnlyPublicRoutes = [
+  // API: dev, test, debug, seed routes (Clerk route matcher patterns)
+  "/api/dev-(.*)",
+  "/api/test-(.*)",
+  "/api/debug-(.*)",
+  "/api/seed-(.*)",
+  "/api/get-latest-job(.*)",
+  "/api/trpc/test\\.(.*)",
+  // Page: test, dev routes
+  "/test-(.*)",
+  "/test",
+  "/dev-(.*)",
+];
+
+const isPublicRoute = createRouteMatcher(
+  isProduction
+    ? productionPublicRoutes
+    : [...productionPublicRoutes, ...devOnlyPublicRoutes]
+);
 
 /**
  * Clerk middleware that protects all non-public routes.

@@ -1,7 +1,9 @@
 'use client';
 
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
+import { persist, createJSONStorage } from 'zustand/middleware';
+import { z } from 'zod';
+import { safeStorage } from './storage';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -48,6 +50,26 @@ const defaultProfile: UserProfile = {
   mealsPerDay: 3,
 };
 
+// ── Persisted state schema ─────────────────────────────────────────────────
+
+const userProfileSchema = z.object({
+  name: z.string().catch(''),
+  email: z.string().catch(''),
+  sex: z.enum(['male', 'female', '']).catch(''),
+  age: z.number().nullable().catch(null),
+  heightCm: z.number().nullable().catch(null),
+  weightKg: z.number().nullable().catch(null),
+  activityLevel: z.string().catch(''),
+  goalType: z.string().catch(''),
+  dietaryStyle: z.string().catch(''),
+  mealsPerDay: z.number().catch(3),
+});
+
+const userPersistedSchema = z.object({
+  profile: userProfileSchema.nullable().catch(null),
+  isOnboarded: z.boolean().catch(false),
+});
+
 // ── Store ──────────────────────────────────────────────────────────────────
 
 export const useUserStore = create<UserState>()(
@@ -81,11 +103,31 @@ export const useUserStore = create<UserState>()(
       }),
     }),
     {
-      name: 'zsn-user-store', // localStorage key
+      name: 'zsn-user-store',
+      version: 1,
+      storage: createJSONStorage(() => safeStorage),
       partialize: (state) => ({
         profile: state.profile,
         isOnboarded: state.isOnboarded,
       }),
+      migrate: (persisted: unknown) => {
+        const parsed = userPersistedSchema.safeParse(persisted);
+        if (!parsed.success) {
+          console.warn('[UserStore] Migration failed, resetting to defaults:', parsed.error);
+          return {
+            profile: null,
+            isOnboarded: false,
+          };
+        }
+        return parsed.data;
+      },
+      onRehydrateStorage: () => {
+        return (_state, error) => {
+          if (error) {
+            console.warn('[UserStore] Rehydration error:', error);
+          }
+        };
+      },
     }
   )
 );

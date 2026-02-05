@@ -1,17 +1,17 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
+import { isDevMode } from "@/lib/dev-mode";
 
 /**
  * DEV API: Seed test user for feature #191 testing
  * POST /api/dev-test/seed-191
  */
 export async function POST(request: Request) {
-  // Only allow in dev mode
-  const isDevMode =
-    !process.env.CLERK_SECRET_KEY ||
-    process.env.CLERK_SECRET_KEY === "sk_test_placeholder" ||
-    process.env.CLERK_SECRET_KEY === "";
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
 
+  // Only allow in dev mode
   if (!isDevMode) {
     return NextResponse.json(
       { error: "Dev test endpoint only available in development mode" },

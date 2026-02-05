@@ -1,9 +1,11 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { trpc } from '@/lib/trpc'
 import { useState } from 'react'
 
 export default function TestFeature150Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [jobId, setJobId] = useState('')
 
   // Use tRPC query hook to fetch job status

@@ -1,20 +1,26 @@
 import { NextResponse } from 'next/server';
 import { getClerkUserId } from '@/lib/auth';
-import { resetRateLimit } from '@/lib/rate-limit';
+import { planGenerationLimiter } from '@/lib/rate-limit';
 
 /**
  * Development-only endpoint to reset rate limits for testing.
- * This allows developers to test rate limiting without waiting for the window to expire.
+ * With Upstash rate limiting, limits are managed server-side via Redis TTLs.
+ * This endpoint now resets by calling the limiter's resetUsedTokens method.
  */
 export async function POST() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 });
+  }
+
   try {
     const clerkUserId = await getClerkUserId();
     if (!clerkUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // Reset rate limit for plan generation
-    resetRateLimit(clerkUserId, 'plan-generation');
+    if (planGenerationLimiter) {
+      await planGenerationLimiter.resetUsedTokens(clerkUserId);
+    }
 
     return NextResponse.json({
       success: true,

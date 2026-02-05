@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
-import { getClerkUserId } from '@/lib/auth'
+import { requireActiveUser } from '@/lib/auth'
 
 async function getOrCreateUser(clerkUserId: string) {
   let user = await prisma.user.findUnique({ where: { clerkUserId } })
@@ -14,9 +14,14 @@ async function getOrCreateUser(clerkUserId: string) {
 
 // GET - fetch onboarding state
 export async function GET() {
-  const clerkUserId = await getClerkUserId()
-  if (!clerkUserId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  let clerkUserId: string
+  let dbUserId: string
+  try {
+    ({ clerkUserId, dbUserId } = await requireActiveUser())
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unauthorized'
+    const status = message === 'Account is deactivated' ? 403 : 401
+    return NextResponse.json({ error: message }, { status })
   }
 
   const user = await getOrCreateUser(clerkUserId)
@@ -60,9 +65,14 @@ export async function GET() {
 
 // POST - update onboarding step
 export async function POST(request: NextRequest) {
-  const clerkUserId = await getClerkUserId()
-  if (!clerkUserId) {
-    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  let clerkUserId: string
+  let dbUserId: string
+  try {
+    ({ clerkUserId, dbUserId } = await requireActiveUser())
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Unauthorized'
+    const status = message === 'Account is deactivated' ? 403 : 401
+    return NextResponse.json({ error: message }, { status })
   }
 
   let body: any

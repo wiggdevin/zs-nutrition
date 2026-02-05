@@ -1,8 +1,10 @@
 "use client"
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 
 export default function TestSkeletonPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [loading, setLoading] = useState(true)
 
   // Toggle loading state every 3 seconds for testing

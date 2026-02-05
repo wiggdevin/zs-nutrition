@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { v4 as uuidv4 } from "uuid";
+import { isDevMode } from "@/lib/dev-mode";
 
 /**
  * Dev-only endpoint to test tracking data isolation between users.
@@ -14,10 +15,9 @@ import { v4 as uuidv4 } from "uuid";
  * 6. Cleans up all test data
  */
 export async function GET() {
-  const isDevMode =
-    !process.env.CLERK_SECRET_KEY ||
-    process.env.CLERK_SECRET_KEY === "sk_test_placeholder" ||
-    process.env.CLERK_SECRET_KEY === "";
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
 
   if (!isDevMode) {
     return NextResponse.json(

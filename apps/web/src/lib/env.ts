@@ -13,39 +13,48 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 // Server-side environment schema
 // ---------------------------------------------------------------------------
+const isProduction = process.env.NODE_ENV === 'production';
+
 const serverEnvSchema = z.object({
   // Database
   DATABASE_URL: z
     .string()
     .min(1, 'DATABASE_URL is required — get your Neon connection string from https://console.neon.tech'),
 
-  // Clerk authentication (optional in dev — uses mock auth when empty)
-  CLERK_SECRET_KEY: z
-    .string()
-    .optional()
-    .default(''),
+  // Clerk authentication (required in production)
+  CLERK_SECRET_KEY: isProduction
+    ? z.string().min(1, 'CLERK_SECRET_KEY is required in production')
+    : z.string().optional().default(''),
 
   // AI — Anthropic Claude
-  ANTHROPIC_API_KEY: z
-    .string()
-    .optional()
-    .default(''),
+  ANTHROPIC_API_KEY: isProduction
+    ? z.string().min(1, 'ANTHROPIC_API_KEY is required in production')
+    : z.string().optional().default(''),
 
   // FatSecret API
-  FATSECRET_CLIENT_ID: z
-    .string()
-    .optional()
-    .default(''),
-  FATSECRET_CLIENT_SECRET: z
-    .string()
-    .optional()
-    .default(''),
+  FATSECRET_CLIENT_ID: isProduction
+    ? z.string().min(1, 'FATSECRET_CLIENT_ID is required in production')
+    : z.string().optional().default(''),
+  FATSECRET_CLIENT_SECRET: isProduction
+    ? z.string().min(1, 'FATSECRET_CLIENT_SECRET is required in production')
+    : z.string().optional().default(''),
+
+  // FatSecret proxy
+  FATSECRET_PROXY_URL: z.string().optional().default(''),
+  FATSECRET_PROXY_SECRET: z.string().optional().default(''),
 
   // Redis
-  REDIS_URL: z
-    .string()
-    .optional()
-    .default('redis://localhost:6379'),
+  REDIS_URL: isProduction
+    ? z.string().min(1, 'REDIS_URL is required in production')
+    : z.string().optional().default('redis://localhost:6379'),
+
+  // Upstash Redis REST (rate limiting)
+  UPSTASH_REDIS_REST_URL: isProduction
+    ? z.string().min(1, 'UPSTASH_REDIS_REST_URL is required in production for rate limiting')
+    : z.string().optional().default(''),
+  UPSTASH_REDIS_REST_TOKEN: isProduction
+    ? z.string().min(1, 'UPSTASH_REDIS_REST_TOKEN is required in production for rate limiting')
+    : z.string().optional().default(''),
 
   // Vercel Blob
   BLOB_READ_WRITE_TOKEN: z
@@ -54,20 +63,26 @@ const serverEnvSchema = z.object({
     .default(''),
 
   // Development helpers
-  USE_MOCK_QUEUE: z
-    .string()
-    .optional()
-    .default('true'),
+  USE_MOCK_QUEUE: isProduction
+    ? z.string().optional().default('false')
+    : z.string().optional().default('true'),
 
-  INTERNAL_API_SECRET: z
-    .string()
-    .optional()
-    .default(''),
+  INTERNAL_API_SECRET: isProduction
+    ? z.string().min(20, 'INTERNAL_API_SECRET must be at least 20 characters in production')
+    : z.string().optional().default('dev-internal-secret'),
 
   WEB_APP_URL: z
     .string()
     .optional()
     .default('http://localhost:3456'),
+
+  // Fitness platform integrations (opt-in)
+  FITBIT_CLIENT_ID: z.string().optional().default(''),
+  FITBIT_CLIENT_SECRET: z.string().optional().default(''),
+  OURA_CLIENT_ID: z.string().optional().default(''),
+  OURA_CLIENT_SECRET: z.string().optional().default(''),
+  GOOGLE_FIT_CLIENT_ID: z.string().optional().default(''),
+  GOOGLE_FIT_CLIENT_SECRET: z.string().optional().default(''),
 });
 
 // ---------------------------------------------------------------------------

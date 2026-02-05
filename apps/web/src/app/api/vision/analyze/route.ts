@@ -1,8 +1,9 @@
 import { NextResponse, NextRequest } from 'next/server'
-import { getAuth } from '@clerk/nextjs/server'
+import { requireActiveUser } from '@/lib/auth'
 import { getVisionClient, FoodAnalysisResult } from '@/lib/vision/claude-vision'
 import { prisma } from '@/lib/prisma'
 import { v4 as uuidv4 } from 'uuid'
+import { visionLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit'
 
 interface AnalyzeRequest {
   imageData: string // Base64 data URL
@@ -17,13 +18,20 @@ interface AnalyzeRequest {
 export async function POST(request: NextRequest) {
   try {
     // Authenticate user
-    const { userId } = await getAuth(request)
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
+    }
 
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 401 }
-      )
+    // Rate limit: 20 vision analyses per hour per user
+    const rateLimitResult = await checkRateLimit(visionLimiter, clerkUserId)
+    if (rateLimitResult && !rateLimitResult.success) {
+      return rateLimitExceededResponse(rateLimitResult.reset)
     }
 
     // Parse request
@@ -64,7 +72,7 @@ export async function POST(request: NextRequest) {
     await prisma.foodScan.create({
       data: {
         id: scanId,
-        userId,
+        userId: clerkUserId,
         scanType,
         photoUrl: imageData, // Store base64 data (will be moved to blob storage in production)
         status: 'processing',

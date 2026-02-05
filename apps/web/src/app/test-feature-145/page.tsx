@@ -1,5 +1,6 @@
 "use client";
 
+import { notFound } from 'next/navigation'
 import { useState } from "react";
 
 const agentStages = [
@@ -12,6 +13,7 @@ const agentStages = [
 ];
 
 export default function TestFeature145Page() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [currentAgent, setCurrentAgent] = useState(0);
 
   return (

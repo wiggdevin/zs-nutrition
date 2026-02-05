@@ -2,8 +2,8 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import { savePlanToDatabase } from '@/lib/save-plan';
-import { getClerkUserId, isDevMode } from '@/lib/auth';
-import { checkRateLimit, addRateLimitHeaders, rateLimitExceededResponse, RATE_LIMITS } from '@/lib/rate-limit';
+import { requireActiveUser, isDevMode } from '@/lib/auth';
+import { planGenerationLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
 import { safeLogError, safeLogWarn } from '@/lib/safe-logger';
 
 const useMockQueue = process.env.USE_MOCK_QUEUE === 'true';
@@ -11,15 +11,20 @@ const useMockQueue = process.env.USE_MOCK_QUEUE === 'true';
 // POST - Create a plan generation job
 export async function POST() {
   try {
-    const clerkUserId = await getClerkUserId();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
-    // Rate limit: 3 plan generations per hour per user
-    const rateLimitResult = checkRateLimit(clerkUserId, RATE_LIMITS.planGeneration);
-    if (!rateLimitResult.success) {
-      return rateLimitExceededResponse(rateLimitResult, RATE_LIMITS.planGeneration);
+    // Rate limit: 5 plan generations per hour per user
+    const rateLimitResult = await checkRateLimit(planGenerationLimiter, clerkUserId);
+    if (rateLimitResult && !rateLimitResult.success) {
+      return rateLimitExceededResponse(rateLimitResult.reset);
     }
 
     // Find or create user
@@ -80,7 +85,6 @@ export async function POST() {
         status: existingJob.status,
         existing: true,
       });
-      addRateLimitHeaders(response, rateLimitResult);
       return response;
     }
 
@@ -147,7 +151,6 @@ export async function POST() {
       status: job.status,
       planId,
     });
-    addRateLimitHeaders(response, rateLimitResult);
     return response;
   } catch (error) {
     safeLogError('Plan generate error:', error);

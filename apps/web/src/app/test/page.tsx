@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 
 interface VerificationResult {
@@ -25,6 +26,7 @@ interface JobInfo {
 }
 
 export default function TestPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [result, setResult] = useState<VerificationResult | null>(null)
   const [jobs, setJobs] = useState<JobInfo[]>([])
   const [loading, setLoading] = useState(false)

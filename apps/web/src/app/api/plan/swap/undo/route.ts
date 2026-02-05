@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getClerkUserId } from '@/lib/auth';
+import { requireActiveUser } from '@/lib/auth';
 import { safeLogError } from '@/lib/safe-logger';
 
 interface MealNutrition {
@@ -39,9 +39,14 @@ interface PlanDay {
  */
 export async function POST(req: NextRequest) {
   try {
-    const clerkUserId = await getClerkUserId();
-    if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+    let clerkUserId: string
+    let dbUserId: string
+    try {
+      ({ clerkUserId, dbUserId } = await requireActiveUser())
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized'
+      const status = message === 'Account is deactivated' ? 403 : 401
+      return NextResponse.json({ error: message }, { status })
     }
 
     const body = await req.json();

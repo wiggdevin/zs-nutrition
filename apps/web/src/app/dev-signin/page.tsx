@@ -4,10 +4,12 @@
 
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 
 export default function DevSignInPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const router = useRouter()
   const [email, setEmail] = useState('test-416-adherence@example.com')
   const [loading, setLoading] = useState(false)

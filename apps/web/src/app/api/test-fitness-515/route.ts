@@ -14,6 +14,10 @@ import { calculateCalorieAdjustment } from '@/lib/fitness/calculator';
  * This simulates activity data from a fitness platform
  */
 export async function POST(req: NextRequest) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   try {
     const { userId } = await auth();
     if (!userId) {
@@ -220,6 +224,10 @@ export async function POST(req: NextRequest) {
  * Get test status and instructions
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   return NextResponse.json({
     name: 'Fitness Integration Test API',
     version: '1.0.0',

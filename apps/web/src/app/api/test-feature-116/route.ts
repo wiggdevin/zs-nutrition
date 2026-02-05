@@ -7,6 +7,10 @@ import type { ClientIntake } from '@zero-sum/nutrition-engine';
  * Tests that calories are correctly distributed across meals based on mealsPerDay setting
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   const calculator = new MetabolicCalculator();
 
   // Helper to create intake with specific meal/snack configuration

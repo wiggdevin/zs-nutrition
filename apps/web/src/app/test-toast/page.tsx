@@ -1,8 +1,10 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { toast } from '@/lib/toast-store'
 
 export default function TestToastPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   return (
     <div className="min-h-screen bg-[#0a0a0a] p-8">
       <h1 className="text-2xl font-bold text-[#fafafa] mb-6">Toast Notification Test</h1>

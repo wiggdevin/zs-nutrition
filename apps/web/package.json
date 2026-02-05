@@ -22,6 +22,8 @@
     "@trpc/client": "^11.9.0",
     "@trpc/react-query": "^11.9.0",
     "@trpc/server": "^11.9.0",
+    "@upstash/ratelimit": "^2.0.8",
+    "@upstash/redis": "^1.36.2",
     "@vercel/blob": "^2.0.1",
     "@zero-sum/nutrition-engine": "workspace:*",
     "bullmq": "^5.34.0",

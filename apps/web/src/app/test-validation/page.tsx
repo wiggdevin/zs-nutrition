@@ -1,5 +1,6 @@
 'use client'
 
+import { notFound } from 'next/navigation'
 import { useState } from 'react'
 import { trpc } from '@/lib/trpc'
 
@@ -49,6 +50,7 @@ function TestResultCard({ result }: { result: TestResult }) {
 }
 
 export default function TestValidationPage() {
+  if (process.env.NODE_ENV === 'production') { notFound() }
   const [results, setResults] = useState<TestResult[]>([])
   const [isRunning, setIsRunning] = useState(false)
   const [apiResults, setApiResults] = useState<Record<string, unknown> | null>(null)

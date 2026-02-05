@@ -10,6 +10,10 @@ import { cookies } from 'next/headers'
  * Creates test meals with different dates and slots
  */
 export async function POST(request: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     // For testing, allow both authenticated users and dev mode
     let user

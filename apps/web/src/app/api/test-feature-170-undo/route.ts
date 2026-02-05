@@ -15,6 +15,10 @@ import { prisma } from '@/lib/prisma';
  * GET /api/test-feature-170-undo
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   // Dev-only test endpoint
 
   const testResults: {

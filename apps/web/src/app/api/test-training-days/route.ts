@@ -6,6 +6,10 @@ import { safeLogError } from '@/lib/safe-logger'
 // POST: Set training days on user's active profile
 // Body: { trainingDays: string[], goalKcal?: number }
 export async function POST(req: Request) {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId();
     if (!clerkUserId) {
@@ -99,6 +103,10 @@ export async function POST(req: Request) {
 
 // GET: Get current training days info
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId();
     if (!clerkUserId) {

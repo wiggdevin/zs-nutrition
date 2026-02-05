@@ -11,6 +11,10 @@ import type { ClientIntake } from '@zero-sum/nutrition-engine';
  * 4. trainingDayKcal equals goalKcal + bonus
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
   const calculator = new MetabolicCalculator();
   const results = [];
 

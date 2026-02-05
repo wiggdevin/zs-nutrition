@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FatSecretAdapter } from '@zero-sum/nutrition-engine'
 import { safeLogError } from '@/lib/safe-logger'
+import { foodSearchLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit'
 
 // Singleton FatSecret adapter instance
 let fatSecretAdapter: FatSecretAdapter | null = null
@@ -21,6 +22,13 @@ function getFatSecretAdapter(): FatSecretAdapter {
  */
 export async function GET(request: NextRequest) {
   try {
+    // Rate limit by IP since this is a public endpoint
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous'
+    const rateLimitResult = await checkRateLimit(foodSearchLimiter, ip)
+    if (rateLimitResult && !rateLimitResult.success) {
+      return rateLimitExceededResponse(rateLimitResult.reset)
+    }
+
     const { searchParams } = new URL(request.url)
     const query = searchParams.get('q')?.trim()
     const type = searchParams.get('type') || 'search'

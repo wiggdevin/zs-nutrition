@@ -1,10 +1,10 @@
 import { cookies } from 'next/headers'
 import { prisma } from './prisma'
 
-export const isDevMode =
-  !process.env.CLERK_SECRET_KEY ||
-  process.env.CLERK_SECRET_KEY === 'sk_test_placeholder' ||
-  process.env.CLERK_SECRET_KEY === ''
+// Single source of truth for dev-mode detection (edge-compatible).
+// Re-exported so existing `import { isDevMode } from '@/lib/auth'` still works.
+import { isDevMode } from './dev-mode'
+export { isDevMode } from './dev-mode'
 
 /**
  * Returns the authenticated Clerk user ID.
@@ -65,6 +65,31 @@ export async function getOrCreateUser() {
  * Returns true if the account exists and is deactivated (isActive=false).
  * Used by API routes that need to return a specific "account deactivated" error.
  */
+export async function requireActiveUser(): Promise<{
+  clerkUserId: string
+  dbUserId: string
+}> {
+  const clerkUserId = await getClerkUserId()
+  if (!clerkUserId) {
+    throw new Error('Unauthorized')
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { clerkUserId },
+    select: { id: true, isActive: true },
+  })
+
+  if (!user) {
+    throw new Error('User not found')
+  }
+
+  if (!user.isActive) {
+    throw new Error('Account is deactivated')
+  }
+
+  return { clerkUserId, dbUserId: user.id }
+}
+
 export async function isAccountDeactivated(): Promise<boolean> {
   const clerkUserId = await getClerkUserId()
   if (!clerkUserId) return false

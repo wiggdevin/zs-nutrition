@@ -4,6 +4,10 @@ import { getClerkUserId } from '@/lib/auth';
 
 // DELETE - Delete onboarding state (for testing)
 export async function DELETE() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 });
+  }
+
   const clerkUserId = await getClerkUserId();
   if (!clerkUserId) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });

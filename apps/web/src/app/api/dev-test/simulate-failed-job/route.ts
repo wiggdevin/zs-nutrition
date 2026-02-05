@@ -11,6 +11,10 @@ import { v4 as uuidv4 } from 'uuid'
  * will pick up the failed status and display the error UI.
  */
 export async function GET() {
+  if (process.env.NODE_ENV === 'production') {
+    return new Response('Not Found', { status: 404 })
+  }
+
   try {
     const clerkUserId = await getClerkUserId()
     if (!clerkUserId) {
