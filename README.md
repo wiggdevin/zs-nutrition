@@ -45,13 +45,39 @@ zero-sum-nutrition/
 
 ## Quick Start
 
+### Option 1: Docker Local Development (Recommended)
+
+```bash
+# 1. Clone and install
+pnpm install
+
+# 2. Start PostgreSQL + Redis locally
+pnpm services:up
+
+# 3. Set up environment variables
+cp .env.example .env
+# Update DATABASE_URL and REDIS_URL to use local Docker services (see .env.example)
+
+# 4. Set up database
+cd apps/web && pnpm prisma migrate dev && cd ../..
+
+# 5. Start development
+pnpm dev
+
+# 6. Open http://localhost:3000
+```
+
+See [DOCKER_QUICKSTART.md](./DOCKER_QUICKSTART.md) for details.
+
+### Option 2: Cloud Services
+
 ```bash
 # 1. Clone and install
 pnpm install
 
 # 2. Set up environment variables
-cp apps/web/.env.local.example apps/web/.env.local
-# Fill in your API keys (see Prerequisites below)
+cp .env.example .env
+# Fill in your cloud API keys (Neon, Upstash, Clerk, etc.)
 
 # 3. Set up database
 cd apps/web && npx prisma migrate dev && cd ../..
@@ -71,13 +97,20 @@ chmod +x init.sh
 
 ## Prerequisites
 
+### Required
 - **Node.js 20+**
 - **pnpm** (`npm install -g pnpm`)
-- **Neon PostgreSQL** account (cloud database)
-- **Upstash Redis** account (cloud cache/queue)
 - **Clerk** account (authentication)
 - **Anthropic API** key (Claude for recipe curation)
 - **FatSecret Platform API** credentials (nutrition data)
+
+### Database & Cache (Choose One)
+**Local Development (Recommended)**:
+- **Docker Desktop** (for PostgreSQL + Redis locally)
+
+**Cloud Development**:
+- **Neon PostgreSQL** account (cloud database)
+- **Upstash Redis** account (cloud cache/queue)
 
 ## Environment Variables
 
@@ -118,11 +151,23 @@ BLOB_READ_WRITE_TOKEN=...
 
 ## Development
 
+### Local Services (Docker)
 ```bash
-pnpm dev          # Start all services
-pnpm build        # Build all packages
-pnpm lint         # Lint all packages
+pnpm services:up      # Start PostgreSQL + Redis
+pnpm services:down    # Stop services
+pnpm services:reset   # Reset database (wipe data)
 ```
+
+### Application
+```bash
+pnpm dev              # Start all services
+pnpm dev:web          # Start web app only
+pnpm dev:worker       # Start queue worker only
+pnpm build            # Build all packages
+pnpm lint             # Lint all packages
+```
+
+See [DOCKER_SETUP.md](./DOCKER_SETUP.md) for full Docker documentation.
 
 ## License
 
