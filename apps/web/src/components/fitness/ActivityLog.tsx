@@ -73,9 +73,7 @@ const WORKOUT_TYPE_ICONS: Record<string, string> = {
 };
 
 export default function ActivityLog() {
-  const [selectedDate, setSelectedDate] = useState(
-    new Date().toISOString().split('T')[0],
-  );
+  const [selectedDate, setSelectedDate] = useState(new Date().toISOString().split('T')[0]);
   const [activityData, setActivityData] = useState<ActivityData | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -86,9 +84,7 @@ export default function ActivityLog() {
   const loadActivityData = async () => {
     try {
       setLoading(true);
-      const response = await fetch(
-        `/api/fitness/activity?date=${selectedDate}`,
-      );
+      const response = await fetch(`/api/fitness/activity?date=${selectedDate}`);
 
       if (response.ok) {
         const data = await response.json();
@@ -166,16 +162,12 @@ export default function ActivityLog() {
           <div className="bg-card border border-border rounded-lg p-4">
             <div className="flex items-center justify-between mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-white">
-                  Calorie Target Adjustment
-                </h3>
+                <h3 className="text-lg font-semibold text-white">Calorie Target Adjustment</h3>
                 <p className="text-sm text-muted-foreground">{formatDate(selectedDate)}</p>
               </div>
               {activityData.adjustment > 0 && (
                 <div className="text-right">
-                  <div className="text-2xl font-bold text-primary">
-                    +{activityData.adjustment}
-                  </div>
+                  <div className="text-2xl font-bold text-primary">+{activityData.adjustment}</div>
                   <div className="text-xs text-muted-foreground">calories</div>
                 </div>
               )}
@@ -184,14 +176,10 @@ export default function ActivityLog() {
             <div className="grid grid-cols-2 gap-4 mb-4">
               <div>
                 <div className="text-xs text-muted-foreground mb-1">Base Target</div>
-                <div className="text-lg font-semibold text-white">
-                  {activityData.baseTarget}
-                </div>
+                <div className="text-lg font-semibold text-white">{activityData.baseTarget}</div>
               </div>
               <div>
-                <div className="text-xs text-muted-foreground mb-1">
-                  Adjusted Target
-                </div>
+                <div className="text-xs text-muted-foreground mb-1">Adjusted Target</div>
                 <div className="text-lg font-semibold text-primary">
                   {activityData.adjustedTarget}
                 </div>
@@ -211,15 +199,17 @@ export default function ActivityLog() {
               <div className="text-2xl mb-1">👟</div>
               <div className="text-xs text-muted-foreground mb-1">Steps</div>
               <div className="text-lg font-semibold text-white">
-                {formatNumber(activityData.totalActiveCalories > 0 ? activityData.activities.find(a => a.steps)?.steps : 0)}
+                {formatNumber(
+                  activityData.totalActiveCalories > 0
+                    ? activityData.activities.find((a) => a.steps)?.steps
+                    : 0
+                )}
               </div>
             </div>
 
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="text-2xl mb-1">🔥</div>
-              <div className="text-xs text-muted-foreground mb-1">
-                Active Calories
-              </div>
+              <div className="text-xs text-muted-foreground mb-1">Active Calories</div>
               <div className="text-lg font-semibold text-white">
                 {formatNumber(activityData.totalActiveCalories)}
               </div>
@@ -228,16 +218,12 @@ export default function ActivityLog() {
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="text-2xl mb-1">💪</div>
               <div className="text-xs text-muted-foreground mb-1">Workouts</div>
-              <div className="text-lg font-semibold text-white">
-                {activityData.totalWorkouts}
-              </div>
+              <div className="text-lg font-semibold text-white">{activityData.totalWorkouts}</div>
             </div>
 
             <div className="bg-card border border-border rounded-lg p-4">
               <div className="text-2xl mb-1">⏱️</div>
-              <div className="text-xs text-muted-foreground mb-1">
-                Active Minutes
-              </div>
+              <div className="text-xs text-muted-foreground mb-1">Active Minutes</div>
               <div className="text-lg font-semibold text-white">
                 {formatNumber(activityData.totalActiveMinutes)}
               </div>
@@ -246,20 +232,13 @@ export default function ActivityLog() {
 
           {/* Platform-Specific Data */}
           <div>
-            <h3 className="text-lg font-semibold text-white mb-4">
-              Synced Data
-            </h3>
+            <h3 className="text-lg font-semibold text-white mb-4">Synced Data</h3>
             <div className="space-y-3">
               {activityData.activities.map((activity, index) => (
-                <div
-                  key={index}
-                  className="bg-card border border-border rounded-lg p-4"
-                >
+                <div key={index} className="bg-card border border-border rounded-lg p-4">
                   <div className="flex items-center justify-between mb-3">
                     <div className="flex items-center gap-3">
-                      <div className="text-2xl">
-                        {PLATFORM_ICONS[activity.platform] || '📊'}
-                      </div>
+                      <div className="text-2xl">{PLATFORM_ICONS[activity.platform] || '📊'}</div>
                       <div>
                         <div className="font-semibold text-white capitalize">
                           {activity.platform.replace('_', ' ')}
@@ -305,14 +284,9 @@ export default function ActivityLog() {
                       <div className="text-xs text-muted-foreground mb-2">Workouts:</div>
                       <div className="space-y-2">
                         {activity.workouts.map((workout, wIndex) => (
-                          <div
-                            key={wIndex}
-                            className="flex items-center justify-between text-sm"
-                          >
+                          <div key={wIndex} className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
-                              <span>
-                                {WORKOUT_TYPE_ICONS[workout.type] || '💪'}
-                              </span>
+                              <span>{WORKOUT_TYPE_ICONS[workout.type] || '💪'}</span>
                               <span className="text-white capitalize">
                                 {workout.type.replace('_', ' ')}
                               </span>

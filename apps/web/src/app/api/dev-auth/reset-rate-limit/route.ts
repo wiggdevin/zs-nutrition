@@ -25,7 +25,7 @@ export async function POST() {
     return NextResponse.json({
       success: true,
       message: 'Rate limit reset for plan generation',
-      userId: clerkUserId
+      userId: clerkUserId,
     });
   } catch (error) {
     console.error('Reset rate limit error:', error);

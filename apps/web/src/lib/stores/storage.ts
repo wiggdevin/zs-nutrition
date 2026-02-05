@@ -1,40 +1,40 @@
-import { StateStorage } from 'zustand/middleware'
-import { logger } from '@/lib/safe-logger'
+import { StateStorage } from 'zustand/middleware';
+import { logger } from '@/lib/safe-logger';
 
 function isLocalStorageAvailable(): boolean {
   try {
-    const testKey = '__zsn_storage_test__'
-    localStorage.setItem(testKey, 'test')
-    localStorage.removeItem(testKey)
-    return true
+    const testKey = '__zsn_storage_test__';
+    localStorage.setItem(testKey, 'test');
+    localStorage.removeItem(testKey);
+    return true;
   } catch {
-    return false
+    return false;
   }
 }
 
 export const safeStorage: StateStorage = {
   getItem: (name) => {
-    if (!isLocalStorageAvailable()) return null
+    if (!isLocalStorageAvailable()) return null;
     try {
-      return localStorage.getItem(name)
+      return localStorage.getItem(name);
     } catch {
-      return null
+      return null;
     }
   },
   setItem: (name, value) => {
-    if (!isLocalStorageAvailable()) return
+    if (!isLocalStorageAvailable()) return;
     try {
-      localStorage.setItem(name, value)
+      localStorage.setItem(name, value);
     } catch (e) {
-      logger.warn('[Storage] Failed to save state:', e)
+      logger.warn('[Storage] Failed to save state:', e);
     }
   },
   removeItem: (name) => {
-    if (!isLocalStorageAvailable()) return
+    if (!isLocalStorageAvailable()) return;
     try {
-      localStorage.removeItem(name)
+      localStorage.removeItem(name);
     } catch {
       // Ignore
     }
   },
-}
+};

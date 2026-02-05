@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function SettingsLoading() {
   return (
@@ -13,5 +13,5 @@ export default function SettingsLoading() {
         ))}
       </div>
     </div>
-  )
+  );
 }

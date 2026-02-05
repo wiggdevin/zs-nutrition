@@ -1,0 +1,14 @@
+{
+  "name": "@zsn/eslint-config",
+  "version": "0.1.0",
+  "private": true,
+  "main": "index.js",
+  "type": "module",
+  "dependencies": {
+    "@eslint/compat": "^1.2.4",
+    "@eslint/js": "^9.18.0",
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-prettier": "^5.2.1",
+    "typescript-eslint": "^8.19.1"
+  }
+}

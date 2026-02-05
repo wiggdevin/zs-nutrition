@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import { router, publicProcedure, protectedProcedure } from '../trpc'
+import { z } from 'zod';
+import { router, publicProcedure, protectedProcedure } from '../trpc';
 
 export const testRouter = router({
   // Public test procedure - no auth required
@@ -9,7 +9,7 @@ export const testRouter = router({
       return {
         greeting: `Hello ${input?.name ?? 'World'}!`,
         timestamp: new Date().toISOString(),
-      }
+      };
     }),
 
   // Protected test procedure - requires auth
@@ -19,6 +19,6 @@ export const testRouter = router({
       userId: ctx.userId,
       dbUserId: ctx.dbUserId,
       timestamp: new Date().toISOString(),
-    }
+    };
   }),
-})
+});

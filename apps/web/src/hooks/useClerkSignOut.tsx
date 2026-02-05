@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { logger } from "@/lib/safe-logger";
+import { useEffect, useState } from 'react';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * Safe hook to check if Clerk is available and get the signOut function.
@@ -18,7 +18,7 @@ export function useClerkSignOut(): (() => Promise<void>) | undefined {
 
   useEffect(() => {
     // Check if we're in the browser and Clerk is configured
-    if (typeof window === "undefined") return;
+    if (typeof window === 'undefined') return;
 
     const hasClerkKey = !!process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
@@ -33,7 +33,7 @@ export function useClerkSignOut(): (() => Promise<void>) | undefined {
       return async () => {
         // The actual sign out will be handled by the SignOutListener
         // This is just a placeholder for type safety
-        logger.warn("SignOut should be called through SignOutListener component");
+        logger.warn('SignOut should be called through SignOutListener component');
       };
     });
   }, []);
@@ -56,13 +56,13 @@ export function ClerkSignOutHandler({
 
   try {
     // Only import and use Clerk hooks if the module is available
-    const { useAuth } = require("@clerk/nextjs");
+    const { useAuth } = require('@clerk/nextjs');
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const auth = useAuth();
     clerkSignOut = auth.signOut;
   } catch (e) {
     // Clerk not available, will use dev mode
-    logger.debug("Clerk hooks not available in ClerkSignOutHandler");
+    logger.debug('Clerk hooks not available in ClerkSignOutHandler');
   }
 
   return <>{children(clerkSignOut)}</>;

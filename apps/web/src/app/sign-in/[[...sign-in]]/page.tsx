@@ -1,6 +1,6 @@
-import { SignIn } from "@clerk/nextjs";
-import { DevSignInForm } from "./SignInContent";
-import { isDevMode } from "@/lib/dev-mode";
+import { SignIn } from '@clerk/nextjs';
+import { DevSignInForm } from './SignInContent';
+import { isDevMode } from '@/lib/dev-mode';
 
 export default function SignInPage() {
   return (
@@ -20,22 +20,21 @@ export default function SignInPage() {
           <SignIn
             appearance={{
               elements: {
-                rootBox: "mx-auto w-full",
-                card: "bg-card border border-border shadow-2xl rounded-xl",
-                headerTitle: "text-foreground font-bold text-xl",
-                headerSubtitle: "text-muted-foreground",
+                rootBox: 'mx-auto w-full',
+                card: 'bg-card border border-border shadow-2xl rounded-xl',
+                headerTitle: 'text-foreground font-bold text-xl',
+                headerSubtitle: 'text-muted-foreground',
                 formButtonPrimary:
-                  "bg-primary hover:bg-primary/90 text-background font-bold uppercase tracking-wide transition-colors",
+                  'bg-primary hover:bg-primary/90 text-background font-bold uppercase tracking-wide transition-colors',
                 formFieldInput:
-                  "bg-background border border-border text-foreground focus:border-primary focus:ring-1 focus:ring-primary",
-                formFieldLabel: "text-muted-foreground",
+                  'bg-background border border-border text-foreground focus:border-primary focus:ring-1 focus:ring-primary',
+                formFieldLabel: 'text-muted-foreground',
                 socialButtonsBlockButton:
-                  "bg-background border border-border text-foreground hover:bg-card transition-colors",
-                socialButtonsBlockButtonText: "text-foreground font-medium",
-                dividerLine: "bg-border",
-                dividerText: "text-muted-foreground",
-                footerActionLink:
-                  "text-primary hover:text-primary/90 font-medium",
+                  'bg-background border border-border text-foreground hover:bg-card transition-colors',
+                socialButtonsBlockButtonText: 'text-foreground font-medium',
+                dividerLine: 'bg-border',
+                dividerText: 'text-muted-foreground',
+                footerActionLink: 'text-primary hover:text-primary/90 font-medium',
               },
             }}
             signUpUrl="/sign-up"

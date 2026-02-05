@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { toast } from "@/lib/toast-store";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from '@/lib/toast-store';
 
-type Sex = "male" | "female";
+type Sex = 'male' | 'female';
 
 interface ProfileData {
   id: string;
@@ -27,11 +27,11 @@ export default function SettingsDemographics() {
   const [success, setSuccess] = useState(false);
 
   // Edit state
-  const [editName, setEditName] = useState("");
-  const [editSex, setEditSex] = useState<Sex | "">("");
-  const [editAge, setEditAge] = useState<string>("");
-  const [editHeightCm, setEditHeightCm] = useState<string>("");
-  const [editWeightKg, setEditWeightKg] = useState<string>("");
+  const [editName, setEditName] = useState('');
+  const [editSex, setEditSex] = useState<Sex | ''>('');
+  const [editAge, setEditAge] = useState<string>('');
+  const [editHeightCm, setEditHeightCm] = useState<string>('');
+  const [editWeightKg, setEditWeightKg] = useState<string>('');
   const [dirty, setDirty] = useState(false);
 
   // Validation
@@ -54,14 +54,14 @@ export default function SettingsDemographics() {
     try {
       setLoading(true);
       setError(null);
-      const res = await fetch("/api/settings/profile", { signal: controller.signal });
+      const res = await fetch('/api/settings/profile', { signal: controller.signal });
 
       // If a newer fetch was started, discard this stale response
       if (generation !== fetchGenerationRef.current) return;
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to load profile");
+        throw new Error(data.error || 'Failed to load profile');
       }
       const data = await res.json();
 
@@ -70,17 +70,17 @@ export default function SettingsDemographics() {
 
       const p = data.profile;
       setProfile(p);
-      setEditName(p.name || "");
-      setEditSex(p.sex || "");
-      setEditAge(p.age?.toString() || "");
-      setEditHeightCm(p.heightCm?.toString() || "");
-      setEditWeightKg(p.weightKg?.toString() || "");
+      setEditName(p.name || '');
+      setEditSex(p.sex || '');
+      setEditAge(p.age?.toString() || '');
+      setEditHeightCm(p.heightCm?.toString() || '');
+      setEditWeightKg(p.weightKg?.toString() || '');
     } catch (err: unknown) {
       // Ignore aborted requests (user navigated away or new fetch started)
       if (err instanceof DOMException && err.name === 'AbortError') return;
       // If this is a stale generation, ignore
       if (generation !== fetchGenerationRef.current) return;
-      setError(err instanceof Error ? err.message : "Failed to load profile");
+      setError(err instanceof Error ? err.message : 'Failed to load profile');
     } finally {
       // Only update loading state if this is still the current generation
       if (generation === fetchGenerationRef.current) {
@@ -103,11 +103,11 @@ export default function SettingsDemographics() {
   useEffect(() => {
     if (!profile) return;
     const changed =
-      editName !== (profile.name || "") ||
-      editSex !== (profile.sex || "") ||
-      editAge !== (profile.age?.toString() || "") ||
-      editHeightCm !== (profile.heightCm?.toString() || "") ||
-      editWeightKg !== (profile.weightKg?.toString() || "");
+      editName !== (profile.name || '') ||
+      editSex !== (profile.sex || '') ||
+      editAge !== (profile.age?.toString() || '') ||
+      editHeightCm !== (profile.heightCm?.toString() || '') ||
+      editWeightKg !== (profile.weightKg?.toString() || '');
     setDirty(changed);
     // Only clear success when user makes new changes (dirty)
     if (changed) {
@@ -118,28 +118,28 @@ export default function SettingsDemographics() {
   function validate(): Record<string, string> {
     const errors: Record<string, string> = {};
     if (!editName.trim()) {
-      errors.name = "Name is required";
+      errors.name = 'Name is required';
     }
     if (!editSex) {
-      errors.sex = "Please select your biological sex";
+      errors.sex = 'Please select your biological sex';
     }
     const ageNum = parseInt(editAge);
     if (!editAge || isNaN(ageNum)) {
-      errors.age = "Age is required";
+      errors.age = 'Age is required';
     } else if (ageNum < 18 || ageNum > 100) {
-      errors.age = "Age must be between 18 and 100";
+      errors.age = 'Age must be between 18 and 100';
     }
     const heightNum = parseFloat(editHeightCm);
     if (!editHeightCm || isNaN(heightNum)) {
-      errors.height = "Height is required";
+      errors.height = 'Height is required';
     } else if (heightNum < 90 || heightNum > 250) {
-      errors.height = "Height must be between 90 and 250 cm";
+      errors.height = 'Height must be between 90 and 250 cm';
     }
     const weightNum = parseFloat(editWeightKg);
     if (!editWeightKg || isNaN(weightNum)) {
-      errors.weight = "Weight is required";
+      errors.weight = 'Weight is required';
     } else if (weightNum < 35 || weightNum > 230) {
-      errors.weight = "Weight must be between 35 and 230 kg";
+      errors.weight = 'Weight must be between 35 and 230 kg';
     }
     return errors;
   }
@@ -154,9 +154,9 @@ export default function SettingsDemographics() {
       setError(null);
       setSuccess(false);
 
-      const res = await fetch("/api/settings/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/settings/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           name: editName.trim(),
           sex: editSex,
@@ -168,7 +168,7 @@ export default function SettingsDemographics() {
 
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to save changes");
+        throw new Error(data.error || 'Failed to save changes');
       }
 
       const data = await res.json();
@@ -176,11 +176,11 @@ export default function SettingsDemographics() {
         setProfile((prev) => (prev ? { ...prev, ...data.profile } : prev));
         setSuccess(true);
         setDirty(false);
-        toast.success("Demographics saved successfully!");
+        toast.success('Demographics saved successfully!');
       }
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save changes");
-      toast.error(err instanceof Error ? err.message : "Failed to save changes");
+      setError(err instanceof Error ? err.message : 'Failed to save changes');
+      toast.error(err instanceof Error ? err.message : 'Failed to save changes');
     } finally {
       setSaving(false);
     }
@@ -188,11 +188,11 @@ export default function SettingsDemographics() {
 
   function handleReset() {
     if (!profile) return;
-    setEditName(profile.name || "");
-    setEditSex(profile.sex || "");
-    setEditAge(profile.age?.toString() || "");
-    setEditHeightCm(profile.heightCm?.toString() || "");
-    setEditWeightKg(profile.weightKg?.toString() || "");
+    setEditName(profile.name || '');
+    setEditSex(profile.sex || '');
+    setEditAge(profile.age?.toString() || '');
+    setEditHeightCm(profile.heightCm?.toString() || '');
+    setEditWeightKg(profile.weightKg?.toString() || '');
     setValidationErrors({});
     setSuccess(false);
     setError(null);
@@ -224,21 +224,25 @@ export default function SettingsDemographics() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6" data-testid="demographics-section">
+    <div
+      className="rounded-2xl border border-border bg-card p-6"
+      data-testid="demographics-section"
+    >
       {/* Section Header */}
       <div className="mb-6">
         <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
           <span className="text-primary">///</span> Demographics
         </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Update your basic profile information
-        </p>
+        <p className="mt-1 text-sm text-muted-foreground">Update your basic profile information</p>
       </div>
 
       <div className="space-y-5">
         {/* Name Field */}
         <div>
-          <label htmlFor="settings-name" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="settings-name"
+            className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Name <span className="text-primary">*</span>
           </label>
           <input
@@ -246,23 +250,31 @@ export default function SettingsDemographics() {
             type="text"
             value={editName}
             onChange={(e) => {
-              setEditName(e.target.value)
+              setEditName(e.target.value);
               if (validationErrors.name && e.target.value.trim()) {
-                setValidationErrors((prev) => { const { name: _, ...rest } = prev; return rest })
+                setValidationErrors((prev) => {
+                  const { name: _, ...rest } = prev;
+                  return rest;
+                });
               }
             }}
             placeholder="Enter your name"
             data-testid="settings-name-input"
             aria-invalid={!!validationErrors.name}
-            aria-describedby={validationErrors.name ? "settings-name-error" : undefined}
+            aria-describedby={validationErrors.name ? 'settings-name-error' : undefined}
             className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card ${
               validationErrors.name
-                ? "border-red-500 focus:border-red-500"
-                : "border-border focus:border-primary"
+                ? 'border-red-500 focus:border-red-500'
+                : 'border-border focus:border-primary'
             }`}
           />
           {validationErrors.name && (
-            <p id="settings-name-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            <p
+              id="settings-name-error"
+              className="mt-1 text-xs text-red-500"
+              role="alert"
+              aria-live="polite"
+            >
               {validationErrors.name}
             </p>
           )}
@@ -270,27 +282,38 @@ export default function SettingsDemographics() {
 
         {/* Sex Field */}
         <div>
-          <label id="settings-sex-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            id="settings-sex-label"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Biological Sex <span className="text-primary">*</span>
           </label>
-          <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="settings-sex-label" aria-invalid={!!validationErrors.sex}>
-            {(["male", "female"] as Sex[]).map((sex) => (
+          <div
+            className="grid grid-cols-2 gap-3"
+            role="group"
+            aria-labelledby="settings-sex-label"
+            aria-invalid={!!validationErrors.sex}
+          >
+            {(['male', 'female'] as Sex[]).map((sex) => (
               <button
                 key={sex}
                 onClick={() => {
-                  setEditSex(sex)
+                  setEditSex(sex);
                   if (validationErrors.sex) {
-                    setValidationErrors((prev) => { const { sex: _, ...rest } = prev; return rest })
+                    setValidationErrors((prev) => {
+                      const { sex: _, ...rest } = prev;
+                      return rest;
+                    });
                   }
                 }}
                 data-testid={`settings-sex-${sex}`}
-                aria-describedby={validationErrors.sex ? "settings-sex-error" : undefined}
+                aria-describedby={validationErrors.sex ? 'settings-sex-error' : undefined}
                 className={`rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
                   editSex === sex
-                    ? "border-primary bg-primary/10 text-primary"
+                    ? 'border-primary bg-primary/10 text-primary'
                     : validationErrors.sex
-                      ? "border-red-500 bg-card text-muted-foreground hover:border-red-400"
-                      : "border-border bg-card text-muted-foreground hover:border-border/80"
+                      ? 'border-red-500 bg-card text-muted-foreground hover:border-red-400'
+                      : 'border-border bg-card text-muted-foreground hover:border-border/80'
                 }`}
               >
                 {sex}
@@ -298,7 +321,12 @@ export default function SettingsDemographics() {
             ))}
           </div>
           {validationErrors.sex && (
-            <p id="settings-sex-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            <p
+              id="settings-sex-error"
+              className="mt-1 text-xs text-red-500"
+              role="alert"
+              aria-live="polite"
+            >
               {validationErrors.sex}
             </p>
           )}
@@ -306,7 +334,10 @@ export default function SettingsDemographics() {
 
         {/* Age Field */}
         <div>
-          <label htmlFor="settings-age" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="settings-age"
+            className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Age <span className="text-primary">*</span>
           </label>
           <input
@@ -314,11 +345,14 @@ export default function SettingsDemographics() {
             type="number"
             value={editAge}
             onChange={(e) => {
-              setEditAge(e.target.value)
+              setEditAge(e.target.value);
               if (validationErrors.age) {
-                const v = parseInt(e.target.value)
+                const v = parseInt(e.target.value);
                 if (!isNaN(v) && v >= 18 && v <= 100) {
-                  setValidationErrors((prev) => { const { age: _, ...rest } = prev; return rest })
+                  setValidationErrors((prev) => {
+                    const { age: _, ...rest } = prev;
+                    return rest;
+                  });
                 }
               }
             }}
@@ -327,15 +361,20 @@ export default function SettingsDemographics() {
             max={100}
             data-testid="settings-age-input"
             aria-invalid={!!validationErrors.age}
-            aria-describedby={validationErrors.age ? "settings-age-error" : undefined}
+            aria-describedby={validationErrors.age ? 'settings-age-error' : undefined}
             className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card ${
               validationErrors.age
-                ? "border-red-500 focus:border-red-500"
-                : "border-border focus:border-primary"
+                ? 'border-red-500 focus:border-red-500'
+                : 'border-border focus:border-primary'
             }`}
           />
           {validationErrors.age && (
-            <p id="settings-age-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            <p
+              id="settings-age-error"
+              className="mt-1 text-xs text-red-500"
+              role="alert"
+              aria-live="polite"
+            >
               {validationErrors.age}
             </p>
           )}
@@ -343,7 +382,10 @@ export default function SettingsDemographics() {
 
         {/* Height Field */}
         <div>
-          <label htmlFor="settings-height" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="settings-height"
+            className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Height (cm) <span className="text-primary">*</span>
           </label>
           <input
@@ -351,11 +393,14 @@ export default function SettingsDemographics() {
             type="number"
             value={editHeightCm}
             onChange={(e) => {
-              setEditHeightCm(e.target.value)
+              setEditHeightCm(e.target.value);
               if (validationErrors.height) {
-                const v = parseFloat(e.target.value)
+                const v = parseFloat(e.target.value);
                 if (!isNaN(v) && v >= 90 && v <= 250) {
-                  setValidationErrors((prev) => { const { height: _, ...rest } = prev; return rest })
+                  setValidationErrors((prev) => {
+                    const { height: _, ...rest } = prev;
+                    return rest;
+                  });
                 }
               }
             }}
@@ -365,15 +410,20 @@ export default function SettingsDemographics() {
             step="0.1"
             data-testid="settings-height-input"
             aria-invalid={!!validationErrors.height}
-            aria-describedby={validationErrors.height ? "settings-height-error" : undefined}
+            aria-describedby={validationErrors.height ? 'settings-height-error' : undefined}
             className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card ${
               validationErrors.height
-                ? "border-red-500 focus:border-red-500"
-                : "border-border focus:border-primary"
+                ? 'border-red-500 focus:border-red-500'
+                : 'border-border focus:border-primary'
             }`}
           />
           {validationErrors.height && (
-            <p id="settings-height-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            <p
+              id="settings-height-error"
+              className="mt-1 text-xs text-red-500"
+              role="alert"
+              aria-live="polite"
+            >
               {validationErrors.height}
             </p>
           )}
@@ -381,7 +431,10 @@ export default function SettingsDemographics() {
 
         {/* Weight Field */}
         <div>
-          <label htmlFor="settings-weight" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="settings-weight"
+            className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Weight (kg) <span className="text-primary">*</span>
           </label>
           <input
@@ -389,11 +442,14 @@ export default function SettingsDemographics() {
             type="number"
             value={editWeightKg}
             onChange={(e) => {
-              setEditWeightKg(e.target.value)
+              setEditWeightKg(e.target.value);
               if (validationErrors.weight) {
-                const v = parseFloat(e.target.value)
+                const v = parseFloat(e.target.value);
                 if (!isNaN(v) && v >= 35 && v <= 230) {
-                  setValidationErrors((prev) => { const { weight: _, ...rest } = prev; return rest })
+                  setValidationErrors((prev) => {
+                    const { weight: _, ...rest } = prev;
+                    return rest;
+                  });
                 }
               }
             }}
@@ -403,15 +459,20 @@ export default function SettingsDemographics() {
             step="0.1"
             data-testid="settings-weight-input"
             aria-invalid={!!validationErrors.weight}
-            aria-describedby={validationErrors.weight ? "settings-weight-error" : undefined}
+            aria-describedby={validationErrors.weight ? 'settings-weight-error' : undefined}
             className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card ${
               validationErrors.weight
-                ? "border-red-500 focus:border-red-500"
-                : "border-border focus:border-primary"
+                ? 'border-red-500 focus:border-red-500'
+                : 'border-border focus:border-primary'
             }`}
           />
           {validationErrors.weight && (
-            <p id="settings-weight-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+            <p
+              id="settings-weight-error"
+              className="mt-1 text-xs text-red-500"
+              role="alert"
+              aria-live="polite"
+            >
               {validationErrors.weight}
             </p>
           )}
@@ -425,9 +486,20 @@ export default function SettingsDemographics() {
         </div>
       )}
       {success && (
-        <div className="mt-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3 flex items-center gap-2" data-testid="save-success">
-          <svg className="w-5 h-5 flex-shrink-0 text-success" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+        <div
+          className="mt-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3 flex items-center gap-2"
+          data-testid="save-success"
+        >
+          <svg
+            className="w-5 h-5 flex-shrink-0 text-success"
+            fill="currentColor"
+            viewBox="0 0 20 20"
+          >
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
           </svg>
           <p className="text-sm text-success">Profile updated successfully!</p>
         </div>
@@ -441,8 +513,8 @@ export default function SettingsDemographics() {
           data-testid="settings-save-btn"
           className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
-              ? "bg-primary hover:bg-primary/90 text-background cursor-pointer"
-              : "bg-primary/30 text-white/50 cursor-not-allowed"
+              ? 'bg-primary hover:bg-primary/90 text-background cursor-pointer'
+              : 'bg-primary/30 text-white/50 cursor-not-allowed'
           }`}
         >
           {saving ? (
@@ -451,7 +523,7 @@ export default function SettingsDemographics() {
               Saving...
             </span>
           ) : (
-            "Save Changes"
+            'Save Changes'
           )}
         </button>
         {dirty && (

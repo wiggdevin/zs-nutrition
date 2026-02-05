@@ -1,6 +1,6 @@
-import { SignUp } from "@clerk/nextjs";
-import { DevSignUpForm } from "./SignUpContent";
-import { isDevMode } from "@/lib/dev-mode";
+import { SignUp } from '@clerk/nextjs';
+import { DevSignUpForm } from './SignUpContent';
+import { isDevMode } from '@/lib/dev-mode';
 
 export default function SignUpPage() {
   return (
@@ -20,24 +20,23 @@ export default function SignUpPage() {
           <SignUp
             appearance={{
               elements: {
-                rootBox: "mx-auto w-full",
-                card: "bg-card border border-border shadow-2xl rounded-xl",
-                headerTitle: "text-foreground font-bold text-xl",
-                headerSubtitle: "text-muted-foreground",
+                rootBox: 'mx-auto w-full',
+                card: 'bg-card border border-border shadow-2xl rounded-xl',
+                headerTitle: 'text-foreground font-bold text-xl',
+                headerSubtitle: 'text-muted-foreground',
                 formButtonPrimary:
-                  "bg-primary hover:bg-primary/90 text-background font-bold uppercase tracking-wide transition-colors",
+                  'bg-primary hover:bg-primary/90 text-background font-bold uppercase tracking-wide transition-colors',
                 formFieldInput:
-                  "bg-background border border-border text-foreground focus:border-primary focus:ring-1 focus:ring-primary",
-                formFieldLabel: "text-muted-foreground",
+                  'bg-background border border-border text-foreground focus:border-primary focus:ring-1 focus:ring-primary',
+                formFieldLabel: 'text-muted-foreground',
                 socialButtonsBlockButton:
-                  "bg-background border border-border text-foreground hover:bg-card transition-colors",
-                socialButtonsBlockButtonText: "text-foreground font-medium",
-                dividerLine: "bg-border",
-                dividerText: "text-muted-foreground",
-                footerActionLink:
-                  "text-primary hover:text-primary/90 font-medium",
-                identityPreviewEditButton: "text-primary",
-                formResendCodeLink: "text-primary",
+                  'bg-background border border-border text-foreground hover:bg-card transition-colors',
+                socialButtonsBlockButtonText: 'text-foreground font-medium',
+                dividerLine: 'bg-border',
+                dividerText: 'text-muted-foreground',
+                footerActionLink: 'text-primary hover:text-primary/90 font-medium',
+                identityPreviewEditButton: 'text-primary',
+                formResendCodeLink: 'text-primary',
               },
             }}
             signInUrl="/sign-in"

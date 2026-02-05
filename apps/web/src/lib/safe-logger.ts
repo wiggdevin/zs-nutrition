@@ -21,17 +21,17 @@ const PII_PATTERNS = [
   // Connection strings with credentials
   /postgresql:\/\/[^@]+@[^\s]+/g,
   /redis:\/\/[^@]+@[^\s]+/g,
-]
+];
 
 /**
  * Redact PII patterns from a string.
  */
 function redactString(str: string): string {
-  let result = str
+  let result = str;
   for (const pattern of PII_PATTERNS) {
-    result = result.replace(pattern, '[REDACTED]')
+    result = result.replace(pattern, '[REDACTED]');
   }
-  return result
+  return result;
 }
 
 /**
@@ -40,14 +40,14 @@ function redactString(str: string): string {
  */
 export function safeErrorMessage(error: unknown): string {
   if (error instanceof Error) {
-    const name = error.name || 'Error'
-    const message = redactString(error.message)
-    return `${name}: ${message}`
+    const name = error.name || 'Error';
+    const message = redactString(error.message);
+    return `${name}: ${message}`;
   }
   if (typeof error === 'string') {
-    return redactString(error)
+    return redactString(error);
   }
-  return 'Unknown error'
+  return 'Unknown error';
 }
 
 /**
@@ -55,17 +55,17 @@ export function safeErrorMessage(error: unknown): string {
  * Use this instead of console.error(label, error) in API routes.
  */
 export function safeLogError(label: string, error: unknown): void {
-  console.error(`${label}`, safeErrorMessage(error))
+  console.error(`${label}`, safeErrorMessage(error));
 }
 
 /**
  * Safe console.warn — logs warning context without PII.
  */
 export function safeLogWarn(label: string, error: unknown): void {
-  console.warn(`${label}`, safeErrorMessage(error))
+  console.warn(`${label}`, safeErrorMessage(error));
 }
 
-const isDev = process.env.NODE_ENV !== 'production'
+const isDev = process.env.NODE_ENV !== 'production';
 
 /**
  * Structured logger with environment-aware log levels.
@@ -77,20 +77,23 @@ const isDev = process.env.NODE_ENV !== 'production'
 export const logger = {
   debug: (...args: unknown[]) => {
     // eslint-disable-next-line no-console
-    if (isDev) console.log('[DEBUG]', ...args)
+    if (isDev) console.log('[DEBUG]', ...args);
   },
   info: (...args: unknown[]) => {
     // eslint-disable-next-line no-console
-    if (isDev) console.log('[INFO]', ...args)
+    if (isDev) console.log('[INFO]', ...args);
   },
   warn: (label: string, ...args: unknown[]) => {
-    console.warn(`[WARN] ${label}`, ...args.map(a => {
-      if (a instanceof Error) return safeErrorMessage(a)
-      if (typeof a === 'string') return redactString(a)
-      return a
-    }))
+    console.warn(
+      `[WARN] ${label}`,
+      ...args.map((a) => {
+        if (a instanceof Error) return safeErrorMessage(a);
+        if (typeof a === 'string') return redactString(a);
+        return a;
+      })
+    );
   },
   error: (label: string, error?: unknown) => {
-    console.error(`[ERROR] ${label}`, error ? safeErrorMessage(error) : '')
+    console.error(`[ERROR] ${label}`, error ? safeErrorMessage(error) : '');
   },
-}
+};

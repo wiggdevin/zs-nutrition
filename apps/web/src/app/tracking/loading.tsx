@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function TrackingLoading() {
   return (
@@ -12,5 +12,5 @@ export default function TrackingLoading() {
         <Skeleton className="h-40 rounded-xl" />
       </div>
     </div>
-  )
+  );
 }

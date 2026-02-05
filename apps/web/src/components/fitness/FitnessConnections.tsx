@@ -213,8 +213,8 @@ export default function FitnessConnections() {
       </div>
 
       <p className="text-muted-foreground text-sm mb-6">
-        Connect your fitness tracker or wearable to automatically adjust your
-        daily calorie targets based on real activity data.
+        Connect your fitness tracker or wearable to automatically adjust your daily calorie targets
+        based on real activity data.
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -226,14 +226,14 @@ export default function FitnessConnections() {
             <div
               key={platform.id}
               className={`border rounded-lg p-4 transition-all ${
-                connected
-                  ? 'border-primary bg-primary/5'
-                  : 'border-border bg-card'
+                connected ? 'border-primary bg-primary/5' : 'border-border bg-card'
               }`}
             >
               <div className="flex items-start justify-between">
                 <div className="flex items-center gap-3">
-                  <div className={`w-12 h-12 ${platform.color} rounded-lg flex items-center justify-center text-2xl`}>
+                  <div
+                    className={`w-12 h-12 ${platform.color} rounded-lg flex items-center justify-center text-2xl`}
+                  >
                     {platform.icon}
                   </div>
                   <div>
@@ -264,15 +264,11 @@ export default function FitnessConnections() {
                 <div className="mt-4 pt-4 border-t border-border">
                   <div className="flex items-center justify-between text-xs">
                     <span className="text-muted-foreground">Last sync:</span>
-                    <span className="text-white">
-                      {formatLastSync(connection.lastSyncAt)}
-                    </span>
+                    <span className="text-white">{formatLastSync(connection.lastSyncAt)}</span>
                   </div>
                   <div className="flex items-center justify-between text-xs mt-1">
                     <span className="text-muted-foreground">Sync frequency:</span>
-                    <span className="text-white capitalize">
-                      {connection.syncFrequency}
-                    </span>
+                    <span className="text-white capitalize">{connection.syncFrequency}</span>
                   </div>
                 </div>
               )}
@@ -284,8 +280,8 @@ export default function FitnessConnections() {
       {connections.length === 0 && (
         <div className="mt-6 p-4 bg-card border border-border rounded-lg">
           <p className="text-sm text-muted-foreground text-center">
-            No fitness trackers connected. Connect one above to enable automatic
-            calorie adjustments based on your activity.
+            No fitness trackers connected. Connect one above to enable automatic calorie adjustments
+            based on your activity.
           </p>
         </div>
       )}

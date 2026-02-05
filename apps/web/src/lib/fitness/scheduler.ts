@@ -88,10 +88,7 @@ export async function syncAllUserActivity(): Promise<{
 /**
  * Sync activity data for a specific user
  */
-export async function syncUserActivity(
-  userId: string,
-  connections?: any[],
-): Promise<void> {
+export async function syncUserActivity(userId: string, connections?: any[]): Promise<void> {
   // If connections not provided, fetch them
   if (!connections) {
     connections = await prisma.fitnessConnection.findMany({
@@ -133,10 +130,7 @@ export async function syncUserActivity(
         logger.info(`Successfully synced ${connection.platform} for user ${userId}`);
       }
     } catch (error) {
-      logger.error(
-        `Error syncing ${connection.platform} for user ${userId}:`,
-        error,
-      );
+      logger.error(`Error syncing ${connection.platform} for user ${userId}:`, error);
       throw error;
     }
   }
@@ -153,7 +147,8 @@ function shouldSync(connection: any, now: Date): boolean {
     return true;
   }
 
-  const intervalMs = SYNC_INTERVALS[syncFrequency as keyof typeof SYNC_INTERVALS] || SYNC_INTERVALS.daily;
+  const intervalMs =
+    SYNC_INTERVALS[syncFrequency as keyof typeof SYNC_INTERVALS] || SYNC_INTERVALS.daily;
   const timeSinceLastSync = now.getTime() - new Date(lastSyncAt).getTime();
 
   return timeSinceLastSync >= intervalMs;
@@ -164,7 +159,7 @@ function shouldSync(connection: any, now: Date): boolean {
  */
 async function syncFromPlatform(
   connection: any,
-  syncDate: Date,
+  syncDate: Date
 ): Promise<{
   success: boolean;
   data?: any;
@@ -204,7 +199,7 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   if (!activityResponse.ok) {
@@ -220,7 +215,7 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -253,7 +248,7 @@ async function syncOuraData(accessToken: string, syncDate: Date) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   if (!activityResponse.ok) {
@@ -269,7 +264,7 @@ async function syncOuraData(accessToken: string, syncDate: Date) {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -321,7 +316,7 @@ async function syncGoogleFitData(accessToken: string, syncDate: Date) {
         startTimeNs: startTimeNanos.toString(),
         endTimeNs: endTimeNanos.toString(),
       }),
-    },
+    }
   );
 
   if (!stepsResponse.ok) {
@@ -342,11 +337,7 @@ async function syncGoogleFitData(accessToken: string, syncDate: Date) {
 /**
  * Store activity sync in database
  */
-async function storeActivitySync(
-  connection: any,
-  syncData: any,
-  syncDate: Date,
-): Promise<void> {
+async function storeActivitySync(connection: any, syncData: any, syncDate: Date): Promise<void> {
   const normalizedData = normalizeSyncData(syncData);
 
   await prisma.activitySync.upsert({
@@ -397,7 +388,7 @@ function normalizeSyncData(syncData: any): any {
             startTime: a.startTime,
             durationMinutes: Math.round(a.duration / 60000),
             caloriesBurned: a.calories,
-          })) || [],
+          })) || []
         ),
         sleepMinutes: sleep?.totalSleepTime ? Math.round(sleep.totalSleepTime / 60000) : null,
         sleepScore: sleep?.efficiency || null,
@@ -415,7 +406,9 @@ function normalizeSyncData(syncData: any): any {
         distanceMiles: ouraActivity?.distance_km * 0.621371,
         activeMinutes:
           ouraActivity?.medium_activity_met_minutes && ouraActivity?.high_activity_met_minutes
-            ? Math.round(ouraActivity.medium_activity_met_minutes + ouraActivity.high_activity_met_minutes)
+            ? Math.round(
+                ouraActivity.medium_activity_met_minutes + ouraActivity.high_activity_met_minutes
+              )
             : null,
         sleepMinutes: ouraSleep?.duration,
         sleepScore: ouraSleep?.score,

@@ -22,7 +22,7 @@ import {
  */
 export function normalizeAppleHealthData(
   data: HealthKitDataPoint[],
-  syncDate: Date,
+  syncDate: Date
 ): NormalizedActivity {
   const workouts: Workout[] = [];
   let steps = 0;
@@ -108,7 +108,7 @@ export function normalizeAppleHealthData(
  */
 export function normalizeGoogleFitData(
   buckets: GoogleFitDataBucket[],
-  syncDate: Date,
+  syncDate: Date
 ): NormalizedActivity {
   const workouts: Workout[] = [];
   let steps = 0;
@@ -182,7 +182,7 @@ export function normalizeGoogleFitData(
 export function normalizeFitbitData(
   activityData: FitbitActivityResponse,
   sleepData?: FitbitSleepResponse,
-  syncDate?: Date,
+  syncDate?: Date
 ): NormalizedActivity {
   const summary = activityData.summary;
   const workouts: Workout[] = [];
@@ -198,7 +198,8 @@ export function normalizeFitbitData(
       endTime,
       durationMinutes: Math.round(activity.duration / 60000),
       caloriesBurned: activity.calories,
-      distanceKm: activity.distanceUnit === 'Kilometers' ? activity.distance : activity.distance * 1.60934,
+      distanceKm:
+        activity.distanceUnit === 'Kilometers' ? activity.distance : activity.distance * 1.60934,
       heartRateAvg: activity.averageHeartRate,
       rawType: activity.activityName,
     });
@@ -216,9 +217,7 @@ export function normalizeFitbitData(
       awakeMinutes: mainSleep.levels.wake.minutes,
       efficiency: mainSleep.efficiency,
       bedtime: new Date(mainSleep.startTime),
-      wakeTime: new Date(
-        new Date(mainSleep.startTime).getTime() + mainSleep.duration * 1000,
-      ),
+      wakeTime: new Date(new Date(mainSleep.startTime).getTime() + mainSleep.duration * 1000),
     };
   }
 
@@ -242,7 +241,7 @@ export function normalizeFitbitData(
 export function normalizeOuraData(
   activityData: OuraActivityResponse,
   sleepData?: OuraSleepResponse,
-  workoutData?: OuraWorkoutResponse,
+  workoutData?: OuraWorkoutResponse
 ): NormalizedActivity {
   // Get the first (most recent) activity data point
   const activity = activityData.data[0];
@@ -349,7 +348,7 @@ function mapFitbitActivityType(fitbitType: string): WorkoutType {
     'Outdoor Bike': 'cycling',
     Swim: 'swimming',
     LapSwimming: 'swimming',
-    'Weights': 'strength_training',
+    Weights: 'strength_training',
     'Strength Training': 'strength_training',
     HIIT: 'hiit',
     'Interval Training': 'hiit',
@@ -385,7 +384,7 @@ function mapOuraActivityType(ouraType: string): WorkoutType {
     running: 'running',
     cycling: 'cycling',
     swimming: 'swimming',
-    'strength_training': 'strength_training',
+    strength_training: 'strength_training',
     hiit: 'hiit',
     yoga: 'yoga',
     crossfit: 'crossfit',
@@ -415,11 +414,17 @@ export function validateActivityData(activity: NormalizedActivity): boolean {
     return false;
   }
 
-  if (activity.activeCalories !== undefined && (activity.activeCalories < 0 || activity.activeCalories > 50000)) {
+  if (
+    activity.activeCalories !== undefined &&
+    (activity.activeCalories < 0 || activity.activeCalories > 50000)
+  ) {
     return false;
   }
 
-  if (activity.totalCalories !== undefined && (activity.totalCalories < 0 || activity.totalCalories > 50000)) {
+  if (
+    activity.totalCalories !== undefined &&
+    (activity.totalCalories < 0 || activity.totalCalories > 50000)
+  ) {
     return false;
   }
 
@@ -437,13 +442,13 @@ export function validateActivityData(activity: NormalizedActivity): boolean {
 
   // Validate sleep data
   if (activity.sleepData) {
-    if (
-      activity.sleepData.totalMinutes < 0 ||
-      activity.sleepData.totalMinutes > 1440
-    ) {
+    if (activity.sleepData.totalMinutes < 0 || activity.sleepData.totalMinutes > 1440) {
       return false;
     }
-    if (activity.sleepData.sleepScore !== undefined && (activity.sleepData.sleepScore < 0 || activity.sleepData.sleepScore > 100)) {
+    if (
+      activity.sleepData.sleepScore !== undefined &&
+      (activity.sleepData.sleepScore < 0 || activity.sleepData.sleepScore > 100)
+    ) {
       return false;
     }
   }

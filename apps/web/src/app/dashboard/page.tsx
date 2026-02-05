@@ -1,5 +1,5 @@
-import DashboardClient from '@/components/dashboard/DashboardClient'
-import NavBar from '@/components/navigation/NavBar'
+import DashboardClient from '@/components/dashboard/DashboardClient';
+import NavBar from '@/components/navigation/NavBar';
 
 export default function DashboardPage() {
   return (
@@ -9,5 +9,5 @@ export default function DashboardPage() {
         <DashboardClient />
       </div>
     </>
-  )
+  );
 }

@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function AdaptiveNutritionLoading() {
   return (
@@ -11,5 +11,5 @@ export default function AdaptiveNutritionLoading() {
         <Skeleton className="h-56 rounded-xl" />
       </div>
     </div>
-  )
+  );
 }

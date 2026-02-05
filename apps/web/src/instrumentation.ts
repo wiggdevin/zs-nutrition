@@ -18,7 +18,8 @@ export async function register() {
 
       // Log which optional services are configured (without exposing secrets)
       const services = {
-        Database: !!env.DATABASE_URL && env.DATABASE_URL !== 'postgresql://user:password@host:5432/dbname',
+        Database:
+          !!env.DATABASE_URL && env.DATABASE_URL !== 'postgresql://user:password@host:5432/dbname',
         Clerk: !!env.CLERK_SECRET_KEY,
         Anthropic: !!env.ANTHROPIC_API_KEY,
         FatSecret: !!env.FATSECRET_CLIENT_ID && !!env.FATSECRET_CLIENT_SECRET,
@@ -43,7 +44,10 @@ export async function register() {
     } catch (error) {
       // In development, log the error but don't crash so devs can fix incrementally
       if (process.env.NODE_ENV === 'development') {
-        logger.error('Environment validation failed:', error instanceof Error ? error.message : error);
+        logger.error(
+          'Environment validation failed:',
+          error instanceof Error ? error.message : error
+        );
         logger.warn('Continuing in development mode with missing env vars...');
       } else {
         // In production, fail hard — missing env vars will cause runtime errors

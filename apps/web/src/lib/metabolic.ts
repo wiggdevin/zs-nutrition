@@ -20,10 +20,10 @@ const ACTIVITY_MULTIPLIERS: Record<string, number> = {
 };
 
 const MACRO_SPLITS: Record<string, { protein: number; carbs: number; fat: number }> = {
-  balanced: { protein: 0.30, carbs: 0.40, fat: 0.30 },
-  high_protein: { protein: 0.40, carbs: 0.35, fat: 0.25 },
-  low_carb: { protein: 0.35, carbs: 0.25, fat: 0.40 },
-  keto: { protein: 0.30, carbs: 0.05, fat: 0.65 },
+  balanced: { protein: 0.3, carbs: 0.4, fat: 0.3 },
+  high_protein: { protein: 0.4, carbs: 0.35, fat: 0.25 },
+  low_carb: { protein: 0.35, carbs: 0.25, fat: 0.4 },
+  keto: { protein: 0.3, carbs: 0.05, fat: 0.65 },
 };
 
 export function calculateMetabolicProfile(params: {
@@ -41,9 +41,9 @@ export function calculateMetabolicProfile(params: {
   // Mifflin-St Jeor BMR
   let bmrKcal: number;
   if (sex === 'male') {
-    bmrKcal = Math.round((10 * weightKg) + (6.25 * heightCm) - (5 * age) + 5);
+    bmrKcal = Math.round(10 * weightKg + 6.25 * heightCm - 5 * age + 5);
   } else {
-    bmrKcal = Math.round((10 * weightKg) + (6.25 * heightCm) - (5 * age) - 161);
+    bmrKcal = Math.round(10 * weightKg + 6.25 * heightCm - 5 * age - 161);
   }
 
   // TDEE
@@ -53,9 +53,9 @@ export function calculateMetabolicProfile(params: {
   // Goal calories
   let goalKcal: number;
   if (goalType === 'cut') {
-    goalKcal = Math.round(tdeeKcal - (goalRate * 500));
+    goalKcal = Math.round(tdeeKcal - goalRate * 500);
   } else if (goalType === 'bulk') {
-    goalKcal = Math.round(tdeeKcal + (goalRate * 350));
+    goalKcal = Math.round(tdeeKcal + goalRate * 350);
   } else {
     goalKcal = tdeeKcal;
   }

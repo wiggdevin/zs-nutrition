@@ -1,7 +1,7 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireActiveUser } from '@/lib/auth'
-import { logger } from '@/lib/safe-logger'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/plan/pdf?planId=xxx
@@ -10,28 +10,28 @@ import { logger } from '@/lib/safe-logger'
  */
 export async function GET(request: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
-    const planId = request.nextUrl.searchParams.get('planId')
+    const planId = request.nextUrl.searchParams.get('planId');
 
     // Find the user
     const user = await prisma.user.findUnique({
       where: { clerkUserId },
-    })
+    });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    let mealPlan
+    let mealPlan;
 
     if (planId) {
       // Get specific plan
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
           dailyFatG: true,
           planDays: true,
         },
-      })
+      });
     } else {
       // Get the active plan
       mealPlan = await prisma.mealPlan.findFirst({
@@ -66,11 +66,11 @@ export async function GET(request: NextRequest) {
           dailyFatG: true,
           planDays: true,
         },
-      })
+      });
     }
 
     if (!mealPlan) {
-      return NextResponse.json({ error: 'No meal plan found' }, { status: 404 })
+      return NextResponse.json({ error: 'No meal plan found' }, { status: 404 });
     }
 
     return NextResponse.json({
@@ -87,9 +87,9 @@ export async function GET(request: NextRequest) {
         dailyCarbsG: mealPlan.dailyCarbsG,
         dailyFatG: mealPlan.dailyFatG,
       },
-    })
+    });
   } catch (error) {
-    logger.error('[/api/plan/pdf] Error:', error)
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 })
+    logger.error('[/api/plan/pdf] Error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

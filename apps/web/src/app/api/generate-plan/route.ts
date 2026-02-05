@@ -1,17 +1,17 @@
-import { NextResponse } from 'next/server'
-import { requireActiveUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
+import { NextResponse } from 'next/server';
+import { requireActiveUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
 
 // POST - create a plan generation job
 export async function POST() {
-  let clerkUserId: string
-  let dbUserId: string
+  let clerkUserId: string;
+  let dbUserId: string;
   try {
-    ({ clerkUserId, dbUserId } = await requireActiveUser())
+    ({ clerkUserId, dbUserId } = await requireActiveUser());
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized'
-    const status = message === 'Account is deactivated' ? 403 : 401
-    return NextResponse.json({ error: message }, { status })
+    const message = error instanceof Error ? error.message : 'Unauthorized';
+    const status = message === 'Account is deactivated' ? 403 : 401;
+    return NextResponse.json({ error: message }, { status });
   }
 
   const user = await prisma.user.findUnique({
@@ -19,15 +19,18 @@ export async function POST() {
     include: {
       profiles: { where: { isActive: true }, take: 1 },
     },
-  })
+  });
 
   if (!user) {
-    return NextResponse.json({ error: 'User not found' }, { status: 404 })
+    return NextResponse.json({ error: 'User not found' }, { status: 404 });
   }
 
-  const profile = user.profiles[0]
+  const profile = user.profiles[0];
   if (!profile) {
-    return NextResponse.json({ error: 'No active profile found. Please complete onboarding first.' }, { status: 400 })
+    return NextResponse.json(
+      { error: 'No active profile found. Please complete onboarding first.' },
+      { status: 400 }
+    );
   }
 
   // Create a plan generation job
@@ -58,10 +61,10 @@ export async function POST() {
         macroStyle: profile.macroStyle,
       }),
     },
-  })
+  });
 
   return NextResponse.json({
     jobId: job.id,
     status: job.status,
-  })
+  });
 }

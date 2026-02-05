@@ -54,7 +54,11 @@ export interface DailyLogState {
   setTrackedMeals: (meals: TrackedMealEntry[]) => void;
   addTrackedMeal: (meal: TrackedMealEntry) => void;
   removeTrackedMeal: (mealId: string) => void;
-  updateTrackedMealPortion: (mealId: string, newPortion: number, newNutrition: { calories: number; protein: number; carbs: number; fat: number }) => void;
+  updateTrackedMealPortion: (
+    mealId: string,
+    newPortion: number,
+    newNutrition: { calories: number; protein: number; carbs: number; fat: number }
+  ) => void;
   setAdherenceScore: (score: number) => void;
   setWeeklyAverageAdherence: (score: number | null) => void;
   setIsLoading: (loading: boolean) => void;
@@ -154,7 +158,9 @@ export const useTrackingStore = create<DailyLogState>()(
       removeTrackedMeal: (mealId) =>
         set((state) => {
           const mealToRemove = state.trackedMeals.find((m) => m.id === mealId);
-          if (!mealToRemove) return state;
+          if (!mealToRemove) {
+            return state;
+          }
 
           return {
             trackedMeals: state.trackedMeals.filter((m) => m.id !== mealId),
@@ -170,7 +176,9 @@ export const useTrackingStore = create<DailyLogState>()(
       updateTrackedMealPortion: (mealId, newPortion, newNutrition) =>
         set((state) => {
           const mealToUpdate = state.trackedMeals.find((m) => m.id === mealId);
-          if (!mealToUpdate) return state;
+          if (!mealToUpdate) {
+            return state;
+          }
 
           // Calculate the difference in nutrition
           const calorieDiff = newNutrition.calories - mealToUpdate.calories;
@@ -180,9 +188,7 @@ export const useTrackingStore = create<DailyLogState>()(
 
           return {
             trackedMeals: state.trackedMeals.map((m) =>
-              m.id === mealId
-                ? { ...m, portion: newPortion, ...newNutrition }
-                : m
+              m.id === mealId ? { ...m, portion: newPortion, ...newNutrition } : m
             ),
             current: {
               calories: state.current.calories + calorieDiff,
@@ -230,6 +236,7 @@ export const useTrackingStore = create<DailyLogState>()(
       name: 'zsn-tracking-store',
       version: 1,
       storage: createJSONStorage(() => safeStorage),
+      skipHydration: true,
       partialize: (state) => ({
         targets: state.targets,
         current: state.current,

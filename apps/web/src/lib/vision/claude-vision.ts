@@ -5,37 +5,37 @@
  * and estimate nutritional content.
  */
 
-import Anthropic from '@anthropic-ai/sdk'
-import { logger } from '@/lib/safe-logger'
+import Anthropic from '@anthropic-ai/sdk';
+import { logger } from '@/lib/safe-logger';
 
 // Nutrition analysis result structure
 export interface NutritionEstimate {
-  calories: number
-  protein_g: number
-  carbs_g: number
-  fat_g: number
-  fiber_g?: number
+  calories: number;
+  protein_g: number;
+  carbs_g: number;
+  fat_g: number;
+  fiber_g?: number;
 }
 
 export interface DetectedIngredient {
-  name: string
-  amount: string
-  confidence: 'high' | 'medium' | 'low'
+  name: string;
+  amount: string;
+  confidence: 'high' | 'medium' | 'low';
 }
 
 export interface FoodAnalysisResult {
-  meal_name: string
-  description: string
-  ingredients: DetectedIngredient[]
-  estimated_nutrition: NutritionEstimate
-  portion_size_estimate: string
-  confidence_score: number // 0-100
-  warnings?: string[]
+  meal_name: string;
+  description: string;
+  ingredients: DetectedIngredient[];
+  estimated_nutrition: NutritionEstimate;
+  portion_size_estimate: string;
+  confidence_score: number; // 0-100
+  warnings?: string[];
 }
 
 export interface VisionAnalysisOptions {
-  maxRetries?: number
-  timeout?: number
+  maxRetries?: number;
+  timeout?: number;
 }
 
 const VISION_NUTRITION_BOUNDS = {
@@ -44,39 +44,39 @@ const VISION_NUTRITION_BOUNDS = {
   carbs_g: { min: 0, max: 500 },
   fat_g: { min: 0, max: 300 },
   fiber_g: { min: 0, max: 100 },
-} as const
+} as const;
 
 function clampNutrition(value: number, field: keyof typeof VISION_NUTRITION_BOUNDS): number {
-  const bounds = VISION_NUTRITION_BOUNDS[field]
-  return Math.max(bounds.min, Math.min(bounds.max, value))
+  const bounds = VISION_NUTRITION_BOUNDS[field];
+  return Math.max(bounds.min, Math.min(bounds.max, value));
 }
 
 /**
  * Claude Vision client for food photo analysis
  */
 export class ClaudeVisionClient {
-  private client: Anthropic | null = null
-  private readonly model = 'claude-3-5-sonnet-20241022' // Use Sonnet for vision
+  private client: Anthropic | null = null;
+  private readonly model = 'claude-3-5-sonnet-20241022'; // Use Sonnet for vision
 
   constructor() {
-    this.initializeClient()
+    this.initializeClient();
   }
 
   private initializeClient() {
-    const apiKey = process.env.ANTHROPIC_API_KEY
+    const apiKey = process.env.ANTHROPIC_API_KEY;
 
     if (!apiKey) {
-      logger.warn('ANTHROPIC_API_KEY not found - Vision analysis will not work')
-      return
+      logger.warn('ANTHROPIC_API_KEY not found - Vision analysis will not work');
+      return;
     }
 
     try {
       this.client = new Anthropic({
         apiKey,
         timeout: 60000, // 60 second timeout
-      })
+      });
     } catch (error) {
-      logger.error('Failed to initialize Claude Vision client:', error)
+      logger.error('Failed to initialize Claude Vision client:', error);
     }
   }
 
@@ -84,7 +84,7 @@ export class ClaudeVisionClient {
    * Check if the client is properly initialized
    */
   isAvailable(): boolean {
-    return this.client !== null
+    return this.client !== null;
   }
 
   /**
@@ -99,30 +99,30 @@ export class ClaudeVisionClient {
     options: VisionAnalysisOptions = {}
   ): Promise<FoodAnalysisResult> {
     if (!this.client) {
-      throw new Error('Claude Vision client not initialized. Check ANTHROPIC_API_KEY.')
+      throw new Error('Claude Vision client not initialized. Check ANTHROPIC_API_KEY.');
     }
 
-    const { maxRetries = 2 } = options
+    const { maxRetries = 2 } = options;
 
-    let lastError: Error | null = null
+    let lastError: Error | null = null;
 
     for (let attempt = 0; attempt <= maxRetries; attempt++) {
       try {
-        const result = await this.performAnalysis(imageUrl)
-        return result
+        const result = await this.performAnalysis(imageUrl);
+        return result;
       } catch (error) {
-        lastError = error as Error
+        lastError = error as Error;
 
         if (attempt < maxRetries) {
           // Exponential backoff before retry
-          const delay = Math.pow(2, attempt) * 1000
-          await new Promise(resolve => setTimeout(resolve, delay))
-          continue
+          const delay = Math.pow(2, attempt) * 1000;
+          await new Promise((resolve) => setTimeout(resolve, delay));
+          continue;
         }
       }
     }
 
-    throw lastError || new Error('Failed to analyze food photo')
+    throw lastError || new Error('Failed to analyze food photo');
   }
 
   /**
@@ -130,10 +130,10 @@ export class ClaudeVisionClient {
    */
   private async performAnalysis(imageUrl: string): Promise<FoodAnalysisResult> {
     if (!this.client) {
-      throw new Error('Client not initialized')
+      throw new Error('Client not initialized');
     }
 
-    const prompt = this.buildAnalysisPrompt()
+    const prompt = this.buildAnalysisPrompt();
 
     const message = await this.client.messages.create({
       model: this.model,
@@ -157,16 +157,16 @@ export class ClaudeVisionClient {
           ],
         },
       ],
-    })
+    });
 
     // Extract the text response
     const textContent = message.content
-      .filter(block => block.type === 'text')
-      .map(block => (block.type === 'text' ? block.text : ''))
-      .join('\n')
+      .filter((block) => block.type === 'text')
+      .map((block) => (block.type === 'text' ? block.text : ''))
+      .join('\n');
 
     // Parse the JSON response
-    return this.parseAnalysisResponse(textContent)
+    return this.parseAnalysisResponse(textContent);
   }
 
   /**
@@ -207,7 +207,7 @@ Important guidelines:
 - If the photo is unclear or portion sizes are difficult to estimate, lower your confidence score
 - Include warnings if you're uncertain about any aspect
 
-Respond ONLY with valid JSON, no additional text.`
+Respond ONLY with valid JSON, no additional text.`;
   }
 
   /**
@@ -216,17 +216,17 @@ Respond ONLY with valid JSON, no additional text.`
   private parseAnalysisResponse(text: string): FoodAnalysisResult {
     try {
       // Try to extract JSON from the response
-      const jsonMatch = text.match(/\{[\s\S]*\}/)
+      const jsonMatch = text.match(/\{[\s\S]*\}/);
 
       if (!jsonMatch) {
-        throw new Error('No JSON found in response')
+        throw new Error('No JSON found in response');
       }
 
-      const parsed = JSON.parse(jsonMatch[0])
+      const parsed = JSON.parse(jsonMatch[0]);
 
       // Validate required fields
       if (!parsed.meal_name || !parsed.estimated_nutrition) {
-        throw new Error('Invalid response format: missing required fields')
+        throw new Error('Invalid response format: missing required fields');
       }
 
       // Ensure nutrition values are numbers and within sane bounds
@@ -235,38 +235,43 @@ Respond ONLY with valid JSON, no additional text.`
         protein_g: Number(parsed.estimated_nutrition.protein_g) || 0,
         carbs_g: Number(parsed.estimated_nutrition.carbs_g) || 0,
         fat_g: Number(parsed.estimated_nutrition.fat_g) || 0,
-        fiber_g: parsed.estimated_nutrition.fiber_g ? Number(parsed.estimated_nutrition.fiber_g) : undefined,
-      }
+        fiber_g: parsed.estimated_nutrition.fiber_g
+          ? Number(parsed.estimated_nutrition.fiber_g)
+          : undefined,
+      };
 
       parsed.estimated_nutrition = {
         calories: clampNutrition(rawNutrition.calories, 'calories'),
         protein_g: clampNutrition(rawNutrition.protein_g, 'protein_g'),
         carbs_g: clampNutrition(rawNutrition.carbs_g, 'carbs_g'),
         fat_g: clampNutrition(rawNutrition.fat_g, 'fat_g'),
-        fiber_g: rawNutrition.fiber_g !== undefined
-          ? clampNutrition(rawNutrition.fiber_g, 'fiber_g')
-          : undefined,
-      }
+        fiber_g:
+          rawNutrition.fiber_g !== undefined
+            ? clampNutrition(rawNutrition.fiber_g, 'fiber_g')
+            : undefined,
+      };
 
-      const clampedFields: string[] = []
+      const clampedFields: string[] = [];
       for (const field of ['calories', 'protein_g', 'carbs_g', 'fat_g', 'fiber_g'] as const) {
-        const raw = rawNutrition[field]
-        const clamped = parsed.estimated_nutrition[field]
+        const raw = rawNutrition[field];
+        const clamped = parsed.estimated_nutrition[field];
         if (raw !== undefined && clamped !== undefined && raw !== clamped) {
-          clampedFields.push(`${field}: ${raw} -> ${clamped}`)
+          clampedFields.push(`${field}: ${raw} -> ${clamped}`);
         }
       }
       if (clampedFields.length > 0) {
         if (!Array.isArray(parsed.warnings)) {
-          parsed.warnings = []
+          parsed.warnings = [];
         }
-        parsed.warnings.push(`Nutrition values were clamped to sane bounds: ${clampedFields.join(', ')}`)
+        parsed.warnings.push(
+          `Nutrition values were clamped to sane bounds: ${clampedFields.join(', ')}`
+        );
       }
 
-      return parsed as FoodAnalysisResult
+      return parsed as FoodAnalysisResult;
     } catch (error) {
-      logger.error('Failed to parse Claude response:', error)
-      logger.debug('Response text:', text)
+      logger.error('Failed to parse Claude response:', error);
+      logger.debug('Response text:', text);
 
       // Return a fallback response
       return {
@@ -281,8 +286,10 @@ Respond ONLY with valid JSON, no additional text.`
         },
         portion_size_estimate: 'Unknown',
         confidence_score: 0,
-        warnings: ['Failed to analyze photo. Please ensure the food is clearly visible and well-lit.'],
-      }
+        warnings: [
+          'Failed to analyze photo. Please ensure the food is clearly visible and well-lit.',
+        ],
+      };
     }
   }
 
@@ -293,12 +300,12 @@ Respond ONLY with valid JSON, no additional text.`
   private extractBase64Data(imageUrl: string): string {
     if (imageUrl.startsWith('data:')) {
       // Remove the data:image/...;base64, prefix
-      return imageUrl.split(',')[1] || imageUrl
+      return imageUrl.split(',')[1] || imageUrl;
     }
 
     // If it's a regular URL, we'd need to fetch and convert
     // For now, we'll assume the caller has already converted to base64
-    return imageUrl
+    return imageUrl;
   }
 
   /**
@@ -306,19 +313,19 @@ Respond ONLY with valid JSON, no additional text.`
    */
   static async fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader()
+      const reader = new FileReader();
 
       reader.onload = () => {
-        const result = reader.result as string
-        resolve(result)
-      }
+        const result = reader.result as string;
+        resolve(result);
+      };
 
       reader.onerror = () => {
-        reject(new Error('Failed to read file'))
-      }
+        reject(new Error('Failed to read file'));
+      };
 
-      reader.readAsDataURL(file)
-    })
+      reader.readAsDataURL(file);
+    });
   }
 
   /**
@@ -326,42 +333,42 @@ Respond ONLY with valid JSON, no additional text.`
    */
   static validateImageFile(file: File): { valid: boolean; error?: string } {
     // Check file type
-    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp']
+    const validTypes = ['image/jpeg', 'image/jpg', 'image/png', 'image/webp'];
     if (!validTypes.includes(file.type)) {
       return {
         valid: false,
         error: 'Invalid file type. Please upload a JPEG, PNG, or WebP image.',
-      }
+      };
     }
 
     // Check file size (max 10MB)
-    const maxSize = 10 * 1024 * 1024
+    const maxSize = 10 * 1024 * 1024;
     if (file.size > maxSize) {
       return {
         valid: false,
         error: 'File too large. Maximum size is 10MB.',
-      }
+      };
     }
 
     // Check minimum size (at least 10KB to avoid corrupted files)
-    const minSize = 10 * 1024
+    const minSize = 10 * 1024;
     if (file.size < minSize) {
       return {
         valid: false,
         error: 'File too small. Please upload a valid image.',
-      }
+      };
     }
 
-    return { valid: true }
+    return { valid: true };
   }
 }
 
 // Singleton instance
-let visionClient: ClaudeVisionClient | null = null
+let visionClient: ClaudeVisionClient | null = null;
 
 export function getVisionClient(): ClaudeVisionClient {
   if (!visionClient) {
-    visionClient = new ClaudeVisionClient()
+    visionClient = new ClaudeVisionClient();
   }
-  return visionClient
+  return visionClient;
 }

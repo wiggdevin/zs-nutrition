@@ -1,17 +1,17 @@
-import { HTMLAttributes } from 'react'
+import { HTMLAttributes } from 'react';
 
 export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
   /**
    * The animation style for the skeleton
    * @default 'shimmer'
    */
-  animation?: 'shimmer' | 'pulse' | 'none'
+  animation?: 'shimmer' | 'pulse' | 'none';
 
   /**
    * The background color variant
    * @default 'default'
    */
-  variant?: 'default' | 'light' | 'dark'
+  variant?: 'default' | 'light' | 'dark';
 }
 
 /**
@@ -43,13 +43,13 @@ export function Skeleton({
     default: 'bg-card',
     light: 'bg-border',
     dark: 'bg-background',
-  }
+  };
 
   const animationClasses = {
     shimmer: 'skeleton-shimmer',
     pulse: 'skeleton-pulse',
     none: '',
-  }
+  };
 
   const combinedClassName = [
     'rounded-md',
@@ -58,7 +58,7 @@ export function Skeleton({
     className,
   ]
     .filter(Boolean)
-    .join(' ')
+    .join(' ');
 
-  return <div className={combinedClassName} {...props} aria-hidden="true" />
+  return <div className={combinedClassName} {...props} aria-hidden="true" />;
 }

@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import { logger } from "@/lib/safe-logger";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import { logger } from '@/lib/safe-logger';
 
 interface PlanSummary {
   id: string;
@@ -34,17 +34,17 @@ export default function SettingsPlanHistory() {
   useEffect(() => {
     async function fetchPlans() {
       try {
-        const res = await fetch("/api/plan/history");
+        const res = await fetch('/api/plan/history');
         const data = await res.json();
 
         if (res.ok) {
           setPlans(data.plans || []);
         } else {
-          setError(data.error || "Failed to load plan history");
+          setError(data.error || 'Failed to load plan history');
         }
       } catch (err) {
-        logger.error("Error fetching plan history:", err);
-        setError("Failed to load plan history");
+        logger.error('Error fetching plan history:', err);
+        setError('Failed to load plan history');
       } finally {
         setLoading(false);
       }
@@ -87,8 +87,8 @@ export default function SettingsPlanHistory() {
           <h2 className="text-lg font-semibold text-foreground">Plan History</h2>
           <p className="mt-1 text-sm text-muted-foreground">
             {plans.length === 0
-              ? "No plans generated yet"
-              : `${plans.length} ${plans.length === 1 ? "plan" : "plans"} generated`}
+              ? 'No plans generated yet'
+              : `${plans.length} ${plans.length === 1 ? 'plan' : 'plans'} generated`}
           </p>
         </div>
         {plans.length > 0 && (
@@ -132,11 +132,11 @@ export default function SettingsPlanHistory() {
                         className="rounded bg-muted-foreground/20 px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide text-muted-foreground"
                         data-testid={`settings-inactive-badge-${plan.id}`}
                       >
-                        {plan.status === "replaced"
-                          ? "Replaced"
-                          : plan.status === "expired"
-                          ? "Expired"
-                          : plan.status}
+                        {plan.status === 'replaced'
+                          ? 'Replaced'
+                          : plan.status === 'expired'
+                            ? 'Expired'
+                            : plan.status}
                       </span>
                     )}
 
@@ -145,10 +145,10 @@ export default function SettingsPlanHistory() {
                       <span
                         className={`rounded px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${
                           plan.qaScore >= 80
-                            ? "bg-success/20 text-success"
+                            ? 'bg-success/20 text-success'
                             : plan.qaScore >= 60
-                            ? "bg-warning/20 text-warning"
-                            : "bg-destructive/20 text-destructive"
+                              ? 'bg-warning/20 text-warning'
+                              : 'bg-destructive/20 text-destructive'
                         }`}
                         data-testid={`settings-qa-score-${plan.id}`}
                       >
@@ -171,15 +171,12 @@ export default function SettingsPlanHistory() {
                     className="mt-1 text-xs text-muted-foreground"
                     data-testid={`settings-plan-date-${plan.id}`}
                   >
-                    Generated{" "}
-                    {new Date(plan.generatedAt).toLocaleDateString(
-                      undefined,
-                      {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      }
-                    )}
+                    Generated{' '}
+                    {new Date(plan.generatedAt).toLocaleDateString(undefined, {
+                      year: 'numeric',
+                      month: 'short',
+                      day: 'numeric',
+                    })}
                   </p>
 
                   {/* Macros */}
@@ -226,7 +223,7 @@ export default function SettingsPlanHistory() {
               href="/meal-plan/history"
               className="block rounded border border-border bg-background p-3 text-center text-sm text-muted-foreground transition-all hover:border-border/80 hover:bg-card hover:text-foreground"
             >
-              View {plans.length - 3} more {plans.length - 3 === 1 ? "plan" : "plans"} →
+              View {plans.length - 3} more {plans.length - 3 === 1 ? 'plan' : 'plans'} →
             </Link>
           )}
         </div>

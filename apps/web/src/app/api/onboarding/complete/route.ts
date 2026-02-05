@@ -3,20 +3,26 @@ import { prisma } from '@/lib/prisma';
 import { calculateMetabolicProfile } from '@/lib/metabolic';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
-import { profileSchemas, validateMealsPerDay, validateSnacksPerDay, validateCookingSkill, validatePrepTimeMax } from '@/lib/validation';
+import {
+  profileSchemas,
+  validateMealsPerDay,
+  validateSnacksPerDay,
+  validateCookingSkill,
+  validatePrepTimeMax,
+} from '@/lib/validation';
 import { ZodError } from 'zod';
 
 // POST - Complete onboarding, create UserProfile
 export async function POST(request: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // In dev mode, accept profile data directly from request body
@@ -74,7 +80,9 @@ export async function POST(request: NextRequest) {
         dietaryStyle: stepData.dietaryStyle || 'omnivore',
         allergies: Array.isArray(stepData.allergies) ? stepData.allergies : [],
         exclusions: Array.isArray(stepData.exclusions) ? stepData.exclusions : [],
-        cuisinePreferences: Array.isArray(stepData.cuisinePreferences) ? stepData.cuisinePreferences : [],
+        cuisinePreferences: Array.isArray(stepData.cuisinePreferences)
+          ? stepData.cuisinePreferences
+          : [],
         mealsPerDay: Number(stepData.mealsPerDay) || 3,
         snacksPerDay: Number(stepData.snacksPerDay) || 1,
         cookingSkill: Number(stepData.cookingSkill) || 5,
@@ -95,10 +103,7 @@ export async function POST(request: NextRequest) {
             errors[err.path[0].toString()] = err.message;
           }
         });
-        return NextResponse.json(
-          { error: 'Validation failed', errors },
-          { status: 400 }
-        );
+        return NextResponse.json({ error: 'Validation failed', errors }, { status: 400 });
       }
       return NextResponse.json({ error: 'Validation failed' }, { status: 400 });
     }
@@ -107,19 +112,17 @@ export async function POST(request: NextRequest) {
     const heightFeet = Number(stepData.heightFeet) || 0;
     const heightInches = Number(stepData.heightInches) || 0;
     const directHeightCm = Number(stepData.heightCm) || 0;
-    const heightCm = directHeightCm > 0
-      ? directHeightCm
-      : heightFeet > 0
-        ? ((heightFeet * 12) + heightInches) * 2.54
-        : 170;
+    const heightCm =
+      directHeightCm > 0
+        ? directHeightCm
+        : heightFeet > 0
+          ? (heightFeet * 12 + heightInches) * 2.54
+          : 170;
 
     const weightLbs = Number(stepData.weightLbs) || 0;
     const directWeightKg = Number(stepData.weightKg) || 0;
-    const weightKg = directWeightKg > 0
-      ? directWeightKg
-      : weightLbs > 0
-        ? weightLbs * 0.453592
-        : 70;
+    const weightKg =
+      directWeightKg > 0 ? directWeightKg : weightLbs > 0 ? weightLbs * 0.453592 : 70;
 
     // Calculate metabolic profile
     const metabolic = calculateMetabolicProfile({

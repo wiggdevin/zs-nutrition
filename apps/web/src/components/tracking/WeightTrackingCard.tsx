@@ -1,90 +1,89 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { trpc } from '@/lib/trpc'
-import { Button } from '@/components/ui/button'
-import { Input } from '@/components/ui/input'
-import { Label } from '@/components/ui/label'
-import { Textarea } from '@/components/ui/textarea'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
-import { Alert, AlertDescription } from '@/components/ui/alert'
-import { Loader2, Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react'
-import { toast } from 'sonner'
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { Textarea } from '@/components/ui/textarea';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Loader2, Scale, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { toast } from 'sonner';
 
 export function WeightTrackingCard() {
-  const [weightKg, setWeightKg] = useState('')
-  const [weightLbs, setWeightLbs] = useState('')
-  const [notes, setNotes] = useState('')
-  const [useLbs, setUseLbs] = useState(false)
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [weightKg, setWeightKg] = useState('');
+  const [weightLbs, setWeightLbs] = useState('');
+  const [notes, setNotes] = useState('');
+  const [useLbs, setUseLbs] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const { data: history, refetch: refetchHistory } = trpc.adaptiveNutrition.getWeightHistory.useQuery(
-    { limit: 8 },
-    { enabled: true }
-  )
+  const { data: history, refetch: refetchHistory } =
+    trpc.adaptiveNutrition.getWeightHistory.useQuery({ limit: 8 }, { enabled: true });
 
-  const { data: trend, isLoading: trendLoading } = trpc.adaptiveNutrition.analyzeWeightTrend.useQuery(undefined, {
-    enabled: true,
-    refetchInterval: 30000,
-  })
+  const { data: trend, isLoading: trendLoading } =
+    trpc.adaptiveNutrition.analyzeWeightTrend.useQuery(undefined, {
+      enabled: true,
+      refetchInterval: 30000,
+    });
 
   const logWeightMutation = trpc.adaptiveNutrition.logWeightEntry.useMutation({
     onSuccess: () => {
-      toast.success('Weight logged successfully')
-      setWeightKg('')
-      setWeightLbs('')
-      setNotes('')
-      refetchHistory()
+      toast.success('Weight logged successfully');
+      setWeightKg('');
+      setWeightLbs('');
+      setNotes('');
+      refetchHistory();
     },
     onError: (error) => {
-      toast.error(error.message || 'Failed to log weight')
+      toast.error(error.message || 'Failed to log weight');
     },
-  })
+  });
 
   const handleWeightChange = (value: string) => {
     if (useLbs) {
-      setWeightLbs(value)
+      setWeightLbs(value);
       // Convert to kg
-      const lbs = parseFloat(value)
+      const lbs = parseFloat(value);
       if (!isNaN(lbs)) {
-        setWeightKg((lbs / 2.20462).toFixed(1))
+        setWeightKg((lbs / 2.20462).toFixed(1));
       } else {
-        setWeightKg('')
+        setWeightKg('');
       }
     } else {
-      setWeightKg(value)
+      setWeightKg(value);
       // Convert to lbs
-      const kg = parseFloat(value)
+      const kg = parseFloat(value);
       if (!isNaN(kg)) {
-        setWeightLbs((kg * 2.20462).toFixed(1))
+        setWeightLbs((kg * 2.20462).toFixed(1));
       } else {
-        setWeightLbs('')
+        setWeightLbs('');
       }
     }
-  }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
+    e.preventDefault();
 
-    const weight = useLbs ? parseFloat(weightLbs) : parseFloat(weightKg)
+    const weight = useLbs ? parseFloat(weightLbs) : parseFloat(weightKg);
     if (isNaN(weight) || weight < 30 || weight > 300) {
-      toast.error('Please enter a valid weight')
-      return
+      toast.error('Please enter a valid weight');
+      return;
     }
 
-    setIsSubmitting(true)
+    setIsSubmitting(true);
     try {
       await logWeightMutation.mutateAsync({
         weightKg: useLbs ? parseFloat(weightKg) : weight,
         notes: notes.trim() || undefined,
-      })
+      });
     } finally {
-      setIsSubmitting(false)
+      setIsSubmitting(false);
     }
-  }
+  };
 
-  const latestEntry = history?.entries?.[0]
-  const previousEntry = history?.entries?.[1]
+  const latestEntry = history?.entries?.[0];
+  const previousEntry = history?.entries?.[1];
 
   const weeklyChange =
     latestEntry && previousEntry
@@ -92,7 +91,7 @@ export function WeightTrackingCard() {
           kg: Math.round((latestEntry.weightKg - previousEntry.weightKg) * 10) / 10,
           lbs: Math.round((latestEntry.weightLbs - previousEntry.weightLbs) * 10) / 10,
         }
-      : null
+      : null;
 
   return (
     <div className="grid gap-6 md:grid-cols-2">
@@ -113,8 +112,8 @@ export function WeightTrackingCard() {
                 variant={!useLbs ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => {
-                  setUseLbs(false)
-                  handleWeightChange(weightKg)
+                  setUseLbs(false);
+                  handleWeightChange(weightKg);
                 }}
               >
                 kg
@@ -124,8 +123,8 @@ export function WeightTrackingCard() {
                 variant={useLbs ? 'default' : 'outline'}
                 size="sm"
                 onClick={() => {
-                  setUseLbs(true)
-                  handleWeightChange(weightLbs)
+                  setUseLbs(true);
+                  handleWeightChange(weightLbs);
                 }}
               >
                 lbs
@@ -157,7 +156,11 @@ export function WeightTrackingCard() {
             </div>
 
             <Button type="submit" className="w-full" disabled={isSubmitting}>
-              {isSubmitting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Scale className="mr-2 h-4 w-4" />}
+              {isSubmitting ? (
+                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+              ) : (
+                <Scale className="mr-2 h-4 w-4" />
+              )}
               Log Weight
             </Button>
           </form>
@@ -190,7 +193,9 @@ export function WeightTrackingCard() {
             </div>
           ) : !trend?.hasEnoughData ? (
             <Alert>
-              <AlertDescription>{trend?.message || 'Log at least 2 weights to see trends'}</AlertDescription>
+              <AlertDescription>
+                {trend?.message || 'Log at least 2 weights to see trends'}
+              </AlertDescription>
             </Alert>
           ) : (
             <div className="space-y-4">
@@ -218,8 +223,8 @@ export function WeightTrackingCard() {
                           weeklyChange.lbs < 0
                             ? 'text-green-600'
                             : weeklyChange.lbs > 0
-                            ? 'text-blue-600'
-                            : 'text-gray-400'
+                              ? 'text-blue-600'
+                              : 'text-gray-400'
                         }`}
                       >
                         {weeklyChange.lbs < 0 ? '-' : weeklyChange.lbs > 0 ? '+' : ''}
@@ -250,7 +255,9 @@ export function WeightTrackingCard() {
                   </div>
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">On Track:</span>
-                    <span className={`font-medium ${trend.isOnTrack ? 'text-green-600' : 'text-primary/90'}`}>
+                    <span
+                      className={`font-medium ${trend.isOnTrack ? 'text-green-600' : 'text-primary/90'}`}
+                    >
                       {trend.isOnTrack ? 'Yes ✓' : 'Not quite'}
                     </span>
                   </div>
@@ -279,7 +286,9 @@ export function WeightTrackingCard() {
                     {history.entries.slice(1).map((entry) => (
                       <div key={entry.id} className="flex justify-between text-sm py-1 border-b">
                         <span>{entry.weightLbs} lbs</span>
-                        <span className="text-muted-foreground">{new Date(entry.logDate).toLocaleDateString()}</span>
+                        <span className="text-muted-foreground">
+                          {new Date(entry.logDate).toLocaleDateString()}
+                        </span>
                       </div>
                     ))}
                   </div>
@@ -290,5 +299,5 @@ export function WeightTrackingCard() {
         </CardContent>
       </Card>
     </div>
-  )
+  );
 }

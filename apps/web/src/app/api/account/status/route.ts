@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getClerkUserId } from '@/lib/auth'
-import { logger } from '@/lib/safe-logger'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getClerkUserId } from '@/lib/auth';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/account/status
@@ -11,18 +11,18 @@ import { logger } from '@/lib/safe-logger'
  */
 export async function GET() {
   try {
-    const clerkUserId = await getClerkUserId()
+    const clerkUserId = await getClerkUserId();
     if (!clerkUserId) {
-      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
     // Find user regardless of active status (for verification)
     const user = await prisma.user.findUnique({
       where: { clerkUserId },
-    })
+    });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     // Count all related records to verify data integrity
@@ -48,7 +48,7 @@ export async function GET() {
           mealPlan: { userId: user.id },
         },
       }),
-    ])
+    ]);
 
     return NextResponse.json({
       userId: user.id,
@@ -67,12 +67,12 @@ export async function GET() {
         mealSwaps: mealSwapCount,
         hasOnboarding: !!onboardingState,
       },
-    })
+    });
   } catch (error) {
-    logger.error('Account status error:', error)
+    logger.error('Account status error:', error);
     return NextResponse.json(
       { error: 'Something went wrong. Please try again later.' },
       { status: 500 }
-    )
+    );
   }
 }

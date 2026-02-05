@@ -1,22 +1,22 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireActiveUser } from '@/lib/auth'
-import { calculateMetabolicProfile } from '@/lib/metabolic'
-import { logger } from '@/lib/safe-logger'
-import { profileUpdateSchema } from '@/lib/validation'
-import { ZodError } from 'zod'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
+import { calculateMetabolicProfile } from '@/lib/metabolic';
+import { logger } from '@/lib/safe-logger';
+import { profileUpdateSchema } from '@/lib/validation';
+import { ZodError } from 'zod';
 
 // GET - fetch user profile for settings
 export async function GET() {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     const user = await prisma.user.findUnique({
@@ -37,7 +37,10 @@ export async function GET() {
     const profile = user.profiles[0] || null;
 
     if (!profile) {
-      return NextResponse.json({ error: 'No profile found. Complete onboarding first.' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'No profile found. Complete onboarding first.' },
+        { status: 404 }
+      );
     }
 
     // Parse JSON fields safely
@@ -46,10 +49,26 @@ export async function GET() {
     let cuisinePrefs: string[] = [];
     let trainingDays: string[] = [];
 
-    try { allergies = JSON.parse(profile.allergies); } catch { allergies = []; }
-    try { exclusions = JSON.parse(profile.exclusions); } catch { exclusions = []; }
-    try { cuisinePrefs = JSON.parse(profile.cuisinePrefs); } catch { cuisinePrefs = []; }
-    try { trainingDays = JSON.parse(profile.trainingDays); } catch { trainingDays = []; }
+    try {
+      allergies = JSON.parse(profile.allergies);
+    } catch {
+      allergies = [];
+    }
+    try {
+      exclusions = JSON.parse(profile.exclusions);
+    } catch {
+      exclusions = [];
+    }
+    try {
+      cuisinePrefs = JSON.parse(profile.cuisinePrefs);
+    } catch {
+      cuisinePrefs = [];
+    }
+    try {
+      trainingDays = JSON.parse(profile.trainingDays);
+    } catch {
+      trainingDays = [];
+    }
 
     return NextResponse.json({
       profile: {
@@ -84,14 +103,14 @@ export async function GET() {
 // PUT - update user profile (all sections)
 export async function PUT(request: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     let body: any;
@@ -136,7 +155,10 @@ export async function PUT(request: NextRequest) {
 
     const profile = user.profiles[0];
     if (!profile) {
-      return NextResponse.json({ error: 'No profile found. Complete onboarding first.' }, { status: 404 });
+      return NextResponse.json(
+        { error: 'No profile found. Complete onboarding first.' },
+        { status: 404 }
+      );
     }
 
     // Build update data - only include fields that were provided (already validated)
@@ -148,29 +170,39 @@ export async function PUT(request: NextRequest) {
     if (validatedData.age !== undefined) updateData.age = validatedData.age;
     if (validatedData.heightCm !== undefined) updateData.heightCm = validatedData.heightCm;
     if (validatedData.weightKg !== undefined) updateData.weightKg = validatedData.weightKg;
-    if (validatedData.bodyFatPercent !== undefined) updateData.bodyFatPercent = validatedData.bodyFatPercent;
+    if (validatedData.bodyFatPercent !== undefined)
+      updateData.bodyFatPercent = validatedData.bodyFatPercent;
 
     // Goals
     if (validatedData.goalType !== undefined) updateData.goalType = validatedData.goalType;
     if (validatedData.goalRate !== undefined) updateData.goalRate = validatedData.goalRate;
 
     // Dietary
-    if (validatedData.dietaryStyle !== undefined) updateData.dietaryStyle = validatedData.dietaryStyle;
-    if (validatedData.allergies !== undefined) updateData.allergies = JSON.stringify(validatedData.allergies);
-    if (validatedData.exclusions !== undefined) updateData.exclusions = JSON.stringify(validatedData.exclusions);
+    if (validatedData.dietaryStyle !== undefined)
+      updateData.dietaryStyle = validatedData.dietaryStyle;
+    if (validatedData.allergies !== undefined)
+      updateData.allergies = JSON.stringify(validatedData.allergies);
+    if (validatedData.exclusions !== undefined)
+      updateData.exclusions = JSON.stringify(validatedData.exclusions);
 
     // Activity
-    if (validatedData.activityLevel !== undefined) updateData.activityLevel = validatedData.activityLevel;
-    if (validatedData.trainingDays !== undefined) updateData.trainingDays = JSON.stringify(validatedData.trainingDays);
-    if (validatedData.trainingTime !== undefined) updateData.trainingTime = validatedData.trainingTime;
-    if (validatedData.cookingSkill !== undefined) updateData.cookingSkill = validatedData.cookingSkill;
+    if (validatedData.activityLevel !== undefined)
+      updateData.activityLevel = validatedData.activityLevel;
+    if (validatedData.trainingDays !== undefined)
+      updateData.trainingDays = JSON.stringify(validatedData.trainingDays);
+    if (validatedData.trainingTime !== undefined)
+      updateData.trainingTime = validatedData.trainingTime;
+    if (validatedData.cookingSkill !== undefined)
+      updateData.cookingSkill = validatedData.cookingSkill;
     if (validatedData.prepTimeMax !== undefined) updateData.prepTimeMax = validatedData.prepTimeMax;
 
     // Meal structure
     if (validatedData.macroStyle !== undefined) updateData.macroStyle = validatedData.macroStyle;
-    if (validatedData.cuisinePrefs !== undefined) updateData.cuisinePrefs = JSON.stringify(validatedData.cuisinePrefs);
+    if (validatedData.cuisinePrefs !== undefined)
+      updateData.cuisinePrefs = JSON.stringify(validatedData.cuisinePrefs);
     if (validatedData.mealsPerDay !== undefined) updateData.mealsPerDay = validatedData.mealsPerDay;
-    if (validatedData.snacksPerDay !== undefined) updateData.snacksPerDay = validatedData.snacksPerDay;
+    if (validatedData.snacksPerDay !== undefined)
+      updateData.snacksPerDay = validatedData.snacksPerDay;
 
     // First update the profile with the provided fields
     let updatedProfile = await prisma.userProfile.update({
@@ -179,8 +211,17 @@ export async function PUT(request: NextRequest) {
     });
 
     // Recalculate metabolic values if any demographic/goal/activity field changed
-    const metabolicFields = ['sex', 'age', 'heightCm', 'weightKg', 'activityLevel', 'goalType', 'goalRate', 'macroStyle'];
-    const metabolicChanged = metabolicFields.some(f => validatedData[f] !== undefined);
+    const metabolicFields = [
+      'sex',
+      'age',
+      'heightCm',
+      'weightKg',
+      'activityLevel',
+      'goalType',
+      'goalRate',
+      'macroStyle',
+    ];
+    const metabolicChanged = metabolicFields.some((f) => validatedData[f] !== undefined);
 
     if (metabolicChanged) {
       const metabolic = calculateMetabolicProfile({

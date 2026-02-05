@@ -1,52 +1,52 @@
-'use client'
+'use client';
 
-import { useState, useRef } from 'react'
-import { Camera, Upload, X, Check, AlertCircle, Loader2 } from 'lucide-react'
-import { ClaudeVisionClient, FoodAnalysisResult } from '@/lib/vision/claude-vision'
-import Image from 'next/image'
+import { useState, useRef } from 'react';
+import { Camera, Upload, X, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { ClaudeVisionClient, FoodAnalysisResult } from '@/lib/vision/claude-vision';
+import Image from 'next/image';
 
 interface FoodScanProps {
-  onMealLogged?: () => void
+  onMealLogged?: () => void;
 }
 
-type ScanState = 'idle' | 'capturing' | 'analyzing' | 'reviewing' | 'error' | 'success'
+type ScanState = 'idle' | 'capturing' | 'analyzing' | 'reviewing' | 'error' | 'success';
 
 export default function FoodScan({ onMealLogged }: FoodScanProps) {
-  const [state, setState] = useState<ScanState>('idle')
-  const [imageData, setImageData] = useState<string | null>(null)
-  const [analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null)
-  const [scanId, setScanId] = useState<string | null>(null)
-  const [adjustedResult, setAdjustedResult] = useState<FoodAnalysisResult | null>(null)
-  const [error, setError] = useState<string>('')
-  const fileInputRef = useRef<HTMLInputElement>(null)
+  const [state, setState] = useState<ScanState>('idle');
+  const [imageData, setImageData] = useState<string | null>(null);
+  const [analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null);
+  const [scanId, setScanId] = useState<string | null>(null);
+  const [adjustedResult, setAdjustedResult] = useState<FoodAnalysisResult | null>(null);
+  const [error, setError] = useState<string>('');
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0]
+    const file = event.target.files?.[0];
 
-    if (!file) return
+    if (!file) return;
 
     // Validate file
-    const validation = ClaudeVisionClient.validateImageFile(file)
+    const validation = ClaudeVisionClient.validateImageFile(file);
 
     if (!validation.valid) {
-      setError(validation.error || 'Invalid file')
-      setState('error')
-      return
+      setError(validation.error || 'Invalid file');
+      setState('error');
+      return;
     }
 
     try {
       // Convert to base64
-      const base64 = await ClaudeVisionClient.fileToBase64(file)
-      setImageData(base64)
-      setState('analyzing')
-      setError('')
-      await analyzeImage(base64)
+      const base64 = await ClaudeVisionClient.fileToBase64(file);
+      setImageData(base64);
+      setState('analyzing');
+      setError('');
+      await analyzeImage(base64);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to process image'
-      setError(message)
-      setState('error')
+      const message = err instanceof Error ? err.message : 'Failed to process image';
+      setError(message);
+      setState('error');
     }
-  }
+  };
 
   const analyzeImage = async (base64: string) => {
     try {
@@ -59,25 +59,25 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           imageData: base64,
           scanType: 'food_plate',
         }),
-      })
+      });
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.message || 'Analysis failed')
+        const data = await response.json();
+        throw new Error(data.message || 'Analysis failed');
       }
 
-      const data = await response.json()
+      const data = await response.json();
 
-      setScanId(data.scanId)
-      setAnalysisResult(data.result)
-      setAdjustedResult(data.result)
-      setState('reviewing')
+      setScanId(data.scanId);
+      setAnalysisResult(data.result);
+      setAdjustedResult(data.result);
+      setState('reviewing');
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Analysis failed'
-      setError(message)
-      setState('error')
+      const message = err instanceof Error ? err.message : 'Analysis failed';
+      setError(message);
+      setState('error');
     }
-  }
+  };
 
   const NUTRITION_BOUNDS: Record<string, { min: number; max: number }> = {
     calories: { min: 0, max: 5000 },
@@ -85,16 +85,14 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
     carbs_g: { min: 0, max: 500 },
     fat_g: { min: 0, max: 300 },
     fiber_g: { min: 0, max: 100 },
-  }
+  };
 
   const handleAdjust = (field: keyof FoodAnalysisResult['estimated_nutrition'], value: string) => {
-    if (!adjustedResult) return
+    if (!adjustedResult) return;
 
-    const numValue = parseFloat(value) || 0
-    const bounds = NUTRITION_BOUNDS[field]
-    const clampedValue = bounds
-      ? Math.max(bounds.min, Math.min(bounds.max, numValue))
-      : numValue
+    const numValue = parseFloat(value) || 0;
+    const bounds = NUTRITION_BOUNDS[field];
+    const clampedValue = bounds ? Math.max(bounds.min, Math.min(bounds.max, numValue)) : numValue;
 
     setAdjustedResult({
       ...adjustedResult,
@@ -102,11 +100,11 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
         ...adjustedResult.estimated_nutrition,
         [field]: clampedValue,
       },
-    })
-  }
+    });
+  };
 
   const handleConfirm = async () => {
-    if (!adjustedResult || !scanId) return
+    if (!adjustedResult || !scanId) return;
 
     try {
       const response = await fetch('/api/vision/log-meal', {
@@ -118,35 +116,35 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           scanId,
           adjustedResult,
         }),
-      })
+      });
 
       if (!response.ok) {
-        const data = await response.json()
-        throw new Error(data.message || 'Failed to log meal')
+        const data = await response.json();
+        throw new Error(data.message || 'Failed to log meal');
       }
 
-      setState('success')
+      setState('success');
 
       // Reset after 2 seconds
       setTimeout(() => {
-        reset()
-        onMealLogged?.()
-      }, 2000)
+        reset();
+        onMealLogged?.();
+      }, 2000);
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Failed to log meal'
-      setError(message)
-      setState('error')
+      const message = err instanceof Error ? err.message : 'Failed to log meal';
+      setError(message);
+      setState('error');
     }
-  }
+  };
 
   const reset = () => {
-    setState('idle')
-    setImageData(null)
-    setAnalysisResult(null)
-    setAdjustedResult(null)
-    setScanId(null)
-    setError('')
-  }
+    setState('idle');
+    setImageData(null);
+    setAnalysisResult(null);
+    setAdjustedResult(null);
+    setScanId(null);
+    setError('');
+  };
 
   // Idle state - show capture button
   if (state === 'idle') {
@@ -192,13 +190,17 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           </ul>
         </div>
       </div>
-    )
+    );
   }
 
   // Analyzing state - show loading
   if (state === 'analyzing') {
     return (
-      <div className="bg-card border border-border rounded-xl p-6 mb-6" role="status" aria-live="polite">
+      <div
+        className="bg-card border border-border rounded-xl p-6 mb-6"
+        role="status"
+        aria-live="polite"
+      >
         <div className="flex flex-col items-center py-8">
           <Loader2 className="w-12 h-12 text-primary animate-spin mb-4" aria-hidden="true" />
           <h3 className="text-lg font-heading uppercase tracking-wider mb-2">
@@ -211,31 +213,30 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
 
         {imageData && (
           <div className="mt-4 rounded-lg overflow-hidden border border-border">
-            <img
-              src={imageData}
-              alt="Captured meal"
-              className="w-full h-48 object-cover"
-            />
+            <img src={imageData} alt="Captured meal" className="w-full h-48 object-cover" />
           </div>
         )}
       </div>
-    )
+    );
   }
 
   // Review state - show results and allow adjustments
   if (state === 'reviewing' && adjustedResult) {
-    const confidenceColor = adjustedResult.confidence_score >= 80
-      ? 'text-success'
-      : adjustedResult.confidence_score >= 60
-        ? 'text-warning'
-        : 'text-destructive'
+    const confidenceColor =
+      adjustedResult.confidence_score >= 80
+        ? 'text-success'
+        : adjustedResult.confidence_score >= 60
+          ? 'text-warning'
+          : 'text-destructive';
 
     return (
-      <div className="bg-card border border-border rounded-xl p-6 mb-6" role="status" aria-live="polite">
+      <div
+        className="bg-card border border-border rounded-xl p-6 mb-6"
+        role="status"
+        aria-live="polite"
+      >
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-heading uppercase tracking-wider">
-            Review Analysis
-          </h3>
+          <h3 className="text-lg font-heading uppercase tracking-wider">Review Analysis</h3>
           <button
             onClick={reset}
             aria-label="Discard analysis and start over"
@@ -248,17 +249,16 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
         {/* Image */}
         {imageData && (
           <div className="mb-4 rounded-lg overflow-hidden border border-border">
-            <img
-              src={imageData}
-              alt="Captured meal"
-              className="w-full h-48 object-cover"
-            />
+            <img src={imageData} alt="Captured meal" className="w-full h-48 object-cover" />
           </div>
         )}
 
         {/* Meal Name */}
         <div className="mb-4">
-          <label htmlFor="scan-meal-name" className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-2 block">
+          <label
+            htmlFor="scan-meal-name"
+            className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-2 block"
+          >
             Meal Name
           </label>
           <input
@@ -294,7 +294,9 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="scan-calories" className="text-xs text-muted-foreground block mb-1">Calories</label>
+              <label htmlFor="scan-calories" className="text-xs text-muted-foreground block mb-1">
+                Calories
+              </label>
               <input
                 id="scan-calories"
                 type="number"
@@ -306,7 +308,9 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
               />
             </div>
             <div>
-              <label htmlFor="scan-protein" className="text-xs text-muted-foreground block mb-1">Protein (g)</label>
+              <label htmlFor="scan-protein" className="text-xs text-muted-foreground block mb-1">
+                Protein (g)
+              </label>
               <input
                 id="scan-protein"
                 type="number"
@@ -318,7 +322,9 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
               />
             </div>
             <div>
-              <label htmlFor="scan-carbs" className="text-xs text-muted-foreground block mb-1">Carbs (g)</label>
+              <label htmlFor="scan-carbs" className="text-xs text-muted-foreground block mb-1">
+                Carbs (g)
+              </label>
               <input
                 id="scan-carbs"
                 type="number"
@@ -330,7 +336,9 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
               />
             </div>
             <div>
-              <label htmlFor="scan-fat" className="text-xs text-muted-foreground block mb-1">Fat (g)</label>
+              <label htmlFor="scan-fat" className="text-xs text-muted-foreground block mb-1">
+                Fat (g)
+              </label>
               <input
                 id="scan-fat"
                 type="number"
@@ -398,15 +406,22 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
   // Error state
   if (state === 'error') {
     return (
-      <div className="bg-card border border-destructive/30 rounded-xl p-6 mb-6" role="alert" aria-live="assertive">
+      <div
+        className="bg-card border border-destructive/30 rounded-xl p-6 mb-6"
+        role="alert"
+        aria-live="assertive"
+      >
         <div className="flex items-start gap-3">
-          <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" aria-hidden="true" />
+          <AlertCircle
+            className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5"
+            aria-hidden="true"
+          />
           <div className="flex-1">
             <h3 className="text-lg font-heading uppercase tracking-wider text-destructive mb-2">
               Analysis Failed
@@ -424,15 +439,22 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
   // Success state
   if (state === 'success') {
     return (
-      <div className="bg-card border border-success/30 rounded-xl p-6 mb-6" role="status" aria-live="polite">
+      <div
+        className="bg-card border border-success/30 rounded-xl p-6 mb-6"
+        role="status"
+        aria-live="polite"
+      >
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center" aria-hidden="true">
+          <div
+            className="w-10 h-10 rounded-full bg-success/20 flex items-center justify-center"
+            aria-hidden="true"
+          >
             <Check className="w-6 h-6 text-success" />
           </div>
           <div>
@@ -445,8 +467,8 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
           </div>
         </div>
       </div>
-    )
+    );
   }
 
-  return null
+  return null;
 }

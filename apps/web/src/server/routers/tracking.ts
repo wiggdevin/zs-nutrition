@@ -1,7 +1,7 @@
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import { protectedProcedure, router } from '../trpc'
-import { toLocalDay, parseLocalDay } from '@/lib/date-utils'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { protectedProcedure, router } from '../trpc';
+import { toLocalDay, parseLocalDay } from '@/lib/date-utils';
 
 /**
  * Tracking Router — handles daily summary, tracked meals queries, and macro tracking.
@@ -15,17 +15,19 @@ export const trackingRouter = router({
    */
   getDailySummary: protectedProcedure
     .input(
-      z.object({
-        date: z.string().optional(), // ISO date string, defaults to today
-      }).optional()
+      z
+        .object({
+          date: z.string().optional(), // ISO date string, defaults to today
+        })
+        .optional()
     )
     .query(async ({ ctx, input }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
 
       // Parse date input or default to today
       // Use local day utilities to ensure consistent date boundaries
-      const dateOnly = input?.date ? parseLocalDay(input.date) : toLocalDay()
+      const dateOnly = input?.date ? parseLocalDay(input.date) : toLocalDay();
 
       // Fetch DailyLog and all TrackedMeals for this date in parallel
       const [dailyLog, trackedMeals] = await Promise.all([
@@ -44,7 +46,7 @@ export const trackingRouter = router({
           },
           orderBy: { createdAt: 'asc' },
         }),
-      ])
+      ]);
 
       // Calculate totals from tracked meals for verification
       const calculatedTotals = trackedMeals.reduce(
@@ -55,7 +57,7 @@ export const trackingRouter = router({
           fatG: acc.fatG + meal.fatG,
         }),
         { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }
-      )
+      );
 
       return {
         date: dateOnly.toISOString(),
@@ -95,7 +97,7 @@ export const trackingRouter = router({
           fatG: Math.round(calculatedTotals.fatG * 10) / 10,
         },
         mealCount: trackedMeals.length,
-      }
+      };
     }),
 
   /**
@@ -109,24 +111,24 @@ export const trackingRouter = router({
       })
     )
     .query(async ({ ctx, input }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
 
       // Validate date is not in the future
-      const todayOnly = toLocalDay()
-      const startOnly = parseLocalDay(input.startDate)
+      const todayOnly = toLocalDay();
+      const startOnly = parseLocalDay(input.startDate);
 
       // Disallow future dates
       if (startOnly > todayOnly) {
         throw new TRPCError({
           code: 'BAD_REQUEST',
           message: 'Start date cannot be in the future',
-        })
+        });
       }
 
       // Calculate end date (exclusive, for database queries)
-      const endOnly = new Date(startOnly)
-      endOnly.setUTCDate(endOnly.getUTCDate() + 7)
+      const endOnly = new Date(startOnly);
+      endOnly.setUTCDate(endOnly.getUTCDate() + 7);
 
       // Fetch all DailyLogs in the 7-day range
       const dailyLogs = await prisma.dailyLog.findMany({
@@ -138,7 +140,7 @@ export const trackingRouter = router({
           },
         },
         orderBy: { date: 'asc' },
-      })
+      });
 
       // Also fetch TrackedMeals for this range to compute totals for days without DailyLog
       const trackedMeals = await prisma.trackedMeal.findMany({
@@ -150,49 +152,49 @@ export const trackingRouter = router({
           },
         },
         orderBy: { loggedDate: 'asc' },
-      })
+      });
 
       // Group tracked meals by date string
       // Since we store dates as UTC midnight representing local days, we can use toISOString() directly
-      const mealsByDate: Record<string, typeof trackedMeals> = {}
+      const mealsByDate: Record<string, typeof trackedMeals> = {};
       for (const meal of trackedMeals) {
-        const dateKey = meal.loggedDate.toISOString()
-        if (!mealsByDate[dateKey]) mealsByDate[dateKey] = []
-        mealsByDate[dateKey].push(meal)
+        const dateKey = meal.loggedDate.toISOString();
+        if (!mealsByDate[dateKey]) mealsByDate[dateKey] = [];
+        mealsByDate[dateKey].push(meal);
       }
 
       // Index DailyLogs by date string
-      const logsByDate: Record<string, typeof dailyLogs[0]> = {}
+      const logsByDate: Record<string, (typeof dailyLogs)[0]> = {};
       for (const log of dailyLogs) {
-        const dateKey = log.date.toISOString()
-        logsByDate[dateKey] = log
+        const dateKey = log.date.toISOString();
+        logsByDate[dateKey] = log;
       }
 
       // Build 7-day summary array
       const days: Array<{
-        date: string
+        date: string;
         targets: {
-          kcal: number | null
-          proteinG: number | null
-          carbsG: number | null
-          fatG: number | null
-        } | null
+          kcal: number | null;
+          proteinG: number | null;
+          carbsG: number | null;
+          fatG: number | null;
+        } | null;
         actuals: {
-          kcal: number
-          proteinG: number
-          carbsG: number
-          fatG: number
-        }
-        adherenceScore: number | null
-        mealCount: number
-      }> = []
+          kcal: number;
+          proteinG: number;
+          carbsG: number;
+          fatG: number;
+        };
+        adherenceScore: number | null;
+        mealCount: number;
+      }> = [];
       for (let i = 0; i < 7; i++) {
-        const dayDate = new Date(startOnly)
-        dayDate.setUTCDate(dayDate.getUTCDate() + i)
-        const dateKey = dayDate.toISOString()
+        const dayDate = new Date(startOnly);
+        dayDate.setUTCDate(dayDate.getUTCDate() + i);
+        const dateKey = dayDate.toISOString();
 
-        const log = logsByDate[dateKey] ?? null
-        const dayMeals = mealsByDate[dateKey] ?? []
+        const log = logsByDate[dateKey] ?? null;
+        const dayMeals = mealsByDate[dateKey] ?? [];
 
         // Compute actuals from tracked meals
         const computed = dayMeals.reduce(
@@ -203,7 +205,7 @@ export const trackingRouter = router({
             fatG: acc.fatG + m.fatG,
           }),
           { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }
-        )
+        );
 
         days.push({
           date: dateKey,
@@ -223,7 +225,7 @@ export const trackingRouter = router({
           },
           adherenceScore: log?.adherenceScore ?? null,
           mealCount: dayMeals.length,
-        })
+        });
       }
 
       return {
@@ -231,7 +233,7 @@ export const trackingRouter = router({
         endDate: endOnly.toISOString(),
         days,
         totalDays: 7,
-      }
+      };
     }),
 
   /**
@@ -240,22 +242,38 @@ export const trackingRouter = router({
   logMeal: protectedProcedure
     .input(
       z.object({
-        mealName: z.string().min(1, 'Meal name is required').max(200, 'Meal name must be 200 characters or less'),
-        calories: z.number().min(0, 'Calories cannot be negative').max(10000, 'Calories must be 10000 or less'),
-        protein: z.number().min(0, 'Protein cannot be negative').max(1000, 'Protein must be 1000g or less'),
-        carbs: z.number().min(0, 'Carbs cannot be negative').max(1000, 'Carbs must be 1000g or less'),
+        mealName: z
+          .string()
+          .min(1, 'Meal name is required')
+          .max(200, 'Meal name must be 200 characters or less'),
+        calories: z
+          .number()
+          .min(0, 'Calories cannot be negative')
+          .max(10000, 'Calories must be 10000 or less'),
+        protein: z
+          .number()
+          .min(0, 'Protein cannot be negative')
+          .max(1000, 'Protein must be 1000g or less'),
+        carbs: z
+          .number()
+          .min(0, 'Carbs cannot be negative')
+          .max(1000, 'Carbs must be 1000g or less'),
         fat: z.number().min(0, 'Fat cannot be negative').max(1000, 'Fat must be 1000g or less'),
-        mealSlot: z.enum(['breakfast', 'lunch', 'dinner', 'snack'], { errorMap: () => ({ message: 'Meal slot must be breakfast, lunch, dinner, or snack' }) }).optional(),
+        mealSlot: z
+          .enum(['breakfast', 'lunch', 'dinner', 'snack'], {
+            errorMap: () => ({ message: 'Meal slot must be breakfast, lunch, dinner, or snack' }),
+          })
+          .optional(),
         date: z.string().optional(),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
 
       // Parse date input or default to today
       // Use local day utilities to ensure consistent date boundaries
-      const dateOnly = input.date ? parseLocalDay(input.date) : toLocalDay()
+      const dateOnly = input.date ? parseLocalDay(input.date) : toLocalDay();
 
       // Use a serialized transaction to prevent race conditions from concurrent requests
       const result = await prisma.$transaction(async (tx) => {
@@ -275,13 +293,13 @@ export const trackingRouter = router({
             source: 'manual',
             confidenceScore: 1.0,
           },
-        })
+        });
 
         // Find or create DailyLog
         const activeProfile = await tx.userProfile.findFirst({
           where: { userId: dbUserId, isActive: true },
           orderBy: { createdAt: 'desc' },
-        })
+        });
 
         let dailyLog = await tx.dailyLog.findUnique({
           where: {
@@ -290,7 +308,7 @@ export const trackingRouter = router({
               date: dateOnly,
             },
           },
-        })
+        });
 
         if (!dailyLog) {
           dailyLog = await tx.dailyLog.create({
@@ -306,7 +324,7 @@ export const trackingRouter = router({
               actualCarbsG: Math.round(input.carbs),
               actualFatG: Math.round(input.fat),
             },
-          })
+          });
         } else {
           dailyLog = await tx.dailyLog.update({
             where: { id: dailyLog.id },
@@ -316,7 +334,7 @@ export const trackingRouter = router({
               actualCarbsG: dailyLog.actualCarbsG + Math.round(input.carbs),
               actualFatG: dailyLog.actualFatG + Math.round(input.fat),
             },
-          })
+          });
         }
 
         return {
@@ -337,9 +355,9 @@ export const trackingRouter = router({
             actualCarbsG: dailyLog.actualCarbsG,
             actualFatG: dailyLog.actualFatG,
           },
-        }
-      })
+        };
+      });
 
-      return result
+      return result;
     }),
-})
+});

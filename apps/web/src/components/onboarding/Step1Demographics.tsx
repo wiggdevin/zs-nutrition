@@ -1,10 +1,21 @@
-"use client";
+'use client';
 
-import { OnboardingData, Sex } from "@/lib/onboarding-types";
+import { OnboardingData, Sex } from '@/lib/onboarding-types';
 
 /** Block non-numeric keys on number inputs (letters, special chars). Allows digits, navigation, and control keys. */
 function numericKeyFilter(e: React.KeyboardEvent<HTMLInputElement>, allowDecimal = false) {
-  const allowed = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Delete', 'Home', 'End', 'Enter'];
+  const allowed = [
+    'Backspace',
+    'Tab',
+    'ArrowLeft',
+    'ArrowRight',
+    'ArrowUp',
+    'ArrowDown',
+    'Delete',
+    'Home',
+    'End',
+    'Enter',
+  ];
   if (allowed.includes(e.key)) return;
   if (e.ctrlKey || e.metaKey) return; // Allow copy/paste/select-all shortcuts
   if (allowDecimal && e.key === '.') return;
@@ -23,15 +34,15 @@ interface Props {
 export function validateStep1(data: OnboardingData): Record<string, string> {
   const errors: Record<string, string> = {};
   if (!data.name || data.name.trim().length === 0) {
-    errors.name = "Name is required";
+    errors.name = 'Name is required';
   }
   if (!data.sex) {
-    errors.sex = "Please select your biological sex";
+    errors.sex = 'Please select your biological sex';
   }
   if (data.age === null || data.age === undefined) {
-    errors.age = "Age is required";
+    errors.age = 'Age is required';
   } else if (data.age < 18 || data.age > 100) {
-    errors.age = "Age must be between 18 and 100";
+    errors.age = 'Age must be between 18 and 100';
   }
   return errors;
 }
@@ -51,7 +62,10 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
 
       {/* Name */}
       <div>
-        <label htmlFor="onboarding-name" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          htmlFor="onboarding-name"
+          className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Name <span className="text-primary">*</span>
         </label>
         <input
@@ -61,15 +75,20 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           onChange={(e) => updateData({ name: e.target.value })}
           placeholder="Enter your name"
           aria-invalid={showErrors && !!errors.name}
-          aria-describedby={showErrors && errors.name ? "onboarding-name-error" : undefined}
+          aria-describedby={showErrors && errors.name ? 'onboarding-name-error' : undefined}
           className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
             showErrors && errors.name
-              ? "border-red-500 focus:border-red-500"
-              : "border-border focus:border-primary"
+              ? 'border-red-500 focus:border-red-500'
+              : 'border-border focus:border-primary'
           }`}
         />
         {showErrors && errors.name && (
-          <p id="onboarding-name-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+          <p
+            id="onboarding-name-error"
+            className="mt-1 text-xs text-red-500"
+            role="alert"
+            aria-live="polite"
+          >
             {errors.name}
           </p>
         )}
@@ -77,11 +96,19 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
 
       {/* Sex */}
       <div>
-        <label id="onboarding-sex-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          id="onboarding-sex-label"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Biological Sex <span className="text-primary">*</span>
         </label>
-        <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="onboarding-sex-label" aria-invalid={showErrors && !!errors.sex}>
-          {(["male", "female"] as Sex[]).map((sex) => (
+        <div
+          className="grid grid-cols-2 gap-3"
+          role="group"
+          aria-labelledby="onboarding-sex-label"
+          aria-invalid={showErrors && !!errors.sex}
+        >
+          {(['male', 'female'] as Sex[]).map((sex) => (
             <button
               key={sex}
               type="button"
@@ -96,10 +123,10 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
               aria-checked={data.sex === sex}
               className={`rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.sex === sex
-                  ? "border-primary bg-primary/10 text-primary"
+                  ? 'border-primary bg-primary/10 text-primary'
                   : showErrors && errors.sex
-                    ? "border-red-500 bg-card text-muted-foreground hover:border-red-400"
-                    : "border-border bg-card text-muted-foreground hover:border-border/80"
+                    ? 'border-red-500 bg-card text-muted-foreground hover:border-red-400'
+                    : 'border-border bg-card text-muted-foreground hover:border-border/80'
               }`}
             >
               {sex}
@@ -107,7 +134,12 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           ))}
         </div>
         {showErrors && errors.sex && (
-          <p id="onboarding-sex-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+          <p
+            id="onboarding-sex-error"
+            className="mt-1 text-xs text-red-500"
+            role="alert"
+            aria-live="polite"
+          >
             {errors.sex}
           </p>
         )}
@@ -115,32 +147,38 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
 
       {/* Age */}
       <div>
-        <label htmlFor="onboarding-age" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          htmlFor="onboarding-age"
+          className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Age <span className="text-primary">*</span>
         </label>
         <input
           id="onboarding-age"
           type="number"
           inputMode="numeric"
-          value={data.age ?? ""}
-          onChange={(e) =>
-            updateData({ age: e.target.value ? parseInt(e.target.value) : null })
-          }
+          value={data.age ?? ''}
+          onChange={(e) => updateData({ age: e.target.value ? parseInt(e.target.value) : null })}
           onKeyDown={(e) => numericKeyFilter(e)}
           placeholder="Enter your age"
           min={18}
           max={100}
           data-testid="onboarding-age"
           aria-invalid={showErrors && !!errors.age}
-          aria-describedby={showErrors && errors.age ? "onboarding-age-error" : undefined}
+          aria-describedby={showErrors && errors.age ? 'onboarding-age-error' : undefined}
           className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
             showErrors && errors.age
-              ? "border-red-500 focus:border-red-500"
-              : "border-border focus:border-primary"
+              ? 'border-red-500 focus:border-red-500'
+              : 'border-border focus:border-primary'
           }`}
         />
         {showErrors && errors.age && (
-          <p id="onboarding-age-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+          <p
+            id="onboarding-age-error"
+            className="mt-1 text-xs text-red-500"
+            role="alert"
+            aria-live="polite"
+          >
             {errors.age}
           </p>
         )}

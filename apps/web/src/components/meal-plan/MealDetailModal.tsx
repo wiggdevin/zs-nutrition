@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect } from "react";
+import { useEffect } from 'react';
 
 interface MealNutrition {
   kcal: number;
@@ -43,21 +43,21 @@ export default function MealDetailModal({
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") onClose();
+      if (e.key === 'Escape') onClose();
     };
-    window.addEventListener("keydown", handleEscape);
-    return () => window.removeEventListener("keydown", handleEscape);
+    window.addEventListener('keydown', handleEscape);
+    return () => window.removeEventListener('keydown', handleEscape);
   }, [onClose]);
 
   // Prevent body scroll when modal is open
   useEffect(() => {
     if (meal) {
-      document.body.style.overflow = "hidden";
+      document.body.style.overflow = 'hidden';
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     }
     return () => {
-      document.body.style.overflow = "";
+      document.body.style.overflow = '';
     };
   }, [meal]);
 
@@ -83,21 +83,53 @@ export default function MealDetailModal({
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {/* Breadcrumb navigation */}
-              <nav className="flex items-center gap-2 mb-3" aria-label="Breadcrumb" data-testid="meal-detail-breadcrumb">
+              <nav
+                className="flex items-center gap-2 mb-3"
+                aria-label="Breadcrumb"
+                data-testid="meal-detail-breadcrumb"
+              >
                 <button
                   onClick={onClose}
                   className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-1 rounded"
                   data-testid="breadcrumb-back"
                 >
-                  <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M19 12H5M12 19L5 12L12 5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg
+                    width="12"
+                    height="12"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M19 12H5M12 19L5 12L12 5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                   <span>Meal Plan</span>
                 </button>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-muted-foreground" aria-hidden="true">
-                  <path d="M9 5L5 9M5 5L9 9M19 19L15 15M15 19L19 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg
+                  width="12"
+                  height="12"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  className="text-muted-foreground"
+                  aria-hidden="true"
+                >
+                  <path
+                    d="M9 5L5 9M5 5L9 9M19 19L15 15M15 19L19 15"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
-                <span className="text-xs font-medium text-foreground truncate max-w-[200px]" data-testid="breadcrumb-current">
+                <span
+                  className="text-xs font-medium text-foreground truncate max-w-[200px]"
+                  data-testid="breadcrumb-current"
+                >
                   {meal.name}
                 </span>
               </nav>
@@ -110,13 +142,13 @@ export default function MealDetailModal({
                 {meal.confidenceLevel && (
                   <span
                     className={`inline-flex items-center rounded px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
-                      meal.confidenceLevel === "verified"
-                        ? "bg-success/20 text-success"
-                        : "bg-warning/20 text-warning"
+                      meal.confidenceLevel === 'verified'
+                        ? 'bg-success/20 text-success'
+                        : 'bg-warning/20 text-warning'
                     }`}
                     data-testid="meal-detail-confidence-badge"
                   >
-                    {meal.confidenceLevel === "verified" ? "✓ Verified" : "⚡ AI-Estimated"}
+                    {meal.confidenceLevel === 'verified' ? '✓ Verified' : '⚡ AI-Estimated'}
                   </span>
                 )}
               </div>
@@ -131,9 +163,7 @@ export default function MealDetailModal({
 
               {/* Cuisine and time */}
               <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
-                {meal.cuisine && (
-                  <span data-testid="meal-detail-cuisine">{meal.cuisine}</span>
-                )}
+                {meal.cuisine && <span data-testid="meal-detail-cuisine">{meal.cuisine}</span>}
                 {totalMinutes > 0 && (
                   <span className="flex items-center gap-1" data-testid="meal-detail-time">
                     <span>🕒</span>
@@ -155,8 +185,19 @@ export default function MealDetailModal({
               data-testid="meal-detail-close"
               aria-label="Close meal details"
             >
-              <svg width="16" height="16" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+              <svg
+                width="16"
+                height="16"
+                viewBox="0 0 14 14"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M1 1L13 13M1 13L13 1"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                />
               </svg>
             </button>
           </div>
@@ -233,7 +274,10 @@ export default function MealDetailModal({
                               <span className="text-muted-foreground">({amountDisplay})</span>
                             )}
                             {ingredient.fatsecretFoodId && (
-                              <span className="text-xs text-muted-foreground bg-border px-1.5 py-0.5 rounded" data-testid={`ingredient-fatsecret-id-${idx}`}>
+                              <span
+                                className="text-xs text-muted-foreground bg-border px-1.5 py-0.5 rounded"
+                                data-testid={`ingredient-fatsecret-id-${idx}`}
+                              >
                                 FS: {ingredient.fatsecretFoodId}
                               </span>
                             )}

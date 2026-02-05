@@ -1,19 +1,19 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { requireActiveUser } from "@/lib/auth";
-import { logger } from "@/lib/safe-logger";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
+import { logger } from '@/lib/safe-logger';
 
 export async function POST(request: NextRequest) {
   try {
     // Auth check
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Look up the internal user
@@ -23,16 +23,13 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: "User not found" }, { status: 404 });
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const { planId } = await request.json();
 
     if (!planId) {
-      return NextResponse.json(
-        { error: "planId is required" },
-        { status: 400 }
-      );
+      return NextResponse.json({ error: 'planId is required' }, { status: 400 });
     }
 
     // Verify the target plan belongs to this user
@@ -41,10 +38,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!targetPlan) {
-      return NextResponse.json(
-        { error: "Plan not found" },
-        { status: 404 }
-      );
+      return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }
 
     // Deactivate only this user's active plans
@@ -68,7 +62,6 @@ export async function POST(request: NextRequest) {
         qaScore: plan.qaScore,
       },
     });
-
   } catch (error) {
     logger.error('Error setting active plan:', error);
     return NextResponse.json(

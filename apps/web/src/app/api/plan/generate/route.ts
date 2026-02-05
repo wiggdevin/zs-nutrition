@@ -11,14 +11,14 @@ const useMockQueue = process.env.USE_MOCK_QUEUE === 'true';
 // POST - Create a plan generation job
 export async function POST() {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Rate limit: 5 plan generations per hour per user
@@ -124,7 +124,13 @@ export async function POST() {
         const today = new Date();
         const startDate = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
-        const simulatedPlanData = generateSimulatedPlan(activeProfile, startDate, allergies, exclusions, activeProfile.prepTimeMax);
+        const simulatedPlanData = generateSimulatedPlan(
+          activeProfile,
+          startDate,
+          allergies,
+          exclusions,
+          activeProfile.prepTimeMax
+        );
         const simulatedMetabolicProfile = calculateSimulatedMetabolicProfile(activeProfile);
 
         const saveResult = await savePlanToDatabase({
@@ -168,24 +174,31 @@ export async function POST() {
  * @param exclusions - Array of foods to exclude (e.g., ['mushrooms'])
  * @param prepTimeMax - Maximum prep time in minutes (user preference)
  */
-function generateSimulatedPlan(profile: {
-  name: string;
-  sex: string;
-  age: number;
-  heightCm: number;
-  weightKg: number;
-  goalType: string;
-  goalRate: number;
-  activityLevel: string;
-  dietaryStyle: string;
-  macroStyle: string;
-  mealsPerDay: number;
-  snacksPerDay: number;
-}, startDate: Date, allergies: string[] = [], exclusions: string[] = [], prepTimeMax: number = 30) {
+function generateSimulatedPlan(
+  profile: {
+    name: string;
+    sex: string;
+    age: number;
+    heightCm: number;
+    weightKg: number;
+    goalType: string;
+    goalRate: number;
+    activityLevel: string;
+    dietaryStyle: string;
+    macroStyle: string;
+    mealsPerDay: number;
+    snacksPerDay: number;
+  },
+  startDate: Date,
+  allergies: string[] = [],
+  exclusions: string[] = [],
+  prepTimeMax: number = 30
+) {
   // Calculate approximate calorie target
-  const bmr = profile.sex === 'male'
-    ? 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5
-    : 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age - 161;
+  const bmr =
+    profile.sex === 'male'
+      ? 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5
+      : 10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age - 161;
 
   const activityMultipliers: Record<string, number> = {
     sedentary: 1.2,
@@ -197,15 +210,29 @@ function generateSimulatedPlan(profile: {
   const tdee = bmr * (activityMultipliers[profile.activityLevel] || 1.55);
 
   let goalKcal = tdee;
-  if (profile.goalType === 'cut') goalKcal = tdee - (profile.goalRate * 500);
-  if (profile.goalType === 'bulk') goalKcal = tdee + (profile.goalRate * 500);
+  if (profile.goalType === 'cut') goalKcal = tdee - profile.goalRate * 500;
+  if (profile.goalType === 'bulk') goalKcal = tdee + profile.goalRate * 500;
   goalKcal = Math.round(goalKcal);
 
   // Macro splits based on macroStyle
-  let proteinPct = 0.30, carbsPct = 0.40, fatPct = 0.30;
-  if (profile.macroStyle === 'high_protein') { proteinPct = 0.40; carbsPct = 0.30; fatPct = 0.30; }
-  if (profile.macroStyle === 'low_carb') { proteinPct = 0.35; carbsPct = 0.25; fatPct = 0.40; }
-  if (profile.macroStyle === 'keto') { proteinPct = 0.25; carbsPct = 0.05; fatPct = 0.70; }
+  let proteinPct = 0.3,
+    carbsPct = 0.4,
+    fatPct = 0.3;
+  if (profile.macroStyle === 'high_protein') {
+    proteinPct = 0.4;
+    carbsPct = 0.3;
+    fatPct = 0.3;
+  }
+  if (profile.macroStyle === 'low_carb') {
+    proteinPct = 0.35;
+    carbsPct = 0.25;
+    fatPct = 0.4;
+  }
+  if (profile.macroStyle === 'keto') {
+    proteinPct = 0.25;
+    carbsPct = 0.05;
+    fatPct = 0.7;
+  }
 
   const proteinG = Math.round((goalKcal * proteinPct) / 4);
   const carbsG = Math.round((goalKcal * carbsPct) / 4);
@@ -232,8 +259,8 @@ function generateSimulatedPlan(profile: {
 
   // Combine all restrictions into a single set (lowercase for easy matching)
   const restrictedFoods = new Set([
-    ...allergies.map(a => a.toLowerCase()),
-    ...exclusions.map(e => e.toLowerCase())
+    ...allergies.map((a) => a.toLowerCase()),
+    ...exclusions.map((e) => e.toLowerCase()),
   ]);
 
   // Helper function to check if a meal name contains restricted foods
@@ -246,16 +273,25 @@ function generateSimulatedPlan(profile: {
     }
     // Also check for related allergens
     if (restrictedFoods.has('peanuts') || restrictedFoods.has('tree nuts')) {
-      if (lowerName.includes('peanut') || lowerName.includes('almond') ||
-          lowerName.includes('cashew') || lowerName.includes('walnut') ||
-          lowerName.includes('pecan') || lowerName.includes('trail mix') ||
-          lowerName.includes('mixed nuts')) {
+      if (
+        lowerName.includes('peanut') ||
+        lowerName.includes('almond') ||
+        lowerName.includes('cashew') ||
+        lowerName.includes('walnut') ||
+        lowerName.includes('pecan') ||
+        lowerName.includes('trail mix') ||
+        lowerName.includes('mixed nuts')
+      ) {
         return true;
       }
     }
     if (restrictedFoods.has('dairy')) {
-      if (lowerName.includes('yogurt') || lowerName.includes('cheese') ||
-          lowerName.includes('milk') || lowerName.includes('cottage cheese')) {
+      if (
+        lowerName.includes('yogurt') ||
+        lowerName.includes('cheese') ||
+        lowerName.includes('milk') ||
+        lowerName.includes('cottage cheese')
+      ) {
         return true;
       }
     }
@@ -265,23 +301,35 @@ function generateSimulatedPlan(profile: {
       }
     }
     if (restrictedFoods.has('fish') || restrictedFoods.has('shellfish')) {
-      if (lowerName.includes('salmon') || lowerName.includes('cod') ||
-          lowerName.includes('shrimp') || lowerName.includes('poke') ||
-          lowerName.includes('fish')) {
+      if (
+        lowerName.includes('salmon') ||
+        lowerName.includes('cod') ||
+        lowerName.includes('shrimp') ||
+        lowerName.includes('poke') ||
+        lowerName.includes('fish')
+      ) {
         return true;
       }
     }
     if (restrictedFoods.has('wheat') || restrictedFoods.has('gluten')) {
-      if (lowerName.includes('wheat') || lowerName.includes('bread') ||
-          lowerName.includes('pasta') || lowerName.includes('tortilla') ||
-          lowerName.includes('wrap') || lowerName.includes('pancake') ||
-          lowerName.includes('oat')) {
+      if (
+        lowerName.includes('wheat') ||
+        lowerName.includes('bread') ||
+        lowerName.includes('pasta') ||
+        lowerName.includes('tortilla') ||
+        lowerName.includes('wrap') ||
+        lowerName.includes('pancake') ||
+        lowerName.includes('oat')
+      ) {
         return true;
       }
     }
     if (restrictedFoods.has('soy')) {
-      if (lowerName.includes('soy') || lowerName.includes('edamame') ||
-          lowerName.includes('tofu')) {
+      if (
+        lowerName.includes('soy') ||
+        lowerName.includes('edamame') ||
+        lowerName.includes('tofu')
+      ) {
         return true;
       }
     }
@@ -294,11 +342,13 @@ function generateSimulatedPlan(profile: {
   }
 
   // Helper function to filter meal options to only safe meals
-  function getSafeMealOptions(slotOptions: Array<{ name: string; slot: string }>): Array<{ name: string; slot: string }> {
+  function getSafeMealOptions(
+    slotOptions: Array<{ name: string; slot: string }>
+  ): Array<{ name: string; slot: string }> {
     if (restrictedFoods.size === 0) {
       return slotOptions; // No restrictions, return all meals
     }
-    return slotOptions.filter(meal => !mealContainsRestrictions(meal.name));
+    return slotOptions.filter((meal) => !mealContainsRestrictions(meal.name));
   }
 
   const sampleMeals: Record<string, Array<{ name: string; slot: string }>> = {
@@ -451,14 +501,18 @@ function generateSimulatedPlan(profile: {
 
     const meals = mealSlots.map((slot) => {
       // Get meal options for this slot, or fallback to appropriate default
-      const allMealOptions = sampleMeals[slot] ||
+      const allMealOptions =
+        sampleMeals[slot] ||
         (slot.startsWith('Snack') ? sampleMeals['Snack 1'] : sampleMeals['Lunch']);
       // Filter out meals that contain allergens or excluded foods
       const safeMealOptions = getSafeMealOptions(allMealOptions);
 
       // If no safe meals available, use a fallback
       if (safeMealOptions.length === 0) {
-        logger.warn(`No safe meals available for ${slot} with restrictions:`, Array.from(restrictedFoods));
+        logger.warn(
+          `No safe meals available for ${slot} with restrictions:`,
+          Array.from(restrictedFoods)
+        );
       }
 
       // Select from safe options, cycling through them
@@ -492,11 +546,7 @@ function generateSimulatedPlan(profile: {
           { name: 'Main ingredient', amount: '150g' },
           { name: 'Side ingredient', amount: '100g' },
         ],
-        instructions: [
-          'Prepare ingredients',
-          'Cook according to recipe',
-          'Plate and serve',
-        ],
+        instructions: ['Prepare ingredients', 'Cook according to recipe', 'Plate and serve'],
       };
     });
 
@@ -543,9 +593,10 @@ function calculateSimulatedMetabolicProfile(profile: {
   goalRate: number;
   activityLevel: string;
 }) {
-  const bmrKcal = profile.sex === 'male'
-    ? Math.round(10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5)
-    : Math.round(10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age - 161);
+  const bmrKcal =
+    profile.sex === 'male'
+      ? Math.round(10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age + 5)
+      : Math.round(10 * profile.weightKg + 6.25 * profile.heightCm - 5 * profile.age - 161);
 
   const activityMultipliers: Record<string, number> = {
     sedentary: 1.2,
@@ -560,9 +611,9 @@ function calculateSimulatedMetabolicProfile(profile: {
   if (profile.goalType === 'cut') goalKcal = tdeeKcal - Math.round(profile.goalRate * 500);
   if (profile.goalType === 'bulk') goalKcal = tdeeKcal + Math.round(profile.goalRate * 500);
 
-  const proteinTargetG = Math.round((goalKcal * 0.30) / 4);
-  const carbsTargetG = Math.round((goalKcal * 0.40) / 4);
-  const fatTargetG = Math.round((goalKcal * 0.30) / 9);
+  const proteinTargetG = Math.round((goalKcal * 0.3) / 4);
+  const carbsTargetG = Math.round((goalKcal * 0.4) / 4);
+  const fatTargetG = Math.round((goalKcal * 0.3) / 9);
 
   return {
     bmrKcal,

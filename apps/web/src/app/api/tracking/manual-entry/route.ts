@@ -1,9 +1,9 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireActiveUser } from '@/lib/auth'
-import { calculateAdherenceScore } from '@/lib/adherence'
-import { logger } from '@/lib/safe-logger'
-import { toLocalDay, parseLocalDay } from '@/lib/date-utils'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
+import { calculateAdherenceScore } from '@/lib/adherence';
+import { logger } from '@/lib/safe-logger';
+import { toLocalDay, parseLocalDay } from '@/lib/date-utils';
 
 /**
  * POST /api/tracking/manual-entry
@@ -12,57 +12,62 @@ import { toLocalDay, parseLocalDay } from '@/lib/date-utils'
  */
 export async function POST(request: Request) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
-    const user = await prisma.user.findUnique({ where: { clerkUserId } })
+    const user = await prisma.user.findUnique({ where: { clerkUserId } });
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    let body: any
+    let body: any;
     try {
-      body = await request.json()
+      body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
     }
-    const { foodName, calories, protein, carbs, fat, mealSlot, loggedDate } = body
+    const { foodName, calories, protein, carbs, fat, mealSlot, loggedDate } = body;
 
     // Validate required fields
     if (!foodName || typeof foodName !== 'string' || foodName.trim().length === 0) {
-      return NextResponse.json({ error: 'Food name is required' }, { status: 400 })
+      return NextResponse.json({ error: 'Food name is required' }, { status: 400 });
     }
-    if (calories === undefined || calories === null || isNaN(Number(calories)) || Number(calories) < 0) {
-      return NextResponse.json({ error: 'Valid calories value is required' }, { status: 400 })
+    if (
+      calories === undefined ||
+      calories === null ||
+      isNaN(Number(calories)) ||
+      Number(calories) < 0
+    ) {
+      return NextResponse.json({ error: 'Valid calories value is required' }, { status: 400 });
     }
 
-    const kcal = Math.round(Number(calories))
-    const proteinG = Math.round((Number(protein) || 0) * 10) / 10
-    const carbsG = Math.round((Number(carbs) || 0) * 10) / 10
-    const fatG = Math.round((Number(fat) || 0) * 10) / 10
+    const kcal = Math.round(Number(calories));
+    const proteinG = Math.round((Number(protein) || 0) * 10) / 10;
+    const carbsG = Math.round((Number(carbs) || 0) * 10) / 10;
+    const fatG = Math.round((Number(fat) || 0) * 10) / 10;
 
     // Use provided loggedDate or default to today
     // This ensures dates are stored consistently as UTC midnight representing the local calendar day
-    let dateOnly: Date
+    let dateOnly: Date;
     if (loggedDate && typeof loggedDate === 'string') {
       // Parse the provided date (YYYY-MM-DD format from HTML date input)
-      dateOnly = parseLocalDay(loggedDate)
+      dateOnly = parseLocalDay(loggedDate);
     } else {
       // No date provided, use today in local time
-      dateOnly = toLocalDay()
+      dateOnly = toLocalDay();
     }
 
     // Use a serialized transaction to prevent race conditions from concurrent tabs
     const result = await prisma.$transaction(async (tx) => {
       // Duplicate detection: check if an identical meal was logged in the last 10 seconds
-      const tenSecondsAgo = new Date(Date.now() - 10000)
+      const tenSecondsAgo = new Date(Date.now() - 10000);
       const recentDuplicate = await tx.trackedMeal.findFirst({
         where: {
           userId: user.id,
@@ -73,12 +78,12 @@ export async function POST(request: Request) {
           createdAt: { gte: tenSecondsAgo },
         },
         orderBy: { createdAt: 'desc' },
-      })
+      });
 
       if (recentDuplicate) {
         const existingDailyLog = await tx.dailyLog.findUnique({
           where: { userId_date: { userId: user.id, date: dateOnly } },
-        })
+        });
         return {
           success: true,
           duplicate: true,
@@ -92,14 +97,16 @@ export async function POST(request: Request) {
             portion: recentDuplicate.portion || 1.0,
             source: recentDuplicate.source,
           },
-          dailyLog: existingDailyLog ? {
-            actualKcal: existingDailyLog.actualKcal,
-            actualProteinG: existingDailyLog.actualProteinG,
-            actualCarbsG: existingDailyLog.actualCarbsG,
-            actualFatG: existingDailyLog.actualFatG,
-            adherenceScore: existingDailyLog.adherenceScore,
-          } : null,
-        }
+          dailyLog: existingDailyLog
+            ? {
+                actualKcal: existingDailyLog.actualKcal,
+                actualProteinG: existingDailyLog.actualProteinG,
+                actualCarbsG: existingDailyLog.actualCarbsG,
+                actualFatG: existingDailyLog.actualFatG,
+                adherenceScore: existingDailyLog.adherenceScore,
+              }
+            : null,
+        };
       }
 
       // Create TrackedMeal with source='manual'
@@ -119,18 +126,18 @@ export async function POST(request: Request) {
           source: 'manual',
           confidenceScore: null,
         },
-      })
+      });
 
       let dailyLog = await tx.dailyLog.findUnique({
         where: {
           userId_date: { userId: user.id, date: dateOnly },
         },
-      })
+      });
 
       const profile = await tx.userProfile.findFirst({
         where: { userId: user.id, isActive: true },
         select: { goalKcal: true, proteinTargetG: true, carbsTargetG: true, fatTargetG: true },
-      })
+      });
 
       if (!dailyLog) {
         dailyLog = await tx.dailyLog.create({
@@ -146,7 +153,7 @@ export async function POST(request: Request) {
             actualCarbsG: Math.round(carbsG),
             actualFatG: Math.round(fatG),
           },
-        })
+        });
       } else {
         dailyLog = await tx.dailyLog.update({
           where: { id: dailyLog.id },
@@ -156,14 +163,14 @@ export async function POST(request: Request) {
             actualCarbsG: dailyLog.actualCarbsG + Math.round(carbsG),
             actualFatG: dailyLog.actualFatG + Math.round(fatG),
           },
-        })
+        });
       }
 
-      const adherenceScore = calculateAdherenceScore(dailyLog)
+      const adherenceScore = calculateAdherenceScore(dailyLog);
       await tx.dailyLog.update({
         where: { id: dailyLog.id },
         data: { adherenceScore },
-      })
+      });
 
       return {
         success: true,
@@ -184,15 +191,15 @@ export async function POST(request: Request) {
           actualFatG: dailyLog.actualFatG,
           adherenceScore,
         },
-      }
-    })
+      };
+    });
 
-    return NextResponse.json(result)
+    return NextResponse.json(result);
   } catch (error) {
-    logger.error('Manual entry error:', error)
+    logger.error('Manual entry error:', error);
     return NextResponse.json(
       { success: false, error: 'Something went wrong. Please try again later.' },
       { status: 500 }
-    )
+    );
   }
 }

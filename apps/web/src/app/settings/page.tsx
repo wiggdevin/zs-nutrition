@@ -1,12 +1,12 @@
-import NavBar from '@/components/navigation/NavBar'
-import SettingsDemographics from "@/components/settings/SettingsDemographics";
-import SettingsGoals from "@/components/settings/SettingsGoals";
-import SettingsDietary from "@/components/settings/SettingsDietary";
-import SettingsActivity from "@/components/settings/SettingsActivity";
-import SettingsMealStructure from "@/components/settings/SettingsMealStructure";
-import SettingsAccount from "@/components/settings/SettingsAccount";
-import SettingsPlanHistory from "@/components/settings/SettingsPlanHistory";
-import FitnessConnections from "@/components/fitness/FitnessConnections";
+import NavBar from '@/components/navigation/NavBar';
+import SettingsDemographics from '@/components/settings/SettingsDemographics';
+import SettingsGoals from '@/components/settings/SettingsGoals';
+import SettingsDietary from '@/components/settings/SettingsDietary';
+import SettingsActivity from '@/components/settings/SettingsActivity';
+import SettingsMealStructure from '@/components/settings/SettingsMealStructure';
+import SettingsAccount from '@/components/settings/SettingsAccount';
+import SettingsPlanHistory from '@/components/settings/SettingsPlanHistory';
+import FitnessConnections from '@/components/fitness/FitnessConnections';
 
 export default function SettingsPage() {
   return (

@@ -1,24 +1,24 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import { useRouter } from "next/navigation";
-import { Confetti } from "../ui/Confetti";
-import { logger } from "@/lib/safe-logger";
+import { useState, useEffect, useRef } from 'react';
+import { useRouter } from 'next/navigation';
+import { Confetti } from '../ui/Confetti';
+import { logger } from '@/lib/safe-logger';
 
-type GenerationStatus = "idle" | "generating" | "enqueued" | "completed" | "failed";
+type GenerationStatus = 'idle' | 'generating' | 'enqueued' | 'completed' | 'failed';
 
 const agentStages = [
-  { number: 1, name: "Intake Normalizer", desc: "Cleaning and validating your data..." },
-  { number: 2, name: "Metabolic Calculator", desc: "Calculating BMR, TDEE, and macro targets..." },
-  { number: 3, name: "Recipe Curator", desc: "AI generating meal ideas matching your targets..." },
-  { number: 4, name: "Nutrition Compiler", desc: "Verifying nutrition data via FatSecret..." },
-  { number: 5, name: "QA Validator", desc: "Enforcing calorie and macro tolerances..." },
-  { number: 6, name: "Brand Renderer", desc: "Generating your deliverables..." },
+  { number: 1, name: 'Intake Normalizer', desc: 'Cleaning and validating your data...' },
+  { number: 2, name: 'Metabolic Calculator', desc: 'Calculating BMR, TDEE, and macro targets...' },
+  { number: 3, name: 'Recipe Curator', desc: 'AI generating meal ideas matching your targets...' },
+  { number: 4, name: 'Nutrition Compiler', desc: 'Verifying nutrition data via FatSecret...' },
+  { number: 5, name: 'QA Validator', desc: 'Enforcing calorie and macro tolerances...' },
+  { number: 6, name: 'Brand Renderer', desc: 'Generating your deliverables...' },
 ];
 
 export function GeneratePlanPage() {
   const router = useRouter();
-  const [status, setStatus] = useState<GenerationStatus>("idle");
+  const [status, setStatus] = useState<GenerationStatus>('idle');
   const [currentAgent, setCurrentAgent] = useState(0);
   const [hasProfile, setHasProfile] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
@@ -35,9 +35,9 @@ export function GeneratePlanPage() {
 
   useEffect(() => {
     // Check if user has completed onboarding
-    const profile = localStorage.getItem("zsn_user_profile");
-    const onboardingComplete = localStorage.getItem("zsn_onboarding_complete");
-    setHasProfile(!!profile && onboardingComplete === "true");
+    const profile = localStorage.getItem('zsn_user_profile');
+    const onboardingComplete = localStorage.getItem('zsn_onboarding_complete');
+    setHasProfile(!!profile && onboardingComplete === 'true');
   }, []);
 
   // Cleanup: Close EventSource, stop polling, and clear reconnect timeout when component unmounts
@@ -60,11 +60,11 @@ export function GeneratePlanPage() {
 
   // Auto-navigate to /meal-plan when generation completes
   useEffect(() => {
-    if (status === "completed" && !hasNavigated.current) {
+    if (status === 'completed' && !hasNavigated.current) {
       hasNavigated.current = true;
       // Brief delay to show completion state before navigating
       const timer = setTimeout(() => {
-        router.push("/meal-plan");
+        router.push('/meal-plan');
       }, 1500);
       return () => clearTimeout(timer);
     }
@@ -91,17 +91,17 @@ export function GeneratePlanPage() {
           setCurrentAgent(data.agent);
         }
 
-        if (data.status === "completed") {
-          setStatus("completed");
-          localStorage.setItem("zsn_plan_generated", "true");
+        if (data.status === 'completed') {
+          setStatus('completed');
+          localStorage.setItem('zsn_plan_generated', 'true');
           if (data.planId) {
-            localStorage.setItem("zsn_plan_id", data.planId);
+            localStorage.setItem('zsn_plan_id', data.planId);
           }
           eventSource.close();
           eventSourceRef.current = null;
-        } else if (data.status === "failed") {
-          setErrorMessage(data.message || "Plan generation failed");
-          setStatus("failed");
+        } else if (data.status === 'failed') {
+          setErrorMessage(data.message || 'Plan generation failed');
+          setStatus('failed');
           eventSource.close();
           eventSourceRef.current = null;
         }
@@ -129,8 +129,8 @@ export function GeneratePlanPage() {
 
         reconnectTimeoutRef.current = setTimeout(() => {
           // Only reconnect if we haven't completed/failed and still have the same job
-          if ((status === "generating" || status === "enqueued") && jobId === streamJobId) {
-            logger.debug("Attempting SSE reconnection...");
+          if ((status === 'generating' || status === 'enqueued') && jobId === streamJobId) {
+            logger.debug('Attempting SSE reconnection...');
             connectToSSE(streamJobId);
           }
         }, backoffDelay);
@@ -153,9 +153,9 @@ export function GeneratePlanPage() {
     // Poll every 2 seconds
     pollingIntervalRef.current = setInterval(async () => {
       try {
-        const response = await fetch("/api/trpc/plan.getJobStatus", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const response = await fetch('/api/trpc/plan.getJobStatus', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             json: { jobId: pollJobId },
           }),
@@ -173,24 +173,24 @@ export function GeneratePlanPage() {
             }
 
             // Check if job completed
-            if (jobStatus.status === "completed") {
+            if (jobStatus.status === 'completed') {
               clearInterval(pollingIntervalRef.current!);
               pollingIntervalRef.current = null;
-              setStatus("completed");
-              localStorage.setItem("zsn_plan_generated", "true");
+              setStatus('completed');
+              localStorage.setItem('zsn_plan_generated', 'true');
               if (jobStatus.planId) {
-                localStorage.setItem("zsn_plan_id", jobStatus.planId);
+                localStorage.setItem('zsn_plan_id', jobStatus.planId);
               }
-            } else if (jobStatus.status === "failed") {
+            } else if (jobStatus.status === 'failed') {
               clearInterval(pollingIntervalRef.current!);
               pollingIntervalRef.current = null;
-              setErrorMessage(jobStatus.error || "Plan generation failed");
-              setStatus("failed");
+              setErrorMessage(jobStatus.error || 'Plan generation failed');
+              setStatus('failed');
             }
           }
         }
       } catch (error) {
-        logger.error("Polling error:", error);
+        logger.error('Polling error:', error);
         // Continue polling on error - don't give up immediately
       }
     }, 2000);
@@ -202,8 +202,8 @@ export function GeneratePlanPage() {
       setCurrentAgent(i);
       await new Promise((resolve) => setTimeout(resolve, 1500));
     }
-    setStatus("completed");
-    localStorage.setItem("zsn_plan_generated", "true");
+    setStatus('completed');
+    localStorage.setItem('zsn_plan_generated', 'true');
   };
 
   const handleGenerate = async () => {
@@ -211,31 +211,31 @@ export function GeneratePlanPage() {
     if (isSubmitting.current) return;
     isSubmitting.current = true;
 
-    setStatus("generating");
+    setStatus('generating');
     setCurrentAgent(1);
     setErrorMessage(null);
 
     // Get profile data from localStorage (saved during onboarding)
-    const profileStr = localStorage.getItem("zsn_user_profile");
+    const profileStr = localStorage.getItem('zsn_user_profile');
     if (!profileStr) {
-      setErrorMessage("Profile data not found. Please complete onboarding first.");
-      setStatus("failed");
+      setErrorMessage('Profile data not found. Please complete onboarding first.');
+      setStatus('failed');
       return;
     }
 
     try {
       // Create the plan generation job via API (server prevents duplicate jobs)
-      const res = await fetch("/api/plan/generate", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/plan/generate', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
       });
 
       const data = await res.json().catch(() => ({}));
 
       if (res.ok && data.jobId) {
         setJobId(data.jobId);
-        localStorage.setItem("zsn_plan_job_id", data.jobId);
-        setStatus("enqueued");
+        localStorage.setItem('zsn_plan_job_id', data.jobId);
+        setStatus('enqueued');
         // Connect to SSE stream for real-time progress
         connectToSSE(data.jobId);
         return;
@@ -244,16 +244,16 @@ export function GeneratePlanPage() {
       // Non-ok response or missing jobId — show error
       // Prefer message field (more detailed) over error field
       setErrorMessage(
-        data.message || data.error || "Failed to start plan generation. Please try again."
+        data.message || data.error || 'Failed to start plan generation. Please try again.'
       );
-      setStatus("failed");
+      setStatus('failed');
       isSubmitting.current = false;
     } catch (err) {
-      logger.error("Error starting plan generation:", err);
+      logger.error('Error starting plan generation:', err);
       setErrorMessage(
-        "Network error while starting plan generation. Please check your connection and try again."
+        'Network error while starting plan generation. Please check your connection and try again.'
       );
-      setStatus("failed");
+      setStatus('failed');
       isSubmitting.current = false;
     }
   };
@@ -278,7 +278,7 @@ export function GeneratePlanPage() {
     isUsingPolling.current = false;
     reconnectAttemptsRef.current = 0;
     setIsReconnecting(false);
-    setStatus("idle");
+    setStatus('idle');
     setCurrentAgent(0);
     setJobId(null);
     setErrorMessage(null);
@@ -293,9 +293,7 @@ export function GeneratePlanPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full border-2 border-warning bg-warning/10">
               <span className="text-2xl">&#x26A0;&#xFE0F;</span>
             </div>
-            <h2 className="text-xl font-bold text-foreground">
-              Complete Onboarding First
-            </h2>
+            <h2 className="text-xl font-bold text-foreground">Complete Onboarding First</h2>
             <p className="mt-2 text-sm text-muted-foreground">
               You need to complete your profile setup before generating a meal plan.
             </p>
@@ -312,7 +310,7 @@ export function GeneratePlanPage() {
   }
 
   // Generating/enqueued state - full screen with agent progress
-  if (status === "generating" || status === "enqueued") {
+  if (status === 'generating' || status === 'enqueued') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-lg">
@@ -324,14 +322,10 @@ export function GeneratePlanPage() {
               /// NUTRITION ENGINE ACTIVE
             </p>
             {jobId && (
-              <p className="mt-1 font-mono text-[10px] text-muted-foreground/50">
-                Job: {jobId}
-              </p>
+              <p className="mt-1 font-mono text-[10px] text-muted-foreground/50">Job: {jobId}</p>
             )}
             {isUsingPolling.current && (
-              <p className="mt-1 font-mono text-[10px] text-primary/80">
-                /// POLLING MODE
-              </p>
+              <p className="mt-1 font-mono text-[10px] text-primary/80">/// POLLING MODE</p>
             )}
             {isReconnecting && (
               <p className="mt-1 font-mono text-[10px] text-warning/80 animate-pulse">
@@ -344,33 +338,31 @@ export function GeneratePlanPage() {
             {agentStages.map((agent) => (
               <div
                 key={agent.number}
-                aria-current={agent.number === currentAgent ? "step" : undefined}
+                aria-current={agent.number === currentAgent ? 'step' : undefined}
                 className={`rounded-lg border p-4 transition-all duration-500 ${
                   agent.number < currentAgent
-                    ? "border-success/30 bg-success/5"
+                    ? 'border-success/30 bg-success/5'
                     : agent.number === currentAgent
-                    ? "border-primary/50 bg-primary/5"
-                    : "border-border bg-card opacity-40"
+                      ? 'border-primary/50 bg-primary/5'
+                      : 'border-border bg-card opacity-40'
                 }`}
               >
                 <div className="flex items-center gap-3">
                   <div
                     className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
                       agent.number < currentAgent
-                        ? "bg-success text-white"
+                        ? 'bg-success text-white'
                         : agent.number === currentAgent
-                        ? "bg-primary text-background"
-                        : "bg-border text-muted-foreground"
+                          ? 'bg-primary text-background'
+                          : 'bg-border text-muted-foreground'
                     }`}
                   >
-                    {agent.number < currentAgent ? "\u2713" : agent.number}
+                    {agent.number < currentAgent ? '\u2713' : agent.number}
                   </div>
                   <div className="flex-1">
                     <p
                       className={`text-sm font-bold ${
-                        agent.number <= currentAgent
-                          ? "text-foreground"
-                          : "text-muted-foreground"
+                        agent.number <= currentAgent ? 'text-foreground' : 'text-muted-foreground'
                       }`}
                     >
                       Agent {agent.number}: {agent.name}
@@ -392,7 +384,7 @@ export function GeneratePlanPage() {
   }
 
   // Completed state
-  if (status === "completed") {
+  if (status === 'completed') {
     return (
       <>
         <Confetti duration={2000} particleCount={60} />
@@ -439,7 +431,7 @@ export function GeneratePlanPage() {
   }
 
   // Failed state
-  if (status === "failed") {
+  if (status === 'failed') {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
         <div className="w-full max-w-lg text-center" role="alert" aria-live="assertive">
@@ -447,11 +439,9 @@ export function GeneratePlanPage() {
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
               <span className="text-2xl">&#x274C;</span>
             </div>
-            <h2 className="text-xl font-bold text-foreground">
-              Generation Failed
-            </h2>
+            <h2 className="text-xl font-bold text-foreground">Generation Failed</h2>
             <p className="mt-2 text-sm text-muted-foreground">
-              {errorMessage || "Something went wrong while generating your plan. Please try again."}
+              {errorMessage || 'Something went wrong while generating your plan. Please try again.'}
             </p>
             <button
               onClick={handleRetry}
@@ -482,9 +472,8 @@ export function GeneratePlanPage() {
 
         <div className="mt-8 rounded-lg border border-border bg-card p-8 shadow-xl">
           <p className="text-sm text-muted-foreground">
-            Your profile is ready. Our 6-agent AI pipeline will create a
-            personalized 7-day meal plan with verified nutrition data, optimized
-            for your goals.
+            Your profile is ready. Our 6-agent AI pipeline will create a personalized 7-day meal
+            plan with verified nutrition data, optimized for your goals.
           </p>
 
           <div className="mt-6 space-y-2">
@@ -503,20 +492,20 @@ export function GeneratePlanPage() {
 
           <button
             onClick={handleGenerate}
-            disabled={status !== "idle"}
+            disabled={status !== 'idle'}
             className={`mt-6 w-full rounded-lg px-6 py-4 text-sm font-black uppercase tracking-wider text-white transition-colors ${
-              status !== "idle"
-                ? "cursor-not-allowed bg-primary/50"
-                : "bg-primary hover:bg-primary/90"
+              status !== 'idle'
+                ? 'cursor-not-allowed bg-primary/50'
+                : 'bg-primary hover:bg-primary/90'
             }`}
           >
-            {status !== "idle" ? (
+            {status !== 'idle' ? (
               <span className="flex items-center justify-center gap-2">
                 <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
                 Generating...
               </span>
             ) : (
-              "Generate Plan"
+              'Generate Plan'
             )}
           </button>
 

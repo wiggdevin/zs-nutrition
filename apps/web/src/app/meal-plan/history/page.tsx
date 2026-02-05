@@ -1,9 +1,9 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import Link from "next/link";
-import NavBar from "@/components/navigation/NavBar";
-import { logger } from "@/lib/safe-logger";
+import { useEffect, useState } from 'react';
+import Link from 'next/link';
+import NavBar from '@/components/navigation/NavBar';
+import { logger } from '@/lib/safe-logger';
 
 interface PlanSummary {
   id: string;
@@ -35,17 +35,17 @@ export default function PlanHistoryPage() {
   useEffect(() => {
     async function fetchPlans() {
       try {
-        const res = await fetch("/api/plan/history");
+        const res = await fetch('/api/plan/history');
         const data = await res.json();
 
         if (res.ok) {
           setPlans(data.plans || []);
         } else {
-          setError(data.error || "Failed to load plan history");
+          setError(data.error || 'Failed to load plan history');
         }
       } catch (err) {
-        logger.error("Error fetching plan history:", err);
-        setError("Failed to load plan history. Please check your connection.");
+        logger.error('Error fetching plan history:', err);
+        setError('Failed to load plan history. Please check your connection.');
       } finally {
         setLoading(false);
       }
@@ -157,7 +157,7 @@ export default function PlanHistoryPage() {
                 Plan History
               </h1>
               <p className="mt-1 text-sm text-muted-foreground">
-                {plans.length} {plans.length === 1 ? "plan" : "plans"}
+                {plans.length} {plans.length === 1 ? 'plan' : 'plans'}
               </p>
             </div>
           </div>
@@ -189,11 +189,11 @@ export default function PlanHistoryPage() {
                             className="rounded bg-muted-foreground/20 px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide text-muted-foreground"
                             data-testid={`inactive-badge-${plan.id}`}
                           >
-                            {plan.status === "replaced"
-                              ? "Replaced"
-                              : plan.status === "expired"
-                              ? "Expired"
-                              : plan.status}
+                            {plan.status === 'replaced'
+                              ? 'Replaced'
+                              : plan.status === 'expired'
+                                ? 'Expired'
+                                : plan.status}
                           </span>
                         )}
 
@@ -202,10 +202,10 @@ export default function PlanHistoryPage() {
                           <span
                             className={`rounded px-2.5 py-1 text-[10px] font-bold uppercase tracking-wide ${
                               plan.qaScore >= 80
-                                ? "bg-success/20 text-success"
+                                ? 'bg-success/20 text-success'
                                 : plan.qaScore >= 60
-                                ? "bg-warning/20 text-warning"
-                                : "bg-destructive/20 text-destructive"
+                                  ? 'bg-warning/20 text-warning'
+                                  : 'bg-destructive/20 text-destructive'
                             }`}
                           >
                             QA: {plan.qaScore}%
@@ -227,15 +227,12 @@ export default function PlanHistoryPage() {
                         className="mt-1 text-xs text-muted-foreground"
                         data-testid={`plan-date-${plan.id}`}
                       >
-                        Generated{" "}
-                        {new Date(plan.generatedAt).toLocaleDateString(
-                          undefined,
-                          {
-                            year: "numeric",
-                            month: "short",
-                            day: "numeric",
-                          }
-                        )}
+                        Generated{' '}
+                        {new Date(plan.generatedAt).toLocaleDateString(undefined, {
+                          year: 'numeric',
+                          month: 'short',
+                          day: 'numeric',
+                        })}
                       </p>
 
                       {/* Macros */}

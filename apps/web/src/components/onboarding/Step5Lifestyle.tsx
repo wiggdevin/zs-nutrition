@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { OnboardingData, ActivityLevel, Weekday } from "@/lib/onboarding-types";
+import { OnboardingData, ActivityLevel, Weekday } from '@/lib/onboarding-types';
 
 interface Props {
   data: OnboardingData;
@@ -8,21 +8,25 @@ interface Props {
 }
 
 const activityLevels: { value: ActivityLevel; label: string; desc: string }[] = [
-  { value: "sedentary", label: "Sedentary", desc: "Desk job, little exercise" },
-  { value: "lightly_active", label: "Lightly Active", desc: "Light exercise 1-3 days/week" },
-  { value: "moderately_active", label: "Moderately Active", desc: "Moderate exercise 3-5 days/week" },
-  { value: "very_active", label: "Very Active", desc: "Hard exercise 6-7 days/week" },
-  { value: "extremely_active", label: "Extremely Active", desc: "Athlete or very physical job" },
+  { value: 'sedentary', label: 'Sedentary', desc: 'Desk job, little exercise' },
+  { value: 'lightly_active', label: 'Lightly Active', desc: 'Light exercise 1-3 days/week' },
+  {
+    value: 'moderately_active',
+    label: 'Moderately Active',
+    desc: 'Moderate exercise 3-5 days/week',
+  },
+  { value: 'very_active', label: 'Very Active', desc: 'Hard exercise 6-7 days/week' },
+  { value: 'extremely_active', label: 'Extremely Active', desc: 'Athlete or very physical job' },
 ];
 
 const weekdays: { value: Weekday; label: string }[] = [
-  { value: "monday", label: "Mon" },
-  { value: "tuesday", label: "Tue" },
-  { value: "wednesday", label: "Wed" },
-  { value: "thursday", label: "Thu" },
-  { value: "friday", label: "Fri" },
-  { value: "saturday", label: "Sat" },
-  { value: "sunday", label: "Sun" },
+  { value: 'monday', label: 'Mon' },
+  { value: 'tuesday', label: 'Tue' },
+  { value: 'wednesday', label: 'Wed' },
+  { value: 'thursday', label: 'Thu' },
+  { value: 'friday', label: 'Fri' },
+  { value: 'saturday', label: 'Sat' },
+  { value: 'sunday', label: 'Sun' },
 ];
 
 export function Step5Lifestyle({ data, updateData }: Props) {
@@ -43,7 +47,10 @@ export function Step5Lifestyle({ data, updateData }: Props) {
 
       {/* Activity Level */}
       <div>
-        <label id="onboarding-activity-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          id="onboarding-activity-label"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Activity Level
         </label>
         <div className="space-y-2" role="radiogroup" aria-labelledby="onboarding-activity-label">
@@ -62,11 +69,13 @@ export function Step5Lifestyle({ data, updateData }: Props) {
               aria-checked={data.activityLevel === value}
               className={`w-full rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.activityLevel === value
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-card hover:border-border/80"
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border bg-card hover:border-border/80'
               }`}
             >
-              <span className={`block text-sm font-bold ${data.activityLevel === value ? "text-primary" : "text-foreground"}`}>
+              <span
+                className={`block text-sm font-bold ${data.activityLevel === value ? 'text-primary' : 'text-foreground'}`}
+              >
                 {label}
               </span>
               <span className="block text-xs text-muted-foreground">{desc}</span>
@@ -77,10 +86,17 @@ export function Step5Lifestyle({ data, updateData }: Props) {
 
       {/* Training Days */}
       <div>
-        <label id="onboarding-training-days-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          id="onboarding-training-days-label"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Training Days
         </label>
-        <div className="grid grid-cols-7 gap-1 sm:gap-2" role="group" aria-labelledby="onboarding-training-days-label">
+        <div
+          className="grid grid-cols-7 gap-1 sm:gap-2"
+          role="group"
+          aria-labelledby="onboarding-training-days-label"
+        >
           {weekdays.map(({ value, label }) => (
             <button
               key={value}
@@ -95,8 +111,8 @@ export function Step5Lifestyle({ data, updateData }: Props) {
               aria-pressed={data.trainingDays.includes(value)}
               className={`rounded-lg border px-1 sm:px-2 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.trainingDays.includes(value)
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:border-border/80"
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:border-border/80'
               }`}
             >
               {label}
@@ -107,7 +123,10 @@ export function Step5Lifestyle({ data, updateData }: Props) {
 
       {/* Cooking Skill */}
       <div>
-        <label htmlFor="onboarding-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          htmlFor="onboarding-cooking-skill"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Cooking Skill: {data.cookingSkill}/10
         </label>
         <input
@@ -132,7 +151,10 @@ export function Step5Lifestyle({ data, updateData }: Props) {
 
       {/* Prep Time */}
       <div>
-        <label htmlFor="onboarding-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          htmlFor="onboarding-prep-time"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Max Prep Time: {data.prepTimeMax} min
         </label>
         <input

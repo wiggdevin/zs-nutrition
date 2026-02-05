@@ -1,13 +1,16 @@
-'use client'
+'use client';
 
-import { ClerkProvider } from '@clerk/nextjs'
-import { dark } from '@clerk/themes'
-import { ThemeProvider } from 'next-themes'
-import { TRPCProvider } from './TRPCProvider'
-import { Toaster } from '@/components/ui/Toaster'
-import { SignOutListener } from './SignOutListener'
+import { useEffect } from 'react';
+import { ClerkProvider } from '@clerk/nextjs';
+import { dark } from '@clerk/themes';
+import { ThemeProvider } from 'next-themes';
+import { TRPCProvider } from './TRPCProvider';
+import { Toaster } from '@/components/ui/Toaster';
+import { SignOutListener } from './SignOutListener';
+import { useTrackingStore } from '@/lib/stores/useTrackingStore';
+import { useUserStore } from '@/lib/stores/useUserStore';
 
-const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY
+const clerkPublishableKey = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY;
 
 const clerkAppearance = {
   baseTheme: dark,
@@ -32,9 +35,16 @@ const clerkAppearance = {
       'bg-background border border-border text-foreground focus:border-primary focus:ring-1 focus:ring-primary',
     footerActionLink: 'text-primary hover:text-primary/90',
   },
-} as const
+} as const;
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Manually rehydrate Zustand stores after mount to avoid SSR hydration mismatches.
+  // This works in conjunction with skipHydration: true in the store configurations.
+  useEffect(() => {
+    useTrackingStore.persist.rehydrate();
+    useUserStore.persist.rehydrate();
+  }, []);
+
   // Dev-mode bypass: skip ClerkProvider when no publishable key is configured
   if (!clerkPublishableKey) {
     return (
@@ -45,15 +55,12 @@ export function Providers({ children }: { children: React.ReactNode }) {
           <Toaster />
         </TRPCProvider>
       </ThemeProvider>
-    )
+    );
   }
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <ClerkProvider
-        publishableKey={clerkPublishableKey}
-        appearance={clerkAppearance}
-      >
+      <ClerkProvider publishableKey={clerkPublishableKey} appearance={clerkAppearance}>
         <TRPCProvider>
           <SignOutListener />
           {children}
@@ -61,5 +68,5 @@ export function Providers({ children }: { children: React.ReactNode }) {
         </TRPCProvider>
       </ClerkProvider>
     </ThemeProvider>
-  )
+  );
 }

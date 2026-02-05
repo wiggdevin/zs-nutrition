@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { OnboardingData, DietaryStyle } from "@/lib/onboarding-types";
+import { useState } from 'react';
+import { OnboardingData, DietaryStyle } from '@/lib/onboarding-types';
 
 interface Props {
   data: OnboardingData;
@@ -9,30 +9,30 @@ interface Props {
 }
 
 const dietaryStyles: { value: DietaryStyle; label: string }[] = [
-  { value: "omnivore", label: "Omnivore" },
-  { value: "vegetarian", label: "Vegetarian" },
-  { value: "vegan", label: "Vegan" },
-  { value: "pescatarian", label: "Pescatarian" },
-  { value: "keto", label: "Keto" },
-  { value: "paleo", label: "Paleo" },
+  { value: 'omnivore', label: 'Omnivore' },
+  { value: 'vegetarian', label: 'Vegetarian' },
+  { value: 'vegan', label: 'Vegan' },
+  { value: 'pescatarian', label: 'Pescatarian' },
+  { value: 'keto', label: 'Keto' },
+  { value: 'paleo', label: 'Paleo' },
 ];
 
 const commonAllergies = [
-  "Peanuts",
-  "Tree Nuts",
-  "Dairy",
-  "Eggs",
-  "Soy",
-  "Wheat",
-  "Fish",
-  "Shellfish",
-  "Sesame",
-  "Gluten",
+  'Peanuts',
+  'Tree Nuts',
+  'Dairy',
+  'Eggs',
+  'Soy',
+  'Wheat',
+  'Fish',
+  'Shellfish',
+  'Sesame',
+  'Gluten',
 ];
 
 export function Step4Dietary({ data, updateData }: Props) {
-  const [exclusionInput, setExclusionInput] = useState("");
-  const [allergyInput, setAllergyInput] = useState("");
+  const [exclusionInput, setExclusionInput] = useState('');
+  const [allergyInput, setAllergyInput] = useState('');
 
   const toggleAllergy = (allergy: string) => {
     const lower = allergy.toLowerCase();
@@ -48,7 +48,7 @@ export function Step4Dietary({ data, updateData }: Props) {
     const trimmed = allergyInput.trim().toLowerCase();
     if (trimmed && !data.allergies.includes(trimmed)) {
       updateData({ allergies: [...data.allergies, trimmed] });
-      setAllergyInput("");
+      setAllergyInput('');
     }
   };
 
@@ -60,7 +60,7 @@ export function Step4Dietary({ data, updateData }: Props) {
     const trimmed = exclusionInput.trim().toLowerCase();
     if (trimmed && !data.exclusions.includes(trimmed)) {
       updateData({ exclusions: [...data.exclusions, trimmed] });
-      setExclusionInput("");
+      setExclusionInput('');
     }
   };
 
@@ -76,10 +76,17 @@ export function Step4Dietary({ data, updateData }: Props) {
 
       {/* Dietary Style */}
       <div>
-        <label id="onboarding-dietary-style-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          id="onboarding-dietary-style-label"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Dietary Style
         </label>
-        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-labelledby="onboarding-dietary-style-label">
+        <div
+          className="grid grid-cols-2 gap-2 sm:grid-cols-3"
+          role="group"
+          aria-labelledby="onboarding-dietary-style-label"
+        >
           {dietaryStyles.map(({ value, label }) => (
             <button
               key={value}
@@ -95,8 +102,8 @@ export function Step4Dietary({ data, updateData }: Props) {
               aria-checked={data.dietaryStyle === value}
               className={`rounded-lg border px-4 py-3 text-xs font-bold uppercase tracking-wide transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.dietaryStyle === value
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:border-border/80"
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:border-border/80'
               }`}
             >
               {label}
@@ -107,12 +114,19 @@ export function Step4Dietary({ data, updateData }: Props) {
 
       {/* Allergies */}
       <div>
-        <label id="onboarding-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          id="onboarding-allergies-label"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Allergies (select common or add custom)
         </label>
 
         {/* Common allergy quick-select buttons */}
-        <div className="mb-3 flex flex-wrap gap-2" role="group" aria-labelledby="onboarding-allergies-label">
+        <div
+          className="mb-3 flex flex-wrap gap-2"
+          role="group"
+          aria-labelledby="onboarding-allergies-label"
+        >
           {commonAllergies.map((allergy) => (
             <button
               key={allergy}
@@ -127,8 +141,8 @@ export function Step4Dietary({ data, updateData }: Props) {
               aria-pressed={data.allergies.includes(allergy.toLowerCase())}
               className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[200px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.allergies.includes(allergy.toLowerCase())
-                  ? "border-destructive bg-destructive/10 text-destructive"
-                  : "border-border bg-card text-muted-foreground hover:border-border/80"
+                  ? 'border-destructive bg-destructive/10 text-destructive'
+                  : 'border-border bg-card text-muted-foreground hover:border-border/80'
               }`}
               title={allergy}
             >
@@ -144,7 +158,7 @@ export function Step4Dietary({ data, updateData }: Props) {
             type="text"
             value={allergyInput}
             onChange={(e) => setAllergyInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addAllergy()}
+            onKeyDown={(e) => e.key === 'Enter' && addAllergy()}
             placeholder="Type custom allergy and press Enter"
             className="flex-1 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground placeholder-muted-foreground/50 outline-none focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           />
@@ -196,7 +210,10 @@ export function Step4Dietary({ data, updateData }: Props) {
 
       {/* Exclusions */}
       <div>
-        <label htmlFor="onboarding-exclusions" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          htmlFor="onboarding-exclusions"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Food Exclusions
         </label>
         <div className="flex gap-2">
@@ -205,7 +222,7 @@ export function Step4Dietary({ data, updateData }: Props) {
             type="text"
             value={exclusionInput}
             onChange={(e) => setExclusionInput(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && addExclusion()}
+            onKeyDown={(e) => e.key === 'Enter' && addExclusion()}
             placeholder="e.g., mushrooms, cilantro"
             className="flex-1 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground placeholder-muted-foreground/50 outline-none focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           />

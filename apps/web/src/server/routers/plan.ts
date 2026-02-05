@@ -1,16 +1,16 @@
-import { z } from 'zod'
-import { protectedProcedure, router } from '../trpc'
-import { TRPCError } from '@trpc/server'
-import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue'
-import { logger } from '@/lib/safe-logger'
-import { safeJsonParse } from '@/lib/utils/safe-json'
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
+import { TRPCError } from '@trpc/server';
+import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue';
+import { logger } from '@/lib/safe-logger';
+import { safeJsonParse } from '@/lib/utils/safe-json';
 import {
   ValidatedPlanSchema,
   MetabolicProfileSchema as MetabolicProfileDbSchema,
   JobProgressSchema,
   JobResultSchema,
   StringArraySchema,
-} from '@/lib/schemas/plan'
+} from '@/lib/schemas/plan';
 
 /**
  * Zod schema for the raw intake form data passed to generatePlan.
@@ -49,20 +49,22 @@ const RawIntakeFormSchema = z.object({
   prepTimeMaxMin: z.number().int().min(10).max(120),
   macroStyle: z.enum(['balanced', 'high_protein', 'low_carb', 'keto']),
   planDurationDays: z.number().int().min(1).max(7).default(7),
-})
+});
 
 /**
  * Schema for the pipeline result that contains the validated plan data.
  * This is what comes back from the nutrition engine after successful generation.
  */
-const MetabolicProfileSchema = z.object({
-  bmrKcal: z.number(),
-  tdeeKcal: z.number(),
-  goalKcal: z.number(),
-  proteinTargetG: z.number(),
-  carbsTargetG: z.number(),
-  fatTargetG: z.number(),
-}).passthrough()
+const MetabolicProfileSchema = z
+  .object({
+    bmrKcal: z.number(),
+    tdeeKcal: z.number(),
+    goalKcal: z.number(),
+    proteinTargetG: z.number(),
+    carbsTargetG: z.number(),
+    fatTargetG: z.number(),
+  })
+  .passthrough();
 
 const PlanResultSchema = z.object({
   validatedPlan: z.record(z.unknown()), // Full MealPlanValidated JSON
@@ -75,7 +77,7 @@ const PlanResultSchema = z.object({
   planDays: z.number().int().min(1).max(7).default(7),
   qaScore: z.number().int().min(0).max(100),
   qaStatus: z.enum(['PASS', 'WARN', 'FAIL']),
-})
+});
 
 export const planRouter = router({
   /**
@@ -84,43 +86,42 @@ export const planRouter = router({
    * Finds the plan with isActive=true and status='active' for the authenticated user.
    * Returns null if no active plan exists.
    */
-  getActivePlan: protectedProcedure
-    .query(async ({ ctx }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+  getActivePlan: protectedProcedure.query(async ({ ctx }) => {
+    const { prisma } = ctx;
+    const dbUserId = ctx.dbUserId;
 
-      const plan = await prisma.mealPlan.findFirst({
-        where: {
-          userId: dbUserId,
-          isActive: true,
-          status: 'active',
-        },
-        orderBy: { generatedAt: 'desc' },
-      })
+    const plan = await prisma.mealPlan.findFirst({
+      where: {
+        userId: dbUserId,
+        isActive: true,
+        status: 'active',
+      },
+      orderBy: { generatedAt: 'desc' },
+    });
 
-      if (!plan) return null
+    if (!plan) return null;
 
-      const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] })
-      const parsedMetabolic = safeJsonParse(plan.metabolicProfile, MetabolicProfileDbSchema, {})
+    const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] });
+    const parsedMetabolic = safeJsonParse(plan.metabolicProfile, MetabolicProfileDbSchema, {});
 
-      return {
-        id: plan.id,
-        dailyKcalTarget: plan.dailyKcalTarget,
-        dailyProteinG: plan.dailyProteinG,
-        dailyCarbsG: plan.dailyCarbsG,
-        dailyFatG: plan.dailyFatG,
-        trainingBonusKcal: plan.trainingBonusKcal,
-        planDays: plan.planDays,
-        startDate: plan.startDate,
-        endDate: plan.endDate,
-        qaScore: plan.qaScore,
-        qaStatus: plan.qaStatus,
-        status: plan.status,
-        isActive: plan.isActive,
-        validatedPlan: parsedPlan,
-        metabolicProfile: parsedMetabolic,
-      }
-    }),
+    return {
+      id: plan.id,
+      dailyKcalTarget: plan.dailyKcalTarget,
+      dailyProteinG: plan.dailyProteinG,
+      dailyCarbsG: plan.dailyCarbsG,
+      dailyFatG: plan.dailyFatG,
+      trainingBonusKcal: plan.trainingBonusKcal,
+      planDays: plan.planDays,
+      startDate: plan.startDate,
+      endDate: plan.endDate,
+      qaScore: plan.qaScore,
+      qaStatus: plan.qaStatus,
+      status: plan.status,
+      isActive: plan.isActive,
+      validatedPlan: parsedPlan,
+      metabolicProfile: parsedMetabolic,
+    };
+  }),
 
   /**
    * getPlanById query:
@@ -132,8 +133,8 @@ export const planRouter = router({
   getPlanById: protectedProcedure
     .input(z.object({ planId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
 
       // Find the plan by ID, filtered by userId for security
       const plan = await prisma.mealPlan.findFirst({
@@ -141,17 +142,17 @@ export const planRouter = router({
           id: input.planId,
           userId: dbUserId, // Security: only return plans owned by this user
         },
-      })
+      });
 
       if (!plan) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Meal plan not found.',
-        })
+        });
       }
 
-      const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] })
-      const parsedMetabolic = safeJsonParse(plan.metabolicProfile, MetabolicProfileDbSchema, {})
+      const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] });
+      const parsedMetabolic = safeJsonParse(plan.metabolicProfile, MetabolicProfileDbSchema, {});
 
       return {
         id: plan.id,
@@ -168,7 +169,7 @@ export const planRouter = router({
         status: plan.status,
         validatedPlan: parsedPlan,
         metabolicProfile: parsedMetabolic,
-      }
+      };
     }),
 
   /**
@@ -177,48 +178,42 @@ export const planRouter = router({
    * 2. Enqueues a BullMQ job for the worker to process
    * 3. Returns jobId immediately (fast response, no waiting for generation)
    */
-  generatePlan: protectedProcedure
-    .input(RawIntakeFormSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+  generatePlan: protectedProcedure.input(RawIntakeFormSchema).mutation(async ({ ctx, input }) => {
+    const { prisma } = ctx;
+    const dbUserId = ctx.dbUserId;
 
-      // Create PlanGenerationJob record in DB with status 'pending'
-      // SQLite stores JSON as string, so stringify the intake data
-      const job = await prisma.planGenerationJob.create({
-        data: {
-          userId: dbUserId,
-          status: 'pending',
-          intakeData: JSON.stringify(input),
-        },
-      })
-
-      // Enqueue BullMQ job
-      const bullmqJobData: PlanGenerationJobData = {
-        jobId: job.id,
+    // Create PlanGenerationJob record in DB with status 'pending'
+    // SQLite stores JSON as string, so stringify the intake data
+    const job = await prisma.planGenerationJob.create({
+      data: {
         userId: dbUserId,
-        intakeData: input as Record<string, unknown>,
-      }
+        status: 'pending',
+        intakeData: JSON.stringify(input),
+      },
+    });
 
-      try {
-        await planGenerationQueue.add(
-          'generate-plan',
-          bullmqJobData,
-          {
-            jobId: job.id, // Use DB job ID as BullMQ job ID for easy correlation
-          }
-        )
-      } catch (queueError) {
-        // If Redis/BullMQ is unavailable (dev environment), log and continue
-        // The job is still created in DB — worker will pick it up when available
-        logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError)
-        // In dev mode, this is expected if Redis isn't running
-        // The job record in DB still serves as the source of truth
-      }
+    // Enqueue BullMQ job
+    const bullmqJobData: PlanGenerationJobData = {
+      jobId: job.id,
+      userId: dbUserId,
+      intakeData: input as Record<string, unknown>,
+    };
 
-      // Return jobId immediately - client will open SSE to track progress
-      return { jobId: job.id }
-    }),
+    try {
+      await planGenerationQueue.add('generate-plan', bullmqJobData, {
+        jobId: job.id, // Use DB job ID as BullMQ job ID for easy correlation
+      });
+    } catch (queueError) {
+      // If Redis/BullMQ is unavailable (dev environment), log and continue
+      // The job is still created in DB — worker will pick it up when available
+      logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError);
+      // In dev mode, this is expected if Redis isn't running
+      // The job record in DB still serves as the source of truth
+    }
+
+    // Return jobId immediately - client will open SSE to track progress
+    return { jobId: job.id };
+  }),
 
   /**
    * getJobStatus query: Check the current status of a plan generation job.
@@ -226,29 +221,29 @@ export const planRouter = router({
   getJobStatus: protectedProcedure
     .input(z.object({ jobId: z.string().uuid() }))
     .query(async ({ ctx, input }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
 
       const job = await prisma.planGenerationJob.findFirst({
         where: {
           id: input.jobId,
           userId: dbUserId,
         },
-      })
+      });
 
       if (!job) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Job not found.',
-        })
+        });
       }
 
       // Parse JSON string fields for SQLite compatibility
       const parsedProgress = job.progress
         ? safeJsonParse(job.progress, JobProgressSchema, {} as Record<string, unknown>)
-        : null
-      const parsedResult = safeJsonParse(job.result, JobResultSchema, {})
-      const parsedPlanId = parsedResult.planId
+        : null;
+      const parsedResult = safeJsonParse(job.result, JobResultSchema, {});
+      const parsedPlanId = parsedResult.planId;
 
       return {
         status: job.status,
@@ -256,7 +251,7 @@ export const planRouter = router({
         progress: parsedProgress,
         error: job.error,
         planId: parsedPlanId,
-      }
+      };
     }),
 
   /**
@@ -276,8 +271,8 @@ export const planRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
 
       // Verify the job exists and belongs to this user
       const job = await prisma.planGenerationJob.findFirst({
@@ -285,39 +280,39 @@ export const planRouter = router({
           id: input.jobId,
           userId: dbUserId,
         },
-      })
+      });
 
       if (!job) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'Plan generation job not found.',
-        })
+        });
       }
 
       // Find user's active profile (most recent)
       const profile = await prisma.userProfile.findFirst({
         where: { userId: dbUserId, isActive: true },
         orderBy: { createdAt: 'desc' },
-      })
+      });
 
       if (!profile) {
         throw new TRPCError({
           code: 'PRECONDITION_FAILED',
           message: 'No active user profile found. Complete onboarding first.',
-        })
+        });
       }
 
       // Calculate start/end dates
-      const now = new Date()
-      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate())
-      const endDate = new Date(startDate)
-      endDate.setDate(endDate.getDate() + input.planResult.planDays)
+      const now = new Date();
+      const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+      const endDate = new Date(startDate);
+      endDate.setDate(endDate.getDate() + input.planResult.planDays);
 
       // Deactivate existing active plans for this user
       await prisma.mealPlan.updateMany({
         where: { userId: dbUserId, isActive: true },
         data: { isActive: false, status: 'replaced' },
-      })
+      });
 
       // Create the MealPlan with all denormalized fields
       const mealPlan = await prisma.mealPlan.create({
@@ -339,7 +334,7 @@ export const planRouter = router({
           status: 'active',
           isActive: true,
         },
-      })
+      });
 
       // Update the PlanGenerationJob as completed
       await prisma.planGenerationJob.update({
@@ -349,7 +344,7 @@ export const planRouter = router({
           result: JSON.stringify({ planId: mealPlan.id }),
           completedAt: new Date(),
         },
-      })
+      });
 
       return {
         planId: mealPlan.id,
@@ -358,7 +353,7 @@ export const planRouter = router({
         dailyKcalTarget: mealPlan.dailyKcalTarget,
         qaScore: mealPlan.qaScore,
         qaStatus: mealPlan.qaStatus,
-      }
+      };
     }),
 
   /**
@@ -367,96 +362,93 @@ export const planRouter = router({
    * This allows users to update their settings (e.g., weight change) and regenerate
    * without going through onboarding again. The old plan is marked as 'replaced'.
    */
-  regeneratePlan: protectedProcedure
-    .mutation(async ({ ctx }) => {
-      const { prisma } = ctx
-      const dbUserId = ctx.dbUserId
+  regeneratePlan: protectedProcedure.mutation(async ({ ctx }) => {
+    const { prisma } = ctx;
+    const dbUserId = ctx.dbUserId;
 
-      // Find user's active profile
-      const profile = await prisma.userProfile.findFirst({
-        where: { userId: dbUserId, isActive: true },
-        orderBy: { createdAt: 'desc' },
-      })
+    // Find user's active profile
+    const profile = await prisma.userProfile.findFirst({
+      where: { userId: dbUserId, isActive: true },
+      orderBy: { createdAt: 'desc' },
+    });
 
-      if (!profile) {
-        throw new TRPCError({
-          code: 'PRECONDITION_FAILED',
-          message: 'No active user profile found. Complete onboarding first.',
-        })
-      }
+    if (!profile) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'No active user profile found. Complete onboarding first.',
+      });
+    }
 
-      // Parse JSON array fields from profile
-      const allergies = safeJsonParse(profile.allergies, StringArraySchema, [])
-      const exclusions = safeJsonParse(profile.exclusions, StringArraySchema, [])
-      const cuisinePreferences = safeJsonParse(profile.cuisinePrefs, StringArraySchema, [])
-      const trainingDays = safeJsonParse(profile.trainingDays, StringArraySchema, [])
+    // Parse JSON array fields from profile
+    const allergies = safeJsonParse(profile.allergies, StringArraySchema, []);
+    const exclusions = safeJsonParse(profile.exclusions, StringArraySchema, []);
+    const cuisinePreferences = safeJsonParse(profile.cuisinePrefs, StringArraySchema, []);
+    const trainingDays = safeJsonParse(profile.trainingDays, StringArraySchema, []);
 
-      // Construct intake data from active profile (matching RawIntakeFormSchema)
-      const intakeData = {
-        name: profile.name,
-        sex: profile.sex as 'male' | 'female',
-        age: profile.age,
-        heightCm: profile.heightCm,
-        weightKg: profile.weightKg,
-        bodyFatPercent: profile.bodyFatPercent ?? undefined,
-        goalType: profile.goalType as 'cut' | 'maintain' | 'bulk',
-        goalRate: profile.goalRate,
-        activityLevel: profile.activityLevel as
-          | 'sedentary'
-          | 'lightly_active'
-          | 'moderately_active'
-          | 'very_active'
-          | 'extremely_active',
-        trainingDays: trainingDays as Array<'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'>,
-        trainingTime: profile.trainingTime as 'morning' | 'afternoon' | 'evening' | undefined,
-        dietaryStyle: profile.dietaryStyle as
-          | 'omnivore'
-          | 'vegetarian'
-          | 'vegan'
-          | 'pescatarian'
-          | 'keto'
-          | 'paleo',
-        allergies,
-        exclusions,
-        cuisinePreferences,
-        mealsPerDay: profile.mealsPerDay,
-        snacksPerDay: profile.snacksPerDay,
-        cookingSkill: profile.cookingSkill,
-        prepTimeMaxMin: profile.prepTimeMax,
-        macroStyle: profile.macroStyle as 'balanced' | 'high_protein' | 'low_carb' | 'keto',
-        planDurationDays: 7, // Default to 7 days
-      }
+    // Construct intake data from active profile (matching RawIntakeFormSchema)
+    const intakeData = {
+      name: profile.name,
+      sex: profile.sex as 'male' | 'female',
+      age: profile.age,
+      heightCm: profile.heightCm,
+      weightKg: profile.weightKg,
+      bodyFatPercent: profile.bodyFatPercent ?? undefined,
+      goalType: profile.goalType as 'cut' | 'maintain' | 'bulk',
+      goalRate: profile.goalRate,
+      activityLevel: profile.activityLevel as
+        | 'sedentary'
+        | 'lightly_active'
+        | 'moderately_active'
+        | 'very_active'
+        | 'extremely_active',
+      trainingDays: trainingDays as Array<
+        'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+      >,
+      trainingTime: profile.trainingTime as 'morning' | 'afternoon' | 'evening' | undefined,
+      dietaryStyle: profile.dietaryStyle as
+        | 'omnivore'
+        | 'vegetarian'
+        | 'vegan'
+        | 'pescatarian'
+        | 'keto'
+        | 'paleo',
+      allergies,
+      exclusions,
+      cuisinePreferences,
+      mealsPerDay: profile.mealsPerDay,
+      snacksPerDay: profile.snacksPerDay,
+      cookingSkill: profile.cookingSkill,
+      prepTimeMaxMin: profile.prepTimeMax,
+      macroStyle: profile.macroStyle as 'balanced' | 'high_protein' | 'low_carb' | 'keto',
+      planDurationDays: 7, // Default to 7 days
+    };
 
-      // Create PlanGenerationJob record in DB with status 'pending'
-      const job = await prisma.planGenerationJob.create({
-        data: {
-          userId: dbUserId,
-          status: 'pending',
-          intakeData: JSON.stringify(intakeData),
-        },
-      })
-
-      // Enqueue BullMQ job
-      const bullmqJobData: PlanGenerationJobData = {
-        jobId: job.id,
+    // Create PlanGenerationJob record in DB with status 'pending'
+    const job = await prisma.planGenerationJob.create({
+      data: {
         userId: dbUserId,
-        intakeData: intakeData as Record<string, unknown>,
-      }
+        status: 'pending',
+        intakeData: JSON.stringify(intakeData),
+      },
+    });
 
-      try {
-        await planGenerationQueue.add(
-          'generate-plan',
-          bullmqJobData,
-          {
-            jobId: job.id, // Use DB job ID as BullMQ job ID for easy correlation
-          }
-        )
-      } catch (queueError) {
-        // If Redis/BullMQ is unavailable (dev environment), log and continue
-        logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError)
-      }
+    // Enqueue BullMQ job
+    const bullmqJobData: PlanGenerationJobData = {
+      jobId: job.id,
+      userId: dbUserId,
+      intakeData: intakeData as Record<string, unknown>,
+    };
 
-      // Return jobId immediately - client will open SSE to track progress
-      return { jobId: job.id }
-    }),
-})
+    try {
+      await planGenerationQueue.add('generate-plan', bullmqJobData, {
+        jobId: job.id, // Use DB job ID as BullMQ job ID for easy correlation
+      });
+    } catch (queueError) {
+      // If Redis/BullMQ is unavailable (dev environment), log and continue
+      logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError);
+    }
+
+    // Return jobId immediately - client will open SSE to track progress
+    return { jobId: job.id };
+  }),
+});

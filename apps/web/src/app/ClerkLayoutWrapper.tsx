@@ -1,7 +1,7 @@
 // Isolated Clerk layout wrapper — only imported when real Clerk keys are configured
 // This prevents webpack from bundling @clerk/nextjs in dev mode
-import { ClerkProvider } from '@clerk/nextjs'
-import { dark } from '@clerk/themes'
+import { ClerkProvider } from '@clerk/nextjs';
+import { dark } from '@clerk/themes';
 
 export function ClerkLayoutWrapper({ children }: { children: React.ReactNode }) {
   return (
@@ -37,5 +37,5 @@ export function ClerkLayoutWrapper({ children }: { children: React.ReactNode }) 
         </ClerkProvider>
       </body>
     </html>
-  )
+  );
 }

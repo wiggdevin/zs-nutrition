@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useState } from "react";
-import { clearAllStores } from "@/lib/stores/clearStores";
-import { ClerkSignOutHandler } from "@/hooks/useClerkSignOut";
+import { useState } from 'react';
+import { clearAllStores } from '@/lib/stores/clearStores';
+import { ClerkSignOutHandler } from '@/hooks/useClerkSignOut';
 
 export default function SettingsAccount() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
@@ -22,8 +22,8 @@ export default function SettingsAccount() {
         // Clerk will handle the redirect automatically
       } else {
         // Dev mode: Clear the dev auth cookie via API, then redirect
-        await fetch("/api/dev-auth/signout", { method: "POST" });
-        window.location.href = "/sign-in";
+        await fetch('/api/dev-auth/signout', { method: 'POST' });
+        window.location.href = '/sign-in';
       }
     } catch {
       setSigningOut(false);
@@ -33,10 +33,10 @@ export default function SettingsAccount() {
   async function handleDeactivate(clerkSignOut?: () => Promise<void>) {
     try {
       setDeactivating(true);
-      const res = await fetch("/api/account/deactivate", { method: "POST" });
+      const res = await fetch('/api/account/deactivate', { method: 'POST' });
       if (!res.ok) {
         const data = await res.json().catch(() => ({}));
-        throw new Error(data.error || "Failed to deactivate account");
+        throw new Error(data.error || 'Failed to deactivate account');
       }
       // Clear all stores before signing out
       clearAllStores();
@@ -46,8 +46,8 @@ export default function SettingsAccount() {
         // Clerk will handle the redirect automatically
       } else {
         // Dev mode: Clear the dev auth cookie via API, then redirect
-        await fetch("/api/dev-auth/signout", { method: "POST" });
-        window.location.href = "/sign-in";
+        await fetch('/api/dev-auth/signout', { method: 'POST' });
+        window.location.href = '/sign-in';
       }
     } catch {
       setDeactivating(false);
@@ -59,7 +59,10 @@ export default function SettingsAccount() {
       {(clerkSignOut) => (
         <div className="space-y-6">
           {/* Sign Out */}
-          <div className="rounded-2xl border border-border bg-card p-6" data-testid="signout-section">
+          <div
+            className="rounded-2xl border border-border bg-card p-6"
+            data-testid="signout-section"
+          >
             <div className="mb-4">
               <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
                 <span className="text-primary">///</span> Session
@@ -77,13 +80,16 @@ export default function SettingsAccount() {
                   Signing Out...
                 </span>
               ) : (
-                "Sign Out"
+                'Sign Out'
               )}
             </button>
           </div>
 
           {/* Account Deactivation */}
-          <div className="rounded-2xl border border-red-500/20 bg-card p-6" data-testid="deactivation-section">
+          <div
+            className="rounded-2xl border border-red-500/20 bg-card p-6"
+            data-testid="deactivation-section"
+          >
             <div className="mb-4">
               <h2 className="text-xs font-mono tracking-wider uppercase text-red-400">
                 <span className="text-red-500">///</span> Danger Zone
@@ -119,7 +125,7 @@ export default function SettingsAccount() {
                         Deactivating...
                       </span>
                     ) : (
-                      "Yes, Deactivate"
+                      'Yes, Deactivate'
                     )}
                   </button>
                   <button

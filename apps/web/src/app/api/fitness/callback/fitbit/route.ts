@@ -3,9 +3,18 @@
 // ============================================================
 
 import { NextRequest, NextResponse } from 'next/server';
-import { auth } from '@clerk/nextjs/server';
+import { requireActiveUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { redis } from '@/lib/redis';
+import { encrypt } from '@/lib/encryption';
 import { logger } from '@/lib/safe-logger';
+
+interface StoredOAuthState {
+  userId: string;
+  clerkUserId: string;
+  platform: string;
+  createdAt: number;
+}
 
 /**
  * GET /api/fitness/callback/fitbit
@@ -15,25 +24,78 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function GET(req: NextRequest) {
   try {
-    const { userId } = await auth();
-    if (!userId) {
+    let dbUserId: string;
+    let clerkUserId: string;
+    try {
+      const result = await requireActiveUser();
+      dbUserId = result.dbUserId;
+      clerkUserId = result.clerkUserId;
+    } catch {
       return NextResponse.redirect(new URL('/sign-in?error=unauthorized', req.url));
     }
 
     const searchParams = req.nextUrl.searchParams;
     const code = searchParams.get('code');
     const error = searchParams.get('error');
+    const state = searchParams.get('state');
 
-    if (error) {
+    // Validate state parameter for CSRF protection
+    if (!state) {
+      logger.warn('Fitbit OAuth callback: Missing state parameter');
       return NextResponse.redirect(
-        new URL('/settings?fitness=fitbit&error=oauth_error', req.url),
+        new URL('/settings?fitness=fitbit&error=missing_state', req.url)
       );
     }
 
-    if (!code) {
+    // Retrieve and validate stored state from Redis
+    let storedState: StoredOAuthState | null = null;
+    try {
+      const storedStateRaw = await redis.get(`oauth-state:${state}`);
+      if (!storedStateRaw) {
+        logger.warn('Fitbit OAuth callback: Invalid or expired state');
+        return NextResponse.redirect(
+          new URL('/settings?fitness=fitbit&error=invalid_state', req.url)
+        );
+      }
+      storedState = JSON.parse(storedStateRaw as string) as StoredOAuthState;
+    } catch (redisError) {
+      logger.error('Fitbit OAuth callback: Redis error', redisError);
+      return NextResponse.redirect(new URL('/settings?fitness=fitbit&error=server_error', req.url));
+    }
+
+    // Verify the state belongs to the current user (CSRF check)
+    if (storedState.clerkUserId !== clerkUserId) {
+      logger.warn('Fitbit OAuth callback: State user mismatch', {
+        stateUserId: storedState.clerkUserId,
+        currentUserId: clerkUserId,
+      });
       return NextResponse.redirect(
-        new URL('/settings?fitness=fitbit&error=no_code', req.url),
+        new URL('/settings?fitness=fitbit&error=state_mismatch', req.url)
       );
+    }
+
+    // Verify the platform matches
+    if (storedState.platform !== 'fitbit') {
+      logger.warn('Fitbit OAuth callback: Platform mismatch in state');
+      return NextResponse.redirect(
+        new URL('/settings?fitness=fitbit&error=platform_mismatch', req.url)
+      );
+    }
+
+    // Delete the state immediately (one-time use to prevent replay attacks)
+    try {
+      await redis.del(`oauth-state:${state}`);
+    } catch (deleteError) {
+      // Log but don't fail the request - state will expire anyway
+      logger.warn('Failed to delete OAuth state from Redis', deleteError);
+    }
+
+    if (error) {
+      return NextResponse.redirect(new URL('/settings?fitness=fitbit&error=oauth_error', req.url));
+    }
+
+    if (!code) {
+      return NextResponse.redirect(new URL('/settings?fitness=fitbit&error=no_code', req.url));
     }
 
     // Exchange authorization code for access token
@@ -41,7 +103,7 @@ export async function GET(req: NextRequest) {
 
     if (!tokenResponse.access_token) {
       return NextResponse.redirect(
-        new URL('/settings?fitness=fitbit&error=token_exchange_failed', req.url),
+        new URL('/settings?fitness=fitbit&error=token_exchange_failed', req.url)
       );
     }
 
@@ -55,20 +117,25 @@ export async function GET(req: NextRequest) {
     const profileData = await profileResponse.json();
     const platformUserId = profileData.user?.encodedId;
 
-    // Store connection in database
-    // Note: In production, encrypt tokens before storing
+    // Encrypt tokens before storage
+    const encryptedAccessToken = encrypt(tokenResponse.access_token);
+    const encryptedRefreshToken = tokenResponse.refresh_token
+      ? encrypt(tokenResponse.refresh_token)
+      : null;
+
+    // Store connection in database with encrypted tokens
     await prisma.fitnessConnection.upsert({
       where: {
         userId_platform: {
-          userId,
+          userId: dbUserId,
           platform: 'fitbit',
         },
       },
       create: {
-        userId,
+        userId: dbUserId,
         platform: 'fitbit',
-        accessToken: tokenResponse.access_token, // Should be encrypted
-        refreshToken: tokenResponse.refresh_token, // Should be encrypted
+        accessToken: encryptedAccessToken,
+        refreshToken: encryptedRefreshToken,
         tokenExpiresAt: new Date(Date.now() + tokenResponse.expires_in * 1000),
         platformUserId,
         scope: tokenResponse.scope,
@@ -78,8 +145,8 @@ export async function GET(req: NextRequest) {
         settings: '{}',
       },
       update: {
-        accessToken: tokenResponse.access_token,
-        refreshToken: tokenResponse.refresh_token,
+        accessToken: encryptedAccessToken,
+        refreshToken: encryptedRefreshToken,
         tokenExpiresAt: new Date(Date.now() + tokenResponse.expires_in * 1000),
         platformUserId,
         isActive: true,
@@ -87,14 +154,10 @@ export async function GET(req: NextRequest) {
     });
 
     // Redirect back to settings with success
-    return NextResponse.redirect(
-      new URL('/settings?fitness=fitbit&status=connected', req.url),
-    );
+    return NextResponse.redirect(new URL('/settings?fitness=fitbit&status=connected', req.url));
   } catch (error) {
     logger.error('Error in Fitbit OAuth callback:', error);
-    return NextResponse.redirect(
-      new URL('/settings?fitness=fitbit&error=server_error', req.url),
-    );
+    return NextResponse.redirect(new URL('/settings?fitness=fitbit&error=server_error', req.url));
   }
 }
 
@@ -104,7 +167,7 @@ async function exchangeCodeForToken(code: string) {
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Authorization: `Basic ${Buffer.from(
-        `${process.env.FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`,
+        `${process.env.FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`
       ).toString('base64')}`,
     },
     body: new URLSearchParams({

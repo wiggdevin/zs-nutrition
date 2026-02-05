@@ -1,26 +1,26 @@
-import { initTRPC, TRPCError } from '@trpc/server'
-import { ZodError } from 'zod'
-import superjson from 'superjson'
-import { prisma } from '@/lib/prisma'
-import { getClerkUserId } from '@/lib/auth'
-import { generalLimiter, checkRateLimit } from '@/lib/rate-limit'
+import { initTRPC, TRPCError } from '@trpc/server';
+import { ZodError } from 'zod';
+import superjson from 'superjson';
+import { prisma } from '@/lib/prisma';
+import { getClerkUserId } from '@/lib/auth';
+import { generalLimiter, checkRateLimit } from '@/lib/rate-limit';
 
 export type Context = {
-  userId: string | null
-  prisma: typeof prisma
-}
+  userId: string | null;
+  prisma: typeof prisma;
+};
 
 export type AuthedContext = Context & {
-  userId: string
-  dbUserId: string
-}
+  userId: string;
+  dbUserId: string;
+};
 
 export async function createContext(): Promise<Context> {
-  const userId = await getClerkUserId()
+  const userId = await getClerkUserId();
   return {
     userId,
     prisma,
-  }
+  };
 }
 
 /**
@@ -29,10 +29,10 @@ export async function createContext(): Promise<Context> {
  */
 function formatZodError(error: ZodError): string {
   const fieldErrors = error.issues.map((issue) => {
-    const field = issue.path.length > 0 ? issue.path.join('.') : 'input'
-    return `${field}: ${issue.message}`
-  })
-  return fieldErrors.join('; ')
+    const field = issue.path.length > 0 ? issue.path.join('.') : 'input';
+    return `${field}: ${issue.message}`;
+  });
+  return fieldErrors.join('; ');
 }
 
 const t = initTRPC.context<Context>().create({
@@ -40,21 +40,17 @@ const t = initTRPC.context<Context>().create({
   errorFormatter({ shape, error }) {
     return {
       ...shape,
-      message: error.cause instanceof ZodError
-        ? formatZodError(error.cause)
-        : shape.message,
+      message: error.cause instanceof ZodError ? formatZodError(error.cause) : shape.message,
       data: {
         ...shape.data,
-        zodError: error.cause instanceof ZodError
-          ? error.cause.flatten()
-          : null,
+        zodError: error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
-    }
+    };
   },
-})
+});
 
-export const router = t.router
-export const publicProcedure = t.procedure
+export const router = t.router;
+export const publicProcedure = t.procedure;
 
 // Middleware that enforces authentication
 const enforceAuth = t.middleware(async ({ ctx, next }) => {
@@ -62,13 +58,13 @@ const enforceAuth = t.middleware(async ({ ctx, next }) => {
     throw new TRPCError({
       code: 'UNAUTHORIZED',
       message: 'You must be signed in to access this resource.',
-    })
+    });
   }
 
   // Ensure user exists in our database, create if needed
   let user = await ctx.prisma.user.findUnique({
     where: { clerkUserId: ctx.userId },
-  })
+  });
 
   if (!user) {
     // Auto-create user record on first authenticated request
@@ -77,14 +73,14 @@ const enforceAuth = t.middleware(async ({ ctx, next }) => {
         clerkUserId: ctx.userId,
         email: `${ctx.userId}@clerk.dev`, // placeholder, will be updated
       },
-    })
+    });
   }
 
   if (!user.isActive) {
     throw new TRPCError({
       code: 'FORBIDDEN',
       message: 'Account is deactivated',
-    })
+    });
   }
 
   return next({
@@ -93,14 +89,14 @@ const enforceAuth = t.middleware(async ({ ctx, next }) => {
       userId: ctx.userId,
       dbUserId: user.id,
     },
-  })
-})
+  });
+});
 
 const rateLimit = t.middleware(async ({ ctx, next }) => {
   if (ctx.userId && generalLimiter) {
-    const result = await checkRateLimit(generalLimiter, ctx.userId)
+    const result = await checkRateLimit(generalLimiter, ctx.userId);
     if (result && !result.success) {
-      const retryAfter = Math.max(1, Math.ceil(((result.reset || Date.now()) - Date.now()) / 1000))
+      const retryAfter = Math.max(1, Math.ceil(((result.reset || Date.now()) - Date.now()) / 1000));
       throw new TRPCError({
         code: 'TOO_MANY_REQUESTS',
         message: JSON.stringify({
@@ -108,10 +104,10 @@ const rateLimit = t.middleware(async ({ ctx, next }) => {
           retryAfter,
           message: `Rate limit exceeded. Try again in ${retryAfter} seconds.`,
         }),
-      })
+      });
     }
   }
-  return next()
-})
+  return next();
+});
 
-export const protectedProcedure = t.procedure.use(enforceAuth).use(rateLimit)
+export const protectedProcedure = t.procedure.use(enforceAuth).use(rateLimit);

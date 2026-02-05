@@ -1,21 +1,21 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
-import { requireActiveUser } from '@/lib/auth'
-import { calculateAdherenceScore } from '@/lib/adherence'
-import { logger } from '@/lib/safe-logger'
-import { toLocalDay } from '@/lib/date-utils'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+import { requireActiveUser } from '@/lib/auth';
+import { calculateAdherenceScore } from '@/lib/adherence';
+import { logger } from '@/lib/safe-logger';
+import { toLocalDay } from '@/lib/date-utils';
 
 export async function POST(request: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     const user = await prisma.user.findUnique({
@@ -36,7 +36,10 @@ export async function POST(request: NextRequest) {
     const portion = typeof portionInput === 'number' && portionInput > 0 ? portionInput : 1.0;
 
     if (!planId || !dayNumber || !slot) {
-      return NextResponse.json({ error: 'Missing required fields: planId, dayNumber, slot' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'Missing required fields: planId, dayNumber, slot' },
+        { status: 400 }
+      );
     }
 
     // Get the meal plan
@@ -50,9 +53,7 @@ export async function POST(request: NextRequest) {
 
     // Parse the validated plan to find the specific meal
     const validatedPlan = JSON.parse(mealPlan.validatedPlan);
-    const day = validatedPlan.days?.find(
-      (d: { dayNumber: number }) => d.dayNumber === dayNumber
-    );
+    const day = validatedPlan.days?.find((d: { dayNumber: number }) => d.dayNumber === dayNumber);
 
     if (!day) {
       return NextResponse.json({ error: 'Day not found in plan' }, { status: 404 });
@@ -110,7 +111,9 @@ export async function POST(request: NextRequest) {
         const adjustedProteinG = Math.round(meal.nutrition.proteinG * portion * 10) / 10;
         const adjustedCarbsG = Math.round(meal.nutrition.carbsG * portion * 10) / 10;
         const adjustedFatG = Math.round(meal.nutrition.fatG * portion * 10) / 10;
-        const adjustedFiberG = meal.nutrition.fiberG ? Math.round(meal.nutrition.fiberG * portion * 10) / 10 : null;
+        const adjustedFiberG = meal.nutrition.fiberG
+          ? Math.round(meal.nutrition.fiberG * portion * 10) / 10
+          : null;
 
         // Create the TrackedMeal with source 'plan_meal'
         const trackedMeal = await tx.trackedMeal.create({

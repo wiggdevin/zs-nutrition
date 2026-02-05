@@ -20,7 +20,10 @@ const serverEnvSchema = z.object({
   // Database
   DATABASE_URL: z
     .string()
-    .min(1, 'DATABASE_URL is required — get your Neon connection string from https://console.neon.tech'),
+    .min(
+      1,
+      'DATABASE_URL is required — get your Neon connection string from https://console.neon.tech'
+    ),
 
   // Clerk authentication (required in production)
   CLERK_SECRET_KEY: isProduction
@@ -58,10 +61,7 @@ const serverEnvSchema = z.object({
     : z.string().optional().default(''),
 
   // Vercel Blob
-  BLOB_READ_WRITE_TOKEN: z
-    .string()
-    .optional()
-    .default(''),
+  BLOB_READ_WRITE_TOKEN: z.string().optional().default(''),
 
   // Development helpers
   USE_MOCK_QUEUE: isProduction
@@ -72,10 +72,7 @@ const serverEnvSchema = z.object({
     ? z.string().min(20, 'INTERNAL_API_SECRET must be at least 20 characters in production')
     : z.string().optional().default('dev-internal-secret'),
 
-  WEB_APP_URL: z
-    .string()
-    .optional()
-    .default('http://localhost:3456'),
+  WEB_APP_URL: z.string().optional().default('http://localhost:3456'),
 
   // Fitness platform integrations (opt-in)
   FITBIT_CLIENT_ID: z.string().optional().default(''),
@@ -90,26 +87,11 @@ const serverEnvSchema = z.object({
 // Client-side (public) environment schema
 // ---------------------------------------------------------------------------
 const clientEnvSchema = z.object({
-  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z
-    .string()
-    .optional()
-    .default(''),
-  NEXT_PUBLIC_CLERK_SIGN_IN_URL: z
-    .string()
-    .optional()
-    .default('/sign-in'),
-  NEXT_PUBLIC_CLERK_SIGN_UP_URL: z
-    .string()
-    .optional()
-    .default('/sign-up'),
-  NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: z
-    .string()
-    .optional()
-    .default('/dashboard'),
-  NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: z
-    .string()
-    .optional()
-    .default('/onboarding'),
+  NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: z.string().optional().default(''),
+  NEXT_PUBLIC_CLERK_SIGN_IN_URL: z.string().optional().default('/sign-in'),
+  NEXT_PUBLIC_CLERK_SIGN_UP_URL: z.string().optional().default('/sign-up'),
+  NEXT_PUBLIC_CLERK_AFTER_SIGN_IN_URL: z.string().optional().default('/dashboard'),
+  NEXT_PUBLIC_CLERK_AFTER_SIGN_UP_URL: z.string().optional().default('/onboarding'),
 });
 
 // ---------------------------------------------------------------------------
@@ -150,9 +132,7 @@ export function validateServerEnv() {
 
   if (!result.success) {
     logger.error(formatZodError(result.error));
-    throw new Error(
-      `❌ Invalid server environment variables.\n${formatZodError(result.error)}`
-    );
+    throw new Error(`❌ Invalid server environment variables.\n${formatZodError(result.error)}`);
   }
 
   return result.data;
@@ -173,9 +153,7 @@ export function validateClientEnv() {
 
   if (!result.success) {
     logger.error(formatZodError(result.error));
-    throw new Error(
-      `❌ Invalid client environment variables.\n${formatZodError(result.error)}`
-    );
+    throw new Error(`❌ Invalid client environment variables.\n${formatZodError(result.error)}`);
   }
 
   return result.data;

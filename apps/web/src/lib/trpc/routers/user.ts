@@ -1,12 +1,12 @@
-import { z } from 'zod'
-import { router, protectedProcedure } from '../server'
+import { z } from 'zod';
+import { router, protectedProcedure } from '../server';
 
 export const userRouter = router({
   getOnboardingState: protectedProcedure.query(async ({ ctx }) => {
     const state = await ctx.prisma.onboardingState.findUnique({
       where: { userId: ctx.userId },
-    })
-    return state
+    });
+    return state;
   }),
 
   updateOnboardingStep: protectedProcedure
@@ -19,11 +19,11 @@ export const userRouter = router({
     .mutation(async ({ ctx, input }) => {
       const existing = await ctx.prisma.onboardingState.findUnique({
         where: { userId: ctx.userId },
-      })
+      });
 
       // Merge step data
-      const existingData = existing?.stepData ? JSON.parse(existing.stepData) : {}
-      const mergedData = { ...existingData, ...input.data }
+      const existingData = existing?.stepData ? JSON.parse(existing.stepData) : {};
+      const mergedData = { ...existingData, ...input.data };
 
       if (existing) {
         return ctx.prisma.onboardingState.update({
@@ -32,7 +32,7 @@ export const userRouter = router({
             currentStep: input.step,
             stepData: JSON.stringify(mergedData),
           },
-        })
+        });
       }
 
       return ctx.prisma.onboardingState.create({
@@ -41,7 +41,7 @@ export const userRouter = router({
           currentStep: input.step,
           stepData: JSON.stringify(mergedData),
         },
-      })
+      });
     }),
 
   completeOnboarding: protectedProcedure
@@ -63,14 +63,7 @@ export const userRouter = router({
           'extremely_active',
         ]),
         trainingDays: z.array(z.string()),
-        dietaryStyle: z.enum([
-          'omnivore',
-          'vegetarian',
-          'vegan',
-          'pescatarian',
-          'keto',
-          'paleo',
-        ]),
+        dietaryStyle: z.enum(['omnivore', 'vegetarian', 'vegan', 'pescatarian', 'keto', 'paleo']),
         allergies: z.array(z.string()),
         exclusions: z.array(z.string()),
         cuisinePreferences: z.array(z.string()),
@@ -86,7 +79,7 @@ export const userRouter = router({
       const bmr =
         input.sex === 'male'
           ? 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age + 5
-          : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161
+          : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161;
 
       const activityMultipliers: Record<string, number> = {
         sedentary: 1.2,
@@ -94,24 +87,24 @@ export const userRouter = router({
         moderately_active: 1.55,
         very_active: 1.725,
         extremely_active: 1.9,
-      }
-      const tdee = Math.round(bmr * activityMultipliers[input.activityLevel])
+      };
+      const tdee = Math.round(bmr * activityMultipliers[input.activityLevel]);
 
-      let goalKcal = tdee
-      if (input.goalType === 'cut') goalKcal = tdee - input.goalRate * 500
-      if (input.goalType === 'bulk') goalKcal = tdee + input.goalRate * 350
-      goalKcal = Math.round(goalKcal)
+      let goalKcal = tdee;
+      if (input.goalType === 'cut') goalKcal = tdee - input.goalRate * 500;
+      if (input.goalType === 'bulk') goalKcal = tdee + input.goalRate * 350;
+      goalKcal = Math.round(goalKcal);
 
       const macroSplits: Record<string, { p: number; c: number; f: number }> = {
         balanced: { p: 0.3, c: 0.4, f: 0.3 },
         high_protein: { p: 0.4, c: 0.35, f: 0.25 },
         low_carb: { p: 0.35, c: 0.25, f: 0.4 },
         keto: { p: 0.3, c: 0.05, f: 0.65 },
-      }
-      const split = macroSplits[input.macroStyle]
-      const proteinG = Math.round((goalKcal * split.p) / 4)
-      const carbsG = Math.round((goalKcal * split.c) / 4)
-      const fatG = Math.round((goalKcal * split.f) / 9)
+      };
+      const split = macroSplits[input.macroStyle];
+      const proteinG = Math.round((goalKcal * split.p) / 4);
+      const carbsG = Math.round((goalKcal * split.c) / 4);
+      const fatG = Math.round((goalKcal * split.f) / 9);
 
       // Create user profile
       const profile = await ctx.prisma.userProfile.create({
@@ -144,7 +137,7 @@ export const userRouter = router({
           fatTargetG: fatG,
           isActive: true,
         },
-      })
+      });
 
       // Mark onboarding complete
       await ctx.prisma.onboardingState.upsert({
@@ -155,15 +148,15 @@ export const userRouter = router({
           completed: true,
           currentStep: 6,
         },
-      })
+      });
 
-      return { profile, redirectTo: '/generate' }
+      return { profile, redirectTo: '/generate' };
     }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {
     const profile = await ctx.prisma.userProfile.findFirst({
       where: { userId: ctx.userId, isActive: true },
-    })
-    return profile
+    });
+    return profile;
   }),
-})
+});

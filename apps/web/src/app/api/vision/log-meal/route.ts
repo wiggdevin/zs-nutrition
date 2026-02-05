@@ -1,45 +1,47 @@
-import { NextResponse } from 'next/server'
-import { requireActiveUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { v4 as uuidv4 } from 'uuid'
-import { z } from 'zod'
-import { logger } from '@/lib/safe-logger'
+import { NextResponse } from 'next/server';
+import { requireActiveUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { v4 as uuidv4 } from 'uuid';
+import { z } from 'zod';
+import { logger } from '@/lib/safe-logger';
 
 // Request schema for confirming and logging a vision analysis
 const LogVisionMealSchema = z.object({
   scanId: z.string().uuid(),
-  adjustedResult: z.object({
-    meal_name: z.string(),
-    description: z.string(),
-    estimated_nutrition: z.object({
-      calories: z.number(),
-      protein_g: z.number(),
-      carbs_g: z.number(),
-      fat_g: z.number(),
-      fiber_g: z.number().optional(),
-    }),
-    portion_size_estimate: z.string(),
-  }).optional(), // User can adjust the analysis before logging
+  adjustedResult: z
+    .object({
+      meal_name: z.string(),
+      description: z.string(),
+      estimated_nutrition: z.object({
+        calories: z.number(),
+        protein_g: z.number(),
+        carbs_g: z.number(),
+        fat_g: z.number(),
+        fiber_g: z.number().optional(),
+      }),
+      portion_size_estimate: z.string(),
+    })
+    .optional(), // User can adjust the analysis before logging
   date: z.string().optional(), // YYYY-MM-DD format, defaults to today
   mealSlot: z.string().optional(), // breakfast, lunch, dinner, snack, etc.
-})
+});
 
 interface LogVisionMealRequest {
-  scanId: string
+  scanId: string;
   adjustedResult?: {
-    meal_name: string
-    description: string
+    meal_name: string;
+    description: string;
     estimated_nutrition: {
-      calories: number
-      protein_g: number
-      carbs_g: number
-      fat_g: number
-      fiber_g?: number
-    }
-    portion_size_estimate: string
-  }
-  date?: string
-  mealSlot?: string
+      calories: number;
+      protein_g: number;
+      carbs_g: number;
+      fat_g: number;
+      fiber_g?: number;
+    };
+    portion_size_estimate: string;
+  };
+  date?: string;
+  mealSlot?: string;
 }
 
 /**
@@ -50,47 +52,41 @@ interface LogVisionMealRequest {
 export async function POST(request: Request) {
   try {
     // Authenticate user
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Parse and validate request
-    const body: LogVisionMealRequest = await request.json()
-    const validation = LogVisionMealSchema.safeParse(body)
+    const body: LogVisionMealRequest = await request.json();
+    const validation = LogVisionMealSchema.safeParse(body);
 
     if (!validation.success) {
       return NextResponse.json(
         { error: 'Invalid request', details: validation.error.errors },
         { status: 400 }
-      )
+      );
     }
 
-    const { scanId, adjustedResult, date, mealSlot } = validation.data
+    const { scanId, adjustedResult, date, mealSlot } = validation.data;
 
     // Fetch the FoodScan
     const foodScan = await prisma.foodScan.findUnique({
       where: { id: scanId },
-    })
+    });
 
     if (!foodScan) {
-      return NextResponse.json(
-        { error: 'Scan not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
     }
 
     // Verify ownership
     if (foodScan.userId !== clerkUserId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Check if scan is completed
@@ -98,24 +94,26 @@ export async function POST(request: Request) {
       return NextResponse.json(
         { error: 'Scan not completed', status: foodScan.status },
         { status: 400 }
-      )
+      );
     }
 
     // Use adjusted result if provided, otherwise use original analysis
     const nutritionData = adjustedResult
-      ? (foodScan.adjustedResult = JSON.stringify(adjustedResult), await prisma.foodScan.update({
+      ? ((foodScan.adjustedResult = JSON.stringify(adjustedResult)),
+        await prisma.foodScan.update({
           where: { id: scanId },
           data: { adjustedResult: JSON.stringify(adjustedResult) },
-        }), adjustedResult)
-      : JSON.parse(foodScan.analysisResult || '{}')
+        }),
+        adjustedResult)
+      : JSON.parse(foodScan.analysisResult || '{}');
 
     // Create tracked meal
-    const trackedMealId = uuidv4()
+    const trackedMealId = uuidv4();
 
     // Parse date (default to today)
     const loggedDate = date
       ? new Date(date + 'T00:00:00.000Z')
-      : new Date(new Date().toISOString().split('T')[0] + 'T00:00:00.000Z')
+      : new Date(new Date().toISOString().split('T')[0] + 'T00:00:00.000Z');
 
     await prisma.trackedMeal.create({
       data: {
@@ -136,13 +134,13 @@ export async function POST(request: Request) {
         scanId,
         confidenceScore: 0.8, // Vision-based analysis has good confidence
       },
-    })
+    });
 
     // Mark scan as confirmed
     await prisma.foodScan.update({
       where: { id: scanId },
       data: { userConfirmed: true },
-    })
+    });
 
     // Update daily log
     const dailyLog = await prisma.dailyLog.findUnique({
@@ -152,7 +150,7 @@ export async function POST(request: Request) {
           date: loggedDate,
         },
       },
-    })
+    });
 
     if (dailyLog) {
       // Update existing daily log
@@ -164,7 +162,7 @@ export async function POST(request: Request) {
           actualCarbsG: { increment: Math.round(nutritionData.estimated_nutrition.carbs_g) },
           actualFatG: { increment: Math.round(nutritionData.estimated_nutrition.fat_g) },
         },
-      })
+      });
     }
 
     return NextResponse.json({
@@ -177,11 +175,11 @@ export async function POST(request: Request) {
         mealSlot: mealSlot || 'snack',
         nutrition: nutritionData.estimated_nutrition,
       },
-    })
+    });
   } catch (error) {
-    logger.error('Error in /api/vision/log-meal:', error)
+    logger.error('Error in /api/vision/log-meal:', error);
 
-    const message = error instanceof Error ? error.message : 'Failed to log meal'
+    const message = error instanceof Error ? error.message : 'Failed to log meal';
 
     return NextResponse.json(
       {
@@ -189,7 +187,7 @@ export async function POST(request: Request) {
         message,
       },
       { status: 500 }
-    )
+    );
   }
 }
 
@@ -200,43 +198,34 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
-    const { searchParams } = new URL(request.url)
-    const scanId = searchParams.get('scanId')
+    const { searchParams } = new URL(request.url);
+    const scanId = searchParams.get('scanId');
 
     if (!scanId) {
-      return NextResponse.json(
-        { error: 'scanId is required' },
-        { status: 400 }
-      )
+      return NextResponse.json({ error: 'scanId is required' }, { status: 400 });
     }
 
     const foodScan = await prisma.foodScan.findUnique({
       where: { id: scanId },
-    })
+    });
 
     if (!foodScan) {
-      return NextResponse.json(
-        { error: 'Scan not found' },
-        { status: 404 }
-      )
+      return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
     }
 
     // Verify ownership
     if (foodScan.userId !== clerkUserId) {
-      return NextResponse.json(
-        { error: 'Unauthorized' },
-        { status: 403 }
-      )
+      return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
     // Return scan details
@@ -251,15 +240,12 @@ export async function GET(request: Request) {
       createdAt: foodScan.createdAt,
       completedAt: foodScan.completedAt,
       error: foodScan.error,
-    })
+    });
   } catch (error) {
-    logger.error('Error in GET /api/vision/log-meal:', error)
+    logger.error('Error in GET /api/vision/log-meal:', error);
 
-    const message = error instanceof Error ? error.message : 'Failed to fetch scan'
+    const message = error instanceof Error ? error.message : 'Failed to fetch scan';
 
-    return NextResponse.json(
-      { error: 'Failed to fetch scan', message },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch scan', message }, { status: 500 });
   }
 }

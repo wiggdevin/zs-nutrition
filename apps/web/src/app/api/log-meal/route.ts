@@ -1,8 +1,8 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { Prisma } from '@prisma/client'
-import { requireActiveUser } from '@/lib/auth'
-import { logger } from '@/lib/safe-logger'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { Prisma } from '@prisma/client';
+import { requireActiveUser } from '@/lib/auth';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * POST /api/log-meal
@@ -10,14 +10,14 @@ import { logger } from '@/lib/safe-logger'
  */
 export async function POST(request: Request) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     const user = await prisma.user.findUnique({ where: { clerkUserId } });
@@ -31,7 +31,18 @@ export async function POST(request: Request) {
     } catch {
       return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
     }
-    const { planId, dayNumber, slot, mealName, calories, protein, carbs, fat, fiber, portion = 1.0 } = body;
+    const {
+      planId,
+      dayNumber,
+      slot,
+      mealName,
+      calories,
+      protein,
+      carbs,
+      fat,
+      fiber,
+      portion = 1.0,
+    } = body;
 
     if (!planId || !mealName || calories === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -47,7 +58,9 @@ export async function POST(request: Request) {
     }
 
     const today = new Date();
-    const dateOnly = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const dateOnly = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+    );
 
     // Apply portion multiplier
     const kcal = Math.round(calories * portion);
@@ -92,7 +105,8 @@ export async function POST(request: Request) {
             },
             dailyLog: {
               actualKcal: existingDailyLog?.actualKcal ?? existingEntry.kcal,
-              actualProteinG: existingDailyLog?.actualProteinG ?? Math.round(existingEntry.proteinG),
+              actualProteinG:
+                existingDailyLog?.actualProteinG ?? Math.round(existingEntry.proteinG),
               actualCarbsG: existingDailyLog?.actualCarbsG ?? Math.round(existingEntry.carbsG),
               actualFatG: existingDailyLog?.actualFatG ?? Math.round(existingEntry.fatG),
               targetKcal: existingDailyLog?.targetKcal ?? null,
@@ -159,9 +173,8 @@ export async function POST(request: Request) {
 
         // Calculate adherence score
         const targetKcal = dailyLog.targetKcal || 2290;
-        const adherenceScore = targetKcal > 0
-          ? Math.min(100, Math.round((dailyLog.actualKcal / targetKcal) * 100))
-          : 0;
+        const adherenceScore =
+          targetKcal > 0 ? Math.min(100, Math.round((dailyLog.actualKcal / targetKcal) * 100)) : 0;
 
         await tx.dailyLog.update({
           where: { id: dailyLog.id },

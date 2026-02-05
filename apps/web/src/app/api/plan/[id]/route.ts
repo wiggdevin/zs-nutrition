@@ -12,19 +12,16 @@ import { logger } from '@/lib/safe-logger';
  * Security: Filters by both plan ID and userId to ensure data isolation.
  * Returns 404 (not 403) to avoid leaking information about plan existence.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ id: string }> }
-) {
+export async function GET(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     const { id: planId } = await params;
@@ -73,18 +70,20 @@ export async function GET(
     // Parse JSON fields
     let validatedPlan = null;
     try {
-      validatedPlan = typeof plan.validatedPlan === 'string'
-        ? JSON.parse(plan.validatedPlan)
-        : plan.validatedPlan;
+      validatedPlan =
+        typeof plan.validatedPlan === 'string'
+          ? JSON.parse(plan.validatedPlan)
+          : plan.validatedPlan;
     } catch {
       // empty
     }
 
     let metabolicProfile = null;
     try {
-      metabolicProfile = typeof plan.metabolicProfile === 'string'
-        ? JSON.parse(plan.metabolicProfile)
-        : plan.metabolicProfile;
+      metabolicProfile =
+        typeof plan.metabolicProfile === 'string'
+          ? JSON.parse(plan.metabolicProfile)
+          : plan.metabolicProfile;
     } catch {
       // empty
     }
@@ -113,9 +112,6 @@ export async function GET(
     });
   } catch (error) {
     logger.error('Error fetching plan by ID:', error);
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

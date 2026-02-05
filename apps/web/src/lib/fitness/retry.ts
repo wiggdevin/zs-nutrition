@@ -9,7 +9,7 @@ export class FitnessApiError extends Error {
     public platform: string,
     public statusCode: number,
     public errorCode: string | undefined,
-    message: string,
+    message: string
   ) {
     super(message);
     this.name = 'FitnessApiError';
@@ -61,7 +61,7 @@ const DEFAULT_RETRY_CONFIG: RetryConfig = {
  */
 export async function retryWithBackoff<T>(
   fn: () => Promise<T>,
-  config: RetryConfig = DEFAULT_RETRY_CONFIG,
+  config: RetryConfig = DEFAULT_RETRY_CONFIG
 ): Promise<T> {
   let lastError: Error | undefined;
   let delay = config.initialDelayMs;
@@ -73,12 +73,11 @@ export async function retryWithBackoff<T>(
       lastError = error as Error;
 
       // Check if error is retryable
-      const statusCode = typeof error === 'object' && error !== null && 'statusCode' in error
-        ? (error as { statusCode: number }).statusCode
-        : undefined;
-      const isRetryable = statusCode
-        ? config.retryableErrors.includes(statusCode)
-        : false;
+      const statusCode =
+        typeof error === 'object' && error !== null && 'statusCode' in error
+          ? (error as { statusCode: number }).statusCode
+          : undefined;
+      const isRetryable = statusCode ? config.retryableErrors.includes(statusCode) : false;
 
       if (!isRetryable || attempt === config.maxRetries) {
         throw error;
@@ -87,9 +86,7 @@ export async function retryWithBackoff<T>(
       // Calculate delay with exponential backoff
       const currentDelay = Math.min(delay, config.maxDelayMs);
 
-      logger.debug(
-        `Retry attempt ${attempt + 1}/${config.maxRetries} after ${currentDelay}ms`,
-      );
+      logger.debug(`Retry attempt ${attempt + 1}/${config.maxRetries} after ${currentDelay}ms`);
 
       await sleep(currentDelay);
       delay *= config.backoffMultiplier;
@@ -112,7 +109,7 @@ function sleep(ms: number): Promise<void> {
 export async function fetchWithRetry(
   url: string,
   options?: RequestInit,
-  config?: RetryConfig,
+  config?: RetryConfig
 ): Promise<Response> {
   return retryWithBackoff(async () => {
     const response = await fetch(url, options);
@@ -124,10 +121,7 @@ export async function fetchWithRetry(
 
     if (response.status === 429) {
       const retryAfter = response.headers.get('Retry-After');
-      throw new RateLimitError(
-        'Unknown',
-        retryAfter ? parseInt(retryAfter, 10) : undefined,
-      );
+      throw new RateLimitError('Unknown', retryAfter ? parseInt(retryAfter, 10) : undefined);
     }
 
     if (!response.ok && config?.retryableErrors.includes(response.status)) {
@@ -135,7 +129,7 @@ export async function fetchWithRetry(
         'Unknown',
         response.status,
         undefined,
-        `HTTP ${response.status}: ${response.statusText}`,
+        `HTTP ${response.status}: ${response.statusText}`
       );
     }
 
@@ -148,7 +142,7 @@ export async function fetchWithRetry(
  */
 export async function refreshAccessToken(
   platform: string,
-  refreshToken: string,
+  refreshToken: string
 ): Promise<{ accessToken: string; expiresIn?: number }> {
   switch (platform) {
     case 'fitbit':
@@ -177,7 +171,7 @@ async function refreshFitbitToken(refreshToken: string): Promise<{
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Authorization: `Basic ${Buffer.from(
-        `${process.env.FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`,
+        `${process.env.FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`
       ).toString('base64')}`,
     },
     body: new URLSearchParams({
@@ -267,7 +261,7 @@ export function logSyncError(
   userId: string,
   platform: string,
   error: Error,
-  context?: Record<string, any>,
+  context?: Record<string, any>
 ): void {
   logger.error('fitness_sync_error', {
     userId,
@@ -300,15 +294,11 @@ function isRefreshable(error: TokenExpiredError): boolean {
   // Check if we have the necessary credentials to refresh
   switch (error.platform) {
     case 'fitbit':
-      return !!(
-        process.env.FITBIT_CLIENT_ID && process.env.FITBIT_CLIENT_SECRET
-      );
+      return !!(process.env.FITBIT_CLIENT_ID && process.env.FITBIT_CLIENT_SECRET);
     case 'oura':
       return !!(process.env.OURA_CLIENT_ID && process.env.OURA_CLIENT_SECRET);
     case 'google_fit':
-      return !!(
-        process.env.GOOGLE_FIT_CLIENT_ID && process.env.GOOGLE_FIT_CLIENT_SECRET
-      );
+      return !!(process.env.GOOGLE_FIT_CLIENT_ID && process.env.GOOGLE_FIT_CLIENT_SECRET);
     default:
       return false;
   }

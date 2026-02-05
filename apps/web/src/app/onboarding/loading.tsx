@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function OnboardingLoading() {
   return (
@@ -15,5 +15,5 @@ export default function OnboardingLoading() {
         <Skeleton className="h-12 w-full rounded-xl" />
       </div>
     </div>
-  )
+  );
 }
