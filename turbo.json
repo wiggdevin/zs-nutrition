@@ -11,10 +11,20 @@
     "BLOB_READ_WRITE_TOKEN",
     "USE_MOCK_QUEUE"
   ],
+  "remoteCache": {
+    "signature": true
+  },
   "tasks": {
     "build": {
       "dependsOn": ["^build"],
-      "outputs": [".next/**", "!.next/cache/**", "dist/**"]
+      "outputs": [".next/**", "!.next/cache/**", "dist/**"],
+      "env": [
+        "DATABASE_URL",
+        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
+        "ANTHROPIC_API_KEY",
+        "FATSECRET_CLIENT_ID",
+        "REDIS_URL"
+      ]
     },
     "typecheck": {
       "dependsOn": ["^build"],
@@ -29,7 +39,8 @@
       "outputs": []
     },
     "test": {
-      "dependsOn": ["^build"]
+      "dependsOn": ["^build"],
+      "outputs": ["coverage/**"]
     }
   }
 }

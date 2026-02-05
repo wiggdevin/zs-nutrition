@@ -3,6 +3,34 @@ import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import { protectedProcedure, router } from '../trpc';
 import { MACRO_SPLITS, calculateMacroTargets } from '@/lib/metabolic-utils';
+import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue';
+import { logger } from '@/lib/safe-logger';
+
+/**
+ * Configuration constants for adaptive nutrition calculations.
+ * Extracted for maintainability and testability.
+ */
+const ADAPTIVE_NUTRITION_CONFIG = {
+  /** Minimum extra calories burned to trigger daily target adjustment */
+  MIN_ACTIVITY_THRESHOLD_KCAL: 200,
+  /** Rate at which activity calories are added back (50% = conservative replenishment) */
+  ACTIVITY_REPLENISHMENT_RATE: 0.5,
+  /** Weekly weight loss threshold below which plateau is detected (lbs/week) */
+  PLATEAU_THRESHOLD_LBS_PER_WEEK: 0.3,
+  /** Calorie targets are rounded to this factor for cleaner numbers */
+  CALORIE_ROUNDING_FACTOR: 50,
+  /** Safe calorie bounds relative to BMR */
+  SAFE_BOUNDS: {
+    MIN_ABOVE_BMR: 200,
+    MAX_ABOVE_BMR: 1500,
+  },
+  /** Calorie adjustment multipliers per lb/week deviation */
+  ADJUSTMENT_MULTIPLIERS: {
+    CUT_DECREASE_PER_LB: 100,
+    BULK_INCREASE_PER_LB: 150,
+    BULK_DECREASE_PER_LB: 100,
+  },
+} as const;
 
 /**
  * Adaptive Nutrition Router — handles weight tracking, trend analysis,
@@ -36,9 +64,8 @@ export const adaptiveNutritionRouter = router({
       const weightLbs = Math.round(input.weightKg * 2.20462 * 10) / 10;
 
       // Use upsert pattern with the compound unique constraint on (userId, logDate)
-      // After running prisma generate, this will use the unique key for atomic upsert
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      const weightEntry = await (prisma.weightEntry.upsert as any)({
+      // The schema defines @@unique([userId, logDate]) which creates the userId_logDate compound key
+      const weightEntry = await prisma.weightEntry.upsert({
         where: {
           userId_logDate: {
             userId: dbUserId,
@@ -334,7 +361,7 @@ export const adaptiveNutritionRouter = router({
     }
 
     // Round to nearest 50 calories for cleaner targets
-    suggestedKcal = Math.round(suggestedKcal / 50) * 50;
+    suggestedKcal = Math.round(suggestedKcal / ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR) * ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR;
 
     return {
       hasSuggestion: shouldAdjust,
@@ -448,29 +475,6 @@ export const adaptiveNutritionRouter = router({
         }
       }
 
-      // Create calorie adjustment audit log
-      // adjustmentReason and trendAnalysis are now Prisma Json types - cast to InputJsonValue
-      // Use Prisma.JsonNull for null values in Json fields
-      const adjustment = await prisma.calorieAdjustment.create({
-        data: {
-          userId: dbUserId,
-          previousGoalKcal: profile.goalKcal ?? 0,
-          newGoalKcal: input.newGoalKcal,
-          adjustmentReason: {
-            reason: `Adaptive adjustment based on ${trend.length} weight entries`,
-            profileGoalType: profile.goalType,
-            profileGoalRate: profile.goalRate,
-          } as Prisma.InputJsonValue,
-          weightChangeKg,
-          weightChangeLbs,
-          trendAnalysis: trendAnalysis
-            ? (trendAnalysis as Prisma.InputJsonValue)
-            : Prisma.JsonNull,
-          milestoneAchieved,
-          planRegenerated: false,
-        },
-      });
-
       // Update profile with new calorie targets
       const newGoalKcal = input.newGoalKcal;
 
@@ -494,6 +498,119 @@ export const adaptiveNutritionRouter = router({
         },
       });
 
+      // Check if user has an active meal plan - if so, trigger regeneration
+      const activePlan = await prisma.mealPlan.findFirst({
+        where: {
+          userId: dbUserId,
+          isActive: true,
+          status: 'active',
+          deletedAt: null,
+        },
+      });
+
+      let planRegenerated = false;
+      let regenerationJobId: string | null = null;
+
+      if (activePlan) {
+        // Build intake data from updated profile for plan regeneration
+        const allergies = (Array.isArray(updatedProfile.allergies) ? updatedProfile.allergies : []) as string[];
+        const exclusions = (Array.isArray(updatedProfile.exclusions) ? updatedProfile.exclusions : []) as string[];
+        const cuisinePreferences = (Array.isArray(updatedProfile.cuisinePrefs) ? updatedProfile.cuisinePrefs : []) as string[];
+        const trainingDays = (Array.isArray(updatedProfile.trainingDays) ? updatedProfile.trainingDays : []) as string[];
+
+        const intakeData = {
+          name: updatedProfile.name,
+          sex: updatedProfile.sex as 'male' | 'female',
+          age: updatedProfile.age,
+          heightCm: updatedProfile.heightCm,
+          weightKg: updatedProfile.weightKg,
+          bodyFatPercent: updatedProfile.bodyFatPercent ?? undefined,
+          goalType: updatedProfile.goalType as 'cut' | 'maintain' | 'bulk',
+          goalRate: updatedProfile.goalRate,
+          activityLevel: updatedProfile.activityLevel as
+            | 'sedentary'
+            | 'lightly_active'
+            | 'moderately_active'
+            | 'very_active'
+            | 'extremely_active',
+          trainingDays: trainingDays as Array<
+            'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
+          >,
+          trainingTime: updatedProfile.trainingTime as 'morning' | 'afternoon' | 'evening' | undefined,
+          dietaryStyle: updatedProfile.dietaryStyle as
+            | 'omnivore'
+            | 'vegetarian'
+            | 'vegan'
+            | 'pescatarian'
+            | 'keto'
+            | 'paleo',
+          allergies,
+          exclusions,
+          cuisinePreferences,
+          mealsPerDay: updatedProfile.mealsPerDay,
+          snacksPerDay: updatedProfile.snacksPerDay,
+          cookingSkill: updatedProfile.cookingSkill,
+          prepTimeMaxMin: updatedProfile.prepTimeMax,
+          macroStyle: updatedProfile.macroStyle as 'balanced' | 'high_protein' | 'low_carb' | 'keto',
+          planDurationDays: 7,
+        };
+
+        // Create plan generation job
+        const job = await prisma.planGenerationJob.create({
+          data: {
+            userId: dbUserId,
+            status: 'pending',
+            intakeData: intakeData as Prisma.InputJsonValue,
+          },
+        });
+
+        regenerationJobId = job.id;
+
+        // Enqueue BullMQ job
+        const bullmqJobData: PlanGenerationJobData = {
+          jobId: job.id,
+          userId: dbUserId,
+          intakeData: intakeData as Record<string, unknown>,
+        };
+
+        try {
+          await planGenerationQueue.add('generate-plan', bullmqJobData, {
+            jobId: job.id,
+          });
+          planRegenerated = true;
+        } catch (queueError) {
+          // If Redis/BullMQ is unavailable, log and continue
+          // The job is still created in DB - worker will pick it up when available
+          logger.warn('BullMQ enqueue failed during calorie adjustment (Redis may be unavailable):', queueError);
+          planRegenerated = true; // Job was created, will be processed eventually
+        }
+      }
+
+      // Create calorie adjustment audit log
+      // adjustmentReason and trendAnalysis are now Prisma Json types - cast to InputJsonValue
+      // Use Prisma.JsonNull for null values in Json fields
+      const adjustment = await prisma.calorieAdjustment.create({
+        data: {
+          userId: dbUserId,
+          previousGoalKcal: profile.goalKcal ?? 0,
+          newGoalKcal: input.newGoalKcal,
+          adjustmentReason: {
+            reason: `Adaptive adjustment based on ${trend.length} weight entries`,
+            profileGoalType: profile.goalType,
+            profileGoalRate: profile.goalRate,
+            regenerationTriggered: planRegenerated,
+            regenerationJobId,
+          } as Prisma.InputJsonValue,
+          weightChangeKg,
+          weightChangeLbs,
+          trendAnalysis: trendAnalysis
+            ? (trendAnalysis as Prisma.InputJsonValue)
+            : Prisma.JsonNull,
+          milestoneAchieved,
+          planRegenerated,
+        },
+      });
+
       return {
         adjustment,
         updatedProfile: {
@@ -503,6 +620,8 @@ export const adaptiveNutritionRouter = router({
           carbsTargetG: updatedProfile.carbsTargetG,
           fatTargetG: updatedProfile.fatTargetG,
         },
+        planRegenerated,
+        regenerationJobId,
       };
     }),
 
@@ -546,4 +665,423 @@ export const adaptiveNutritionRouter = router({
         total: adjustments.length,
       };
     }),
+
+  /**
+   * runWeeklyCheck: Analyze weight trends and suggest calorie adjustments
+   *
+   * This procedure should be called once per week (e.g., on Sunday evening or Monday morning)
+   * to analyze the user's weight trend and determine if a calorie adjustment is needed.
+   *
+   * Returns a suggestion for the user to review - does NOT auto-apply changes.
+   */
+  runWeeklyCheck: protectedProcedure.mutation(async ({ ctx }) => {
+    const { prisma } = ctx;
+    const dbUserId = ctx.dbUserId;
+
+    // Get user's active profile
+    const profile = await prisma.userProfile.findFirst({
+      where: { userId: dbUserId, isActive: true },
+    });
+
+    if (!profile) {
+      throw new TRPCError({
+        code: 'NOT_FOUND',
+        message: 'No active profile found. Please complete onboarding first.',
+      });
+    }
+
+    // Check if a weekly check was already performed this week
+    const oneWeekAgo = new Date();
+    oneWeekAgo.setDate(oneWeekAgo.getDate() - 7);
+
+    const recentAdjustment = await prisma.calorieAdjustment.findFirst({
+      where: {
+        userId: dbUserId,
+        createdAt: { gte: oneWeekAgo },
+      },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    // Get weight entries for trend analysis (at least 2 weeks of data)
+    const twoWeeksAgo = new Date();
+    twoWeeksAgo.setDate(twoWeeksAgo.getDate() - 14);
+
+    const weightEntriesDesc = await prisma.weightEntry.findMany({
+      where: {
+        userId: dbUserId,
+        logDate: { gte: twoWeeksAgo },
+      },
+      orderBy: { logDate: 'desc' },
+      take: 14, // Up to 14 entries (daily for 2 weeks)
+    });
+
+    // Reverse to get chronological order
+    const weightEntries = weightEntriesDesc.reverse();
+
+    if (weightEntries.length < 2) {
+      return {
+        status: 'insufficient_data' as const,
+        message: 'Need at least 2 weight entries over the past 2 weeks to analyze trends.',
+        entriesFound: weightEntries.length,
+        lastCheckDate: recentAdjustment?.createdAt.toISOString() ?? null,
+      };
+    }
+
+    // Calculate weight trend
+    const firstEntry = weightEntries[0];
+    const lastEntry = weightEntries[weightEntries.length - 1];
+    const timeSpanDays = Math.max(
+      1,
+      Math.round(
+        (lastEntry.logDate.getTime() - firstEntry.logDate.getTime()) / (1000 * 60 * 60 * 24)
+      )
+    );
+
+    const weightChangeLbs = lastEntry.weightLbs - firstEntry.weightLbs;
+    const weeklyRateLbs = (weightChangeLbs / timeSpanDays) * 7;
+
+    // Determine if adjustment is needed based on goal type
+    const goalRateLbs = profile.goalRate;
+    const currentGoalKcal = profile.goalKcal ?? 0;
+    let adjustmentNeeded = false;
+    let suggestedKcal = currentGoalKcal;
+    let adjustmentReason = 'Progress is on track - no adjustment needed.';
+
+    // Validate BMR is available - required for safe bounds calculation
+    // Throwing an error is safer than silently using a fallback value
+    if (!profile.bmrKcal) {
+      throw new TRPCError({
+        code: 'PRECONDITION_FAILED',
+        message: 'Metabolic profile is incomplete (missing BMR). Please regenerate your meal plan to recalculate metabolic data.',
+      });
+    }
+
+    // Safe bounds: BMR + configured offsets
+    const bmrKcal = profile.bmrKcal;
+    const minSafeKcal = bmrKcal + ADAPTIVE_NUTRITION_CONFIG.SAFE_BOUNDS.MIN_ABOVE_BMR;
+    const maxSafeKcal = bmrKcal + ADAPTIVE_NUTRITION_CONFIG.SAFE_BOUNDS.MAX_ABOVE_BMR;
+
+    if (profile.goalType === 'cut') {
+      const expectedRate = -goalRateLbs;
+      const deviation = weeklyRateLbs - expectedRate;
+
+      // Plateau detection: less than threshold lbs/week loss for 2+ weeks on a cut
+      if (timeSpanDays >= 14 && weeklyRateLbs > -ADAPTIVE_NUTRITION_CONFIG.PLATEAU_THRESHOLD_LBS_PER_WEEK) {
+        const decrease = Math.round(Math.abs(deviation) * ADAPTIVE_NUTRITION_CONFIG.ADJUSTMENT_MULTIPLIERS.CUT_DECREASE_PER_LB);
+        suggestedKcal = Math.max(minSafeKcal, currentGoalKcal - decrease);
+        adjustmentNeeded = true;
+        adjustmentReason = `Weight loss has stalled (${weeklyRateLbs.toFixed(2)} lbs/week vs ${expectedRate.toFixed(2)} target). Consider reducing calories to restart progress.`;
+      }
+      // Losing too slowly
+      else if (deviation > 0.5) {
+        const decrease = Math.round(deviation * 100);
+        suggestedKcal = Math.max(minSafeKcal, currentGoalKcal - decrease);
+        adjustmentNeeded = true;
+        adjustmentReason = `Weight loss slower than target (${weeklyRateLbs.toFixed(2)} lbs/week vs ${expectedRate.toFixed(2)} target). Decreasing calories may help.`;
+      }
+      // Losing too fast (risk of muscle loss)
+      else if (deviation < -1) {
+        const increase = Math.round(Math.abs(deviation) * 100);
+        suggestedKcal = Math.min(maxSafeKcal, currentGoalKcal + increase);
+        adjustmentNeeded = true;
+        adjustmentReason = `Weight loss faster than target (${weeklyRateLbs.toFixed(2)} lbs/week vs ${expectedRate.toFixed(2)} target). Increasing calories can help preserve muscle.`;
+      }
+    } else if (profile.goalType === 'bulk') {
+      const expectedRate = goalRateLbs;
+      const deviation = weeklyRateLbs - expectedRate;
+
+      // Gaining too slowly or losing
+      if (deviation < -0.5) {
+        const increase = Math.round(Math.abs(deviation) * 150);
+        suggestedKcal = Math.min(maxSafeKcal, currentGoalKcal + increase);
+        adjustmentNeeded = true;
+        adjustmentReason = `Weight gain slower than target (${weeklyRateLbs.toFixed(2)} lbs/week vs ${expectedRate.toFixed(2)} target). Increasing calories will support growth.`;
+      }
+      // Gaining too fast (likely more fat than muscle)
+      else if (deviation > 1) {
+        const decrease = Math.round(deviation * 100);
+        suggestedKcal = Math.max(minSafeKcal, currentGoalKcal - decrease);
+        adjustmentNeeded = true;
+        adjustmentReason = `Weight gain faster than target (${weeklyRateLbs.toFixed(2)} lbs/week vs ${expectedRate.toFixed(2)} target). Decreasing calories can help minimize fat gain.`;
+      }
+    }
+    // For 'maintain' goal, check if weight is drifting significantly
+    else if (profile.goalType === 'maintain') {
+      if (Math.abs(weeklyRateLbs) > 0.5) {
+        if (weeklyRateLbs > 0) {
+          const decrease = Math.round(weeklyRateLbs * 100);
+          suggestedKcal = Math.max(minSafeKcal, currentGoalKcal - decrease);
+          adjustmentNeeded = true;
+          adjustmentReason = `Weight is trending up (${weeklyRateLbs.toFixed(2)} lbs/week). Small calorie decrease recommended to maintain weight.`;
+        } else {
+          const increase = Math.round(Math.abs(weeklyRateLbs) * 100);
+          suggestedKcal = Math.min(maxSafeKcal, currentGoalKcal + increase);
+          adjustmentNeeded = true;
+          adjustmentReason = `Weight is trending down (${weeklyRateLbs.toFixed(2)} lbs/week). Small calorie increase recommended to maintain weight.`;
+        }
+      }
+    }
+
+    // Round to nearest 50 calories
+    suggestedKcal = Math.round(suggestedKcal / ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR) * ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR;
+
+    const trend = {
+      startWeightLbs: firstEntry.weightLbs,
+      currentWeightLbs: lastEntry.weightLbs,
+      weightChangeLbs: Math.round(weightChangeLbs * 10) / 10,
+      weeklyRateLbs: Math.round(weeklyRateLbs * 100) / 100,
+      timeSpanDays,
+      entriesAnalyzed: weightEntries.length,
+    };
+
+    if (!adjustmentNeeded) {
+      return {
+        status: 'no_adjustment_needed' as const,
+        message: adjustmentReason,
+        trend,
+        currentGoalKcal,
+        lastCheckDate: recentAdjustment?.createdAt.toISOString() ?? null,
+      };
+    }
+
+    return {
+      status: 'adjustment_suggested' as const,
+      suggestion: {
+        currentGoalKcal,
+        suggestedGoalKcal: suggestedKcal,
+        calorieDifference: suggestedKcal - currentGoalKcal,
+        reason: adjustmentReason,
+        safeBounds: { min: minSafeKcal, max: maxSafeKcal },
+      },
+      trend,
+      lastCheckDate: recentAdjustment?.createdAt.toISOString() ?? null,
+    };
+  }),
+
+  /**
+   * processActivitySync: Process unprocessed activity syncs and adjust daily calorie targets
+   *
+   * This procedure processes ActivitySync records from fitness platforms (Apple Health,
+   * Google Fit, Fitbit, Oura) and adjusts the user's daily calorie target based on
+   * extra activity calories burned.
+   *
+   * The adjustment uses a 50% replenishment rate: if you burn 500 extra calories from
+   * activity, your daily target increases by 250 calories. This helps support recovery
+   * while maintaining progress toward weight goals.
+   *
+   * Minimum threshold: 200 extra calories must be burned to trigger an adjustment.
+   */
+  processActivitySync: protectedProcedure.mutation(async ({ ctx }) => {
+    const { prisma } = ctx;
+    const dbUserId = ctx.dbUserId;
+
+    // Get start of today in UTC
+    const now = new Date();
+    const startOfToday = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+    // Get unprocessed syncs from today
+    const unprocessed = await prisma.activitySync.findMany({
+      where: {
+        userId: dbUserId,
+        processed: false,
+        syncDate: { gte: startOfToday },
+      },
+      include: {
+        connection: {
+          select: {
+            platform: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    if (unprocessed.length === 0) {
+      return {
+        adjusted: false,
+        message: 'No unprocessed activity syncs found for today.',
+        syncsProcessed: 0,
+        bonusCalories: 0,
+      };
+    }
+
+    // Filter out syncs from inactive connections
+    const validSyncs = unprocessed.filter((sync) => sync.connection.isActive);
+
+    if (validSyncs.length === 0) {
+      return {
+        adjusted: false,
+        message: 'All activity syncs are from inactive connections.',
+        syncsProcessed: 0,
+        bonusCalories: 0,
+      };
+    }
+
+    // Calculate total extra calories burned from active calories
+    // activeCalories represents calories burned from activity (not BMR)
+    const totalActiveCalories = validSyncs.reduce((sum, sync) => {
+      return sum + (sync.activeCalories || 0);
+    }, 0);
+
+    let bonusCalories = 0;
+    let adjusted = false;
+
+    // Only adjust if significant activity (>threshold kcal)
+    // This prevents tiny adjustments from minor activity differences
+    if (totalActiveCalories > ADAPTIVE_NUTRITION_CONFIG.MIN_ACTIVITY_THRESHOLD_KCAL) {
+      // Apply replenishment rate
+      // This balances recovery needs with weight management goals
+      bonusCalories = Math.round(totalActiveCalories * ADAPTIVE_NUTRITION_CONFIG.ACTIVITY_REPLENISHMENT_RATE);
+
+      // Get user's profile to determine base targets
+      const profile = await prisma.userProfile.findFirst({
+        where: { userId: dbUserId, isActive: true },
+      });
+
+      if (profile && profile.goalKcal) {
+        // Extract values before transaction to ensure TypeScript narrowing works
+        // (TypeScript doesn't narrow types inside async callbacks)
+        const baseGoalKcal = profile.goalKcal;
+        const baseProteinG = profile.proteinTargetG;
+        const baseCarbsG = profile.carbsTargetG;
+        const baseFatG = profile.fatTargetG;
+
+        // CRITICAL: Use a transaction to ensure atomicity between DailyLog update
+        // and ActivitySync marking. This prevents race conditions where one succeeds
+        // and the other fails, which could lead to double-processing or orphaned state.
+        await prisma.$transaction(async (tx) => {
+          // Update or create today's DailyLog with bonus calories
+          await tx.dailyLog.upsert({
+            where: {
+              userId_date: {
+                userId: dbUserId,
+                date: startOfToday,
+              },
+            },
+            update: {
+              targetKcal: { increment: bonusCalories },
+            },
+            create: {
+              userId: dbUserId,
+              date: startOfToday,
+              targetKcal: baseGoalKcal + bonusCalories,
+              targetProteinG: baseProteinG,
+              targetCarbsG: baseCarbsG,
+              targetFatG: baseFatG,
+            },
+          });
+
+          // Mark all syncs as processed within the same transaction
+          // This ensures atomic operation - either both succeed or both rollback
+          await tx.activitySync.updateMany({
+            where: {
+              id: { in: validSyncs.map((s) => s.id) },
+            },
+            data: { processed: true },
+          });
+        });
+
+        adjusted = true;
+
+        logger.info(`[processActivitySync] Adjusted daily target for user ${dbUserId}`, {
+          activeCalories: totalActiveCalories,
+          bonusCalories,
+          syncsProcessed: validSyncs.length,
+        });
+      } else {
+        // No profile or goalKcal - still mark syncs as processed to prevent re-processing
+        await prisma.activitySync.updateMany({
+          where: {
+            id: { in: validSyncs.map((s) => s.id) },
+          },
+          data: { processed: true },
+        });
+      }
+    } else {
+      // Below threshold - mark all syncs as processed to prevent re-processing
+      await prisma.activitySync.updateMany({
+        where: {
+          id: { in: validSyncs.map((s) => s.id) },
+        },
+        data: { processed: true },
+      });
+    }
+
+    return {
+      adjusted,
+      message: adjusted
+        ? `Added ${bonusCalories} bonus calories based on ${Math.round(totalActiveCalories)} active calories burned.`
+        : totalActiveCalories > 0
+          ? `Activity logged (${Math.round(totalActiveCalories)} kcal) but below ${ADAPTIVE_NUTRITION_CONFIG.MIN_ACTIVITY_THRESHOLD_KCAL} kcal threshold for bonus.`
+          : 'Activity syncs processed but no active calories recorded.',
+      syncsProcessed: validSyncs.length,
+      totalActiveCalories: Math.round(totalActiveCalories),
+      bonusCalories,
+      platforms: [...new Set(validSyncs.map((s) => s.connection.platform))],
+    };
+  }),
+
+  /**
+   * getActivitySyncStatus: Get summary of activity sync status for the dashboard
+   */
+  getActivitySyncStatus: protectedProcedure.query(async ({ ctx }) => {
+    const { prisma } = ctx;
+    const dbUserId = ctx.dbUserId;
+
+    // Get start of today in UTC
+    const now = new Date();
+    const startOfToday = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+
+    // Get today's syncs
+    const todaysSyncs = await prisma.activitySync.findMany({
+      where: {
+        userId: dbUserId,
+        syncDate: { gte: startOfToday },
+      },
+      include: {
+        connection: {
+          select: {
+            platform: true,
+            isActive: true,
+          },
+        },
+      },
+    });
+
+    // Get today's daily log to see current bonus
+    const todaysLog = await prisma.dailyLog.findUnique({
+      where: {
+        userId_date: {
+          userId: dbUserId,
+          date: startOfToday,
+        },
+      },
+    });
+
+    // Get user profile for base target
+    const profile = await prisma.userProfile.findFirst({
+      where: { userId: dbUserId, isActive: true },
+    });
+
+    const totalActiveCalories = todaysSyncs.reduce((sum, sync) => {
+      return sum + (sync.activeCalories || 0);
+    }, 0);
+
+    const processedCount = todaysSyncs.filter((s) => s.processed).length;
+    const unprocessedCount = todaysSyncs.filter((s) => !s.processed).length;
+
+    return {
+      todaysSyncs: {
+        total: todaysSyncs.length,
+        processed: processedCount,
+        unprocessed: unprocessedCount,
+      },
+      totalActiveCalories: Math.round(totalActiveCalories),
+      bonusApplied: todaysLog?.targetKcal && profile?.goalKcal
+        ? Math.max(0, todaysLog.targetKcal - profile.goalKcal)
+        : 0,
+      platforms: [...new Set(todaysSyncs.map((s) => s.connection.platform))],
+      hasUnprocessed: unprocessedCount > 0,
+    };
+  }),
 });

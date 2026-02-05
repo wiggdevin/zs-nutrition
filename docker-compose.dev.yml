@@ -1,0 +1,46 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: zsn-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: zsn
+      POSTGRES_PASSWORD: zsn_dev
+      POSTGRES_DB: zero_sum_nutrition
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U zsn"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zsn-network
+
+  redis:
+    image: redis:7-alpine
+    container_name: zsn-redis
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - zsn-network
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+
+networks:
+  zsn-network:
+    driver: bridge

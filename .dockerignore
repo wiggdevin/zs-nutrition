@@ -1,0 +1,67 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+.next-101/
+dist/
+.turbo/
+out/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# Credentials
+CREDENTIALS.md
+
+# Database files
+*.db
+*.db-shm
+*.db-wal
+*.sqlite
+*.sqlite3
+
+# Generated files
+*.tsbuildinfo
+*.log
+
+# Git
+.git/
+.github/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+coverage/
+.nyc_output/
+playwright-report/
+test-results/
+
+# Documentation and verification artifacts
+FEATURE-*.md
+SESSION-*.md
+claude-progress*.txt
+*.pid
+
+# Screenshots
+*.png
+!apps/web/public/**/*.png
+
+# Docker
+docker-compose*.yml
+Dockerfile
+.dockerignore
+
+# Vercel
+.vercel/

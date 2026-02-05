@@ -1,0 +1,43 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "buildCommand": "cd ../.. && pnpm turbo run build --filter=@zsn/web",
+  "outputDirectory": ".next",
+  "functions": {
+    "src/app/api/trpc/[trpc]/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/plan/generate/route.ts": {
+      "maxDuration": 60
+    },
+    "src/app/api/plan-stream/[jobId]/route.ts": {
+      "maxDuration": 300
+    },
+    "src/app/api/vision/analyze/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/vision/log-meal/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/plan/pdf/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "crons": [],
+  "headers": [
+    {
+      "source": "/api/plan-stream/:jobId",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "no-cache, no-transform"
+        },
+        {
+          "key": "X-Accel-Buffering",
+          "value": "no"
+        }
+      ]
+    }
+  ]
+}
