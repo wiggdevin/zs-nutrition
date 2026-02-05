@@ -1,6 +1,6 @@
-import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
-import { logger } from "@/lib/safe-logger";
+import { NextResponse } from 'next/server';
+import { cookies } from 'next/headers';
+import { logger } from '@/lib/safe-logger';
 
 export async function POST() {
   if (process.env.NODE_ENV === 'production') {
@@ -11,18 +11,15 @@ export async function POST() {
     const cookieStore = await cookies();
 
     // Delete the dev-user-id cookie by setting it with maxAge=0
-    cookieStore.set("dev-user-id", "", {
+    cookieStore.set('dev-user-id', '', {
       httpOnly: true,
-      path: "/",
+      path: '/',
       maxAge: 0,
     });
 
-    return NextResponse.json({ success: true, message: "Signed out successfully" });
+    return NextResponse.json({ success: true, message: 'Signed out successfully' });
   } catch (error) {
-    logger.error("Dev auth signout error:", error);
-    return NextResponse.json(
-      { error: "Failed to sign out" },
-      { status: 500 }
-    );
+    logger.error('Dev auth signout error:', error);
+    return NextResponse.json({ error: 'Failed to sign out' }, { status: 500 });
   }
 }

@@ -1,5 +1,5 @@
-import NavBar from '@/components/navigation/NavBar'
-import Link from 'next/link'
+import NavBar from '@/components/navigation/NavBar';
+import Link from 'next/link';
 
 export default function NotFound() {
   return (
@@ -18,5 +18,5 @@ export default function NotFound() {
         </div>
       </div>
     </>
-  )
+  );
 }

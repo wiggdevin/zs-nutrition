@@ -4,8 +4,11 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveUser } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { redis } from '@/lib/redis';
 import { logger } from '@/lib/safe-logger';
+
+// OAuth state expiration time in seconds (10 minutes)
+const STATE_EXPIRATION_SECONDS = 600;
 
 /**
  * POST /api/fitness/connect
@@ -15,14 +18,14 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function POST(req: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     const body = await req.json();
@@ -38,13 +41,28 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Platform not supported' }, { status: 400 });
     }
 
-    // Generate OAuth URL based on platform
-    const oauthUrl = generateOAuthUrl(platform, config);
-
-    // Store pending connection state (for OAuth callback verification)
+    // Generate cryptographically secure state ID for CSRF protection
     const stateId = crypto.randomUUID();
-    // In production, store this in Redis with expiration
-    // await redis.setex(`oauth:state:${stateId}`, 600, JSON.stringify({ userId, platform }));
+
+    // Store state in Redis with expiration for OAuth callback verification
+    try {
+      await redis.setex(
+        `oauth-state:${stateId}`,
+        STATE_EXPIRATION_SECONDS,
+        JSON.stringify({
+          userId: dbUserId,
+          clerkUserId,
+          platform,
+          createdAt: Date.now(),
+        })
+      );
+    } catch (redisError) {
+      logger.error('Failed to store OAuth state in Redis:', redisError);
+      return NextResponse.json({ error: 'Failed to initiate connection' }, { status: 500 });
+    }
+
+    // Generate OAuth URL with state parameter
+    const oauthUrl = generateOAuthUrl(platform, config, stateId);
 
     return NextResponse.json({
       oauthUrl,
@@ -53,10 +71,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     logger.error('Error initiating fitness platform connection:', error);
-    return NextResponse.json(
-      { error: 'Failed to initiate connection' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to initiate connection' }, { status: 500 });
   }
 }
 
@@ -99,7 +114,7 @@ function getOAuthConfig(platform: string) {
   }
 }
 
-function generateOAuthUrl(platform: string, config: any): string {
+function generateOAuthUrl(platform: string, config: any, stateId: string): string {
   switch (platform) {
     case 'fitbit':
       const fitbitParams = new URLSearchParams({
@@ -108,6 +123,7 @@ function generateOAuthUrl(platform: string, config: any): string {
         redirect_uri: config.redirectUri,
         scope: config.scopes.join(' '),
         expires_in: '604800', // 7 days
+        state: stateId,
       });
       return `https://www.fitbit.com/oauth2/authorize?${fitbitParams.toString()}`;
 
@@ -117,7 +133,7 @@ function generateOAuthUrl(platform: string, config: any): string {
         client_id: config.clientId,
         redirect_uri: config.redirectUri,
         scope: config.scopes.join(' '),
-        state: crypto.randomUUID(),
+        state: stateId,
       });
       return `https://cloud.ouraring.com/oauth/authorize?${ouraParams.toString()}`;
 
@@ -129,7 +145,7 @@ function generateOAuthUrl(platform: string, config: any): string {
         scope: config.scopes.join(' '),
         access_type: 'offline',
         prompt: 'consent',
-        state: crypto.randomUUID(),
+        state: stateId,
       });
       return `https://accounts.google.com/o/oauth2/v2/auth?${googleParams.toString()}`;
 

@@ -1,38 +1,47 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { toast } from "@/lib/toast-store";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from '@/lib/toast-store';
 
-type ActivityLevel = "sedentary" | "lightly_active" | "moderately_active" | "very_active" | "extremely_active";
-type Weekday = "monday" | "tuesday" | "wednesday" | "thursday" | "friday" | "saturday" | "sunday";
+type ActivityLevel =
+  | 'sedentary'
+  | 'lightly_active'
+  | 'moderately_active'
+  | 'very_active'
+  | 'extremely_active';
+type Weekday = 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday';
 
 const activityLevels: { value: ActivityLevel; label: string; desc: string }[] = [
-  { value: "sedentary", label: "Sedentary", desc: "Desk job, little exercise" },
-  { value: "lightly_active", label: "Lightly Active", desc: "Light exercise 1-3 days/week" },
-  { value: "moderately_active", label: "Moderately Active", desc: "Moderate exercise 3-5 days/week" },
-  { value: "very_active", label: "Very Active", desc: "Hard exercise 6-7 days/week" },
-  { value: "extremely_active", label: "Extremely Active", desc: "Athlete or very physical job" },
+  { value: 'sedentary', label: 'Sedentary', desc: 'Desk job, little exercise' },
+  { value: 'lightly_active', label: 'Lightly Active', desc: 'Light exercise 1-3 days/week' },
+  {
+    value: 'moderately_active',
+    label: 'Moderately Active',
+    desc: 'Moderate exercise 3-5 days/week',
+  },
+  { value: 'very_active', label: 'Very Active', desc: 'Hard exercise 6-7 days/week' },
+  { value: 'extremely_active', label: 'Extremely Active', desc: 'Athlete or very physical job' },
 ];
 
 const weekdays: { value: Weekday; label: string }[] = [
-  { value: "monday", label: "Mon" },
-  { value: "tuesday", label: "Tue" },
-  { value: "wednesday", label: "Wed" },
-  { value: "thursday", label: "Thu" },
-  { value: "friday", label: "Fri" },
-  { value: "saturday", label: "Sat" },
-  { value: "sunday", label: "Sun" },
+  { value: 'monday', label: 'Mon' },
+  { value: 'tuesday', label: 'Tue' },
+  { value: 'wednesday', label: 'Wed' },
+  { value: 'thursday', label: 'Thu' },
+  { value: 'friday', label: 'Fri' },
+  { value: 'saturday', label: 'Sat' },
+  { value: 'sunday', label: 'Sun' },
 ];
 
 export default function SettingsActivity() {
-  const [activityLevel, setActivityLevel] = useState<ActivityLevel | "">("");
+  const [activityLevel, setActivityLevel] = useState<ActivityLevel | ''>('');
   const [trainingDays, setTrainingDays] = useState<Weekday[]>([]);
   const [cookingSkill, setCookingSkill] = useState(5);
   const [cookingSkillError, setCookingSkillError] = useState<string | null>(null);
   const [prepTimeMax, setPrepTimeMax] = useState(30);
   const [prepTimeMaxError, setPrepTimeMaxError] = useState<string | null>(null);
   const [originalData, setOriginalData] = useState({
-    activityLevel: "" as string,
+    activityLevel: '' as string,
     trainingDays: [] as string[],
     cookingSkill: 5,
     prepTimeMax: 30,
@@ -64,19 +73,19 @@ export default function SettingsActivity() {
 
     try {
       setLoading(true);
-      const res = await fetch("/api/settings/profile", { signal: controller.signal });
+      const res = await fetch('/api/settings/profile', { signal: controller.signal });
 
       // If a newer fetch was started, discard this stale response
       if (generation !== fetchGenerationRef.current) return;
 
-      if (!res.ok) throw new Error("Failed to load profile");
+      if (!res.ok) throw new Error('Failed to load profile');
       const data = await res.json();
 
       // Double-check generation again after async json parsing
       if (generation !== fetchGenerationRef.current) return;
 
       const p = data.profile;
-      const al = p.activityLevel || "";
+      const al = p.activityLevel || '';
       const td = p.trainingDays || [];
       const cs = p.cookingSkill || 5;
       const pt = p.prepTimeMax || 30;
@@ -90,7 +99,7 @@ export default function SettingsActivity() {
       if (err instanceof DOMException && err.name === 'AbortError') return;
       // If this is a stale generation, ignore
       if (generation !== fetchGenerationRef.current) return;
-      setError(err instanceof Error ? err.message : "Failed to load");
+      setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
       // Only update loading state if this is still the current generation
       if (generation === fetchGenerationRef.current) {
@@ -128,7 +137,7 @@ export default function SettingsActivity() {
 
       // Client-side validation for cooking skill
       if (cookingSkill < 1 || cookingSkill > 10) {
-        const errorMsg = "Cooking skill must be between 1 and 10";
+        const errorMsg = 'Cooking skill must be between 1 and 10';
         setCookingSkillError(errorMsg);
         setError(errorMsg);
         toast.error(errorMsg);
@@ -138,7 +147,7 @@ export default function SettingsActivity() {
 
       // Client-side validation for prep time max
       if (prepTimeMax < 10 || prepTimeMax > 120) {
-        const errorMsg = "Prep time must be between 10 and 120 minutes";
+        const errorMsg = 'Prep time must be between 10 and 120 minutes';
         setPrepTimeMaxError(errorMsg);
         setError(errorMsg);
         toast.error(errorMsg);
@@ -146,14 +155,14 @@ export default function SettingsActivity() {
         return;
       }
 
-      const res = await fetch("/api/settings/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/settings/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ activityLevel, trainingDays, cookingSkill, prepTimeMax }),
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to save");
+        throw new Error(data.error || 'Failed to save');
       }
       setOriginalData({
         activityLevel,
@@ -162,17 +171,17 @@ export default function SettingsActivity() {
         prepTimeMax,
       });
       setSuccess(true);
-      toast.success("Activity settings saved!");
+      toast.success('Activity settings saved!');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-      toast.error(err instanceof Error ? err.message : "Failed to save activity settings");
+      setError(err instanceof Error ? err.message : 'Failed to save');
+      toast.error(err instanceof Error ? err.message : 'Failed to save activity settings');
     } finally {
       setSaving(false);
     }
   }
 
   function handleReset() {
-    setActivityLevel(originalData.activityLevel as ActivityLevel | "");
+    setActivityLevel(originalData.activityLevel as ActivityLevel | '');
     setTrainingDays(originalData.trainingDays as Weekday[]);
     setCookingSkill(originalData.cookingSkill);
     setPrepTimeMax(originalData.prepTimeMax);
@@ -207,22 +216,30 @@ export default function SettingsActivity() {
       <div className="space-y-5">
         {/* Activity Level */}
         <div>
-          <label id="settings-activity-level-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            id="settings-activity-level-label"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Activity Level
           </label>
           <div className="space-y-2">
             {activityLevels.map(({ value, label, desc }) => (
               <button
                 key={value}
-                onClick={() => { setActivityLevel(value); setSuccess(false); }}
+                onClick={() => {
+                  setActivityLevel(value);
+                  setSuccess(false);
+                }}
                 data-testid={`settings-activity-${value}`}
                 className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                   activityLevel === value
-                    ? "border-primary bg-primary/10"
-                    : "border-border bg-card hover:border-border/80"
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-card hover:border-border/80'
                 }`}
               >
-                <span className={`block text-sm font-bold ${activityLevel === value ? "text-primary" : "text-foreground"}`}>
+                <span
+                  className={`block text-sm font-bold ${activityLevel === value ? 'text-primary' : 'text-foreground'}`}
+                >
                   {label}
                 </span>
                 <span className="block text-xs text-muted-foreground">{desc}</span>
@@ -233,7 +250,10 @@ export default function SettingsActivity() {
 
         {/* Training Days */}
         <div>
-          <label id="settings-training-days-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            id="settings-training-days-label"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Training Days
           </label>
           <div className="grid grid-cols-7 gap-1">
@@ -244,8 +264,8 @@ export default function SettingsActivity() {
                 data-testid={`settings-training-${value}`}
                 className={`rounded-lg border px-0.5 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] ${
                   trainingDays.includes(value)
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card text-muted-foreground hover:border-border/80"
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-card text-muted-foreground hover:border-border/80'
                 }`}
               >
                 {label}
@@ -256,7 +276,10 @@ export default function SettingsActivity() {
 
         {/* Cooking Skill */}
         <div>
-          <label htmlFor="settings-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="settings-cooking-skill"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Cooking Skill: {cookingSkill}/10
           </label>
           <input
@@ -282,21 +305,25 @@ export default function SettingsActivity() {
             <span>Beginner</span>
             <span>Expert</span>
           </div>
-          {cookingSkillError && (
-            <p className="mt-1 text-xs text-red-400">{cookingSkillError}</p>
-          )}
+          {cookingSkillError && <p className="mt-1 text-xs text-red-400">{cookingSkillError}</p>}
         </div>
 
         {/* Prep Time */}
         <div>
-          <label htmlFor="settings-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="settings-prep-time"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Max Prep Time: {prepTimeMax} min
           </label>
           <input
             id="settings-prep-time"
             type="range"
             value={prepTimeMax}
-            onChange={(e) => { setPrepTimeMax(parseInt(e.target.value)); setSuccess(false); }}
+            onChange={(e) => {
+              setPrepTimeMax(parseInt(e.target.value));
+              setSuccess(false);
+            }}
             min={10}
             max={120}
             step={5}
@@ -328,8 +355,8 @@ export default function SettingsActivity() {
           data-testid="settings-activity-save"
           className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
-              ? "bg-primary hover:bg-primary/90 text-background cursor-pointer"
-              : "bg-primary/30 text-white/50 cursor-not-allowed"
+              ? 'bg-primary hover:bg-primary/90 text-background cursor-pointer'
+              : 'bg-primary/30 text-white/50 cursor-not-allowed'
           }`}
         >
           {saving ? (
@@ -338,11 +365,14 @@ export default function SettingsActivity() {
               Saving...
             </span>
           ) : (
-            "Save Changes"
+            'Save Changes'
           )}
         </button>
         {dirty && (
-          <button onClick={handleReset} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors">
+          <button
+            onClick={handleReset}
+            className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors"
+          >
             Reset
           </button>
         )}

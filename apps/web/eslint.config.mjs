@@ -96,7 +96,7 @@ export default [
       "prefer-const": "error",
       "no-var": "error",
       "eqeqeq": ["error", "always"],
-      "curly": ["error", "all"],
+      "curly": "off",
 
       // Next.js specific
       "@next/next/no-html-link-for-pages": "error",

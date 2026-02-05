@@ -15,6 +15,9 @@ out/
 .env.*.local
 !.env.example
 
+# Credentials (never commit)
+CREDENTIALS.md
+
 # Database files
 *.db
 *.db-shm
@@ -47,3 +50,30 @@ test-results/
 
 # Vercel
 .vercel/
+
+# Development artifacts (prevent re-introduction)
+FEATURE-*.md
+SESSION-*.md
+claude-progress*.txt
+check-*.js
+create-test-*.js
+verify-*.js
+test-*.py
+*.pid
+server*.log
+
+# Screenshots (except public assets)
+*.png
+!apps/web/public/**/*.png
+!**/favicon*.png
+
+# Verification directories
+verification/
+screenshots/
+test-output/
+
+# Duplicate lockfiles (only root pnpm-lock.yaml is authoritative)
+apps/**/pnpm-lock.yaml
+packages/**/pnpm-lock.yaml
+workers/**/pnpm-lock.yaml
+**/package-lock.json

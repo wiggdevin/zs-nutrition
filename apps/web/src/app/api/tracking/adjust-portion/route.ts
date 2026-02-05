@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireActiveUser } from '@/lib/auth'
-import { logger } from '@/lib/safe-logger'
-import { recalculateDailyLog, calculateAdherenceScore } from '@/server/utils/daily-log'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
+import { logger } from '@/lib/safe-logger';
+import { recalculateDailyLog, calculateAdherenceScore } from '@/server/utils/daily-log';
 
 /**
  * PUT /api/tracking/adjust-portion
@@ -11,63 +11,63 @@ import { recalculateDailyLog, calculateAdherenceScore } from '@/server/utils/dai
  */
 export async function PUT(request: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
-    const user = await prisma.user.findUnique({ where: { clerkUserId } })
+    const user = await prisma.user.findUnique({ where: { clerkUserId } });
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 })
+      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
-    let body: any
+    let body: any;
     try {
-      body = await request.json()
+      body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
     }
-    const { trackedMealId, newPortion } = body
+    const { trackedMealId, newPortion } = body;
 
     if (!trackedMealId || typeof trackedMealId !== 'string') {
-      return NextResponse.json({ error: 'trackedMealId is required' }, { status: 400 })
+      return NextResponse.json({ error: 'trackedMealId is required' }, { status: 400 });
     }
 
     if (typeof newPortion !== 'number' || newPortion <= 0 || newPortion > 10) {
       return NextResponse.json(
         { error: 'newPortion must be a number between 0.1 and 10' },
         { status: 400 }
-      )
+      );
     }
 
     // Get the tracked meal, ensuring it belongs to this user
     const trackedMeal = await prisma.trackedMeal.findFirst({
       where: { id: trackedMealId, userId: user.id },
-    })
+    });
 
     if (!trackedMeal) {
-      return NextResponse.json({ error: 'Tracked meal not found' }, { status: 404 })
+      return NextResponse.json({ error: 'Tracked meal not found' }, { status: 404 });
     }
 
     // Calculate base nutrition values (per 1.0 portion)
-    const oldPortion = trackedMeal.portion || 1.0
-    const baseKcal = trackedMeal.kcal / oldPortion
-    const baseProteinG = trackedMeal.proteinG / oldPortion
-    const baseCarbsG = trackedMeal.carbsG / oldPortion
-    const baseFatG = trackedMeal.fatG / oldPortion
-    const baseFiberG = trackedMeal.fiberG !== null ? trackedMeal.fiberG / oldPortion : null
+    const oldPortion = trackedMeal.portion || 1.0;
+    const baseKcal = trackedMeal.kcal / oldPortion;
+    const baseProteinG = trackedMeal.proteinG / oldPortion;
+    const baseCarbsG = trackedMeal.carbsG / oldPortion;
+    const baseFatG = trackedMeal.fatG / oldPortion;
+    const baseFiberG = trackedMeal.fiberG !== null ? trackedMeal.fiberG / oldPortion : null;
 
     // Apply new portion multiplier
-    const newKcal = Math.round(baseKcal * newPortion)
-    const newProteinG = Math.round(baseProteinG * newPortion * 10) / 10
-    const newCarbsG = Math.round(baseCarbsG * newPortion * 10) / 10
-    const newFatG = Math.round(baseFatG * newPortion * 10) / 10
-    const newFiberG = baseFiberG !== null ? Math.round(baseFiberG * newPortion * 10) / 10 : null
+    const newKcal = Math.round(baseKcal * newPortion);
+    const newProteinG = Math.round(baseProteinG * newPortion * 10) / 10;
+    const newCarbsG = Math.round(baseCarbsG * newPortion * 10) / 10;
+    const newFatG = Math.round(baseFatG * newPortion * 10) / 10;
+    const newFiberG = baseFiberG !== null ? Math.round(baseFiberG * newPortion * 10) / 10 : null;
 
     // Update the tracked meal
     const updatedMeal = await prisma.trackedMeal.update({
@@ -80,24 +80,26 @@ export async function PUT(request: NextRequest) {
         fatG: newFatG,
         fiberG: newFiberG,
       },
-    })
+    });
 
     // Recalculate DailyLog totals from ALL tracked meals for this day
-    const loggedDate = new Date(Date.UTC(
-      trackedMeal.loggedDate.getUTCFullYear(),
-      trackedMeal.loggedDate.getUTCMonth(),
-      trackedMeal.loggedDate.getUTCDate()
-    ))
+    const loggedDate = new Date(
+      Date.UTC(
+        trackedMeal.loggedDate.getUTCFullYear(),
+        trackedMeal.loggedDate.getUTCMonth(),
+        trackedMeal.loggedDate.getUTCDate()
+      )
+    );
 
     // Recalculate DailyLog totals using database aggregate
-    const totals = await recalculateDailyLog(prisma, user.id, loggedDate)
+    const totals = await recalculateDailyLog(prisma, user.id, loggedDate);
 
     // Update DailyLog with recalculated totals
     const dailyLog = await prisma.dailyLog.findUnique({
       where: {
         userId_date: { userId: user.id, date: loggedDate },
       },
-    })
+    });
 
     if (dailyLog) {
       const adherenceScore = calculateAdherenceScore({
@@ -109,7 +111,7 @@ export async function PUT(request: NextRequest) {
         targetProteinG: dailyLog.targetProteinG,
         targetCarbsG: dailyLog.targetCarbsG,
         targetFatG: dailyLog.targetFatG,
-      })
+      });
 
       await prisma.dailyLog.update({
         where: { id: dailyLog.id },
@@ -120,7 +122,7 @@ export async function PUT(request: NextRequest) {
           actualFatG: totals.actualFatG,
           adherenceScore,
         },
-      })
+      });
     }
 
     return NextResponse.json({
@@ -140,12 +142,9 @@ export async function PUT(request: NextRequest) {
         actualCarbsG: totals.actualCarbsG,
         actualFatG: totals.actualFatG,
       },
-    })
+    });
   } catch (error) {
-    logger.error('Adjust portion error:', error)
-    return NextResponse.json(
-      { error: 'Internal server error' },
-      { status: 500 }
-    )
+    logger.error('Adjust portion error:', error);
+    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

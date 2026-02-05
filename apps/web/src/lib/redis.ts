@@ -1,9 +1,9 @@
-import IORedis from 'ioredis'
-import { logger } from '@/lib/safe-logger'
+import IORedis from 'ioredis';
+import { logger } from '@/lib/safe-logger';
 
 const globalForRedis = globalThis as unknown as {
-  redis: IORedis | undefined
-}
+  redis: IORedis | undefined;
+};
 
 function createRedisConnection() {
   // When using mock queue, don't create a real Redis connection
@@ -15,15 +15,17 @@ function createRedisConnection() {
       enableReadyCheck: false,
       lazyConnect: true,
       retryStrategy: () => null, // Don't retry in mock mode
-    })
+    });
   }
 
-  const redisUrl = process.env.REDIS_URL
+  const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) {
     if (process.env.NODE_ENV === 'production') {
-      throw new Error('REDIS_URL is required in production. Set it in your Vercel environment variables.')
+      throw new Error(
+        'REDIS_URL is required in production. Set it in your Vercel environment variables.'
+      );
     }
-    logger.warn('REDIS_URL not configured, using lazy Redis connection for development')
+    logger.warn('REDIS_URL not configured, using lazy Redis connection for development');
     return new IORedis({
       host: '127.0.0.1',
       port: 6379,
@@ -34,22 +36,21 @@ function createRedisConnection() {
         if (times > 3) return null;
         return Math.min(times * 500, 2000);
       },
-    })
+    });
   }
   return new IORedis(redisUrl, {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
     ...(redisUrl.startsWith('rediss://') ? { tls: {} } : {}),
-  })
+  });
 }
 
-export const redis =
-  globalForRedis.redis ?? createRedisConnection()
+export const redis = globalForRedis.redis ?? createRedisConnection();
 
-if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis
+if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis;
 
 export function createNewRedisConnection() {
-  return createRedisConnection()
+  return createRedisConnection();
 }
 
 export async function checkRedisHealth(): Promise<boolean> {

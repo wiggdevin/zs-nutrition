@@ -1,61 +1,61 @@
-'use client'
+'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react'
-import { useSearchParams } from 'next/navigation'
-import NavBar from '@/components/navigation/NavBar'
-import FoodSearch from '@/components/tracking/FoodSearch'
-import ManualEntryForm from '@/components/tracking/ManualEntryForm'
-import QuickAddForm from '@/components/tracking/QuickAddForm'
-import FoodScan from '@/components/tracking/FoodScan'
-import { useTrackingStore } from '@/lib/stores/useTrackingStore'
-import Link from 'next/link'
+import { useState, useEffect, useRef, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
+import NavBar from '@/components/navigation/NavBar';
+import FoodSearch from '@/components/tracking/FoodSearch';
+import ManualEntryForm from '@/components/tracking/ManualEntryForm';
+import QuickAddForm from '@/components/tracking/QuickAddForm';
+import FoodScan from '@/components/tracking/FoodScan';
+import { useTrackingStore } from '@/lib/stores/useTrackingStore';
+import Link from 'next/link';
 
-export const dynamic = 'force-dynamic'
+export const dynamic = 'force-dynamic';
 
 function TrackingPageContent() {
-  const searchParams = useSearchParams()
-  const mode = searchParams.get('mode') // 'plan', 'search', 'quick', or null (show all)
-  const foodSearchRef = useRef<HTMLDivElement>(null)
-  const quickAddRef = useRef<HTMLDivElement>(null)
-  const manualEntryRef = useRef<HTMLDivElement>(null)
+  const searchParams = useSearchParams();
+  const mode = searchParams.get('mode'); // 'plan', 'search', 'quick', or null (show all)
+  const foodSearchRef = useRef<HTMLDivElement>(null);
+  const quickAddRef = useRef<HTMLDivElement>(null);
+  const manualEntryRef = useRef<HTMLDivElement>(null);
 
   // Read from Zustand store (same state as dashboard)
-  const targets = useTrackingStore((state) => state.targets)
-  const current = useTrackingStore((state) => state.current)
-  const trackedMeals = useTrackingStore((state) => state.trackedMeals)
-  const isLoading = useTrackingStore((state) => state.isLoading)
-  const planId = useTrackingStore((state) => state.planId)
+  const targets = useTrackingStore((state) => state.targets);
+  const current = useTrackingStore((state) => state.current);
+  const trackedMeals = useTrackingStore((state) => state.trackedMeals);
+  const isLoading = useTrackingStore((state) => state.isLoading);
+  const planId = useTrackingStore((state) => state.planId);
 
   // Scroll to and focus the relevant section based on mode
   useEffect(() => {
     // Small delay to ensure DOM is rendered
     const timer = setTimeout(() => {
       if (mode === 'search' && foodSearchRef.current) {
-        foodSearchRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        foodSearchRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         // Focus the first input in the food search section
-        const input = foodSearchRef.current.querySelector('input') as HTMLInputElement
-        if (input) input.focus()
+        const input = foodSearchRef.current.querySelector('input') as HTMLInputElement;
+        if (input) input.focus();
       } else if (mode === 'quick' && quickAddRef.current) {
-        quickAddRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        quickAddRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         // Focus the first input in the quick add section
-        const input = quickAddRef.current.querySelector('input') as HTMLInputElement
-        if (input) input.focus()
+        const input = quickAddRef.current.querySelector('input') as HTMLInputElement;
+        if (input) input.focus();
       } else if (mode === 'manual' && manualEntryRef.current) {
-        manualEntryRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+        manualEntryRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         // Focus the first input in the manual entry section
-        const input = manualEntryRef.current.querySelector('input') as HTMLInputElement
-        if (input) input.focus()
+        const input = manualEntryRef.current.querySelector('input') as HTMLInputElement;
+        if (input) input.focus();
       } else if (mode === 'plan') {
         // For plan mode, redirect to meal plan page if they have a plan
         // Otherwise, show food search with a message
         if (!planId && foodSearchRef.current) {
-          foodSearchRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' })
+          foodSearchRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
       }
-    }, 100)
+    }, 100);
 
-    return () => clearTimeout(timer)
-  }, [mode, planId])
+    return () => clearTimeout(timer);
+  }, [mode, planId]);
 
   return (
     <>
@@ -64,7 +64,9 @@ function TrackingPageContent() {
         <div className="min-h-screen bg-background text-foreground p-6 md:p-8">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-2xl font-heading uppercase tracking-wider mb-2">Tracking</h1>
-            <p className="text-muted-foreground mb-6">Search and log foods to track your daily macros.</p>
+            <p className="text-muted-foreground mb-6">
+              Search and log foods to track your daily macros.
+            </p>
 
             {/* Daily Totals - shows same data as dashboard (from Zustand) */}
             <div
@@ -78,28 +80,40 @@ function TrackingPageContent() {
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-primary" />
                   <span className="text-sm text-muted-foreground">Calories</span>
-                  <span data-testid="tracking-calories" className="text-sm font-bold text-foreground ml-auto">
+                  <span
+                    data-testid="tracking-calories"
+                    className="text-sm font-bold text-foreground ml-auto"
+                  >
                     {current.calories} / {targets.calories}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-chart-3" />
                   <span className="text-sm text-muted-foreground">Protein</span>
-                  <span data-testid="tracking-protein" className="text-sm font-bold text-foreground ml-auto">
+                  <span
+                    data-testid="tracking-protein"
+                    className="text-sm font-bold text-foreground ml-auto"
+                  >
                     {current.protein}g / {targets.protein}g
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-success" />
                   <span className="text-sm text-muted-foreground">Carbs</span>
-                  <span data-testid="tracking-carbs" className="text-sm font-bold text-foreground ml-auto">
+                  <span
+                    data-testid="tracking-carbs"
+                    className="text-sm font-bold text-foreground ml-auto"
+                  >
                     {current.carbs}g / {targets.carbs}g
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="w-2 h-2 rounded-full bg-warning" />
                   <span className="text-sm text-muted-foreground">Fat</span>
-                  <span data-testid="tracking-fat" className="text-sm font-bold text-foreground ml-auto">
+                  <span
+                    data-testid="tracking-fat"
+                    className="text-sm font-bold text-foreground ml-auto"
+                  >
                     {current.fat}g / {targets.fat}g
                   </span>
                 </div>
@@ -128,10 +142,12 @@ function TrackingPageContent() {
             )}
 
             {/* AI-Powered Food Scan - always shown */}
-            <FoodScan onMealLogged={() => {
-              // Refresh tracking data when meal is logged
-              window.location.reload()
-            }} />
+            <FoodScan
+              onMealLogged={() => {
+                // Refresh tracking data when meal is logged
+                window.location.reload();
+              }}
+            />
 
             {/* Food Search - shown when mode is null, 'search', or 'plan' (if no planId) */}
             {!mode || mode === 'search' || (mode === 'plan' && !planId) ? (
@@ -162,7 +178,12 @@ function TrackingPageContent() {
                   className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
+                    />
                   </svg>
                   Show all logging options
                 </Link>
@@ -177,15 +198,17 @@ function TrackingPageContent() {
 
 export default function TrackingPage() {
   return (
-    <Suspense fallback={
-      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
-          <p className="text-sm text-muted-foreground">Loading...</p>
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
+          <div className="text-center">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+            <p className="text-sm text-muted-foreground">Loading...</p>
+          </div>
         </div>
-      </div>
-    }>
+      }
+    >
       <TrackingPageContent />
     </Suspense>
-  )
+  );
 }

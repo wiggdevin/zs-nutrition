@@ -39,14 +39,14 @@ interface PlanDay {
  */
 export async function POST(req: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Rate limit: 10 meal swaps per hour per user
@@ -85,9 +85,10 @@ export async function POST(req: NextRequest) {
     // Parse the validated plan
     let validatedPlan: { days: PlanDay[]; [key: string]: unknown };
     try {
-      validatedPlan = typeof mealPlan.validatedPlan === 'string'
-        ? JSON.parse(mealPlan.validatedPlan)
-        : mealPlan.validatedPlan as { days: PlanDay[]; [key: string]: unknown };
+      validatedPlan =
+        typeof mealPlan.validatedPlan === 'string'
+          ? JSON.parse(mealPlan.validatedPlan)
+          : (mealPlan.validatedPlan as { days: PlanDay[]; [key: string]: unknown });
     } catch {
       return NextResponse.json({ error: 'Failed to parse plan data' }, { status: 500 });
     }

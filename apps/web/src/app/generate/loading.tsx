@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function GenerateLoading() {
   return (
@@ -14,5 +14,5 @@ export default function GenerateLoading() {
         <Skeleton className="h-12 w-48 mx-auto rounded-xl" />
       </div>
     </div>
-  )
+  );
 }

@@ -1,8 +1,8 @@
-import { NextRequest, NextResponse } from "next/server";
-import { prisma } from "@/lib/prisma";
-import { cookies } from "next/headers";
-import { logger } from "@/lib/safe-logger";
-import { isDevMode } from "@/lib/dev-mode";
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { cookies } from 'next/headers';
+import { logger } from '@/lib/safe-logger';
+import { isDevMode } from '@/lib/dev-mode';
 
 /**
  * Validates that a redirect URL is safe (internal URL only)
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   // Only allow in dev mode
   if (!isDevMode) {
     return NextResponse.json(
-      { error: "Dev auth is only available in development mode" },
+      { error: 'Dev auth is only available in development mode' },
       { status: 403 }
     );
   }
@@ -33,11 +33,8 @@ export async function POST(request: NextRequest) {
     const body = await request.json();
     const { email, redirectUrl } = body;
 
-    if (!email || !email.includes("@")) {
-      return NextResponse.json(
-        { error: "Valid email is required" },
-        { status: 400 }
-      );
+    if (!email || !email.includes('@')) {
+      return NextResponse.json({ error: 'Valid email is required' }, { status: 400 });
     }
 
     // Find the user by email
@@ -54,7 +51,7 @@ export async function POST(request: NextRequest) {
 
     if (!user) {
       return NextResponse.json(
-        { error: "No account found with this email. Please sign up first." },
+        { error: 'No account found with this email. Please sign up first.' },
         { status: 404 }
       );
     }
@@ -63,9 +60,9 @@ export async function POST(request: NextRequest) {
     if (!user.isActive) {
       return NextResponse.json(
         {
-          error: "This account has been deactivated.",
-          code: "ACCOUNT_DEACTIVATED",
-          message: "Your account has been deactivated and is no longer accessible."
+          error: 'This account has been deactivated.',
+          code: 'ACCOUNT_DEACTIVATED',
+          message: 'Your account has been deactivated and is no longer accessible.',
         },
         { status: 403 }
       );
@@ -73,12 +70,12 @@ export async function POST(request: NextRequest) {
 
     // Set dev auth cookie
     const cookieStore = await cookies();
-    cookieStore.set("dev-user-id", user.id, {
+    cookieStore.set('dev-user-id', user.id, {
       httpOnly: true,
       secure: (process.env.NODE_ENV as string) === 'production',
-      path: "/",
+      path: '/',
       maxAge: 60 * 60 * 24 * 7, // 1 week
-      sameSite: "lax",
+      sameSite: 'lax',
     });
 
     // Determine if user has completed onboarding
@@ -94,7 +91,7 @@ export async function POST(request: NextRequest) {
     } else {
       // Returning user with profile → dashboard
       // User without completed onboarding → onboarding
-      redirectTo = hasCompletedOnboarding || hasProfile ? "/dashboard" : "/onboarding";
+      redirectTo = hasCompletedOnboarding || hasProfile ? '/dashboard' : '/onboarding';
     }
 
     return NextResponse.json({
@@ -104,13 +101,10 @@ export async function POST(request: NextRequest) {
       redirectTo,
       hasCompletedOnboarding,
       hasProfile,
-      message: "Signed in successfully",
+      message: 'Signed in successfully',
     });
   } catch (error: any) {
-    logger.error("Dev auth signin error:", error);
-    return NextResponse.json(
-      { error: "Failed to sign in" },
-      { status: 500 }
-    );
+    logger.error('Dev auth signin error:', error);
+    return NextResponse.json({ error: 'Failed to sign in' }, { status: 500 });
   }
 }

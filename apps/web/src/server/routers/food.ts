@@ -1,18 +1,18 @@
-import { z } from 'zod'
-import { protectedProcedure, router } from '../trpc'
-import { FatSecretAdapter } from '@zero-sum/nutrition-engine'
+import { z } from 'zod';
+import { protectedProcedure, router } from '../trpc';
+import { FatSecretAdapter } from '@zero-sum/nutrition-engine';
 
 // Singleton FatSecret adapter instance
-let fatSecretAdapter: FatSecretAdapter | null = null
+let fatSecretAdapter: FatSecretAdapter | null = null;
 
 function getFatSecretAdapter(): FatSecretAdapter {
   if (!fatSecretAdapter) {
     fatSecretAdapter = new FatSecretAdapter(
       process.env.FATSECRET_CLIENT_ID || '',
       process.env.FATSECRET_CLIENT_SECRET || ''
-    )
+    );
   }
-  return fatSecretAdapter
+  return fatSecretAdapter;
 }
 
 /**
@@ -30,9 +30,9 @@ export const foodRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const adapter = getFatSecretAdapter()
-      const suggestions = await adapter.autocomplete(input.query)
-      return { suggestions }
+      const adapter = getFatSecretAdapter();
+      const suggestions = await adapter.autocomplete(input.query);
+      return { suggestions };
     }),
 
   /**
@@ -49,9 +49,9 @@ export const foodRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const adapter = getFatSecretAdapter()
-      const results = await adapter.searchFoods(input.query, input.maxResults, input.pageNumber)
-      return { results, pageNumber: input.pageNumber }
+      const adapter = getFatSecretAdapter();
+      const results = await adapter.searchFoods(input.query, input.maxResults, input.pageNumber);
+      return { results, pageNumber: input.pageNumber };
     }),
 
   /**
@@ -65,8 +65,8 @@ export const foodRouter = router({
       })
     )
     .query(async ({ input }) => {
-      const adapter = getFatSecretAdapter()
-      const food = await adapter.getFood(input.foodId)
-      return { food }
+      const adapter = getFatSecretAdapter();
+      const food = await adapter.getFood(input.foodId);
+      return { food };
     }),
-})
+});

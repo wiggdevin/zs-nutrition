@@ -15,18 +15,18 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function GET(req: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId
+    const userId = clerkUserId;
 
     const searchParams = req.nextUrl.searchParams;
     const dateParam = searchParams.get('date');
@@ -45,7 +45,7 @@ export async function GET(req: NextRequest) {
     if (!profile || !profile.goalKcal) {
       return NextResponse.json(
         { error: 'User profile not found or calorie target not set' },
-        { status: 404 },
+        { status: 404 }
       );
     }
 
@@ -99,18 +99,9 @@ export async function GET(req: NextRequest) {
     }
 
     // Calculate calorie adjustment based on aggregated data
-    const totalActiveCalories = activities.reduce(
-      (sum, a) => sum + (a.activeCalories || 0),
-      0,
-    );
-    const totalWorkouts = activities.reduce(
-      (sum, a) => sum + (a.workoutCount || 0),
-      0,
-    );
-    const totalActiveMinutes = activities.reduce(
-      (sum, a) => sum + (a.activeMinutes || 0),
-      0,
-    );
+    const totalActiveCalories = activities.reduce((sum, a) => sum + (a.activeCalories || 0), 0);
+    const totalWorkouts = activities.reduce((sum, a) => sum + (a.workoutCount || 0), 0);
+    const totalActiveMinutes = activities.reduce((sum, a) => sum + (a.activeMinutes || 0), 0);
 
     // Use the calculator to determine adjustment
     const adjustment = calculateCalorieAdjustment(baseTarget, {
@@ -134,10 +125,7 @@ export async function GET(req: NextRequest) {
     });
   } catch (error) {
     logger.error('Error fetching activity data:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch activity data' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to fetch activity data' }, { status: 500 });
   }
 }
 
@@ -148,27 +136,24 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId
+    const userId = clerkUserId;
 
     const body = await req.json();
     const { platform, syncDate, activityData } = body;
 
     if (!platform || !syncDate) {
-      return NextResponse.json(
-        { error: 'Platform and syncDate are required' },
-        { status: 400 },
-      );
+      return NextResponse.json({ error: 'Platform and syncDate are required' }, { status: 400 });
     }
 
     // Get or create connection
@@ -246,9 +231,6 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     logger.error('Error saving activity data:', error);
-    return NextResponse.json(
-      { error: 'Failed to save activity data' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to save activity data' }, { status: 500 });
   }
 }

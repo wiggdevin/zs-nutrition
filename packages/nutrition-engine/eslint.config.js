@@ -58,11 +58,11 @@ export default [
       "@typescript-eslint/no-non-null-assertion": "warn",
 
       // General code quality
-      "no-console": ["warn", { allow: ["warn", "error"] }],
+      "no-console": ["error", { allow: ["warn", "error"] }],
       "prefer-const": "error",
       "no-var": "error",
       "eqeqeq": ["error", "always"],
-      "curly": ["error", "all"],
+      "curly": "off",
     },
   },
 ];

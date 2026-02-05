@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
+import { useEffect, useState } from 'react';
 
 interface ConfettiProps {
   duration?: number;
@@ -10,20 +10,20 @@ interface ConfettiProps {
 // Confetti colors use CSS variable references resolved at render time via getComputedStyle.
 // Fallback hex values match the :root defaults in globals.css.
 function getConfettiColors(): string[] {
-  if (typeof window === "undefined") {
-    return ["#f97316", "#22c55e", "#3b82f6", "#a855f7", "#f59e0b", "#ef4444", "#06b6d4", "#ec4899"];
+  if (typeof window === 'undefined') {
+    return ['#f97316', '#22c55e', '#3b82f6', '#a855f7', '#f59e0b', '#ef4444', '#06b6d4', '#ec4899'];
   }
   const style = getComputedStyle(document.documentElement);
   const get = (v: string, fallback: string) => style.getPropertyValue(v).trim() || fallback;
   return [
-    get("--primary", "#f97316"),
-    get("--color-success", "#22c55e"),
-    get("--chart-3", "#3b82f6"),
-    get("--chart-4", "#a855f7"),
-    get("--color-warning", "#f59e0b"),
-    get("--destructive", "#ef4444"),
-    "#06b6d4", // Cyan (no semantic token)
-    "#ec4899", // Pink (no semantic token)
+    get('--primary', '#f97316'),
+    get('--color-success', '#22c55e'),
+    get('--chart-3', '#3b82f6'),
+    get('--chart-4', '#a855f7'),
+    get('--color-warning', '#f59e0b'),
+    get('--destructive', '#ef4444'),
+    '#06b6d4', // Cyan (no semantic token)
+    '#ec4899', // Pink (no semantic token)
   ];
 }
 

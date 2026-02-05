@@ -11,14 +11,14 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function GET() {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Find the user
@@ -51,24 +51,29 @@ export async function GET() {
     });
 
     if (!activePlan) {
-      return NextResponse.json({ error: 'No active meal plan found', hasActivePlan: false }, { status: 404 });
+      return NextResponse.json(
+        { error: 'No active meal plan found', hasActivePlan: false },
+        { status: 404 }
+      );
     }
 
     // Parse the validated plan JSON
     let validatedPlan = null;
     try {
-      validatedPlan = typeof activePlan.validatedPlan === 'string'
-        ? JSON.parse(activePlan.validatedPlan)
-        : activePlan.validatedPlan;
+      validatedPlan =
+        typeof activePlan.validatedPlan === 'string'
+          ? JSON.parse(activePlan.validatedPlan)
+          : activePlan.validatedPlan;
     } catch {
       logger.error('Failed to parse validatedPlan');
     }
 
     let metabolicProfile = null;
     try {
-      metabolicProfile = typeof activePlan.metabolicProfile === 'string'
-        ? JSON.parse(activePlan.metabolicProfile)
-        : activePlan.metabolicProfile;
+      metabolicProfile =
+        typeof activePlan.metabolicProfile === 'string'
+          ? JSON.parse(activePlan.metabolicProfile)
+          : activePlan.metabolicProfile;
     } catch {
       logger.error('Failed to parse metabolicProfile');
     }

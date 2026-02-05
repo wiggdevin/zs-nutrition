@@ -1,4 +1,4 @@
-'use client'
+'use client';
 
 import {
   BarChart,
@@ -14,7 +14,7 @@ import {
   PieChart,
   Pie,
   Cell,
-} from 'recharts'
+} from 'recharts';
 
 const macroData = [
   { name: 'Mon', protein: 140, carbs: 220, fat: 65 },
@@ -24,7 +24,7 @@ const macroData = [
   { name: 'Fri', protein: 145, carbs: 230, fat: 68 },
   { name: 'Sat', protein: 135, carbs: 250, fat: 72 },
   { name: 'Sun', protein: 150, carbs: 215, fat: 66 },
-]
+];
 
 const calorieData = [
   { name: 'Mon', actual: 2100, target: 2200 },
@@ -34,13 +34,13 @@ const calorieData = [
   { name: 'Fri', actual: 2250, target: 2200 },
   { name: 'Sat', actual: 2400, target: 2200 },
   { name: 'Sun', actual: 2180, target: 2200 },
-]
+];
 
 const pieData = [
   { name: 'Protein', value: 35, color: 'var(--chart-3)' },
   { name: 'Carbs', value: 45, color: 'var(--color-success)' },
   { name: 'Fat', value: 20, color: 'var(--color-warning)' },
-]
+];
 
 export default function TestChart() {
   return (
@@ -51,7 +51,10 @@ export default function TestChart() {
       </p>
 
       {/* Bar Chart — Macro Breakdown */}
-      <section data-testid="bar-chart-section" className="bg-card border border-secondary rounded-lg p-4">
+      <section
+        data-testid="bar-chart-section"
+        className="bg-card border border-secondary rounded-lg p-4"
+      >
         <h2 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
           Weekly Macro Breakdown (Bar Chart)
         </h2>
@@ -59,8 +62,16 @@ export default function TestChart() {
           <ResponsiveContainer width="100%" height={300}>
             <BarChart data={macroData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--secondary)" />
-              <XAxis dataKey="name" tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} stroke="var(--secondary)" />
-              <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} stroke="var(--secondary)" unit="g" />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                stroke="var(--secondary)"
+              />
+              <YAxis
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                stroke="var(--secondary)"
+                unit="g"
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'var(--card)',
@@ -69,9 +80,21 @@ export default function TestChart() {
                   color: '#fff',
                 }}
               />
-              <Legend wrapperStyle={{ color: 'var(--muted-foreground)', fontSize: 13, paddingTop: 8 }} />
-              <Bar dataKey="protein" name="Protein (g)" fill="var(--chart-3)" radius={[4, 4, 0, 0]} />
-              <Bar dataKey="carbs" name="Carbs (g)" fill="var(--color-success)" radius={[4, 4, 0, 0]} />
+              <Legend
+                wrapperStyle={{ color: 'var(--muted-foreground)', fontSize: 13, paddingTop: 8 }}
+              />
+              <Bar
+                dataKey="protein"
+                name="Protein (g)"
+                fill="var(--chart-3)"
+                radius={[4, 4, 0, 0]}
+              />
+              <Bar
+                dataKey="carbs"
+                name="Carbs (g)"
+                fill="var(--color-success)"
+                radius={[4, 4, 0, 0]}
+              />
               <Bar dataKey="fat" name="Fat (g)" fill="var(--color-warning)" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>
@@ -79,7 +102,10 @@ export default function TestChart() {
       </section>
 
       {/* Line Chart — Calories Actual vs Target */}
-      <section data-testid="line-chart-section" className="bg-card border border-secondary rounded-lg p-4">
+      <section
+        data-testid="line-chart-section"
+        className="bg-card border border-secondary rounded-lg p-4"
+      >
         <h2 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
           Calories — Actual vs Target (Line Chart)
         </h2>
@@ -87,8 +113,15 @@ export default function TestChart() {
           <ResponsiveContainer width="100%" height={300}>
             <LineChart data={calorieData} margin={{ top: 5, right: 20, left: 10, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" stroke="var(--secondary)" />
-              <XAxis dataKey="name" tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} stroke="var(--secondary)" />
-              <YAxis tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }} stroke="var(--secondary)" />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                stroke="var(--secondary)"
+              />
+              <YAxis
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 12 }}
+                stroke="var(--secondary)"
+              />
               <Tooltip
                 contentStyle={{
                   backgroundColor: 'var(--card)',
@@ -97,7 +130,9 @@ export default function TestChart() {
                   color: '#fff',
                 }}
               />
-              <Legend wrapperStyle={{ color: 'var(--muted-foreground)', fontSize: 13, paddingTop: 8 }} />
+              <Legend
+                wrapperStyle={{ color: 'var(--muted-foreground)', fontSize: 13, paddingTop: 8 }}
+              />
               <Line
                 type="monotone"
                 dataKey="target"
@@ -122,7 +157,10 @@ export default function TestChart() {
       </section>
 
       {/* Pie Chart — Macro Distribution */}
-      <section data-testid="pie-chart-section" className="bg-card border border-secondary rounded-lg p-4">
+      <section
+        data-testid="pie-chart-section"
+        className="bg-card border border-secondary rounded-lg p-4"
+      >
         <h2 className="text-white font-semibold text-sm uppercase tracking-wider mb-4">
           Macro Distribution (Pie Chart)
         </h2>
@@ -157,5 +195,5 @@ export default function TestChart() {
         </div>
       </section>
     </div>
-  )
+  );
 }

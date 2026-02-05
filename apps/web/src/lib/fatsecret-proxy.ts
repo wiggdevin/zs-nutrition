@@ -36,7 +36,7 @@ async function proxyRequest<T>(endpoint: string, body: Record<string, unknown>):
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'Authorization': `Bearer ${PROXY_SECRET}`,
+      Authorization: `Bearer ${PROXY_SECRET}`,
     },
     body: JSON.stringify(body),
   });
@@ -105,10 +105,10 @@ export const fatsecretProxy = {
    * Search recipes by query
    */
   async searchRecipes(query: string, maxResults: number = 10): Promise<RecipeSearchResult[]> {
-    const data = await proxyRequest<{ results: RecipeSearchResult[] }>(
-      '/recipes/search',
-      { query, maxResults }
-    );
+    const data = await proxyRequest<{ results: RecipeSearchResult[] }>('/recipes/search', {
+      query,
+      maxResults,
+    });
     return data.results;
   },
 

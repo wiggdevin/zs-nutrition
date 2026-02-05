@@ -1,16 +1,16 @@
-import { z } from 'zod'
-import { TRPCError } from '@trpc/server'
-import { router, protectedProcedure } from '../trpc'
-import { safeJsonParse } from '@/lib/utils/safe-json'
-import { StepDataSchema } from '@/lib/schemas/plan'
+import { z } from 'zod';
+import { TRPCError } from '@trpc/server';
+import { router, protectedProcedure } from '../trpc';
+import { safeJsonParse } from '@/lib/utils/safe-json';
+import { StepDataSchema } from '@/lib/schemas/plan';
 
 export const userRouter = router({
   getOnboardingState: protectedProcedure.query(async ({ ctx }) => {
-    const dbUserId = ctx.dbUserId
+    const dbUserId = ctx.dbUserId;
     const state = await ctx.prisma.onboardingState.findUnique({
       where: { userId: dbUserId },
-    })
-    return state
+    });
+    return state;
   }),
 
   updateOnboardingStep: protectedProcedure
@@ -21,14 +21,14 @@ export const userRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const dbUserId = ctx.dbUserId
+      const dbUserId = ctx.dbUserId;
       const existing = await ctx.prisma.onboardingState.findUnique({
         where: { userId: dbUserId },
-      })
+      });
 
       // Merge step data
-      const existingData = safeJsonParse(existing?.stepData, StepDataSchema, {})
-      const mergedData = { ...existingData, ...input.data }
+      const existingData = safeJsonParse(existing?.stepData, StepDataSchema, {});
+      const mergedData = { ...existingData, ...input.data };
 
       if (existing) {
         return ctx.prisma.onboardingState.update({
@@ -37,7 +37,7 @@ export const userRouter = router({
             currentStep: input.step,
             stepData: JSON.stringify(mergedData),
           },
-        })
+        });
       }
 
       return ctx.prisma.onboardingState.create({
@@ -46,7 +46,7 @@ export const userRouter = router({
           currentStep: input.step,
           stepData: JSON.stringify(mergedData),
         },
-      })
+      });
     }),
 
   completeOnboarding: protectedProcedure
@@ -68,14 +68,7 @@ export const userRouter = router({
           'extremely_active',
         ]),
         trainingDays: z.array(z.string()),
-        dietaryStyle: z.enum([
-          'omnivore',
-          'vegetarian',
-          'vegan',
-          'pescatarian',
-          'keto',
-          'paleo',
-        ]),
+        dietaryStyle: z.enum(['omnivore', 'vegetarian', 'vegan', 'pescatarian', 'keto', 'paleo']),
         allergies: z.array(z.string()),
         exclusions: z.array(z.string()),
         cuisinePreferences: z.array(z.string()),
@@ -87,13 +80,13 @@ export const userRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const dbUserId = ctx.dbUserId
+      const dbUserId = ctx.dbUserId;
 
       // Calculate metabolic profile
       const bmr =
         input.sex === 'male'
           ? 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age + 5
-          : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161
+          : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161;
 
       const activityMultipliers: Record<string, number> = {
         sedentary: 1.2,
@@ -101,24 +94,24 @@ export const userRouter = router({
         moderately_active: 1.55,
         very_active: 1.725,
         extremely_active: 1.9,
-      }
-      const tdee = Math.round(bmr * activityMultipliers[input.activityLevel])
+      };
+      const tdee = Math.round(bmr * activityMultipliers[input.activityLevel]);
 
-      let goalKcal = tdee
-      if (input.goalType === 'cut') goalKcal = tdee - input.goalRate * 500
-      if (input.goalType === 'bulk') goalKcal = tdee + input.goalRate * 350
-      goalKcal = Math.round(goalKcal)
+      let goalKcal = tdee;
+      if (input.goalType === 'cut') goalKcal = tdee - input.goalRate * 500;
+      if (input.goalType === 'bulk') goalKcal = tdee + input.goalRate * 350;
+      goalKcal = Math.round(goalKcal);
 
       const macroSplits: Record<string, { p: number; c: number; f: number }> = {
         balanced: { p: 0.3, c: 0.4, f: 0.3 },
         high_protein: { p: 0.4, c: 0.35, f: 0.25 },
         low_carb: { p: 0.35, c: 0.25, f: 0.4 },
         keto: { p: 0.3, c: 0.05, f: 0.65 },
-      }
-      const split = macroSplits[input.macroStyle]
-      const proteinG = Math.round((goalKcal * split.p) / 4)
-      const carbsG = Math.round((goalKcal * split.c) / 4)
-      const fatG = Math.round((goalKcal * split.f) / 9)
+      };
+      const split = macroSplits[input.macroStyle];
+      const proteinG = Math.round((goalKcal * split.p) / 4);
+      const carbsG = Math.round((goalKcal * split.c) / 4);
+      const fatG = Math.round((goalKcal * split.f) / 9);
 
       // Create user profile
       const profile = await ctx.prisma.userProfile.create({
@@ -151,7 +144,7 @@ export const userRouter = router({
           fatTargetG: fatG,
           isActive: true,
         },
-      })
+      });
 
       // Mark onboarding complete
       await ctx.prisma.onboardingState.upsert({
@@ -162,71 +155,100 @@ export const userRouter = router({
           completed: true,
           currentStep: 6,
         },
-      })
+      });
 
-      return { profile, redirectTo: '/generate' }
+      return { profile, redirectTo: '/generate' };
     }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {
-    const dbUserId = ctx.dbUserId
+    const dbUserId = ctx.dbUserId;
     const profile = await ctx.prisma.userProfile.findFirst({
       where: { userId: dbUserId, isActive: true },
-    })
-    return profile
+    });
+    return profile;
   }),
 
   updateProfile: protectedProcedure
     .input(
       z.object({
         name: z.string().min(1, 'Name is required').max(100, 'Name must be 100 characters or less'),
-        age: z.number().int('Age must be a whole number').min(18, 'Must be at least 18 years old').max(100, 'Age must be 100 or less'),
-        heightCm: z.number().min(100, 'Height must be at least 100 cm').max(250, 'Height must be 250 cm or less'),
-        weightKg: z.number().min(30, 'Weight must be at least 30 kg').max(300, 'Weight must be 300 kg or less'),
-        bodyFatPercent: z.number().min(3, 'Body fat must be at least 3%').max(60, 'Body fat must be 60% or less').optional(),
-        goalType: z.enum(['cut', 'maintain', 'bulk'], { errorMap: () => ({ message: 'Goal type must be cut, maintain, or bulk' }) }),
-        goalRate: z.number().min(0, 'Goal rate must be non-negative').max(2, 'Goal rate must be 2 or less'),
-        activityLevel: z.enum([
-          'sedentary',
-          'lightly_active',
-          'moderately_active',
-          'very_active',
-          'extremely_active',
-        ], { errorMap: () => ({ message: 'Invalid activity level' }) }),
-        dietaryStyle: z.enum([
-          'omnivore',
-          'vegetarian',
-          'vegan',
-          'pescatarian',
-          'keto',
-          'paleo',
-        ], { errorMap: () => ({ message: 'Invalid dietary style' }) }),
-        mealsPerDay: z.number().int().min(2, 'Meals per day must be at least 2').max(6, 'Meals per day must be 6 or less'),
-        snacksPerDay: z.number().int().min(0, 'Snacks per day cannot be negative').max(4, 'Snacks per day must be 4 or less'),
-        cookingSkill: z.number().int().min(1, 'Cooking skill must be at least 1').max(10, 'Cooking skill must be 10 or less'),
-        prepTimeMax: z.number().int().min(10, 'Prep time must be at least 10 minutes').max(120, 'Prep time must be 120 minutes or less'),
-        macroStyle: z.enum(['balanced', 'high_protein', 'low_carb', 'keto'], { errorMap: () => ({ message: 'Invalid macro style' }) }),
+        age: z
+          .number()
+          .int('Age must be a whole number')
+          .min(18, 'Must be at least 18 years old')
+          .max(100, 'Age must be 100 or less'),
+        heightCm: z
+          .number()
+          .min(100, 'Height must be at least 100 cm')
+          .max(250, 'Height must be 250 cm or less'),
+        weightKg: z
+          .number()
+          .min(30, 'Weight must be at least 30 kg')
+          .max(300, 'Weight must be 300 kg or less'),
+        bodyFatPercent: z
+          .number()
+          .min(3, 'Body fat must be at least 3%')
+          .max(60, 'Body fat must be 60% or less')
+          .optional(),
+        goalType: z.enum(['cut', 'maintain', 'bulk'], {
+          errorMap: () => ({ message: 'Goal type must be cut, maintain, or bulk' }),
+        }),
+        goalRate: z
+          .number()
+          .min(0, 'Goal rate must be non-negative')
+          .max(2, 'Goal rate must be 2 or less'),
+        activityLevel: z.enum(
+          ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active'],
+          { errorMap: () => ({ message: 'Invalid activity level' }) }
+        ),
+        dietaryStyle: z.enum(['omnivore', 'vegetarian', 'vegan', 'pescatarian', 'keto', 'paleo'], {
+          errorMap: () => ({ message: 'Invalid dietary style' }),
+        }),
+        mealsPerDay: z
+          .number()
+          .int()
+          .min(2, 'Meals per day must be at least 2')
+          .max(6, 'Meals per day must be 6 or less'),
+        snacksPerDay: z
+          .number()
+          .int()
+          .min(0, 'Snacks per day cannot be negative')
+          .max(4, 'Snacks per day must be 4 or less'),
+        cookingSkill: z
+          .number()
+          .int()
+          .min(1, 'Cooking skill must be at least 1')
+          .max(10, 'Cooking skill must be 10 or less'),
+        prepTimeMax: z
+          .number()
+          .int()
+          .min(10, 'Prep time must be at least 10 minutes')
+          .max(120, 'Prep time must be 120 minutes or less'),
+        macroStyle: z.enum(['balanced', 'high_protein', 'low_carb', 'keto'], {
+          errorMap: () => ({ message: 'Invalid macro style' }),
+        }),
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const dbUserId = ctx.dbUserId
+      const dbUserId = ctx.dbUserId;
 
       // Find existing active profile
       const existing = await ctx.prisma.userProfile.findFirst({
         where: { userId: dbUserId, isActive: true },
-      })
+      });
 
       if (!existing) {
         throw new TRPCError({
           code: 'NOT_FOUND',
           message: 'No active profile found. Please complete onboarding first.',
-        })
+        });
       }
 
       // Recalculate metabolic profile
       const bmr =
         existing.sex === 'male'
           ? 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age + 5
-          : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161
+          : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161;
 
       const activityMultipliers: Record<string, number> = {
         sedentary: 1.2,
@@ -234,24 +256,24 @@ export const userRouter = router({
         moderately_active: 1.55,
         very_active: 1.725,
         extremely_active: 1.9,
-      }
-      const tdee = Math.round(bmr * activityMultipliers[input.activityLevel])
+      };
+      const tdee = Math.round(bmr * activityMultipliers[input.activityLevel]);
 
-      let goalKcal = tdee
-      if (input.goalType === 'cut') goalKcal = tdee - input.goalRate * 500
-      if (input.goalType === 'bulk') goalKcal = tdee + input.goalRate * 350
-      goalKcal = Math.round(goalKcal)
+      let goalKcal = tdee;
+      if (input.goalType === 'cut') goalKcal = tdee - input.goalRate * 500;
+      if (input.goalType === 'bulk') goalKcal = tdee + input.goalRate * 350;
+      goalKcal = Math.round(goalKcal);
 
       const macroSplits: Record<string, { p: number; c: number; f: number }> = {
         balanced: { p: 0.3, c: 0.4, f: 0.3 },
         high_protein: { p: 0.4, c: 0.35, f: 0.25 },
         low_carb: { p: 0.35, c: 0.25, f: 0.4 },
         keto: { p: 0.3, c: 0.05, f: 0.65 },
-      }
-      const split = macroSplits[input.macroStyle]
-      const proteinG = Math.round((goalKcal * split.p) / 4)
-      const carbsG = Math.round((goalKcal * split.c) / 4)
-      const fatG = Math.round((goalKcal * split.f) / 9)
+      };
+      const split = macroSplits[input.macroStyle];
+      const proteinG = Math.round((goalKcal * split.p) / 4);
+      const carbsG = Math.round((goalKcal * split.c) / 4);
+      const fatG = Math.round((goalKcal * split.f) / 9);
 
       // Update profile
       const updated = await ctx.prisma.userProfile.update({
@@ -278,8 +300,8 @@ export const userRouter = router({
           carbsTargetG: carbsG,
           fatTargetG: fatG,
         },
-      })
+      });
 
-      return { profile: updated }
+      return { profile: updated };
     }),
-})
+});

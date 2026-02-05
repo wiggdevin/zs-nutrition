@@ -1,5 +1,5 @@
-import { z } from 'zod'
-import { logger } from '@/lib/safe-logger'
+import { z } from 'zod';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * Parse a JSON string and validate against a Zod schema.
@@ -13,16 +13,16 @@ export function safeJsonParse<O>(
   schema: z.ZodType<O, z.ZodTypeDef, unknown>,
   fallback: NoInfer<O>
 ): O {
-  if (!json) return fallback
+  if (!json) return fallback;
 
   try {
-    const parsed = JSON.parse(json)
-    const result = schema.safeParse(parsed)
-    if (result.success) return result.data
-    logger.warn('[safeJsonParse] Validation failed:', result.error.issues.slice(0, 3))
-    return fallback
+    const parsed = JSON.parse(json);
+    const result = schema.safeParse(parsed);
+    if (result.success) return result.data;
+    logger.warn('[safeJsonParse] Validation failed:', result.error.issues.slice(0, 3));
+    return fallback;
   } catch {
-    logger.warn('[safeJsonParse] JSON.parse failed for input of length', json.length)
-    return fallback
+    logger.warn('[safeJsonParse] JSON.parse failed for input of length', json.length);
+    return fallback;
   }
 }

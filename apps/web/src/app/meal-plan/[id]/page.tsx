@@ -1,8 +1,8 @@
-"use client";
+'use client';
 
-import { useEffect, useState } from "react";
-import { useParams, useRouter } from "next/navigation";
-import NavBar from "@/components/navigation/NavBar";
+import { useEffect, useState } from 'react';
+import { useParams, useRouter } from 'next/navigation';
+import NavBar from '@/components/navigation/NavBar';
 
 interface PlanSummary {
   id: string;
@@ -37,24 +37,24 @@ export default function MealPlanByIdPage() {
         setStatusCode(res.status);
 
         if (res.status === 401) {
-          setError("You must be signed in to view this plan.");
+          setError('You must be signed in to view this plan.');
           return;
         }
 
         if (res.status === 404) {
-          setError("Meal plan not found or access denied.");
+          setError('Meal plan not found or access denied.');
           return;
         }
 
         if (!res.ok) {
-          setError("Failed to load meal plan.");
+          setError('Failed to load meal plan.');
           return;
         }
 
         const data = await res.json();
         setPlan(data.plan);
       } catch {
-        setError("Failed to load meal plan. Please check your connection.");
+        setError('Failed to load meal plan. Please check your connection.');
       } finally {
         setLoading(false);
       }
@@ -90,15 +90,10 @@ export default function MealPlanByIdPage() {
             <div className="w-full max-w-md text-center" data-testid="plan-access-denied">
               <div className="rounded-lg border border-border bg-card p-8">
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
-                  <span className="text-2xl">
-                    {statusCode === 401 ? "🔒" : "🚫"}
-                  </span>
+                  <span className="text-2xl">{statusCode === 401 ? '🔒' : '🚫'}</span>
                 </div>
-                <h2
-                  className="text-xl font-bold text-foreground"
-                  data-testid="access-denied-title"
-                >
-                  {statusCode === 401 ? "Authentication Required" : "Plan Not Found"}
+                <h2 className="text-xl font-bold text-foreground" data-testid="access-denied-title">
+                  {statusCode === 401 ? 'Authentication Required' : 'Plan Not Found'}
                 </h2>
                 <p
                   className="mt-2 text-sm text-muted-foreground"
@@ -111,12 +106,12 @@ export default function MealPlanByIdPage() {
                   data-testid="access-denied-detail"
                 >
                   {statusCode === 404
-                    ? "This meal plan may have been deleted or does not exist."
-                    : "Please sign in to continue."}
+                    ? 'This meal plan may have been deleted or does not exist.'
+                    : 'Please sign in to continue.'}
                 </p>
                 <div className="mt-6 flex flex-col gap-3 items-center">
                   <button
-                    onClick={() => router.push("/meal-plan")}
+                    onClick={() => router.push('/meal-plan')}
                     className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                     data-testid="back-to-plans-button"
                   >
@@ -124,7 +119,7 @@ export default function MealPlanByIdPage() {
                   </button>
                   {statusCode === 401 && (
                     <button
-                      onClick={() => router.push("/sign-in")}
+                      onClick={() => router.push('/sign-in')}
                       className="inline-block rounded-lg border border-border px-6 py-3 text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary"
                     >
                       Sign In
@@ -151,10 +146,7 @@ export default function MealPlanByIdPage() {
                 <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-warning/10">
                   <span className="text-2xl">📋</span>
                 </div>
-                <h2
-                  className="text-xl font-bold text-foreground"
-                  data-testid="plan-replaced-title"
-                >
+                <h2 className="text-xl font-bold text-foreground" data-testid="plan-replaced-title">
                   Plan No Longer Active
                 </h2>
                 <p
@@ -168,14 +160,14 @@ export default function MealPlanByIdPage() {
                 </p>
                 <div className="mt-6 flex flex-col gap-3 items-center">
                   <button
-                    onClick={() => router.push("/meal-plan")}
+                    onClick={() => router.push('/meal-plan')}
                     className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                     data-testid="view-current-plan-button"
                   >
                     View Current Plan
                   </button>
                   <button
-                    onClick={() => router.push("/generate")}
+                    onClick={() => router.push('/generate')}
                     className="inline-block rounded-lg border border-border px-6 py-3 text-sm font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-secondary"
                     data-testid="generate-new-plan-button"
                   >
@@ -211,7 +203,7 @@ export default function MealPlanByIdPage() {
                 </p>
                 <div className="mt-6">
                   <button
-                    onClick={() => router.push("/meal-plan")}
+                    onClick={() => router.push('/meal-plan')}
                     className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                     data-testid="view-plan-button"
                   >

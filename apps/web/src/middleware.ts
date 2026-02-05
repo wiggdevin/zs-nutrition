@@ -1,20 +1,20 @@
-import { NextResponse } from "next/server";
-import type { NextRequest } from "next/server";
-import type { NextFetchEvent } from "next/server";
-import { clerkMiddleware, createRouteMatcher } from "@clerk/nextjs/server";
-import { isDevMode } from "@/lib/dev-mode";
+import { NextResponse } from 'next/server';
+import type { NextRequest } from 'next/server';
+import type { NextFetchEvent } from 'next/server';
+import { clerkMiddleware, createRouteMatcher } from '@clerk/nextjs/server';
+import { isDevMode } from '@/lib/dev-mode';
 
-const isProduction = process.env.NODE_ENV === "production";
+const isProduction = process.env.NODE_ENV === 'production';
 
-const STATE_CHANGING_METHODS = new Set(["POST", "PUT", "DELETE", "PATCH"]);
+const STATE_CHANGING_METHODS = new Set(['POST', 'PUT', 'DELETE', 'PATCH']);
 
 function validateOrigin(request: NextRequest): boolean {
-  const origin = request.headers.get("origin");
+  const origin = request.headers.get('origin');
 
   // Allow requests with no origin (same-origin navigations, server-to-server calls)
   if (!origin) return true;
 
-  const host = request.headers.get("host");
+  const host = request.headers.get('host');
   const appUrl = process.env.NEXT_PUBLIC_APP_URL;
 
   try {
@@ -35,20 +35,17 @@ function csrfCheck(request: NextRequest): NextResponse | null {
   if (!STATE_CHANGING_METHODS.has(method)) return null;
 
   if (!validateOrigin(request)) {
-    return NextResponse.json(
-      { error: "Forbidden", message: "Invalid origin" },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: 'Forbidden', message: 'Invalid origin' }, { status: 403 });
   }
 
   // For API routes, require a custom header that HTML forms cannot set
-  if (pathname.startsWith("/api/")) {
-    const contentType = request.headers.get("content-type") || "";
-    const trpcSource = request.headers.get("x-trpc-source");
-    if (!trpcSource && !contentType.includes("application/json")) {
+  if (pathname.startsWith('/api/')) {
+    const contentType = request.headers.get('content-type') || '';
+    const trpcSource = request.headers.get('x-trpc-source');
+    if (!trpcSource && !contentType.includes('application/json')) {
       return NextResponse.json(
-        { error: "Forbidden", message: "Missing required header" },
-        { status: 403 },
+        { error: 'Forbidden', message: 'Missing required header' },
+        { status: 403 }
       );
     }
   }
@@ -63,26 +60,20 @@ function csrfCheck(request: NextRequest): NextResponse | null {
  * - Webhook endpoints (Clerk, Stripe, etc.)
  * - Static assets handled by Next.js (_next)
  */
-const productionPublicPaths = [
-  "/",
-  "/sign-in",
-  "/sign-up",
-  "/api/webhooks",
-  "/api/food-search",
-];
+const productionPublicPaths = ['/', '/sign-in', '/sign-up', '/api/webhooks', '/api/food-search'];
 
 const devOnlyPublicPaths = [
   // API: dev, test, debug, seed routes (prefix-matched)
-  "/api/dev-",
-  "/api/test-",
-  "/api/debug-",
-  "/api/seed-",
-  "/api/get-latest-job",
-  "/api/trpc/test.",
+  '/api/dev-',
+  '/api/test-',
+  '/api/debug-',
+  '/api/seed-',
+  '/api/get-latest-job',
+  '/api/trpc/test.',
   // Page: test, dev routes (prefix-matched)
-  "/test-",
-  "/test",
-  "/dev-",
+  '/test-',
+  '/test',
+  '/dev-',
 ];
 
 const publicPaths = isProduction
@@ -91,39 +82,37 @@ const publicPaths = isProduction
 
 function isPublicPath(pathname: string): boolean {
   // Exact match for root
-  if (pathname === "/") return true;
+  if (pathname === '/') return true;
   // Prefix match for other public paths.
   // Works for both exact paths (e.g. "/api/food-search") and prefix patterns
   // (e.g. "/api/test-" matches "/api/test-prisma", "/api/test-fatsecret", etc.)
-  return publicPaths.some((p) => p !== "/" && pathname.startsWith(p));
+  return publicPaths.some((p) => p !== '/' && pathname.startsWith(p));
 }
 
 const productionPublicRoutes = [
-  "/",
-  "/sign-in(.*)",
-  "/sign-up(.*)",
-  "/api/webhooks(.*)",
-  "/api/food-search(.*)",
+  '/',
+  '/sign-in(.*)',
+  '/sign-up(.*)',
+  '/api/webhooks(.*)',
+  '/api/food-search(.*)',
 ];
 
 const devOnlyPublicRoutes = [
   // API: dev, test, debug, seed routes (Clerk route matcher patterns)
-  "/api/dev-(.*)",
-  "/api/test-(.*)",
-  "/api/debug-(.*)",
-  "/api/seed-(.*)",
-  "/api/get-latest-job(.*)",
-  "/api/trpc/test\\.(.*)",
+  '/api/dev-(.*)',
+  '/api/test-(.*)',
+  '/api/debug-(.*)',
+  '/api/seed-(.*)',
+  '/api/get-latest-job(.*)',
+  '/api/trpc/test\\.(.*)',
   // Page: test, dev routes
-  "/test-(.*)",
-  "/test",
-  "/dev-(.*)",
+  '/test-(.*)',
+  '/test',
+  '/dev-(.*)',
 ];
 
 const isPublicRoute = createRouteMatcher(
-  isProduction
-    ? productionPublicRoutes
-    : [...productionPublicRoutes, ...devOnlyPublicRoutes]
+  isProduction ? productionPublicRoutes : [...productionPublicRoutes, ...devOnlyPublicRoutes]
 );
 
 /**
@@ -153,20 +142,20 @@ function devMiddleware(request: NextRequest) {
   }
 
   // Check for dev auth cookie
-  const devUserId = request.cookies.get("dev-user-id")?.value;
+  const devUserId = request.cookies.get('dev-user-id')?.value;
 
   if (!devUserId) {
     // API/tRPC routes → return 401 JSON
-    if (pathname.startsWith("/api") || pathname.startsWith("/trpc")) {
+    if (pathname.startsWith('/api') || pathname.startsWith('/trpc')) {
       return NextResponse.json(
-        { error: "Unauthorized", message: "You must be signed in to access this resource." },
+        { error: 'Unauthorized', message: 'You must be signed in to access this resource.' },
         { status: 401 }
       );
     }
 
     // Page routes → redirect to sign-in
-    const signInUrl = new URL("/sign-in", request.url);
-    signInUrl.searchParams.set("redirect_url", pathname);
+    const signInUrl = new URL('/sign-in', request.url);
+    signInUrl.searchParams.set('redirect_url', pathname);
     return NextResponse.redirect(signInUrl);
   }
 
@@ -180,10 +169,7 @@ function devMiddleware(request: NextRequest) {
  */
 const handler = isDevMode ? devMiddleware : protectedMiddleware;
 
-export default function middleware(
-  request: NextRequest,
-  event: NextFetchEvent,
-) {
+export default function middleware(request: NextRequest, event: NextFetchEvent) {
   const csrfResponse = csrfCheck(request);
   if (csrfResponse) return csrfResponse;
 
@@ -192,7 +178,7 @@ export default function middleware(
 
 export const config = {
   matcher: [
-    "/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)",
-    "/(api|trpc)(.*)",
+    '/((?!_next|[^?]*\\.(?:html?|css|js(?!on)|jpe?g|webp|png|gif|svg|ttf|woff2?|ico|csv|docx?|xlsx?|zip|webmanifest)).*)',
+    '/(api|trpc)(.*)',
   ],
 };

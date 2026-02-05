@@ -1,19 +1,19 @@
-'use client'
+'use client';
 
-import { useEffect } from 'react'
-import { Button } from '@/components/ui/button'
-import { logger } from '@/lib/safe-logger'
+import { useEffect } from 'react';
+import { Button } from '@/components/ui/button';
+import { logger } from '@/lib/safe-logger';
 
 export default function TrackingError({
   error,
   reset,
 }: {
-  error: Error & { digest?: string }
-  reset: () => void
+  error: Error & { digest?: string };
+  reset: () => void;
 }) {
   useEffect(() => {
-    logger.error('Tracking error:', error)
-  }, [error])
+    logger.error('Tracking error:', error);
+  }, [error]);
 
   return (
     <div className="flex flex-col items-center justify-center min-h-[400px] gap-4">
@@ -23,5 +23,5 @@ export default function TrackingError({
       </p>
       <Button onClick={reset}>Try Again</Button>
     </div>
-  )
+  );
 }

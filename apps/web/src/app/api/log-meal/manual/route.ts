@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireActiveUser } from '@/lib/auth'
-import { logger } from '@/lib/safe-logger'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * POST /api/log-meal/manual
@@ -10,14 +10,14 @@ import { logger } from '@/lib/safe-logger'
  */
 export async function POST(request: Request) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     const user = await prisma.user.findUnique({ where: { clerkUserId } });
@@ -37,7 +37,12 @@ export async function POST(request: Request) {
     if (!foodName || typeof foodName !== 'string' || foodName.trim().length === 0) {
       return NextResponse.json({ error: 'Food name is required' }, { status: 400 });
     }
-    if (calories === undefined || calories === null || isNaN(Number(calories)) || Number(calories) < 0) {
+    if (
+      calories === undefined ||
+      calories === null ||
+      isNaN(Number(calories)) ||
+      Number(calories) < 0
+    ) {
       return NextResponse.json({ error: 'Valid calories value is required' }, { status: 400 });
     }
 
@@ -47,7 +52,9 @@ export async function POST(request: Request) {
     const fatG = Math.round((Number(fat) || 0) * 10) / 10;
 
     const today = new Date();
-    const dateOnly = new Date(Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate()));
+    const dateOnly = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate())
+    );
 
     // Use a transaction with duplicate detection to prevent race conditions
     const result = await prisma.$transaction(async (tx) => {
@@ -84,7 +91,8 @@ export async function POST(request: Request) {
           },
           dailyLog: {
             actualKcal: existingDailyLog?.actualKcal ?? recentDuplicate.kcal,
-            actualProteinG: existingDailyLog?.actualProteinG ?? Math.round(recentDuplicate.proteinG),
+            actualProteinG:
+              existingDailyLog?.actualProteinG ?? Math.round(recentDuplicate.proteinG),
             actualCarbsG: existingDailyLog?.actualCarbsG ?? Math.round(recentDuplicate.carbsG),
             actualFatG: existingDailyLog?.actualFatG ?? Math.round(recentDuplicate.fatG),
             targetKcal: existingDailyLog?.targetKcal ?? null,
@@ -153,9 +161,8 @@ export async function POST(request: Request) {
 
       // Calculate adherence score
       const targetKcal = dailyLog.targetKcal || 2000;
-      const adherenceScore = targetKcal > 0
-        ? Math.min(100, Math.round((dailyLog.actualKcal / targetKcal) * 100))
-        : 0;
+      const adherenceScore =
+        targetKcal > 0 ? Math.min(100, Math.round((dailyLog.actualKcal / targetKcal) * 100)) : 0;
 
       await tx.dailyLog.update({
         where: { id: dailyLog.id },

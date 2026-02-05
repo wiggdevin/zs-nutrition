@@ -1,31 +1,41 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useCallback, useRef } from "react";
-import { toast } from "@/lib/toast-store";
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { toast } from '@/lib/toast-store';
 
-type MacroStyle = "balanced" | "high_protein" | "low_carb" | "keto";
+type MacroStyle = 'balanced' | 'high_protein' | 'low_carb' | 'keto';
 
 const macroStyles: { value: MacroStyle; label: string; desc: string }[] = [
-  { value: "balanced", label: "Balanced", desc: "30P / 40C / 30F — General health" },
-  { value: "high_protein", label: "High Protein", desc: "40P / 35C / 25F — Muscle building" },
-  { value: "low_carb", label: "Low Carb", desc: "35P / 25C / 40F — Fat adaptation" },
-  { value: "keto", label: "Keto", desc: "30P / 5C / 65F — Ketogenic" },
+  { value: 'balanced', label: 'Balanced', desc: '30P / 40C / 30F — General health' },
+  { value: 'high_protein', label: 'High Protein', desc: '40P / 35C / 25F — Muscle building' },
+  { value: 'low_carb', label: 'Low Carb', desc: '35P / 25C / 40F — Fat adaptation' },
+  { value: 'keto', label: 'Keto', desc: '30P / 5C / 65F — Ketogenic' },
 ];
 
 const cuisineOptions = [
-  "American", "Italian", "Mexican", "Asian", "Mediterranean",
-  "Indian", "Japanese", "Thai", "Greek", "Middle Eastern", "Korean", "French",
+  'American',
+  'Italian',
+  'Mexican',
+  'Asian',
+  'Mediterranean',
+  'Indian',
+  'Japanese',
+  'Thai',
+  'Greek',
+  'Middle Eastern',
+  'Korean',
+  'French',
 ];
 
 export default function SettingsMealStructure() {
-  const [macroStyle, setMacroStyle] = useState<MacroStyle | "">("");
+  const [macroStyle, setMacroStyle] = useState<MacroStyle | ''>('');
   const [cuisinePrefs, setCuisinePrefs] = useState<string[]>([]);
   const [mealsPerDay, setMealsPerDay] = useState(3);
   const [snacksPerDay, setSnacksPerDay] = useState(1);
   const [cookingSkill, setCookingSkill] = useState(5);
   const [prepTimeMax, setPrepTimeMax] = useState(30);
   const [originalData, setOriginalData] = useState({
-    macroStyle: "" as string,
+    macroStyle: '' as string,
     cuisinePrefs: [] as string[],
     mealsPerDay: 3,
     snacksPerDay: 1,
@@ -62,19 +72,19 @@ export default function SettingsMealStructure() {
 
     try {
       setLoading(true);
-      const res = await fetch("/api/settings/profile", { signal: controller.signal });
+      const res = await fetch('/api/settings/profile', { signal: controller.signal });
 
       // If a newer fetch was started, discard this stale response
       if (generation !== fetchGenerationRef.current) return;
 
-      if (!res.ok) throw new Error("Failed to load profile");
+      if (!res.ok) throw new Error('Failed to load profile');
       const data = await res.json();
 
       // Double-check generation again after async json parsing
       if (generation !== fetchGenerationRef.current) return;
 
       const p = data.profile;
-      const ms = p.macroStyle || "";
+      const ms = p.macroStyle || '';
       const cp = p.cuisinePrefs || [];
       const mpd = p.mealsPerDay || 3;
       const spd = p.snacksPerDay ?? 1;
@@ -86,13 +96,20 @@ export default function SettingsMealStructure() {
       setSnacksPerDay(spd);
       setCookingSkill(cs);
       setPrepTimeMax(ptm);
-      setOriginalData({ macroStyle: ms, cuisinePrefs: cp, mealsPerDay: mpd, snacksPerDay: spd, cookingSkill: cs, prepTimeMax: ptm });
+      setOriginalData({
+        macroStyle: ms,
+        cuisinePrefs: cp,
+        mealsPerDay: mpd,
+        snacksPerDay: spd,
+        cookingSkill: cs,
+        prepTimeMax: ptm,
+      });
     } catch (err: unknown) {
       // Ignore aborted requests (user navigated away or new fetch started)
       if (err instanceof DOMException && err.name === 'AbortError') return;
       // If this is a stale generation, ignore
       if (generation !== fetchGenerationRef.current) return;
-      setError(err instanceof Error ? err.message : "Failed to load");
+      setError(err instanceof Error ? err.message : 'Failed to load');
     } finally {
       // Only update loading state if this is still the current generation
       if (generation === fetchGenerationRef.current) {
@@ -122,16 +139,16 @@ export default function SettingsMealStructure() {
   };
 
   const cookingSkillLabels: Record<number, string> = {
-    1: "Beginner",
-    2: "Novice",
-    3: "Learning",
-    4: "Competent",
-    5: "Intermediate",
-    6: "Capable",
-    7: "Experienced",
-    8: "Advanced",
-    9: "Expert",
-    10: "Professional Chef",
+    1: 'Beginner',
+    2: 'Novice',
+    3: 'Learning',
+    4: 'Competent',
+    5: 'Intermediate',
+    6: 'Capable',
+    7: 'Experienced',
+    8: 'Advanced',
+    9: 'Expert',
+    10: 'Professional Chef',
   };
 
   async function handleSave() {
@@ -143,21 +160,28 @@ export default function SettingsMealStructure() {
 
       // Client-side validation
       if (mealsPerDay < 2 || mealsPerDay > 6) {
-        const errorMsg = "Meals per day must be between 2 and 6";
+        const errorMsg = 'Meals per day must be between 2 and 6';
         setValidationError(errorMsg);
         setError(errorMsg);
         toast.error(errorMsg);
         return;
       }
 
-      const res = await fetch("/api/settings/profile", {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ macroStyle, cuisinePrefs, mealsPerDay, snacksPerDay, cookingSkill, prepTimeMax }),
+      const res = await fetch('/api/settings/profile', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          macroStyle,
+          cuisinePrefs,
+          mealsPerDay,
+          snacksPerDay,
+          cookingSkill,
+          prepTimeMax,
+        }),
       });
       if (!res.ok) {
         const data = await res.json();
-        throw new Error(data.error || "Failed to save");
+        throw new Error(data.error || 'Failed to save');
       }
       setOriginalData({
         macroStyle,
@@ -168,17 +192,17 @@ export default function SettingsMealStructure() {
         prepTimeMax,
       });
       setSuccess(true);
-      toast.success("Meal structure saved!");
+      toast.success('Meal structure saved!');
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : "Failed to save");
-      toast.error(err instanceof Error ? err.message : "Failed to save meal structure");
+      setError(err instanceof Error ? err.message : 'Failed to save');
+      toast.error(err instanceof Error ? err.message : 'Failed to save meal structure');
     } finally {
       setSaving(false);
     }
   }
 
   function handleReset() {
-    setMacroStyle(originalData.macroStyle as MacroStyle | "");
+    setMacroStyle(originalData.macroStyle as MacroStyle | '');
     setCuisinePrefs([...originalData.cuisinePrefs]);
     setMealsPerDay(originalData.mealsPerDay);
     setSnacksPerDay(originalData.snacksPerDay);
@@ -200,7 +224,10 @@ export default function SettingsMealStructure() {
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6" data-testid="meal-structure-section">
+    <div
+      className="rounded-2xl border border-border bg-card p-6"
+      data-testid="meal-structure-section"
+    >
       <div className="mb-6">
         <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
           <span className="text-primary">///</span> Meal Structure
@@ -213,22 +240,30 @@ export default function SettingsMealStructure() {
       <div className="space-y-5">
         {/* Macro Style */}
         <div>
-          <label id="settings-macro-split-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            id="settings-macro-split-label"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Macro Split
           </label>
           <div className="space-y-2">
             {macroStyles.map(({ value, label, desc }) => (
               <button
                 key={value}
-                onClick={() => { setMacroStyle(value); setSuccess(false); }}
+                onClick={() => {
+                  setMacroStyle(value);
+                  setSuccess(false);
+                }}
                 data-testid={`settings-macro-${value}`}
                 className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                   macroStyle === value
-                    ? "border-primary bg-primary/10"
-                    : "border-border bg-card hover:border-border/80"
+                    ? 'border-primary bg-primary/10'
+                    : 'border-border bg-card hover:border-border/80'
                 }`}
               >
-                <span className={`block text-sm font-bold ${macroStyle === value ? "text-primary" : "text-foreground"}`}>
+                <span
+                  className={`block text-sm font-bold ${macroStyle === value ? 'text-primary' : 'text-foreground'}`}
+                >
                   {label}
                 </span>
                 <span className="block text-xs text-muted-foreground">{desc}</span>
@@ -239,7 +274,10 @@ export default function SettingsMealStructure() {
 
         {/* Cuisine Preferences */}
         <div>
-          <label id="settings-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            id="settings-cuisine-label"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Cuisine Preferences
           </label>
           <div className="flex flex-wrap gap-2">
@@ -249,8 +287,8 @@ export default function SettingsMealStructure() {
                 onClick={() => toggleCuisine(cuisine)}
                 className={`rounded-full border px-3 py-1.5 text-xs font-medium transition-colors min-h-[36px] ${
                   cuisinePrefs.includes(cuisine.toLowerCase())
-                    ? "border-primary bg-primary/10 text-primary"
-                    : "border-border bg-card text-muted-foreground hover:border-border/80"
+                    ? 'border-primary bg-primary/10 text-primary'
+                    : 'border-border bg-card text-muted-foreground hover:border-border/80'
                 }`}
               >
                 {cuisine}
@@ -262,14 +300,20 @@ export default function SettingsMealStructure() {
         {/* Meals & Snacks */}
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label htmlFor="settings-meals-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <label
+              htmlFor="settings-meals-per-day"
+              className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+            >
               Meals/Day: {mealsPerDay}
             </label>
             <input
               id="settings-meals-per-day"
               type="range"
               value={mealsPerDay}
-              onChange={(e) => { setMealsPerDay(parseInt(e.target.value)); setSuccess(false); }}
+              onChange={(e) => {
+                setMealsPerDay(parseInt(e.target.value));
+                setSuccess(false);
+              }}
               min={2}
               max={6}
               step={1}
@@ -282,14 +326,20 @@ export default function SettingsMealStructure() {
             </div>
           </div>
           <div>
-            <label htmlFor="settings-snacks-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+            <label
+              htmlFor="settings-snacks-per-day"
+              className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+            >
               Snacks/Day: {snacksPerDay}
             </label>
             <input
               id="settings-snacks-per-day"
               type="range"
               value={snacksPerDay}
-              onChange={(e) => { setSnacksPerDay(parseInt(e.target.value)); setSuccess(false); }}
+              onChange={(e) => {
+                setSnacksPerDay(parseInt(e.target.value));
+                setSuccess(false);
+              }}
               min={0}
               max={4}
               step={1}
@@ -305,14 +355,20 @@ export default function SettingsMealStructure() {
 
         {/* Cooking Skill */}
         <div>
-          <label htmlFor="settings-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="settings-cooking-skill"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Cooking Skill: {cookingSkillLabels[cookingSkill]}
           </label>
           <input
             id="settings-cooking-skill"
             type="range"
             value={cookingSkill}
-            onChange={(e) => { setCookingSkill(parseInt(e.target.value)); setSuccess(false); }}
+            onChange={(e) => {
+              setCookingSkill(parseInt(e.target.value));
+              setSuccess(false);
+            }}
             min={1}
             max={10}
             step={1}
@@ -327,14 +383,20 @@ export default function SettingsMealStructure() {
 
         {/* Max Prep Time */}
         <div>
-          <label htmlFor="settings-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="settings-prep-time"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Max Prep Time: {prepTimeMax} minutes
           </label>
           <input
             id="settings-prep-time"
             type="range"
             value={prepTimeMax}
-            onChange={(e) => { setPrepTimeMax(parseInt(e.target.value)); setSuccess(false); }}
+            onChange={(e) => {
+              setPrepTimeMax(parseInt(e.target.value));
+              setSuccess(false);
+            }}
             min={10}
             max={120}
             step={5}
@@ -366,8 +428,8 @@ export default function SettingsMealStructure() {
           data-testid="settings-meal-save"
           className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
-              ? "bg-primary hover:bg-primary/90 text-background cursor-pointer"
-              : "bg-primary/30 text-white/50 cursor-not-allowed"
+              ? 'bg-primary hover:bg-primary/90 text-background cursor-pointer'
+              : 'bg-primary/30 text-white/50 cursor-not-allowed'
           }`}
         >
           {saving ? (
@@ -376,11 +438,14 @@ export default function SettingsMealStructure() {
               Saving...
             </span>
           ) : (
-            "Save Changes"
+            'Save Changes'
           )}
         </button>
         {dirty && (
-          <button onClick={handleReset} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors">
+          <button
+            onClick={handleReset}
+            className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors"
+          >
             Reset
           </button>
         )}

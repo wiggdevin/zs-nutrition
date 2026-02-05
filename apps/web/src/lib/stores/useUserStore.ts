@@ -97,16 +97,18 @@ export const useUserStore = create<UserState>()(
 
       setIsLoading: (value) => set({ isLoading: value }),
 
-      clearAllState: () => set({
-        profile: null,
-        isOnboarded: false,
-        isLoading: false,
-      }),
+      clearAllState: () =>
+        set({
+          profile: null,
+          isOnboarded: false,
+          isLoading: false,
+        }),
     }),
     {
       name: 'zsn-user-store',
       version: 1,
       storage: createJSONStorage(() => safeStorage),
+      skipHydration: true,
       partialize: (state) => ({
         profile: state.profile,
         isOnboarded: state.isOnboarded,

@@ -253,6 +253,7 @@ model WeightEntry {
   notes           String?   // optional notes about the entry
   createdAt       DateTime  @default(now())
 
+  @@unique([userId, logDate])
   @@index([userId, logDate])
 }
 

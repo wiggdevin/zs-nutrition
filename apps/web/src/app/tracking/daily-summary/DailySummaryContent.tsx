@@ -1,62 +1,62 @@
-'use client'
+'use client';
 
-import { useState } from 'react'
-import { trpc } from '@/lib/trpc'
+import { useState } from 'react';
+import { trpc } from '@/lib/trpc';
 
 function PortionAdjuster({
   mealId,
   currentPortion,
   onAdjusted,
 }: {
-  mealId: string
-  currentPortion: number
-  onAdjusted: () => void
+  mealId: string;
+  currentPortion: number;
+  onAdjusted: () => void;
 }) {
-  const [portion, setPortion] = useState(currentPortion)
-  const [isEditing, setIsEditing] = useState(false)
-  const [isSaving, setIsSaving] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [success, setSuccess] = useState(false)
+  const [portion, setPortion] = useState(currentPortion);
+  const [isEditing, setIsEditing] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const handleSave = async () => {
     if (portion === currentPortion) {
-      setIsEditing(false)
-      return
+      setIsEditing(false);
+      return;
     }
 
-    setIsSaving(true)
-    setError(null)
-    setSuccess(false)
+    setIsSaving(true);
+    setError(null);
+    setSuccess(false);
 
     try {
       const res = await fetch('/api/tracking/adjust-portion', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ trackedMealId: mealId, newPortion: portion }),
-      })
+      });
 
-      const data = await res.json()
+      const data = await res.json();
       if (!res.ok) {
-        throw new Error(data.error || 'Failed to adjust portion')
+        throw new Error(data.error || 'Failed to adjust portion');
       }
 
-      setSuccess(true)
-      setIsEditing(false)
+      setSuccess(true);
+      setIsEditing(false);
       // Refetch data to show updated values
-      onAdjusted()
-      setTimeout(() => setSuccess(false), 2000)
+      onAdjusted();
+      setTimeout(() => setSuccess(false), 2000);
     } catch (err) {
-      setError((err as Error).message)
+      setError((err as Error).message);
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
-  }
+  };
 
   const handleCancel = () => {
-    setPortion(currentPortion)
-    setIsEditing(false)
-    setError(null)
-  }
+    setPortion(currentPortion);
+    setIsEditing(false);
+    setError(null);
+  };
 
   if (!isEditing) {
     return (
@@ -68,7 +68,7 @@ function PortionAdjuster({
       >
         {currentPortion}x
       </button>
-    )
+    );
   }
 
   return (
@@ -85,9 +85,9 @@ function PortionAdjuster({
         type="number"
         value={portion}
         onChange={(e) => {
-          const val = parseFloat(e.target.value)
+          const val = parseFloat(e.target.value);
           if (!isNaN(val) && val > 0 && val <= 10) {
-            setPortion(Math.round(val * 100) / 100)
+            setPortion(Math.round(val * 100) / 100);
           }
         }}
         className="w-14 text-center bg-zinc-800 border border-zinc-600 rounded text-xs py-0.5 text-white [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
@@ -124,7 +124,7 @@ function PortionAdjuster({
       {error && <span className="text-xs text-red-400">{error}</span>}
       {success && <span className="text-xs text-green-400">Updated!</span>}
     </div>
-  )
+  );
 }
 
 function DeleteMealButton({
@@ -132,29 +132,29 @@ function DeleteMealButton({
   mealName,
   onDeleted,
 }: {
-  mealId: string
-  mealName: string
-  onDeleted: () => void
+  mealId: string;
+  mealName: string;
+  onDeleted: () => void;
 }) {
-  const [confirming, setConfirming] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
-  const [error, setError] = useState<string | null>(null)
+  const [confirming, setConfirming] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const deleteMutation = trpc.meal.deleteTrackedMeal.useMutation({
     onSuccess: () => {
-      onDeleted()
+      onDeleted();
     },
     onError: (err) => {
-      setError(err.message)
-      setIsDeleting(false)
+      setError(err.message);
+      setIsDeleting(false);
     },
-  })
+  });
 
   const handleDelete = () => {
-    setIsDeleting(true)
-    setError(null)
-    deleteMutation.mutate({ trackedMealId: mealId })
-  }
+    setIsDeleting(true);
+    setError(null);
+    deleteMutation.mutate({ trackedMealId: mealId });
+  };
 
   if (confirming) {
     return (
@@ -169,7 +169,10 @@ function DeleteMealButton({
           {isDeleting ? '...' : 'Yes'}
         </button>
         <button
-          onClick={() => { setConfirming(false); setError(null) }}
+          onClick={() => {
+            setConfirming(false);
+            setError(null);
+          }}
           disabled={isDeleting}
           className="text-xs text-muted-foreground hover:text-white px-1"
           data-testid="delete-confirm-no"
@@ -178,7 +181,7 @@ function DeleteMealButton({
         </button>
         {error && <span className="text-xs text-red-400">{error}</span>}
       </div>
-    )
+    );
   }
 
   return (
@@ -190,34 +193,39 @@ function DeleteMealButton({
     >
       ✕
     </button>
-  )
+  );
 }
 
 export function DailySummaryContent() {
   // State for currently selected date
   const [selectedDate, setSelectedDate] = useState<string>(() => {
     // Initialize with today's date in YYYY-MM-DD format
-    return new Date().toISOString().split('T')[0]
-  })
+    return new Date().toISOString().split('T')[0];
+  });
 
   // Query with the selected date
-  const { data, isLoading, error, refetch } = trpc.tracking.getDailySummary.useQuery(
-    { date: selectedDate }
-  )
+  const { data, isLoading, error, refetch } = trpc.tracking.getDailySummary.useQuery({
+    date: selectedDate,
+  });
 
   // Helper to format date for display
   const formatDateDisplay = (dateStr: string) => {
-    const date = new Date(dateStr)
-    return date.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' })
-  }
+    const date = new Date(dateStr);
+    return date.toLocaleDateString(undefined, {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric',
+    });
+  };
 
   // Navigate to previous/next day
   const navigateDate = (days: number) => {
-    const currentDate = new Date(selectedDate)
-    currentDate.setDate(currentDate.getDate() + days)
-    const newDateStr = currentDate.toISOString().split('T')[0]
-    setSelectedDate(newDateStr)
-  }
+    const currentDate = new Date(selectedDate);
+    currentDate.setDate(currentDate.getDate() + days);
+    const newDateStr = currentDate.toISOString().split('T')[0];
+    setSelectedDate(newDateStr);
+  };
 
   // Group meals by slot
   const groupMealsBySlot = (meals: NonNullable<typeof data>['trackedMeals']) => {
@@ -226,28 +234,31 @@ export function DailySummaryContent() {
       lunch: [],
       dinner: [],
       snack: [],
-      other: []
-    }
+      other: [],
+    };
 
-    meals.forEach(meal => {
-      const slot = meal.mealSlot || 'other'
+    meals.forEach((meal) => {
+      const slot = meal.mealSlot || 'other';
       if (groups[slot] !== undefined) {
-        groups[slot].push(meal)
+        groups[slot].push(meal);
       } else {
-        groups.other.push(meal)
+        groups.other.push(meal);
       }
-    })
+    });
 
-    return groups
-  }
+    return groups;
+  };
 
   if (isLoading) {
-    return <div className="text-muted-foreground animate-pulse">Loading daily summary...</div>
+    return <div className="text-muted-foreground animate-pulse">Loading daily summary...</div>;
   }
 
   if (error) {
     return (
-      <div className="bg-red-900/30 border border-red-500 rounded-lg p-4" data-testid="network-error-state">
+      <div
+        className="bg-red-900/30 border border-red-500 rounded-lg p-4"
+        data-testid="network-error-state"
+      >
         <div className="flex flex-col items-center text-center space-y-3">
           <span className="text-2xl">⚠️</span>
           <p className="text-red-300">Error: {error.message}</p>
@@ -260,10 +271,10 @@ export function DailySummaryContent() {
           </button>
         </div>
       </div>
-    )
+    );
   }
 
-  if (!data) return null
+  if (!data) return null;
 
   return (
     <div className="space-y-6">
@@ -278,12 +289,21 @@ export function DailySummaryContent() {
             title="Previous day"
           >
             <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M15 19l-7-7 7-7"
+              />
             </svg>
           </button>
           <div className="flex-1 text-center">
-            <p className="text-lg font-medium" data-testid="summary-date">{formatDateDisplay(selectedDate)}</p>
-            <p className="text-sm text-muted-foreground" data-testid="meal-count">{data.mealCount} meal{data.mealCount !== 1 ? 's' : ''} logged</p>
+            <p className="text-lg font-medium" data-testid="summary-date">
+              {formatDateDisplay(selectedDate)}
+            </p>
+            <p className="text-sm text-muted-foreground" data-testid="meal-count">
+              {data.mealCount} meal{data.mealCount !== 1 ? 's' : ''} logged
+            </p>
           </div>
           <button
             onClick={() => navigateDate(1)}
@@ -317,7 +337,9 @@ export function DailySummaryContent() {
                 <h3 className="text-xs text-muted-foreground uppercase">Consumed</h3>
                 <div className="mt-1 space-y-1">
                   <p data-testid="actual-kcal">{data.dailyLog.actualKcal} kcal consumed</p>
-                  <p data-testid="actual-protein">{data.dailyLog.actualProteinG}g protein consumed</p>
+                  <p data-testid="actual-protein">
+                    {data.dailyLog.actualProteinG}g protein consumed
+                  </p>
                   <p data-testid="actual-carbs">{data.dailyLog.actualCarbsG}g carbs consumed</p>
                   <p data-testid="actual-fat">{data.dailyLog.actualFatG}g fat consumed</p>
                 </div>
@@ -326,29 +348,46 @@ export function DailySummaryContent() {
             {data.dailyLog.adherenceScore !== null && (
               <div className="pt-2 border-t border-zinc-700">
                 <p className="text-sm" data-testid="adherence-score">
-                  Adherence Score: <span className="text-primary font-bold">{data.dailyLog.adherenceScore}%</span>
+                  Adherence Score:{' '}
+                  <span className="text-primary font-bold">{data.dailyLog.adherenceScore}%</span>
                 </p>
               </div>
             )}
           </div>
         ) : (
-          <p className="text-muted-foreground" data-testid="no-daily-log">No daily log yet - log some meals first!</p>
+          <p className="text-muted-foreground" data-testid="no-daily-log">
+            No daily log yet - log some meals first!
+          </p>
         )}
       </div>
 
       <div className="bg-zinc-900 border border-zinc-800 rounded-lg p-4">
-        <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-2">Calculated Totals</h2>
+        <h2 className="text-sm font-semibold text-muted-foreground uppercase mb-2">
+          Calculated Totals
+        </h2>
         <div className="flex gap-3 flex-wrap">
-          <span className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm" data-testid="total-kcal">
+          <span
+            className="bg-primary/20 text-primary px-3 py-1 rounded-full text-sm"
+            data-testid="total-kcal"
+          >
             {data.totals.kcal} kcal
           </span>
-          <span className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm" data-testid="total-protein">
+          <span
+            className="bg-blue-500/20 text-blue-400 px-3 py-1 rounded-full text-sm"
+            data-testid="total-protein"
+          >
             P {data.totals.proteinG}g
           </span>
-          <span className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm" data-testid="total-carbs">
+          <span
+            className="bg-amber-500/20 text-amber-400 px-3 py-1 rounded-full text-sm"
+            data-testid="total-carbs"
+          >
             C {data.totals.carbsG}g
           </span>
-          <span className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm" data-testid="total-fat">
+          <span
+            className="bg-red-500/20 text-red-400 px-3 py-1 rounded-full text-sm"
+            data-testid="total-fat"
+          >
             F {data.totals.fatG}g
           </span>
         </div>
@@ -361,19 +400,19 @@ export function DailySummaryContent() {
         {data.trackedMeals.length > 0 ? (
           <div className="space-y-4">
             {(() => {
-              const grouped = groupMealsBySlot(data.trackedMeals)
-              const slotOrder = ['breakfast', 'lunch', 'dinner', 'snack', 'other']
+              const grouped = groupMealsBySlot(data.trackedMeals);
+              const slotOrder = ['breakfast', 'lunch', 'dinner', 'snack', 'other'];
               const slotLabels: Record<string, string> = {
                 breakfast: 'Breakfast',
                 lunch: 'Lunch',
                 dinner: 'Dinner',
                 snack: 'Snack',
-                other: 'Other'
-              }
+                other: 'Other',
+              };
 
-              return slotOrder.map(slot => {
-                const mealsInSlot = grouped[slot]
-                if (mealsInSlot.length === 0) return null
+              return slotOrder.map((slot) => {
+                const mealsInSlot = grouped[slot];
+                if (mealsInSlot.length === 0) return null;
 
                 return (
                   <div key={slot} data-testid={`meal-slot-${slot}`}>
@@ -389,7 +428,9 @@ export function DailySummaryContent() {
                         >
                           <div className="flex justify-between items-start">
                             <div>
-                              <p className="font-medium" data-testid="meal-name">{meal.mealName}</p>
+                              <p className="font-medium" data-testid="meal-name">
+                                {meal.mealName}
+                              </p>
                               <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                 <span>{meal.source}</span>
                                 <span>{'\u00B7'}</span>
@@ -401,7 +442,12 @@ export function DailySummaryContent() {
                               </div>
                             </div>
                             <div className="flex items-center gap-1.5">
-                              <span className="text-primary font-semibold text-sm" data-testid="meal-kcal">{meal.kcal} kcal</span>
+                              <span
+                                className="text-primary font-semibold text-sm"
+                                data-testid="meal-kcal"
+                              >
+                                {meal.kcal} kcal
+                              </span>
                               <DeleteMealButton
                                 mealId={meal.id}
                                 mealName={meal.mealName}
@@ -418,14 +464,16 @@ export function DailySummaryContent() {
                       ))}
                     </div>
                   </div>
-                )
-              })
+                );
+              });
             })()}
           </div>
         ) : (
-          <p className="text-muted-foreground" data-testid="no-meals">No meals tracked on this date.</p>
+          <p className="text-muted-foreground" data-testid="no-meals">
+            No meals tracked on this date.
+          </p>
         )}
       </div>
     </div>
-  )
+  );
 }

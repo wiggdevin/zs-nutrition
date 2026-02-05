@@ -1,6 +1,6 @@
-import ActivityLog from '@/components/fitness/ActivityLog'
-import FitnessConnections from '@/components/fitness/FitnessConnections'
-import NavBar from '@/components/navigation/NavBar'
+import ActivityLog from '@/components/fitness/ActivityLog';
+import FitnessConnections from '@/components/fitness/FitnessConnections';
+import NavBar from '@/components/navigation/NavBar';
 
 export default function ActivityPage() {
   return (
@@ -15,7 +15,8 @@ export default function ActivityPage() {
                 <span className="text-primary">///</span> Activity & Adjustments
               </h1>
               <p className="text-sm text-muted-foreground mt-1">
-                Connect fitness trackers and view synced activity data with automatic calorie adjustments
+                Connect fitness trackers and view synced activity data with automatic calorie
+                adjustments
               </p>
             </div>
 
@@ -28,5 +29,5 @@ export default function ActivityPage() {
         </div>
       </div>
     </>
-  )
+  );
 }

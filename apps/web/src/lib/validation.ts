@@ -1,4 +1,4 @@
-import { z } from 'zod'
+import { z } from 'zod';
 
 /**
  * Email validation schema using Zod
@@ -7,7 +7,7 @@ import { z } from 'zod'
 export const emailSchema = z
   .string()
   .min(1, 'Email address is required')
-  .email('Please enter a valid email address')
+  .email('Please enter a valid email address');
 
 /**
  * Validate an email address
@@ -15,15 +15,15 @@ export const emailSchema = z
  * @returns Object with isValid boolean and optional error message
  */
 export function validateEmail(email: string): { isValid: boolean; error?: string } {
-  const result = emailSchema.safeParse(email)
+  const result = emailSchema.safeParse(email);
 
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
 
   // Return the first error message
-  const error = result.error.errors[0]?.message || 'Invalid email format'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid email format';
+  return { isValid: false, error };
 }
 
 /**
@@ -34,7 +34,7 @@ export const mealsPerDaySchema = z
   .number()
   .int('Meals per day must be a whole number')
   .min(2, 'Meals per day must be at least 2')
-  .max(6, 'Meals per day cannot exceed 6')
+  .max(6, 'Meals per day cannot exceed 6');
 
 /**
  * Snacks per day validation schema
@@ -44,7 +44,7 @@ export const snacksPerDaySchema = z
   .number()
   .int('Snacks per day must be a whole number')
   .min(0, 'Snacks per day cannot be negative')
-  .max(4, 'Snacks per day cannot exceed 4')
+  .max(4, 'Snacks per day cannot exceed 4');
 
 /**
  * Validate meals per day
@@ -52,14 +52,14 @@ export const snacksPerDaySchema = z
  * @returns Object with isValid boolean and optional error message
  */
 export function validateMealsPerDay(mealsPerDay: number): { isValid: boolean; error?: string } {
-  const result = mealsPerDaySchema.safeParse(mealsPerDay)
+  const result = mealsPerDaySchema.safeParse(mealsPerDay);
 
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
 
-  const error = result.error.errors[0]?.message || 'Invalid meals per day'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid meals per day';
+  return { isValid: false, error };
 }
 
 /**
@@ -68,14 +68,14 @@ export function validateMealsPerDay(mealsPerDay: number): { isValid: boolean; er
  * @returns Object with isValid boolean and optional error message
  */
 export function validateSnacksPerDay(snacksPerDay: number): { isValid: boolean; error?: string } {
-  const result = snacksPerDaySchema.safeParse(snacksPerDay)
+  const result = snacksPerDaySchema.safeParse(snacksPerDay);
 
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
 
-  const error = result.error.errors[0]?.message || 'Invalid snacks per day'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid snacks per day';
+  return { isValid: false, error };
 }
 
 /**
@@ -89,7 +89,7 @@ export const authSchemas = {
   signIn: z.object({
     email: emailSchema,
   }),
-}
+};
 
 /**
  * Cooking skill validation schema
@@ -99,7 +99,7 @@ export const cookingSkillSchema = z
   .number()
   .int('Cooking skill must be a whole number')
   .min(1, 'Cooking skill must be at least 1')
-  .max(10, 'Cooking skill cannot exceed 10')
+  .max(10, 'Cooking skill cannot exceed 10');
 
 /**
  * Validate cooking skill
@@ -107,14 +107,14 @@ export const cookingSkillSchema = z
  * @returns Object with isValid boolean and optional error message
  */
 export function validateCookingSkill(cookingSkill: number): { isValid: boolean; error?: string } {
-  const result = cookingSkillSchema.safeParse(cookingSkill)
+  const result = cookingSkillSchema.safeParse(cookingSkill);
 
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
 
-  const error = result.error.errors[0]?.message || 'Invalid cooking skill'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid cooking skill';
+  return { isValid: false, error };
 }
 
 /**
@@ -125,7 +125,7 @@ export const prepTimeMaxSchema = z
   .number()
   .int('Prep time must be a whole number')
   .min(10, 'Prep time must be at least 10 minutes')
-  .max(120, 'Prep time cannot exceed 120 minutes')
+  .max(120, 'Prep time cannot exceed 120 minutes');
 
 /**
  * Validate prep time max
@@ -133,14 +133,14 @@ export const prepTimeMaxSchema = z
  * @returns Object with isValid boolean and optional error message
  */
 export function validatePrepTimeMax(prepTimeMax: number): { isValid: boolean; error?: string } {
-  const result = prepTimeMaxSchema.safeParse(prepTimeMax)
+  const result = prepTimeMaxSchema.safeParse(prepTimeMax);
 
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
 
-  const error = result.error.errors[0]?.message || 'Invalid prep time'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid prep time';
+  return { isValid: false, error };
 }
 
 /**
@@ -151,7 +151,7 @@ export const ageSchema = z
   .number()
   .int('Age must be a whole number')
   .min(18, 'Age must be between 18 and 100')
-  .max(100, 'Age must be between 18 and 100')
+  .max(100, 'Age must be between 18 and 100');
 
 /**
  * Height (cm) validation schema
@@ -160,7 +160,7 @@ export const ageSchema = z
 export const heightCmSchema = z
   .number()
   .min(90, 'Height must be between 90 and 250 cm')
-  .max(250, 'Height must be between 90 and 250 cm')
+  .max(250, 'Height must be between 90 and 250 cm');
 
 /**
  * Weight (kg) validation schema
@@ -169,7 +169,7 @@ export const heightCmSchema = z
 export const weightKgSchema = z
   .number()
   .min(35, 'Weight must be between 35 and 230 kg')
-  .max(230, 'Weight must be between 35 and 230 kg')
+  .max(230, 'Weight must be between 35 and 230 kg');
 
 /**
  * Body fat percentage validation schema
@@ -180,7 +180,7 @@ export const bodyFatPercentSchema = z
   .min(3, 'Body fat must be between 3% and 60%')
   .max(60, 'Body fat must be between 3% and 60%')
   .nullable()
-  .optional()
+  .optional();
 
 /**
  * Goal rate validation schema
@@ -189,73 +189,58 @@ export const bodyFatPercentSchema = z
 export const goalRateSchema = z
   .number()
   .min(0, 'Goal rate must be between 0 and 2')
-  .max(2, 'Goal rate must be between 0 and 2')
+  .max(2, 'Goal rate must be between 0 and 2');
 
 /**
  * Sex validation schema
  */
 export const sexSchema = z.enum(['male', 'female'], {
-  errorMap: () => ({ message: 'Sex must be male or female' })
-})
+  errorMap: () => ({ message: 'Sex must be male or female' }),
+});
 
 /**
  * Goal type validation schema
  */
 export const goalTypeSchema = z.enum(['cut', 'maintain', 'bulk'], {
-  errorMap: () => ({ message: 'Invalid goal type' })
-})
+  errorMap: () => ({ message: 'Invalid goal type' }),
+});
 
 /**
  * Activity level validation schema
  */
-export const activityLevelSchema = z.enum([
-  'sedentary',
-  'lightly_active',
-  'moderately_active',
-  'very_active',
-  'extremely_active'
-], {
-  errorMap: () => ({ message: 'Invalid activity level' })
-})
+export const activityLevelSchema = z.enum(
+  ['sedentary', 'lightly_active', 'moderately_active', 'very_active', 'extremely_active'],
+  {
+    errorMap: () => ({ message: 'Invalid activity level' }),
+  }
+);
 
 /**
  * Dietary style validation schema
  */
-export const dietaryStyleSchema = z.enum([
-  'omnivore',
-  'vegetarian',
-  'vegan',
-  'pescatarian',
-  'keto',
-  'paleo'
-], {
-  errorMap: () => ({ message: 'Invalid dietary style' })
-})
+export const dietaryStyleSchema = z.enum(
+  ['omnivore', 'vegetarian', 'vegan', 'pescatarian', 'keto', 'paleo'],
+  {
+    errorMap: () => ({ message: 'Invalid dietary style' }),
+  }
+);
 
 /**
  * Macro style validation schema
  */
-export const macroStyleSchema = z.enum([
-  'balanced',
-  'high_protein',
-  'low_carb',
-  'keto'
-], {
-  errorMap: () => ({ message: 'Invalid macro style' })
-})
+export const macroStyleSchema = z.enum(['balanced', 'high_protein', 'low_carb', 'keto'], {
+  errorMap: () => ({ message: 'Invalid macro style' }),
+});
 
 /**
  * Name validation schema
  */
-export const nameSchema = z
-  .string()
-  .min(1, 'Name is required')
-  .trim()
+export const nameSchema = z.string().min(1, 'Name is required').trim();
 
 /**
  * Training time validation schema
  */
-export const trainingTimeSchema = z.enum(['morning', 'afternoon', 'evening']).nullable().optional()
+export const trainingTimeSchema = z.enum(['morning', 'afternoon', 'evening']).nullable().optional();
 
 /**
  * Validate age
@@ -263,12 +248,12 @@ export const trainingTimeSchema = z.enum(['morning', 'afternoon', 'evening']).nu
  * @returns Object with isValid boolean and optional error message
  */
 export function validateAge(age: number): { isValid: boolean; error?: string } {
-  const result = ageSchema.safeParse(age)
+  const result = ageSchema.safeParse(age);
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
-  const error = result.error.errors[0]?.message || 'Invalid age'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid age';
+  return { isValid: false, error };
 }
 
 /**
@@ -277,12 +262,12 @@ export function validateAge(age: number): { isValid: boolean; error?: string } {
  * @returns Object with isValid boolean and optional error message
  */
 export function validateHeightCm(heightCm: number): { isValid: boolean; error?: string } {
-  const result = heightCmSchema.safeParse(heightCm)
+  const result = heightCmSchema.safeParse(heightCm);
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
-  const error = result.error.errors[0]?.message || 'Invalid height'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid height';
+  return { isValid: false, error };
 }
 
 /**
@@ -291,12 +276,12 @@ export function validateHeightCm(heightCm: number): { isValid: boolean; error?: 
  * @returns Object with isValid boolean and optional error message
  */
 export function validateWeightKg(weightKg: number): { isValid: boolean; error?: string } {
-  const result = weightKgSchema.safeParse(weightKg)
+  const result = weightKgSchema.safeParse(weightKg);
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
-  const error = result.error.errors[0]?.message || 'Invalid weight'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid weight';
+  return { isValid: false, error };
 }
 
 /**
@@ -304,16 +289,19 @@ export function validateWeightKg(weightKg: number): { isValid: boolean; error?: 
  * @param bodyFatPercent - The body fat percentage to validate
  * @returns Object with isValid boolean and optional error message
  */
-export function validateBodyFatPercent(bodyFatPercent: number | null): { isValid: boolean; error?: string } {
+export function validateBodyFatPercent(bodyFatPercent: number | null): {
+  isValid: boolean;
+  error?: string;
+} {
   if (bodyFatPercent === null || bodyFatPercent === undefined) {
-    return { isValid: true } // Optional field
+    return { isValid: true }; // Optional field
   }
-  const result = bodyFatPercentSchema.safeParse(bodyFatPercent)
+  const result = bodyFatPercentSchema.safeParse(bodyFatPercent);
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
-  const error = result.error.errors[0]?.message || 'Invalid body fat percentage'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid body fat percentage';
+  return { isValid: false, error };
 }
 
 /**
@@ -322,49 +310,51 @@ export function validateBodyFatPercent(bodyFatPercent: number | null): { isValid
  * @returns Object with isValid boolean and optional error message
  */
 export function validateGoalRate(goalRate: number): { isValid: boolean; error?: string } {
-  const result = goalRateSchema.safeParse(goalRate)
+  const result = goalRateSchema.safeParse(goalRate);
   if (result.success) {
-    return { isValid: true }
+    return { isValid: true };
   }
-  const error = result.error.errors[0]?.message || 'Invalid goal rate'
-  return { isValid: false, error }
+  const error = result.error.errors[0]?.message || 'Invalid goal rate';
+  return { isValid: false, error };
 }
 
 /**
  * Comprehensive profile update validation schema
  * This schema validates all fields that can be updated via the settings API
  */
-export const profileUpdateSchema = z.object({
-  // Demographics
-  name: nameSchema.optional(),
-  sex: sexSchema.optional(),
-  age: ageSchema.optional(),
-  heightCm: heightCmSchema.optional(),
-  weightKg: weightKgSchema.optional(),
-  bodyFatPercent: bodyFatPercentSchema,
+export const profileUpdateSchema = z
+  .object({
+    // Demographics
+    name: nameSchema.optional(),
+    sex: sexSchema.optional(),
+    age: ageSchema.optional(),
+    heightCm: heightCmSchema.optional(),
+    weightKg: weightKgSchema.optional(),
+    bodyFatPercent: bodyFatPercentSchema,
 
-  // Goals
-  goalType: goalTypeSchema.optional(),
-  goalRate: goalRateSchema.optional(),
+    // Goals
+    goalType: goalTypeSchema.optional(),
+    goalRate: goalRateSchema.optional(),
 
-  // Activity
-  activityLevel: activityLevelSchema.optional(),
-  trainingDays: z.array(z.string()).optional(),
-  trainingTime: trainingTimeSchema,
+    // Activity
+    activityLevel: activityLevelSchema.optional(),
+    trainingDays: z.array(z.string()).optional(),
+    trainingTime: trainingTimeSchema,
 
-  // Dietary
-  dietaryStyle: dietaryStyleSchema.optional(),
-  allergies: z.array(z.string()).optional(),
-  exclusions: z.array(z.string()).optional(),
-  cuisinePrefs: z.array(z.string()).optional(),
+    // Dietary
+    dietaryStyle: dietaryStyleSchema.optional(),
+    allergies: z.array(z.string()).optional(),
+    exclusions: z.array(z.string()).optional(),
+    cuisinePrefs: z.array(z.string()).optional(),
 
-  // Meal structure
-  macroStyle: macroStyleSchema.optional(),
-  mealsPerDay: mealsPerDaySchema.optional(),
-  snacksPerDay: snacksPerDaySchema.optional(),
-  cookingSkill: cookingSkillSchema.optional(),
-  prepTimeMax: prepTimeMaxSchema.optional(),
-}).strict()
+    // Meal structure
+    macroStyle: macroStyleSchema.optional(),
+    mealsPerDay: mealsPerDaySchema.optional(),
+    snacksPerDay: snacksPerDaySchema.optional(),
+    cookingSkill: cookingSkillSchema.optional(),
+    prepTimeMax: prepTimeMaxSchema.optional(),
+  })
+  .strict();
 
 /**
  * Profile validation schemas
@@ -398,4 +388,4 @@ export const profileSchemas = {
     prepTimeMax: prepTimeMaxSchema,
     macroStyle: macroStyleSchema,
   }),
-}
+};

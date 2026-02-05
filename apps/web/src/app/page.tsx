@@ -1,7 +1,7 @@
-import { redirect } from 'next/navigation'
-import { cookies } from 'next/headers'
-import Link from 'next/link'
-import { isDevMode } from '@/lib/dev-mode'
+import { redirect } from 'next/navigation';
+import { cookies } from 'next/headers';
+import Link from 'next/link';
+import { isDevMode } from '@/lib/dev-mode';
 
 export default async function HomePage() {
   let userId: string | null = null;
@@ -17,7 +17,7 @@ export default async function HomePage() {
   }
 
   if (userId) {
-    redirect('/dashboard')
+    redirect('/dashboard');
   }
 
   // Landing page for unauthenticated users
@@ -61,8 +61,7 @@ export default async function HomePage() {
 
           {/* Headline */}
           <h1 className="text-4xl font-heading uppercase tracking-tight text-foreground sm:text-5xl lg:text-6xl">
-            Zero Sum{' '}
-            <span className="text-primary">Nutrition</span>
+            Zero Sum <span className="text-primary">Nutrition</span>
           </h1>
 
           {/* Subtitle */}
@@ -71,8 +70,8 @@ export default async function HomePage() {
           </p>
 
           <p className="mt-2 max-w-xl mx-auto text-sm text-muted-foreground sm:text-base">
-            Transform your health goals into a personalized 7-day meal plan with verified nutrition data,
-            powered by our 6-agent AI pipeline.
+            Transform your health goals into a personalized 7-day meal plan with verified nutrition
+            data, powered by our 6-agent AI pipeline.
           </p>
 
           {/* CTA Buttons */}
@@ -96,30 +95,66 @@ export default async function HomePage() {
         <div className="mt-20 grid max-w-4xl grid-cols-1 gap-6 sm:grid-cols-3">
           <div className="rounded-xl border border-border bg-card/50 p-6 text-center">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10">
-              <svg className="h-5 w-5 text-primary" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2" />
+              <svg
+                className="h-5 w-5 text-primary"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                />
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-foreground">Personalized Plans</h3>
-            <p className="mt-1 text-xs text-muted-foreground">7-day meal plans tailored to your goals and preferences</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              7-day meal plans tailored to your goals and preferences
+            </p>
           </div>
           <div className="rounded-xl border border-border bg-card/50 p-6 text-center">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-success/10">
-              <svg className="h-5 w-5 text-success" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+              <svg
+                className="h-5 w-5 text-success"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-foreground">Macro Tracking</h3>
-            <p className="mt-1 text-xs text-muted-foreground">Track calories, protein, carbs, and fats with precision</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              Track calories, protein, carbs, and fats with precision
+            </p>
           </div>
           <div className="rounded-xl border border-border bg-card/50 p-6 text-center">
             <div className="mx-auto mb-3 flex h-10 w-10 items-center justify-center rounded-lg bg-chart-3/10">
-              <svg className="h-5 w-5 text-chart-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 10V3L4 14h7v7l9-11h-7z" />
+              <svg
+                className="h-5 w-5 text-chart-3"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M13 10V3L4 14h7v7l9-11h-7z"
+                />
               </svg>
             </div>
             <h3 className="text-sm font-semibold text-foreground">AI-Powered</h3>
-            <p className="mt-1 text-xs text-muted-foreground">6-agent pipeline with verified FatSecret nutrition data</p>
+            <p className="mt-1 text-xs text-muted-foreground">
+              6-agent pipeline with verified FatSecret nutrition data
+            </p>
           </div>
         </div>
       </main>
@@ -129,5 +164,5 @@ export default async function HomePage() {
         <p>&copy; {new Date().getFullYear()} Zero Sum Nutrition. All rights reserved.</p>
       </footer>
     </div>
-  )
+  );
 }

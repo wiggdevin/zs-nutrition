@@ -1,7 +1,7 @@
-import { NextResponse } from 'next/server'
-import { requireActiveUser } from '@/lib/auth'
-import { prisma } from '@/lib/prisma'
-import { logger } from '@/lib/safe-logger'
+import { NextResponse } from 'next/server';
+import { requireActiveUser } from '@/lib/auth';
+import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/vision/history
@@ -10,22 +10,22 @@ import { logger } from '@/lib/safe-logger'
  */
 export async function GET(request: Request) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Use clerkUserId as userId for foodScan queries (foodScan stores Clerk user IDs)
-    const userId = clerkUserId
+    const userId = clerkUserId;
 
-    const { searchParams } = new URL(request.url)
-    const limit = parseInt(searchParams.get('limit') || '20')
-    const offset = parseInt(searchParams.get('offset') || '0')
+    const { searchParams } = new URL(request.url);
+    const limit = parseInt(searchParams.get('limit') || '20');
+    const offset = parseInt(searchParams.get('offset') || '0');
 
     // Fetch food scans
     const scans = await prisma.foodScan.findMany({
@@ -38,10 +38,10 @@ export async function GET(request: Request) {
       },
       take: limit,
       skip: offset,
-    })
+    });
 
     // Parse JSON fields and format response
-    const formattedScans = scans.map(scan => ({
+    const formattedScans = scans.map((scan) => ({
       id: scan.id,
       status: scan.status,
       scanType: scan.scanType,
@@ -51,7 +51,7 @@ export async function GET(request: Request) {
       completedAt: scan.completedAt,
       // Check if this scan has been logged as a meal
       hasLoggedMeal: scan.userConfirmed,
-    }))
+    }));
 
     // Get total count
     const totalCount = await prisma.foodScan.count({
@@ -59,7 +59,7 @@ export async function GET(request: Request) {
         userId,
         status: 'completed',
       },
-    })
+    });
 
     return NextResponse.json({
       scans: formattedScans,
@@ -69,15 +69,12 @@ export async function GET(request: Request) {
         offset,
         hasMore: offset + limit < totalCount,
       },
-    })
+    });
   } catch (error) {
-    logger.error('Error in GET /api/vision/history:', error)
+    logger.error('Error in GET /api/vision/history:', error);
 
-    const message = error instanceof Error ? error.message : 'Failed to fetch history'
+    const message = error instanceof Error ? error.message : 'Failed to fetch history';
 
-    return NextResponse.json(
-      { error: 'Failed to fetch history', message },
-      { status: 500 }
-    )
+    return NextResponse.json({ error: 'Failed to fetch history', message }, { status: 500 });
   }
 }

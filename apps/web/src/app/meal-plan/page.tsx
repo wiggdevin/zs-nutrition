@@ -1,7 +1,7 @@
-"use client";
+'use client';
 
-import { useEffect, useState, useCallback, useRef } from "react";
-import Link from "next/link";
+import { useEffect, useState, useCallback, useRef } from 'react';
+import Link from 'next/link';
 import NavBar from '@/components/navigation/NavBar';
 import MealDetailModal from '@/components/meal-plan/MealDetailModal';
 import { logger } from '@/lib/safe-logger';
@@ -56,7 +56,8 @@ interface GroceryCategory {
  * in the proper {name, amount, unit} format.
  */
 function normalizeGroceryItem(raw: Record<string, unknown>): GroceryItem {
-  const name = (raw.name as string) || (raw.food_name as string) || (raw.item as string) || 'Unknown Item';
+  const name =
+    (raw.name as string) || (raw.food_name as string) || (raw.item as string) || 'Unknown Item';
   let amount: number;
   let unit: string;
 
@@ -215,7 +216,10 @@ function SwapModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm" data-testid="swap-modal">
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      data-testid="swap-modal"
+    >
       <div className="relative mx-4 w-full max-w-lg rounded-xl border border-border card-elevation-modal">
         {/* Modal header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
@@ -233,8 +237,19 @@ function SwapModal({
             data-testid="swap-modal-close"
             aria-label="Close swap modal"
           >
-            <svg width="14" height="14" viewBox="0 0 14 14" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d="M1 1L13 13M1 13L13 1" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1 1L13 13M1 13L13 1"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
             </svg>
           </button>
         </div>
@@ -257,7 +272,9 @@ function SwapModal({
             </div>
           ) : alternatives.length === 0 ? (
             <div className="py-8 text-center">
-              <p className="text-sm text-muted-foreground">No alternatives available for this meal slot.</p>
+              <p className="text-sm text-muted-foreground">
+                No alternatives available for this meal slot.
+              </p>
             </div>
           ) : (
             <div className="space-y-3" data-testid="swap-alternatives-list">
@@ -267,24 +284,25 @@ function SwapModal({
                   onClick={() => handleSelect(alt)}
                   disabled={selecting}
                   className={`w-full rounded-lg border border-border card-elevation p-4 text-left transition-all ${
-                    selecting
-                      ? "opacity-50 cursor-not-allowed"
-                      : "hover:border-primary/50"
+                    selecting ? 'opacity-50 cursor-not-allowed' : 'hover:border-primary/50'
                   }`}
                   data-testid={`swap-alternative-${idx}`}
                 >
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex-1 min-w-0">
-                      <h4 className="text-sm font-semibold text-foreground truncate" title={alt.name}>
+                      <h4
+                        className="text-sm font-semibold text-foreground truncate"
+                        title={alt.name}
+                      >
                         {alt.name}
                       </h4>
                       {alt.cuisine && (
                         <p className="mt-0.5 text-xs text-muted-foreground">{alt.cuisine}</p>
                       )}
                       <div className="mt-1 text-[10px] text-muted-foreground">
-                        {alt.prepTimeMin ? `${alt.prepTimeMin}m prep` : ""}
-                        {alt.prepTimeMin && alt.cookTimeMin ? " + " : ""}
-                        {alt.cookTimeMin ? `${alt.cookTimeMin}m cook` : ""}
+                        {alt.prepTimeMin ? `${alt.prepTimeMin}m prep` : ''}
+                        {alt.prepTimeMin && alt.cookTimeMin ? ' + ' : ''}
+                        {alt.cookTimeMin ? `${alt.cookTimeMin}m cook` : ''}
                       </div>
                     </div>
                     <span className="ml-2 rounded bg-primary/20 px-2 py-1 text-[10px] font-bold text-primary">
@@ -349,13 +367,18 @@ function DayColumn({
   const dayTotalFat = day.meals.reduce((sum, m) => sum + m.nutrition.fatG, 0);
 
   return (
-    <div className="flex flex-col rounded-lg border border-border card-elevation overflow-hidden" data-testid={`day-column-${day.dayNumber}`}>
+    <div
+      className="flex flex-col rounded-lg border border-border card-elevation overflow-hidden"
+      data-testid={`day-column-${day.dayNumber}`}
+    >
       {/* Day header - prominent and distinguishable */}
       <div className="border-b border-border bg-gradient-to-b from-card to-card px-4 py-4 text-center">
         <h3 className="text-base font-black uppercase tracking-widest text-foreground">
           {day.dayName}
           {day.isTrainingDay && (
-            <span className="ml-2 text-xs" title="Training Day">&#x1F4AA;</span>
+            <span className="ml-2 text-xs" title="Training Day">
+              &#x1F4AA;
+            </span>
           )}
         </h3>
         <p className="mt-1 font-mono text-xs font-semibold text-muted-foreground">
@@ -380,24 +403,22 @@ function DayColumn({
       <div className="flex-1 space-y-2.5 p-2.5" data-testid={`day-${day.dayNumber}-meals`}>
         {day.meals.map((meal, mealIdx) => {
           const isSwapping =
-            swappingMeal?.dayNumber === day.dayNumber &&
-            swappingMeal?.mealIdx === mealIdx;
+            swappingMeal?.dayNumber === day.dayNumber && swappingMeal?.mealIdx === mealIdx;
 
           if (isSwapping) {
             return <MealCardSkeleton key={mealIdx} />;
           }
 
           const isSwapSuccess =
-            swapSuccess?.dayNumber === day.dayNumber &&
-            swapSuccess?.mealIdx === mealIdx;
+            swapSuccess?.dayNumber === day.dayNumber && swapSuccess?.mealIdx === mealIdx;
 
           return (
             <div
               key={mealIdx}
               className={`group relative rounded-lg border border-border card-elevation p-3 transition-all outline-none ${
                 isSwapSuccess
-                  ? "border-green-500/60 bg-green-500/5 ring-1 ring-green-500/30"
-                  : "hover:border-border/80"
+                  ? 'border-green-500/60 bg-green-500/5 ring-1 ring-green-500/30'
+                  : 'hover:border-border/80'
               } focus-visible:ring-2 focus-visible:ring-primary focus-visible:border-primary`}
               onClick={() => onMealClick(day.dayNumber, mealIdx, meal)}
               onKeyDown={(e) => handleMealKeyDown(e, day.dayNumber, mealIdx, meal)}
@@ -409,9 +430,16 @@ function DayColumn({
               {/* Swap success indicator + undo button */}
               {isSwapSuccess && (
                 <div className="absolute -top-2 -right-1 z-10 flex items-center gap-1">
-                  <div className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/30" data-testid={`swap-success-${day.dayNumber}-${mealIdx}`}>
+                  <div
+                    className="flex h-6 w-6 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/30"
+                    data-testid={`swap-success-${day.dayNumber}-${mealIdx}`}
+                  >
                     <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
-                      <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+                      <path
+                        fillRule="evenodd"
+                        d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                        clipRule="evenodd"
+                      />
                     </svg>
                   </div>
                   <button
@@ -424,8 +452,18 @@ function DayColumn({
                     aria-label={`Undo swap of ${meal.name}`}
                     title="Undo swap"
                   >
-                    <svg className="w-3.5 h-3.5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6" />
+                    <svg
+                      className="w-3.5 h-3.5 text-white"
+                      fill="none"
+                      viewBox="0 0 24 24"
+                      stroke="currentColor"
+                    >
+                      <path
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2.5}
+                        d="M3 10h10a8 8 0 018 8v2M3 10l6 6m-6-6l6-6"
+                      />
                     </svg>
                   </button>
                 </div>
@@ -439,15 +477,27 @@ function DayColumn({
                 disabled={swapInProgress}
                 className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-muted-foreground transition-all ${
                   swapInProgress
-                    ? "opacity-30 cursor-not-allowed"
-                    : "opacity-0 group-hover:opacity-100 hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+                    ? 'opacity-30 cursor-not-allowed'
+                    : 'opacity-0 group-hover:opacity-100 hover:border-primary/50 hover:bg-primary/10 hover:text-primary'
                 }`}
                 data-testid={`swap-icon-${day.dayNumber}-${mealIdx}`}
                 aria-label={`Swap ${meal.name}`}
-                title={swapInProgress ? "Swap in progress..." : "Swap this meal"}
+                title={swapInProgress ? 'Swap in progress...' : 'Swap this meal'}
               >
-                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M7 16L3 12M3 12L7 8M3 12H16M17 8L21 12M21 12L17 16M21 12H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M7 16L3 12M3 12L7 8M3 12H16M17 8L21 12M21 12L17 16M21 12H8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
                 </svg>
               </button>
 
@@ -459,12 +509,12 @@ function DayColumn({
                 <span
                   data-testid={`confidence-badge-${day.dayNumber}-${mealIdx}`}
                   className={`rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider border ${
-                    meal.confidenceLevel === "verified"
-                      ? "bg-success/20 text-success border-success/30"
-                      : "bg-warning/20 text-warning border-warning/30"
+                    meal.confidenceLevel === 'verified'
+                      ? 'bg-success/20 text-success border-success/30'
+                      : 'bg-warning/20 text-warning border-warning/30'
                   }`}
                 >
-                  {meal.confidenceLevel === "verified" ? "✓ Verified" : "⚡ AI-Estimated"}
+                  {meal.confidenceLevel === 'verified' ? '✓ Verified' : '⚡ AI-Estimated'}
                 </span>
               </div>
 
@@ -482,18 +532,24 @@ function DayColumn({
               )}
 
               {/* Prep time indicator */}
-              <div className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground" data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}>
+              <div
+                className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground"
+                data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}
+              >
                 <span className="text-[12px]">🕒</span>
                 <span className="font-medium">
-                  {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ""}
-                  {meal.prepTimeMin && meal.cookTimeMin ? " + " : ""}
-                  {meal.cookTimeMin ? `${meal.cookTimeMin}m cook` : ""}
-                  {!meal.prepTimeMin && !meal.cookTimeMin ? "Time N/A" : ""}
+                  {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ''}
+                  {meal.prepTimeMin && meal.cookTimeMin ? ' + ' : ''}
+                  {meal.cookTimeMin ? `${meal.cookTimeMin}m cook` : ''}
+                  {!meal.prepTimeMin && !meal.cookTimeMin ? 'Time N/A' : ''}
                 </span>
               </div>
 
               {/* Macro pills */}
-              <div className="mt-2.5 flex flex-wrap gap-1.5" data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}>
+              <div
+                className="mt-2.5 flex flex-wrap gap-1.5"
+                data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}
+              >
                 <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-1 text-[11px] font-bold text-primary border border-primary/20">
                   {meal.nutrition.kcal} kcal
                 </span>
@@ -648,16 +704,46 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
             >
               {copySuccess ? (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M20 6L9 17L4 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      d="M20 6L9 17L4 12"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                    />
                   </svg>
                   Copied!
                 </>
               ) : (
                 <>
-                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <rect x="9" y="9" width="13" height="13" rx="2" stroke="currentColor" strokeWidth="2"/>
-                    <path d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5" stroke="currentColor" strokeWidth="2"/>
+                  <svg
+                    width="14"
+                    height="14"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <rect
+                      x="9"
+                      y="9"
+                      width="13"
+                      height="13"
+                      rx="2"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
+                    <path
+                      d="M5 15H4C2.89543 15 2 14.1046 2 13V4C2 2.89543 2.89543 2 4 2H13C14.1046 2 15 2.89543 15 4V5"
+                      stroke="currentColor"
+                      strokeWidth="2"
+                    />
                   </svg>
                   Copy
                 </>
@@ -670,10 +756,34 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
               aria-label="Download grocery list as text file"
               title="Download as text"
             >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                <path d="M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+              <svg
+                width="14"
+                height="14"
+                viewBox="0 0 24 24"
+                fill="none"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M7 10L12 15L17 10"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
+                <path
+                  d="M12 15V3"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
               Download
             </button>
@@ -690,7 +800,13 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
                 fill="none"
                 className={`text-muted-foreground transition-transform ${expanded ? 'rotate-180' : ''}`}
               >
-                <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                <path
+                  d="M6 9L12 15L18 9"
+                  stroke="currentColor"
+                  strokeWidth="2"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                />
               </svg>
             </button>
           </div>
@@ -699,7 +815,10 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
 
       {/* Category grid */}
       {expanded && (
-        <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4" data-testid="grocery-list-categories">
+        <div
+          className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          data-testid="grocery-list-categories"
+        >
           {groceryList.map((cat) => (
             <div
               key={cat.category}
@@ -727,10 +846,16 @@ function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] })
                     className="flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-secondary"
                     data-testid={`grocery-item-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
                   >
-                    <span className="text-sm text-foreground break-words" title={item.name || 'Unknown Item'}>
+                    <span
+                      className="text-sm text-foreground break-words"
+                      title={item.name || 'Unknown Item'}
+                    >
                       {item.name || 'Unknown Item'}
                     </span>
-                    <span className="ml-3 flex-shrink-0 whitespace-nowrap rounded bg-border px-2 py-0.5 font-mono text-xs font-bold text-muted-foreground" data-testid={`grocery-amount-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}>
+                    <span
+                      className="ml-3 flex-shrink-0 whitespace-nowrap rounded bg-border px-2 py-0.5 font-mono text-xs font-bold text-muted-foreground"
+                      data-testid={`grocery-amount-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                    >
                       {formatGroceryAmount(item.amount, item.unit)}
                     </span>
                   </div>
@@ -753,14 +878,22 @@ export default function MealPlanPage() {
   const [swapTarget, setSwapTarget] = useState<SwapTarget | null>(null);
   const [swapAlternatives, setSwapAlternatives] = useState<Meal[]>([]);
   const [swapLoading, setSwapLoading] = useState(false);
-  const [swappingMeal, setSwappingMeal] = useState<{ dayNumber: number; mealIdx: number } | null>(null);
-  const [swapSuccess, setSwapSuccess] = useState<{ dayNumber: number; mealIdx: number } | null>(null);
+  const [swappingMeal, setSwappingMeal] = useState<{ dayNumber: number; mealIdx: number } | null>(
+    null
+  );
+  const [swapSuccess, setSwapSuccess] = useState<{ dayNumber: number; mealIdx: number } | null>(
+    null
+  );
   const [swapError, setSwapError] = useState<string | null>(null);
   // Ref-based guard for synchronous double-click prevention (state updates are async)
   const swapLockRef = useRef(false);
 
   // Meal detail modal state
-  const [selectedMeal, setSelectedMeal] = useState<{ meal: Meal; dayNumber: number; mealIdx: number } | null>(null);
+  const [selectedMeal, setSelectedMeal] = useState<{
+    meal: Meal;
+    dayNumber: number;
+    mealIdx: number;
+  } | null>(null);
 
   // Plan replacement state
   const [planReplaced, setPlanReplaced] = useState(false);
@@ -786,7 +919,7 @@ export default function MealPlanPage() {
     setLoading(true);
     setError(null);
     try {
-      const res = await fetch("/api/plan/active", { signal: controller.signal });
+      const res = await fetch('/api/plan/active', { signal: controller.signal });
       // If a newer fetch was started, discard this stale response
       if (generation !== planFetchGenRef.current) return;
       const data = await res.json();
@@ -795,14 +928,14 @@ export default function MealPlanPage() {
       if (res.ok && data.hasActivePlan) {
         setPlan(data.plan);
       } else {
-        setError(data.error || "No active meal plan found");
+        setError(data.error || 'No active meal plan found');
       }
     } catch (err) {
       // Ignore aborted requests (user navigated away or new fetch started)
       if (err instanceof DOMException && err.name === 'AbortError') return;
       if (generation !== planFetchGenRef.current) return;
-      logger.error("Error fetching meal plan:", err);
-      setError("Failed to load meal plan. Please check your connection and try again.");
+      logger.error('Error fetching meal plan:', err);
+      setError('Failed to load meal plan. Please check your connection and try again.');
     } finally {
       if (generation === planFetchGenRef.current) {
         setLoading(false);
@@ -889,9 +1022,9 @@ export default function MealPlanPage() {
       setSwapAlternatives([]);
 
       try {
-        const res = await fetch("/api/plan/swap/alternatives", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const res = await fetch('/api/plan/swap/alternatives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             planId: plan?.id,
             dayNumber,
@@ -911,7 +1044,7 @@ export default function MealPlanPage() {
           }
         }
       } catch (err) {
-        logger.error("Failed to fetch swap alternatives:", err);
+        logger.error('Failed to fetch swap alternatives:', err);
       } finally {
         setSwapLoading(false);
         swapLockRef.current = false;
@@ -937,9 +1070,9 @@ export default function MealPlanPage() {
 
       for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
         try {
-          const res = await fetch("/api/plan/swap", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
+          const res = await fetch('/api/plan/swap', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({
               planId: plan.id,
               dayNumber: target.dayNumber,
@@ -955,9 +1088,7 @@ export default function MealPlanPage() {
 
             // Update the plan locally
             const updatedDays = [...(plan.validatedPlan?.days || [])];
-            const dayIdx = updatedDays.findIndex(
-              (d) => d.dayNumber === target.dayNumber
-            );
+            const dayIdx = updatedDays.findIndex((d) => d.dayNumber === target.dayNumber);
             if (dayIdx !== -1 && updatedDays[dayIdx].meals[target.mealIdx]) {
               updatedDays[dayIdx].meals[target.mealIdx] = alt;
               setPlan({
@@ -988,8 +1119,10 @@ export default function MealPlanPage() {
 
             // If this is the last attempt, we'll handle it after the loop
             if (attempt < MAX_RETRIES - 1) {
-              logger.debug(`Swap attempt ${attempt + 1} failed, retrying... (${lastError.message})`);
-              await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+              logger.debug(
+                `Swap attempt ${attempt + 1} failed, retrying... (${lastError.message})`
+              );
+              await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
             }
           }
         } catch (err) {
@@ -997,8 +1130,10 @@ export default function MealPlanPage() {
 
           // Network error or other exception - retry if attempts remain
           if (attempt < MAX_RETRIES - 1) {
-            logger.debug(`Swap attempt ${attempt + 1} failed with error, retrying... (${lastError.message})`);
-            await new Promise(resolve => setTimeout(resolve, RETRY_DELAY_MS));
+            logger.debug(
+              `Swap attempt ${attempt + 1} failed with error, retrying... (${lastError.message})`
+            );
+            await new Promise((resolve) => setTimeout(resolve, RETRY_DELAY_MS));
           }
         }
       }
@@ -1035,9 +1170,9 @@ export default function MealPlanPage() {
       swapLockRef.current = true;
 
       try {
-        const res = await fetch("/api/plan/swap/undo", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        const res = await fetch('/api/plan/swap/undo', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             planId: plan.id,
             dayNumber,
@@ -1066,7 +1201,7 @@ export default function MealPlanPage() {
           setSwapSuccess(null);
         }
       } catch (err) {
-        logger.error("Failed to undo swap:", err);
+        logger.error('Failed to undo swap:', err);
       } finally {
         swapLockRef.current = false;
       }
@@ -1122,7 +1257,10 @@ export default function MealPlanPage() {
               >
                 {[1, 2, 3, 4, 5, 6, 7].map((dayNum) => (
                   <div key={dayNum} className="min-w-[280px] snap-start md:min-w-0">
-                    <div className="flex flex-col rounded-lg border border-border bg-card overflow-hidden" data-testid={`skeleton-day-${dayNum}`}>
+                    <div
+                      className="flex flex-col rounded-lg border border-border bg-card overflow-hidden"
+                      data-testid={`skeleton-day-${dayNum}`}
+                    >
                       {/* Skeleton day header */}
                       <div className="border-b border-border bg-gradient-to-b from-card to-card px-4 py-4 text-center">
                         <div className="mx-auto h-5 w-24 rounded skeleton-shimmer" />
@@ -1178,7 +1316,10 @@ export default function MealPlanPage() {
   }
 
   if (error || !plan) {
-    const isNetworkError = error?.toLowerCase().includes('failed to load') || error?.toLowerCase().includes('network') || error?.toLowerCase().includes('fetch');
+    const isNetworkError =
+      error?.toLowerCase().includes('failed to load') ||
+      error?.toLowerCase().includes('network') ||
+      error?.toLowerCase().includes('fetch');
     return (
       <>
         <NavBar />
@@ -1192,7 +1333,10 @@ export default function MealPlanPage() {
                 <h2 className="text-xl font-bold text-foreground" data-testid="empty-state-message">
                   {isNetworkError ? 'Connection Error' : 'No Active Plan'}
                 </h2>
-                <p className="mt-2 text-sm text-muted-foreground" data-testid="empty-state-description">
+                <p
+                  className="mt-2 text-sm text-muted-foreground"
+                  data-testid="empty-state-description"
+                >
                   {error || "You haven't generated a meal plan yet."}
                 </p>
                 <div className="mt-6 flex flex-col gap-3 items-center">
@@ -1229,208 +1373,282 @@ export default function MealPlanPage() {
 
   return (
     <>
-    <NavBar />
-    {planReplaced && (
-      <div
-        className="fixed top-14 left-0 right-0 z-40 border-b border-primary/50 bg-card px-4 py-3 md:top-14"
-        role="alert"
-        aria-live="polite"
-        data-testid="plan-replaced-banner"
-      >
-        <div className="mx-auto max-w-[1600px]">
-          <div className="flex items-center justify-between gap-4">
-            <div className="flex items-center gap-3">
-              <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/20">
-                <svg className="h-4 w-4 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-              </div>
-              <div>
-                <p className="text-sm font-semibold text-foreground" data-testid="plan-replaced-title">
-                  Plan Updated
-                </p>
-                <p className="text-xs text-muted-foreground" data-testid="plan-replaced-description">
-                  A newer meal plan has been generated. You're viewing an outdated plan.
-                </p>
-              </div>
-            </div>
-            <div className="flex items-center gap-2">
-              <button
-                onClick={handleViewNewerPlan}
-                className="rounded-lg bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
-                data-testid="view-newer-plan-button"
-              >
-                View New Plan
-              </button>
-              <button
-                onClick={handleDismissReplacedBanner}
-                className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
-                data-testid="dismiss-replaced-banner"
-                aria-label="Dismiss notification"
-              >
-                Dismiss
-              </button>
-            </div>
-          </div>
-        </div>
-      </div>
-    )}
-    <div className={`md:pt-14 pb-20 md:pb-0 ${planReplaced ? 'md:mt-12' : ''}`}>
-    <div className="min-h-screen bg-background text-foreground">
-      {/* Header */}
-      <div className="border-b border-border bg-background px-4 py-6">
-        <div className="mx-auto max-w-[1600px]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                /// ZERO SUM NUTRITION
-              </p>
-              <h1 className="mt-1 text-2xl font-heading uppercase tracking-wider text-foreground">
-                Your Meal Plan
-              </h1>
-              {plan.profile && (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {plan.profile.name} &middot; {plan.profile.goalType} &middot; {plan.planDays}-day plan
-                </p>
-              )}
-              {plan.generatedAt && (
-                <p className="mt-1 text-xs text-muted-foreground" data-testid="plan-generated-date">
-                  Generated {new Date(plan.generatedAt).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric'
-                  })}
-                </p>
-              )}
-            </div>
-            <div className="flex items-center gap-4">
-              {plan.qaStatus && (
-                <div
-                  className="rounded-lg border px-3 py-2 text-center"
-                  style={{
-                    backgroundColor: plan.qaStatus === 'PASS' ? 'rgba(34, 197, 94, 0.1)' :
-                                   plan.qaStatus === 'WARN' ? 'rgba(245, 158, 11, 0.1)' :
-                                   'rgba(239, 68, 68, 0.1)',
-                    borderColor: plan.qaStatus === 'PASS' ? 'rgba(34, 197, 94, 0.3)' :
-                                plan.qaStatus === 'WARN' ? 'rgba(245, 158, 11, 0.3)' :
-                                'rgba(239, 68, 68, 0.3)'
-                  }}
-                  title={`QA Status: ${plan.qaStatus}${plan.qaScore !== null ? ` (${plan.qaScore}%)` : ''}`}
-                  data-testid="qa-score-badge"
-                >
-                  <p className="font-mono text-xs text-muted-foreground">QA Score</p>
-                  <p
-                    className="text-lg font-bold"
-                    style={{
-                      color: plan.qaStatus === 'PASS' ? 'var(--color-success)' :
-                             plan.qaStatus === 'WARN' ? 'var(--color-warning)' :
-                             'var(--destructive)'
-                    }}
+      <NavBar />
+      {planReplaced && (
+        <div
+          className="fixed top-14 left-0 right-0 z-40 border-b border-primary/50 bg-card px-4 py-3 md:top-14"
+          role="alert"
+          aria-live="polite"
+          data-testid="plan-replaced-banner"
+        >
+          <div className="mx-auto max-w-[1600px]">
+            <div className="flex items-center justify-between gap-4">
+              <div className="flex items-center gap-3">
+                <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/20">
+                  <svg
+                    className="h-4 w-4 text-primary"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
                   >
-                    {plan.qaScore !== null ? `${plan.qaScore}%` : 'N/A'}
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p
+                    className="text-sm font-semibold text-foreground"
+                    data-testid="plan-replaced-title"
+                  >
+                    Plan Updated
+                  </p>
+                  <p
+                    className="text-xs text-muted-foreground"
+                    data-testid="plan-replaced-description"
+                  >
+                    A newer meal plan has been generated. You're viewing an outdated plan.
                   </p>
                 </div>
-              )}
-              {plan.dailyKcalTarget && (
-                <div className="rounded-lg border border-border bg-card px-4 py-2">
-                  <p className="font-mono text-xs text-muted-foreground text-center mb-1">Daily Targets</p>
-                  <div className="flex items-center gap-3">
-                    <div className="text-center">
-                      <p className="text-lg font-bold text-primary">{plan.dailyKcalTarget}</p>
-                      <p className="text-[10px] text-muted-foreground">kcal</p>
-                    </div>
-                    {(plan.dailyProteinG || plan.dailyCarbsG || plan.dailyFatG) && (
-                      <>
-                        <div className="w-px h-8 bg-border"></div>
-                        <div className="flex items-center gap-2 text-xs font-semibold">
-                          {plan.dailyProteinG && (
-                            <span className="text-chart-3" data-testid="daily-protein-target">P {plan.dailyProteinG}g</span>
-                          )}
-                          {plan.dailyCarbsG && (
-                            <span className="text-warning" data-testid="daily-carbs-target">C {plan.dailyCarbsG}g</span>
-                          )}
-                          {plan.dailyFatG && (
-                            <span className="text-destructive" data-testid="daily-fat-target">F {plan.dailyFatG}g</span>
-                          )}
-                        </div>
-                      </>
-                    )}
-                  </div>
-                </div>
-              )}
-              {plan.pdfUrl && (
-                <a
-                  href={plan.pdfUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
-                  data-testid="download-pdf-button"
-                  aria-label="Download meal plan as PDF"
-                  title="Download PDF"
+              </div>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={handleViewNewerPlan}
+                  className="rounded-lg bg-primary px-4 py-2 text-xs font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
+                  data-testid="view-newer-plan-button"
                 >
-                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                    <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M7 10L12 15L17 10" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                    <path d="M12 15V3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                  </svg>
-                  <span>PDF</span>
-                </a>
-              )}
-              <Link
-                href="/meal-plan/history"
-                className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-chart-3/50 hover:bg-chart-3/10 hover:text-chart-3"
-                data-testid="view-history-button"
-                aria-label="View plan history"
-                title="View plan history"
-              >
-                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                  <path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-                </svg>
-                <span>History</span>
-              </Link>
+                  View New Plan
+                </button>
+                <button
+                  onClick={handleDismissReplacedBanner}
+                  className="rounded-lg border border-border px-3 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:bg-secondary hover:text-foreground"
+                  data-testid="dismiss-replaced-banner"
+                  aria-label="Dismiss notification"
+                >
+                  Dismiss
+                </button>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      )}
+      <div className={`md:pt-14 pb-20 md:pb-0 ${planReplaced ? 'md:mt-12' : ''}`}>
+        <div className="min-h-screen bg-background text-foreground">
+          {/* Header */}
+          <div className="border-b border-border bg-background px-4 py-6">
+            <div className="mx-auto max-w-[1600px]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
+                    /// ZERO SUM NUTRITION
+                  </p>
+                  <h1 className="mt-1 text-2xl font-heading uppercase tracking-wider text-foreground">
+                    Your Meal Plan
+                  </h1>
+                  {plan.profile && (
+                    <p className="mt-1 text-sm text-muted-foreground">
+                      {plan.profile.name} &middot; {plan.profile.goalType} &middot; {plan.planDays}
+                      -day plan
+                    </p>
+                  )}
+                  {plan.generatedAt && (
+                    <p
+                      className="mt-1 text-xs text-muted-foreground"
+                      data-testid="plan-generated-date"
+                    >
+                      Generated{' '}
+                      {new Date(plan.generatedAt).toLocaleDateString(undefined, {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric',
+                      })}
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  {plan.qaStatus && (
+                    <div
+                      className="rounded-lg border px-3 py-2 text-center"
+                      style={{
+                        backgroundColor:
+                          plan.qaStatus === 'PASS'
+                            ? 'rgba(34, 197, 94, 0.1)'
+                            : plan.qaStatus === 'WARN'
+                              ? 'rgba(245, 158, 11, 0.1)'
+                              : 'rgba(239, 68, 68, 0.1)',
+                        borderColor:
+                          plan.qaStatus === 'PASS'
+                            ? 'rgba(34, 197, 94, 0.3)'
+                            : plan.qaStatus === 'WARN'
+                              ? 'rgba(245, 158, 11, 0.3)'
+                              : 'rgba(239, 68, 68, 0.3)',
+                      }}
+                      title={`QA Status: ${plan.qaStatus}${plan.qaScore !== null ? ` (${plan.qaScore}%)` : ''}`}
+                      data-testid="qa-score-badge"
+                    >
+                      <p className="font-mono text-xs text-muted-foreground">QA Score</p>
+                      <p
+                        className="text-lg font-bold"
+                        style={{
+                          color:
+                            plan.qaStatus === 'PASS'
+                              ? 'var(--color-success)'
+                              : plan.qaStatus === 'WARN'
+                                ? 'var(--color-warning)'
+                                : 'var(--destructive)',
+                        }}
+                      >
+                        {plan.qaScore !== null ? `${plan.qaScore}%` : 'N/A'}
+                      </p>
+                    </div>
+                  )}
+                  {plan.dailyKcalTarget && (
+                    <div className="rounded-lg border border-border bg-card px-4 py-2">
+                      <p className="font-mono text-xs text-muted-foreground text-center mb-1">
+                        Daily Targets
+                      </p>
+                      <div className="flex items-center gap-3">
+                        <div className="text-center">
+                          <p className="text-lg font-bold text-primary">{plan.dailyKcalTarget}</p>
+                          <p className="text-[10px] text-muted-foreground">kcal</p>
+                        </div>
+                        {(plan.dailyProteinG || plan.dailyCarbsG || plan.dailyFatG) && (
+                          <>
+                            <div className="w-px h-8 bg-border"></div>
+                            <div className="flex items-center gap-2 text-xs font-semibold">
+                              {plan.dailyProteinG && (
+                                <span className="text-chart-3" data-testid="daily-protein-target">
+                                  P {plan.dailyProteinG}g
+                                </span>
+                              )}
+                              {plan.dailyCarbsG && (
+                                <span className="text-warning" data-testid="daily-carbs-target">
+                                  C {plan.dailyCarbsG}g
+                                </span>
+                              )}
+                              {plan.dailyFatG && (
+                                <span className="text-destructive" data-testid="daily-fat-target">
+                                  F {plan.dailyFatG}g
+                                </span>
+                              )}
+                            </div>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+                  {plan.pdfUrl && (
+                    <a
+                      href={plan.pdfUrl}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+                      data-testid="download-pdf-button"
+                      aria-label="Download meal plan as PDF"
+                      title="Download PDF"
+                    >
+                      <svg
+                        width="16"
+                        height="16"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        xmlns="http://www.w3.org/2000/svg"
+                      >
+                        <path
+                          d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M7 10L12 15L17 10"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                        <path
+                          d="M12 15V3"
+                          stroke="currentColor"
+                          strokeWidth="2"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                        />
+                      </svg>
+                      <span>PDF</span>
+                    </a>
+                  )}
+                  <Link
+                    href="/meal-plan/history"
+                    className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-chart-3/50 hover:bg-chart-3/10 hover:text-chart-3"
+                    data-testid="view-history-button"
+                    aria-label="View plan history"
+                    title="View plan history"
+                  >
+                    <svg
+                      width="16"
+                      height="16"
+                      viewBox="0 0 24 24"
+                      fill="none"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
+                      <path
+                        d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                        stroke="currentColor"
+                        strokeWidth="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                    <span>History</span>
+                  </Link>
+                </div>
+              </div>
+            </div>
+          </div>
 
-      {/* Tab Navigation */}
-      <div className="mx-auto max-w-[1600px] px-4 pt-6">
-        <div className="flex gap-2 border-b border-border" data-testid="meal-plan-tabs">
-          <button
-            onClick={() => setActiveTab('meal-plan')}
-            className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
-              activeTab === 'meal-plan'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/80'
-            }`}
-            data-testid="tab-meal-plan"
-            aria-label="View meal plan"
-            aria-selected={activeTab === 'meal-plan'}
-          >
-            📅 Meal Plan
-          </button>
-          <button
-            onClick={() => setActiveTab('grocery-list')}
-            className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
-              activeTab === 'grocery-list'
-                ? 'border-primary text-primary'
-                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/80'
-            }`}
-            data-testid="tab-grocery-list"
-            aria-label="View grocery list"
-            aria-selected={activeTab === 'grocery-list'}
-          >
-            🛒 Grocery List
-          </button>
-        </div>
-      </div>
+          {/* Tab Navigation */}
+          <div className="mx-auto max-w-[1600px] px-4 pt-6">
+            <div className="flex gap-2 border-b border-border" data-testid="meal-plan-tabs">
+              <button
+                onClick={() => setActiveTab('meal-plan')}
+                className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+                  activeTab === 'meal-plan'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/80'
+                }`}
+                data-testid="tab-meal-plan"
+                aria-label="View meal plan"
+                aria-selected={activeTab === 'meal-plan'}
+              >
+                📅 Meal Plan
+              </button>
+              <button
+                onClick={() => setActiveTab('grocery-list')}
+                className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+                  activeTab === 'grocery-list'
+                    ? 'border-primary text-primary'
+                    : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/80'
+                }`}
+                data-testid="tab-grocery-list"
+                aria-label="View grocery list"
+                aria-selected={activeTab === 'grocery-list'}
+              >
+                🛒 Grocery List
+              </button>
+            </div>
+          </div>
 
-      {/* 7-day grid - Responsive layout */}
-      {activeTab === 'meal-plan' && (
-      <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="meal-plan-view">
-        {/* Desktop: 7 columns (xl+), Tablet: 3-4 columns (md-lg), Mobile: swipeable cards (xs-sm) */}
-        <div
-          className="
+          {/* 7-day grid - Responsive layout */}
+          {activeTab === 'meal-plan' && (
+            <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="meal-plan-view">
+              {/* Desktop: 7 columns (xl+), Tablet: 3-4 columns (md-lg), Mobile: swipeable cards (xs-sm) */}
+              <div
+                className="
             /* Mobile: horizontal scroll with snap (swipeable cards) */
             flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory
             /* md: grid with 3 columns */
@@ -1442,98 +1660,117 @@ export default function MealPlanPage() {
             /* 2xl: full 7 columns grid */
             2xl:grid-cols-7
           "
-          data-testid="seven-day-grid"
-        >
-          {days.map((day) => (
-            <div
-              key={day.dayNumber}
-              className="
+                data-testid="seven-day-grid"
+              >
+                {days.map((day) => (
+                  <div
+                    key={day.dayNumber}
+                    className="
                 /* Mobile: min-width for swipeable cards with snap alignment */
                 min-w-[280px] snap-start
                 /* md+: remove min-width, use grid columns */
                 md:min-w-0
               "
-            >
-              <DayColumn
-                day={day}
-                swappingMeal={swappingMeal}
-                swapSuccess={swapSuccess}
-                swapInProgress={swapLoading || swappingMeal !== null}
-                onSwapClick={handleSwapClick}
-                onMealClick={(dayNumber, mealIdx, meal) => setSelectedMeal({ dayNumber, mealIdx, meal })}
-                onUndoClick={handleUndoClick}
-              />
+                  >
+                    <DayColumn
+                      day={day}
+                      swappingMeal={swappingMeal}
+                      swapSuccess={swapSuccess}
+                      swapInProgress={swapLoading || swappingMeal !== null}
+                      onSwapClick={handleSwapClick}
+                      onMealClick={(dayNumber, mealIdx, meal) =>
+                        setSelectedMeal({ dayNumber, mealIdx, meal })
+                      }
+                      onUndoClick={handleUndoClick}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {days.length === 0 && (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No meal plan data available.</p>
+                </div>
+              )}
             </div>
-          ))}
-        </div>
+          )}
 
-        {days.length === 0 && (
-          <div className="text-center py-12">
-            <p className="text-muted-foreground">No meal plan data available.</p>
-          </div>
-        )}
-      </div>
-      )}
-
-      {/* Grocery List View */}
-      {activeTab === 'grocery-list' && (
-        <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="grocery-list-view">
-          {plan.validatedPlan?.groceryList && plan.validatedPlan.groceryList.length > 0 ? (
-            <GroceryListSection groceryList={normalizeGroceryList(plan.validatedPlan.groceryList as unknown[])} />
-          ) : (
-            <div className="text-center py-12">
-              <p className="text-muted-foreground">No grocery list available.</p>
+          {/* Grocery List View */}
+          {activeTab === 'grocery-list' && (
+            <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="grocery-list-view">
+              {plan.validatedPlan?.groceryList && plan.validatedPlan.groceryList.length > 0 ? (
+                <GroceryListSection
+                  groceryList={normalizeGroceryList(plan.validatedPlan.groceryList as unknown[])}
+                />
+              ) : (
+                <div className="text-center py-12">
+                  <p className="text-muted-foreground">No grocery list available.</p>
+                </div>
+              )}
             </div>
           )}
         </div>
-      )}
-    </div>
-    </div>
-
-    {/* Swap modal */}
-    {swapTarget && (
-      <SwapModal
-        target={swapTarget}
-        alternatives={swapAlternatives}
-        loading={swapLoading}
-        onSelect={handleSwapSelect}
-        onClose={handleSwapClose}
-      />
-    )}
-
-    {/* Swap error toast */}
-    {swapError && (
-      <div className="fixed bottom-4 right-4 z-50 max-w-md rounded-lg border border-red-500/60 bg-red-500/10 px-4 py-3 shadow-lg" data-testid="swap-error-toast">
-        <div className="flex items-start gap-3">
-          <svg className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500" viewBox="0 0 20 20" fill="currentColor">
-            <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
-          </svg>
-          <div className="flex-1">
-            <p className="text-sm font-semibold text-red-500">Meal Swap Failed</p>
-            <p className="mt-1 text-xs text-red-400">{swapError}</p>
-          </div>
-          <button
-            onClick={() => setSwapError(null)}
-            className="flex-shrink-0 rounded text-red-400 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-500"
-            aria-label="Dismiss error"
-          >
-            <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-              <path fillRule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clipRule="evenodd" />
-            </svg>
-          </button>
-        </div>
       </div>
-    )}
 
-    {/* Meal detail modal */}
-    {selectedMeal && (
-      <MealDetailModal
-        meal={selectedMeal.meal}
-        dayNumber={selectedMeal.dayNumber}
-        mealIdx={selectedMeal.mealIdx}
-        onClose={() => setSelectedMeal(null)}
-      />
-    )}
+      {/* Swap modal */}
+      {swapTarget && (
+        <SwapModal
+          target={swapTarget}
+          alternatives={swapAlternatives}
+          loading={swapLoading}
+          onSelect={handleSwapSelect}
+          onClose={handleSwapClose}
+        />
+      )}
+
+      {/* Swap error toast */}
+      {swapError && (
+        <div
+          className="fixed bottom-4 right-4 z-50 max-w-md rounded-lg border border-red-500/60 bg-red-500/10 px-4 py-3 shadow-lg"
+          data-testid="swap-error-toast"
+        >
+          <div className="flex items-start gap-3">
+            <svg
+              className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500"
+              viewBox="0 0 20 20"
+              fill="currentColor"
+            >
+              <path
+                fillRule="evenodd"
+                d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z"
+                clipRule="evenodd"
+              />
+            </svg>
+            <div className="flex-1">
+              <p className="text-sm font-semibold text-red-500">Meal Swap Failed</p>
+              <p className="mt-1 text-xs text-red-400">{swapError}</p>
+            </div>
+            <button
+              onClick={() => setSwapError(null)}
+              className="flex-shrink-0 rounded text-red-400 hover:text-red-300 focus:outline-none focus:ring-2 focus:ring-red-500"
+              aria-label="Dismiss error"
+            >
+              <svg className="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                <path
+                  fillRule="evenodd"
+                  d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z"
+                  clipRule="evenodd"
+                />
+              </svg>
+            </button>
+          </div>
+        </div>
+      )}
+
+      {/* Meal detail modal */}
+      {selectedMeal && (
+        <MealDetailModal
+          meal={selectedMeal.meal}
+          dayNumber={selectedMeal.dayNumber}
+          mealIdx={selectedMeal.mealIdx}
+          onClose={() => setSelectedMeal(null)}
+        />
+      )}
     </>
   );
 }

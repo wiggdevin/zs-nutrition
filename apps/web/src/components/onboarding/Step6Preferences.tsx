@@ -1,6 +1,6 @@
-"use client";
+'use client';
 
-import { OnboardingData, MacroStyle } from "@/lib/onboarding-types";
+import { OnboardingData, MacroStyle } from '@/lib/onboarding-types';
 
 interface Props {
   data: OnboardingData;
@@ -8,25 +8,25 @@ interface Props {
 }
 
 const macroStyles: { value: MacroStyle; label: string; desc: string }[] = [
-  { value: "balanced", label: "Balanced", desc: "30P / 40C / 30F — General health" },
-  { value: "high_protein", label: "High Protein", desc: "40P / 35C / 25F — Muscle building" },
-  { value: "low_carb", label: "Low Carb", desc: "35P / 25C / 40F — Fat adaptation" },
-  { value: "keto", label: "Keto", desc: "30P / 5C / 65F — Ketogenic" },
+  { value: 'balanced', label: 'Balanced', desc: '30P / 40C / 30F — General health' },
+  { value: 'high_protein', label: 'High Protein', desc: '40P / 35C / 25F — Muscle building' },
+  { value: 'low_carb', label: 'Low Carb', desc: '35P / 25C / 40F — Fat adaptation' },
+  { value: 'keto', label: 'Keto', desc: '30P / 5C / 65F — Ketogenic' },
 ];
 
 const cuisineOptions = [
-  "American",
-  "Italian",
-  "Mexican",
-  "Asian",
-  "Mediterranean",
-  "Indian",
-  "Japanese",
-  "Thai",
-  "Greek",
-  "Middle Eastern",
-  "Korean",
-  "French",
+  'American',
+  'Italian',
+  'Mexican',
+  'Asian',
+  'Mediterranean',
+  'Indian',
+  'Japanese',
+  'Thai',
+  'Greek',
+  'Middle Eastern',
+  'Korean',
+  'French',
 ];
 
 export function Step6Preferences({ data, updateData }: Props) {
@@ -48,7 +48,10 @@ export function Step6Preferences({ data, updateData }: Props) {
 
       {/* Macro Style */}
       <div>
-        <label id="onboarding-macro-split-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          id="onboarding-macro-split-label"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Macro Split
         </label>
         <div className="space-y-2" role="radiogroup" aria-labelledby="onboarding-macro-split-label">
@@ -67,11 +70,13 @@ export function Step6Preferences({ data, updateData }: Props) {
               aria-checked={data.macroStyle === value}
               className={`w-full rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.macroStyle === value
-                  ? "border-primary bg-primary/10"
-                  : "border-border bg-card hover:border-border/80"
+                  ? 'border-primary bg-primary/10'
+                  : 'border-border bg-card hover:border-border/80'
               }`}
             >
-              <span className={`block text-sm font-bold ${data.macroStyle === value ? "text-primary" : "text-foreground"}`}>
+              <span
+                className={`block text-sm font-bold ${data.macroStyle === value ? 'text-primary' : 'text-foreground'}`}
+              >
                 {label}
               </span>
               <span className="block text-xs text-muted-foreground">{desc}</span>
@@ -82,10 +87,17 @@ export function Step6Preferences({ data, updateData }: Props) {
 
       {/* Cuisine Preferences */}
       <div>
-        <label id="onboarding-cuisine-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          id="onboarding-cuisine-label"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Cuisine Preferences (select favorites)
         </label>
-        <div className="flex flex-wrap gap-2" role="group" aria-labelledby="onboarding-cuisine-label">
+        <div
+          className="flex flex-wrap gap-2"
+          role="group"
+          aria-labelledby="onboarding-cuisine-label"
+        >
           {cuisineOptions.map((cuisine) => (
             <button
               key={cuisine}
@@ -100,8 +112,8 @@ export function Step6Preferences({ data, updateData }: Props) {
               aria-pressed={data.cuisinePreferences.includes(cuisine.toLowerCase())}
               className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[180px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.cuisinePreferences.includes(cuisine.toLowerCase())
-                  ? "border-primary bg-primary/10 text-primary"
-                  : "border-border bg-card text-muted-foreground hover:border-border/80"
+                  ? 'border-primary bg-primary/10 text-primary'
+                  : 'border-border bg-card text-muted-foreground hover:border-border/80'
               }`}
               title={cuisine}
             >
@@ -114,7 +126,10 @@ export function Step6Preferences({ data, updateData }: Props) {
       {/* Meals Per Day */}
       <div className="grid grid-cols-2 gap-4">
         <div>
-          <label htmlFor="onboarding-meals-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="onboarding-meals-per-day"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Meals/Day: {data.mealsPerDay}
           </label>
           <input
@@ -137,7 +152,10 @@ export function Step6Preferences({ data, updateData }: Props) {
           </div>
         </div>
         <div>
-          <label htmlFor="onboarding-snacks-per-day" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          <label
+            htmlFor="onboarding-snacks-per-day"
+            className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+          >
             Snacks/Day: {data.snacksPerDay}
           </label>
           <input
@@ -163,9 +181,7 @@ export function Step6Preferences({ data, updateData }: Props) {
 
       {/* Ready message */}
       <div className="rounded-lg border border-success/30 bg-success/5 p-4 text-center">
-        <p className="text-sm font-bold text-success">
-          You&apos;re all set!
-        </p>
+        <p className="text-sm font-bold text-success">You&apos;re all set!</p>
         <p className="mt-1 text-xs text-muted-foreground">
           Click &quot;Complete Setup&quot; to generate your personalized meal plan.
         </p>

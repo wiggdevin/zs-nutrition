@@ -27,13 +27,9 @@ export const DEFAULT_ADJUSTMENT_CONFIG: CalorieAdjustmentConfig = {
 export function calculateCalorieAdjustment(
   baseTarget: number,
   activity: NormalizedActivity,
-  config: CalorieAdjustmentConfig = DEFAULT_ADJUSTMENT_CONFIG,
+  config: CalorieAdjustmentConfig = DEFAULT_ADJUSTMENT_CONFIG
 ): CalorieAdjustment {
-  const {
-    safetyFactor = 0.75,
-    maxDailyIncrease = 500,
-    minWorkoutMinutes = 20,
-  } = config;
+  const { safetyFactor = 0.75, maxDailyIncrease = 500, minWorkoutMinutes = 20 } = config;
 
   // Calculate total active minutes from workouts
   const totalActiveMinutes = activity.workouts?.reduce((sum, w) => sum + w.durationMinutes, 0) || 0;
@@ -41,7 +37,9 @@ export function calculateCalorieAdjustment(
 
   // Calculate active calories (prefer workout-specific data)
   const activeCalories =
-    activity.workouts?.reduce((sum, w) => sum + w.caloriesBurned, 0) || activity.activeCalories || 0;
+    activity.workouts?.reduce((sum, w) => sum + w.caloriesBurned, 0) ||
+    activity.activeCalories ||
+    0;
 
   // Check if minimum workout requirement is met
   const meetsMinimumWorkout = totalActiveMinutes >= minWorkoutMinutes || workoutCount > 0;
@@ -89,7 +87,7 @@ export function calculateCalorieAdjustment(
  */
 export function calculateMealPlanAdjustments(
   baseMeals: { slot: string; calories: number }[],
-  calorieAdjustment: CalorieAdjustment,
+  calorieAdjustment: CalorieAdjustment
 ): {
   dayNumber: number;
   originalCalories: number;
@@ -132,7 +130,7 @@ export function calculateMealPlanAdjustments(
 export function shouldApplyAdjustment(
   activityDate: Date,
   currentDate: Date = new Date(),
-  windowHours: number = 4,
+  windowHours: number = 4
 ): boolean {
   const timeDiffMs = currentDate.getTime() - activityDate.getTime();
   const windowMs = windowHours * 60 * 60 * 1000;
@@ -144,9 +142,7 @@ export function shouldApplyAdjustment(
 /**
  * Aggregate activity data from multiple platforms for a single date
  */
-export function aggregateActivityData(
-  activities: NormalizedActivity[],
-): NormalizedActivity {
+export function aggregateActivityData(activities: NormalizedActivity[]): NormalizedActivity {
   if (activities.length === 0) {
     throw new Error('No activity data to aggregate');
   }
@@ -169,10 +165,14 @@ export function aggregateActivityData(
 
   for (const activity of activities) {
     if (activity.steps) aggregated.steps = (aggregated.steps ?? 0) + activity.steps;
-    if (activity.activeCalories) aggregated.activeCalories = (aggregated.activeCalories ?? 0) + activity.activeCalories;
-    if (activity.totalCalories) aggregated.totalCalories = (aggregated.totalCalories ?? 0) + activity.totalCalories;
-    if (activity.distanceKm) aggregated.distanceKm = (aggregated.distanceKm ?? 0) + activity.distanceKm;
-    if (activity.activeMinutes) aggregated.activeMinutes = (aggregated.activeMinutes ?? 0) + activity.activeMinutes;
+    if (activity.activeCalories)
+      aggregated.activeCalories = (aggregated.activeCalories ?? 0) + activity.activeCalories;
+    if (activity.totalCalories)
+      aggregated.totalCalories = (aggregated.totalCalories ?? 0) + activity.totalCalories;
+    if (activity.distanceKm)
+      aggregated.distanceKm = (aggregated.distanceKm ?? 0) + activity.distanceKm;
+    if (activity.activeMinutes)
+      aggregated.activeMinutes = (aggregated.activeMinutes ?? 0) + activity.activeMinutes;
     if (activity.workouts) {
       allWorkouts.push(...activity.workouts);
     }
@@ -180,10 +180,16 @@ export function aggregateActivityData(
 
   // Use the maximum heart rate values
   for (const activity of activities) {
-    if (activity.heartRateAvg && (!aggregated.heartRateAvg || activity.heartRateAvg > aggregated.heartRateAvg)) {
+    if (
+      activity.heartRateAvg &&
+      (!aggregated.heartRateAvg || activity.heartRateAvg > aggregated.heartRateAvg)
+    ) {
       aggregated.heartRateAvg = activity.heartRateAvg;
     }
-    if (activity.heartRateMax && (!aggregated.heartRateMax || activity.heartRateMax > aggregated.heartRateMax)) {
+    if (
+      activity.heartRateMax &&
+      (!aggregated.heartRateMax || activity.heartRateMax > aggregated.heartRateMax)
+    ) {
       aggregated.heartRateMax = activity.heartRateMax;
     }
   }
@@ -210,7 +216,7 @@ export function aggregateActivityData(
 export function calculateAdherenceAdjustedTarget(
   currentTarget: number,
   adherenceScores: number[],
-  windowSize: number = 7,
+  windowSize: number = 7
 ): number {
   if (adherenceScores.length < windowSize) {
     return currentTarget;
@@ -253,7 +259,7 @@ export function roundMealCalories(calories: number, roundTo: 10 | 25 = 10): numb
 export function calculateAdjustedMacros(
   originalMacros: { protein: number; carbs: number; fat: number },
   originalCalories: number,
-  adjustedCalories: number,
+  adjustedCalories: number
 ): { protein: number; carbs: number; fat: number } {
   const adjustmentRatio = adjustedCalories / originalCalories;
 

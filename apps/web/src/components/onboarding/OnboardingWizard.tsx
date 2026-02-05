@@ -1,22 +1,18 @@
-"use client";
+'use client';
 
-import { useState, useEffect, useRef } from "react";
-import {
-  OnboardingData,
-  defaultOnboardingData,
-  TOTAL_STEPS,
-} from "@/lib/onboarding-types";
-import { logger } from "@/lib/safe-logger";
-import { Step1Demographics, isStep1Valid } from "./Step1Demographics";
-import { Step2BodyMetrics, isStep2Valid } from "./Step2BodyMetrics";
-import { Step3Goals, isStep3Valid } from "./Step3Goals";
-import { Step4Dietary } from "./Step4Dietary";
-import { Step5Lifestyle } from "./Step5Lifestyle";
-import { Step6Preferences } from "./Step6Preferences";
-import { ProgressBar } from "./ProgressBar";
+import { useState, useEffect, useRef } from 'react';
+import { OnboardingData, defaultOnboardingData, TOTAL_STEPS } from '@/lib/onboarding-types';
+import { logger } from '@/lib/safe-logger';
+import { Step1Demographics, isStep1Valid } from './Step1Demographics';
+import { Step2BodyMetrics, isStep2Valid } from './Step2BodyMetrics';
+import { Step3Goals, isStep3Valid } from './Step3Goals';
+import { Step4Dietary } from './Step4Dietary';
+import { Step5Lifestyle } from './Step5Lifestyle';
+import { Step6Preferences } from './Step6Preferences';
+import { ProgressBar } from './ProgressBar';
 
-const STORAGE_KEY = "zsn_onboarding_data";
-const STEP_KEY = "zsn_onboarding_step";
+const STORAGE_KEY = 'zsn_onboarding_data';
+const STEP_KEY = 'zsn_onboarding_step';
 
 // API response types
 interface OnboardingStateResponse {
@@ -56,13 +52,13 @@ export function OnboardingWizard() {
 
       try {
         // Try to load from database first (cross-session persistence)
-        const res = await fetch("/api/onboarding");
+        const res = await fetch('/api/onboarding');
         if (res.ok) {
           const serverState: OnboardingStateResponse = await res.json();
 
           // If onboarding is completed, redirect to dashboard
           if (serverState.completed) {
-            window.location.href = "/dashboard";
+            window.location.href = '/dashboard';
             return;
           }
 
@@ -81,7 +77,7 @@ export function OnboardingWizard() {
         }
       } catch (err) {
         // If server request fails, fall back to localStorage
-        logger.warn("Failed to load onboarding state from server, using localStorage:", err);
+        logger.warn('Failed to load onboarding state from server, using localStorage:', err);
       }
 
       // Fall back to localStorage if server didn't have data or request failed
@@ -123,9 +119,9 @@ export function OnboardingWizard() {
     // Save to database for cross-session persistence (debounced)
     const saveToDatabase = setTimeout(async () => {
       try {
-        await fetch("/api/onboarding", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
+        await fetch('/api/onboarding', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
             step: currentStep,
             data: data,
@@ -134,7 +130,7 @@ export function OnboardingWizard() {
         });
       } catch (err) {
         // Silent fail - localStorage has the data
-        logger.warn("Failed to save onboarding state to server:", err);
+        logger.warn('Failed to save onboarding state to server:', err);
       }
     }, 500); // Debounce to avoid too many requests
 
@@ -174,9 +170,9 @@ export function OnboardingWizard() {
     setIsCompleting(true);
     try {
       // First, update the onboarding state to mark completion
-      await fetch("/api/onboarding", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      await fetch('/api/onboarding', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
           step: currentStep,
           data: data,
@@ -185,26 +181,26 @@ export function OnboardingWizard() {
       });
 
       // Call API to persist profile to database
-      const res = await fetch("/api/onboarding/complete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const res = await fetch('/api/onboarding/complete', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profileData: data }),
       });
       if (!res.ok) {
-        logger.error("Failed to save profile: status", res.status);
+        logger.error('Failed to save profile: status', res.status);
       }
     } catch (err) {
-      logger.error("Error saving profile:", err instanceof Error ? err.message : "Unknown error");
+      logger.error('Error saving profile:', err instanceof Error ? err.message : 'Unknown error');
     }
     // Clear onboarding state from localStorage
     localStorage.removeItem(STORAGE_KEY);
     localStorage.removeItem(STEP_KEY);
     // Mark onboarding as complete
-    localStorage.setItem("zsn_onboarding_complete", "true");
+    localStorage.setItem('zsn_onboarding_complete', 'true');
     // Save the profile data for plan generation
-    localStorage.setItem("zsn_user_profile", JSON.stringify(data));
+    localStorage.setItem('zsn_user_profile', JSON.stringify(data));
     // Redirect to dashboard
-    window.location.href = "/dashboard";
+    window.location.href = '/dashboard';
   };
 
   const stepComponents: Record<number, React.ReactNode> = {
@@ -217,12 +213,12 @@ export function OnboardingWizard() {
   };
 
   const stepTitles: Record<number, string> = {
-    1: "Demographics",
-    2: "Body Metrics",
-    3: "Goals",
-    4: "Dietary Preferences",
-    5: "Lifestyle",
-    6: "Preferences",
+    1: 'Demographics',
+    2: 'Body Metrics',
+    3: 'Goals',
+    4: 'Dietary Preferences',
+    5: 'Lifestyle',
+    6: 'Preferences',
   };
 
   // Show loading state while hydrating from localStorage to prevent flicker
@@ -260,9 +256,7 @@ export function OnboardingWizard() {
           <p className="font-mono text-xs uppercase tracking-widest text-primary">
             Step {currentStep} of {TOTAL_STEPS}
           </p>
-          <h2 className="mt-1 text-xl font-bold text-foreground">
-            {stepTitles[currentStep]}
-          </h2>
+          <h2 className="mt-1 text-xl font-bold text-foreground">{stepTitles[currentStep]}</h2>
         </div>
 
         {/* Step Content */}
@@ -277,7 +271,11 @@ export function OnboardingWizard() {
         </div>
 
         {/* Navigation */}
-        <div className="flex items-center justify-between" role="navigation" aria-label="Onboarding steps navigation">
+        <div
+          className="flex items-center justify-between"
+          role="navigation"
+          aria-label="Onboarding steps navigation"
+        >
           <button
             type="button"
             onClick={prevStep}
@@ -308,11 +306,14 @@ export function OnboardingWizard() {
             >
               {isCompleting ? (
                 <span className="flex items-center gap-2">
-                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" aria-hidden="true" />
+                  <span
+                    className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent"
+                    aria-hidden="true"
+                  />
                   Completing...
                 </span>
               ) : (
-                "Complete Setup"
+                'Complete Setup'
               )}
             </button>
           )}

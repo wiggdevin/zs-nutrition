@@ -1,19 +1,19 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireActiveUser } from '@/lib/auth'
-import { logger } from '@/lib/safe-logger'
-import { toLocalDay } from '@/lib/date-utils'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
+import { logger } from '@/lib/safe-logger';
+import { toLocalDay } from '@/lib/date-utils';
 
 export async function GET(request: Request) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     const user = await prisma.user.findUnique({
@@ -36,7 +36,15 @@ export async function GET(request: Request) {
     const { searchParams } = new URL(request.url);
     const clientDayOfWeek = searchParams.get('dayOfWeek');
 
-    const DAY_NAMES = ['sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday'];
+    const DAY_NAMES = [
+      'sunday',
+      'monday',
+      'tuesday',
+      'wednesday',
+      'thursday',
+      'friday',
+      'saturday',
+    ];
     const dayOfWeek = clientDayOfWeek ? parseInt(clientDayOfWeek, 10) : new Date().getDay();
     const todayDayName = DAY_NAMES[dayOfWeek];
     let trainingDays: string[] = [];
@@ -60,11 +68,9 @@ export async function GET(request: Request) {
 
     // Get today's date (start of day) - use UTC midnight to match toLocalDay() storage
     const today = toLocalDay();
-    const tomorrow = new Date(Date.UTC(
-      today.getUTCFullYear(),
-      today.getUTCMonth(),
-      today.getUTCDate() + 1
-    ));
+    const tomorrow = new Date(
+      Date.UTC(today.getUTCFullYear(), today.getUTCMonth(), today.getUTCDate() + 1)
+    );
 
     // Figure out today's meals from the plan
     let todayPlanMeals: Array<{
@@ -95,7 +101,8 @@ export async function GET(request: Request) {
       // The plan's dailyKcalTarget might already include the training bonus
       // So we calculate the true base by subtracting the training bonus
       const planBonusKcal = activePlan.trainingBonusKcal || 200;
-      const baseKcal = (activePlan.dailyKcalTarget || activeProfile?.goalKcal || 2100) - planBonusKcal;
+      const baseKcal =
+        (activePlan.dailyKcalTarget || activeProfile?.goalKcal || 2100) - planBonusKcal;
       const bonus = isTrainingDay ? planBonusKcal : 0;
       dailyTargets = {
         kcal: baseKcal + bonus,
@@ -201,11 +208,12 @@ export async function GET(request: Request) {
 
     // Use the stored weighted adherence score from DailyLog (calculated by meal logging endpoints)
     // Falls back to a simple calorie-based calculation if no stored score exists
-    const adherenceScore = dailyLog.adherenceScore !== null
-      ? dailyLog.adherenceScore
-      : (dailyLog.targetKcal && dailyLog.targetKcal > 0 && dailyLog.actualKcal > 0
-        ? Math.min(100, Math.round((dailyLog.actualKcal / dailyLog.targetKcal) * 100))
-        : 0);
+    const adherenceScore =
+      dailyLog.adherenceScore !== null
+        ? dailyLog.adherenceScore
+        : dailyLog.targetKcal && dailyLog.targetKcal > 0 && dailyLog.actualKcal > 0
+          ? Math.min(100, Math.round((dailyLog.actualKcal / dailyLog.targetKcal) * 100))
+          : 0;
 
     // Calculate weekly average adherence from last 7 days of DailyLogs
     const weekAgo = new Date(today);
@@ -218,9 +226,15 @@ export async function GET(request: Request) {
       },
       select: { adherenceScore: true },
     });
-    const weeklyAverageAdherence = weeklyLogs.length > 0
-      ? Math.round(weeklyLogs.reduce((sum: number, l: { adherenceScore: number | null }) => sum + (l.adherenceScore || 0), 0) / weeklyLogs.length)
-      : null;
+    const weeklyAverageAdherence =
+      weeklyLogs.length > 0
+        ? Math.round(
+            weeklyLogs.reduce(
+              (sum: number, l: { adherenceScore: number | null }) => sum + (l.adherenceScore || 0),
+              0
+            ) / weeklyLogs.length
+          )
+        : null;
 
     // Compute effective calorie target accounting for training day
     const effectiveKcalTarget = dailyLog.targetKcal || dailyTargets.kcal;
@@ -252,24 +266,36 @@ export async function GET(request: Request) {
       })),
       macros: {
         calories: { current: dailyLog.actualKcal, target: effectiveKcalTarget },
-        protein: { current: Math.round(dailyLog.actualProteinG), target: dailyLog.targetProteinG || dailyTargets.proteinG },
-        carbs: { current: Math.round(dailyLog.actualCarbsG), target: dailyLog.targetCarbsG || dailyTargets.carbsG },
-        fat: { current: Math.round(dailyLog.actualFatG), target: dailyLog.targetFatG || dailyTargets.fatG },
+        protein: {
+          current: Math.round(dailyLog.actualProteinG),
+          target: dailyLog.targetProteinG || dailyTargets.proteinG,
+        },
+        carbs: {
+          current: Math.round(dailyLog.actualCarbsG),
+          target: dailyLog.targetCarbsG || dailyTargets.carbsG,
+        },
+        fat: {
+          current: Math.round(dailyLog.actualFatG),
+          target: dailyLog.targetFatG || dailyTargets.fatG,
+        },
       },
       adherenceScore,
       weeklyAverageAdherence,
       isTrainingDay,
       trainingDays: normalizedTrainingDays,
-      trainingBonusKcal: isTrainingDay ? (activePlan?.trainingBonusKcal || 200) : 0,
+      trainingBonusKcal: isTrainingDay ? activePlan?.trainingBonusKcal || 200 : 0,
       // Calculate true base goal by subtracting the training bonus from the plan's target
       // The plan's dailyKcalTarget might already include the training bonus, so we subtract it to get the base
       // We use the plan's bonus value since that's what was used during plan generation
       baseGoalKcal: activePlan
         ? (activePlan.dailyKcalTarget || 2100) - (activePlan.trainingBonusKcal || 200)
-        : (activeProfile?.goalKcal || 2100),
+        : activeProfile?.goalKcal || 2100,
     });
   } catch (error) {
     logger.error('Dashboard data error:', error);
-    return NextResponse.json({ error: 'Something went wrong. Please try again later.' }, { status: 500 });
+    return NextResponse.json(
+      { error: 'Something went wrong. Please try again later.' },
+      { status: 500 }
+    );
   }
 }

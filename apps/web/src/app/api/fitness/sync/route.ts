@@ -14,18 +14,18 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function POST(req: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId
+    const userId = clerkUserId;
 
     const body = await req.json();
     const { platform, date } = body;
@@ -40,10 +40,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (connections.length === 0) {
-      return NextResponse.json(
-        { error: 'No connected fitness platforms found' },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: 'No connected fitness platforms found' }, { status: 404 });
     }
 
     const syncDate = date ? new Date(date) : new Date();
@@ -71,10 +68,7 @@ export async function POST(req: NextRequest) {
     });
   } catch (error) {
     logger.error('Error in fitness sync:', error);
-    return NextResponse.json(
-      { error: 'Failed to sync activity data' },
-      { status: 500 },
-    );
+    return NextResponse.json({ error: 'Failed to sync activity data' }, { status: 500 });
   }
 }
 
@@ -83,7 +77,7 @@ export async function POST(req: NextRequest) {
  */
 async function syncFromPlatform(
   connection: any,
-  syncDate: Date,
+  syncDate: Date
 ): Promise<{
   platform: string;
   success: boolean;
@@ -134,7 +128,7 @@ async function syncFitbitData(accessToken: string, syncDate: Date): Promise<any>
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   if (!activityResponse.ok) {
@@ -150,7 +144,7 @@ async function syncFitbitData(accessToken: string, syncDate: Date): Promise<any>
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   let sleepData: any = null;
@@ -185,7 +179,7 @@ async function syncOuraData(accessToken: string, syncDate: Date): Promise<any> {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   if (!activityResponse.ok) {
@@ -201,7 +195,7 @@ async function syncOuraData(accessToken: string, syncDate: Date): Promise<any> {
       headers: {
         Authorization: `Bearer ${accessToken}`,
       },
-    },
+    }
   );
 
   let sleepData: any = null;
@@ -252,7 +246,7 @@ async function syncGoogleFitData(accessToken: string, syncDate: Date): Promise<a
         startTimeNs: startTimeNanos.toString(),
         endTimeNs: endTimeNanos.toString(),
       }),
-    },
+    }
   );
 
   if (!stepsResponse.ok) {

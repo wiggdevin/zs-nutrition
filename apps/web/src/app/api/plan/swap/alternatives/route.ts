@@ -29,10 +29,7 @@ interface PlanDay {
  * Check if a meal's nutrition is within tolerance of the target
  * Tolerances: ±3% kcal, ±5% macros (protein, carbs, fat)
  */
-function isWithinTolerance(
-  mealNutrition: MealNutrition,
-  targetNutrition: MealNutrition
-): boolean {
+function isWithinTolerance(mealNutrition: MealNutrition, targetNutrition: MealNutrition): boolean {
   const kcalTolerance = 0.03; // ±3%
   const macroTolerance = 0.05; // ±5%
 
@@ -42,13 +39,15 @@ function isWithinTolerance(
 
   // Check protein tolerance
   if (targetNutrition.proteinG > 0) {
-    const proteinDiff = Math.abs(mealNutrition.proteinG - targetNutrition.proteinG) / targetNutrition.proteinG;
+    const proteinDiff =
+      Math.abs(mealNutrition.proteinG - targetNutrition.proteinG) / targetNutrition.proteinG;
     if (proteinDiff > macroTolerance) return false;
   }
 
   // Check carbs tolerance
   if (targetNutrition.carbsG > 0) {
-    const carbsDiff = Math.abs(mealNutrition.carbsG - targetNutrition.carbsG) / targetNutrition.carbsG;
+    const carbsDiff =
+      Math.abs(mealNutrition.carbsG - targetNutrition.carbsG) / targetNutrition.carbsG;
     if (carbsDiff > macroTolerance) return false;
   }
 
@@ -77,13 +76,25 @@ function respectsDietaryPreferences(
   if (dietaryStyle) {
     const style = dietaryStyle.toLowerCase();
     if (style === 'vegetarian' || style === 'vegan') {
-      const animalProducts = ['chicken', 'beef', 'pork', 'fish', 'salmon', 'tuna', 'shrimp', 'bacon', 'sausage', 'meat', 'egg'];
-      if (animalProducts.some(product => mealNameLower.includes(product))) {
+      const animalProducts = [
+        'chicken',
+        'beef',
+        'pork',
+        'fish',
+        'salmon',
+        'tuna',
+        'shrimp',
+        'bacon',
+        'sausage',
+        'meat',
+        'egg',
+      ];
+      if (animalProducts.some((product) => mealNameLower.includes(product))) {
         return false;
       }
       if (style === 'vegan') {
         const dairy = ['cheese', 'milk', 'yogurt', 'butter', 'cream'];
-        if (dairy.some(d => mealNameLower.includes(d))) {
+        if (dairy.some((d) => mealNameLower.includes(d))) {
           return false;
         }
       }
@@ -121,14 +132,14 @@ function respectsDietaryPreferences(
  */
 export async function POST(req: NextRequest) {
   try {
-    let clerkUserId: string
-    let dbUserId: string
+    let clerkUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser())
+      ({ clerkUserId, dbUserId } = await requireActiveUser());
     } catch (error) {
-      const message = error instanceof Error ? error.message : 'Unauthorized'
-      const status = message === 'Account is deactivated' ? 403 : 401
-      return NextResponse.json({ error: message }, { status })
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      const status = message === 'Account is deactivated' ? 403 : 401;
+      return NextResponse.json({ error: message }, { status });
     }
 
     const body = await req.json();
@@ -174,21 +185,22 @@ export async function POST(req: NextRequest) {
     // Parse the validated plan
     let validatedPlan: { days: PlanDay[] };
     try {
-      validatedPlan = typeof mealPlan.validatedPlan === 'string'
-        ? JSON.parse(mealPlan.validatedPlan)
-        : mealPlan.validatedPlan as { days: PlanDay[] };
+      validatedPlan =
+        typeof mealPlan.validatedPlan === 'string'
+          ? JSON.parse(mealPlan.validatedPlan)
+          : (mealPlan.validatedPlan as { days: PlanDay[] });
     } catch {
       return NextResponse.json({ error: 'Failed to parse plan data' }, { status: 500 });
     }
 
     // Find the current day and the meal being swapped
-    const currentDay = (validatedPlan.days || []).find(d => d.dayNumber === dayNumber);
+    const currentDay = (validatedPlan.days || []).find((d) => d.dayNumber === dayNumber);
     if (!currentDay) {
       return NextResponse.json({ error: 'Day not found in plan' }, { status: 404 });
     }
 
     // Find the target meal to get its nutrition as the baseline
-    const targetMeal = currentDay.meals?.find(m => m.slot?.toLowerCase() === slot.toLowerCase());
+    const targetMeal = currentDay.meals?.find((m) => m.slot?.toLowerCase() === slot.toLowerCase());
     if (!targetMeal) {
       return NextResponse.json({ error: 'Meal slot not found' }, { status: 404 });
     }
@@ -209,9 +221,9 @@ export async function POST(req: NextRequest) {
       seenNames.add(currentMealName.toLowerCase());
     }
 
-    for (const day of (validatedPlan.days || [])) {
+    for (const day of validatedPlan.days || []) {
       if (day.dayNumber === dayNumber) continue;
-      for (const meal of (day.meals || [])) {
+      for (const meal of day.meals || []) {
         const mealNameLower = meal.name.toLowerCase();
 
         // Skip if already seen or on current day

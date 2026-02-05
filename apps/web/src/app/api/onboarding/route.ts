@@ -1,40 +1,40 @@
-import { NextRequest, NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { requireActiveUser } from '@/lib/auth'
+import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
 
 async function getOrCreateUser(clerkUserId: string) {
-  let user = await prisma.user.findUnique({ where: { clerkUserId } })
+  let user = await prisma.user.findUnique({ where: { clerkUserId } });
   if (!user) {
     user = await prisma.user.create({
       data: { clerkUserId, email: `${clerkUserId}@placeholder.com` },
-    })
+    });
   }
-  return user
+  return user;
 }
 
 // GET - fetch onboarding state
 export async function GET() {
-  let clerkUserId: string
-  let dbUserId: string
+  let clerkUserId: string;
+  let dbUserId: string;
   try {
-    ({ clerkUserId, dbUserId } = await requireActiveUser())
+    ({ clerkUserId, dbUserId } = await requireActiveUser());
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized'
-    const status = message === 'Account is deactivated' ? 403 : 401
-    return NextResponse.json({ error: message }, { status })
+    const message = error instanceof Error ? error.message : 'Unauthorized';
+    const status = message === 'Account is deactivated' ? 403 : 401;
+    return NextResponse.json({ error: message }, { status });
   }
 
-  const user = await getOrCreateUser(clerkUserId)
+  const user = await getOrCreateUser(clerkUserId);
   const onboarding = await prisma.onboardingState.findUnique({
     where: { userId: user.id },
-  })
+  });
 
   // If no onboarding state exists, check if user has a profile
   // (which means onboarding was completed and cleaned up)
   if (!onboarding) {
     const profile = await prisma.userProfile.findFirst({
       where: { userId: user.id, isActive: true },
-    })
+    });
 
     if (profile) {
       // User has completed onboarding (state was cleaned up)
@@ -42,62 +42,62 @@ export async function GET() {
         currentStep: 7,
         completed: true,
         stepData: {},
-      })
+      });
     }
 
     // No profile and no onboarding state - start fresh onboarding
     const newOnboarding = await prisma.onboardingState.create({
       data: { userId: user.id, currentStep: 1, stepData: '{}' },
-    })
+    });
     return NextResponse.json({
       currentStep: newOnboarding.currentStep,
       completed: newOnboarding.completed,
       stepData: JSON.parse(newOnboarding.stepData),
-    })
+    });
   }
 
   return NextResponse.json({
     currentStep: onboarding.currentStep,
     completed: onboarding.completed,
     stepData: JSON.parse(onboarding.stepData),
-  })
+  });
 }
 
 // POST - update onboarding step
 export async function POST(request: NextRequest) {
-  let clerkUserId: string
-  let dbUserId: string
+  let clerkUserId: string;
+  let dbUserId: string;
   try {
-    ({ clerkUserId, dbUserId } = await requireActiveUser())
+    ({ clerkUserId, dbUserId } = await requireActiveUser());
   } catch (error) {
-    const message = error instanceof Error ? error.message : 'Unauthorized'
-    const status = message === 'Account is deactivated' ? 403 : 401
-    return NextResponse.json({ error: message }, { status })
+    const message = error instanceof Error ? error.message : 'Unauthorized';
+    const status = message === 'Account is deactivated' ? 403 : 401;
+    return NextResponse.json({ error: message }, { status });
   }
 
-  let body: any
+  let body: any;
   try {
-    body = await request.json()
+    body = await request.json();
   } catch {
-    return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 })
+    return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
   }
-  const { step, data, complete } = body
+  const { step, data, complete } = body;
 
-  const user = await getOrCreateUser(clerkUserId)
+  const user = await getOrCreateUser(clerkUserId);
 
   let onboarding = await prisma.onboardingState.findUnique({
     where: { userId: user.id },
-  })
+  });
 
   if (!onboarding) {
     onboarding = await prisma.onboardingState.create({
       data: { userId: user.id, currentStep: 1, stepData: '{}' },
-    })
+    });
   }
 
   // Merge new step data with existing
-  const existingData = JSON.parse(onboarding.stepData)
-  const mergedData = { ...existingData, ...data }
+  const existingData = JSON.parse(onboarding.stepData);
+  const mergedData = { ...existingData, ...data };
 
   if (complete) {
     // Mark onboarding as completed and create UserProfile
@@ -108,11 +108,13 @@ export async function POST(request: NextRequest) {
         completed: true,
         stepData: JSON.stringify(mergedData),
       },
-    })
+    });
 
     // Convert heights/weights for profile creation
-    const heightCm = mergedData.heightCm || (mergedData.heightFeet || 0) * 30.48 + (mergedData.heightInches || 0) * 2.54
-    const weightKg = mergedData.weightKg || (mergedData.weightLbs || 0) * 0.453592
+    const heightCm =
+      mergedData.heightCm ||
+      (mergedData.heightFeet || 0) * 30.48 + (mergedData.heightInches || 0) * 2.54;
+    const weightKg = mergedData.weightKg || (mergedData.weightLbs || 0) * 0.453592;
 
     // Create user profile from onboarding data
     const profile = await prisma.userProfile.create({
@@ -140,13 +142,13 @@ export async function POST(request: NextRequest) {
         macroStyle: mergedData.macroStyle || 'balanced',
         isActive: true,
       },
-    })
+    });
 
     return NextResponse.json({
       completed: true,
       profileId: profile.id,
       redirect: '/generate',
-    })
+    });
   }
 
   // Just update the step
@@ -156,10 +158,10 @@ export async function POST(request: NextRequest) {
       currentStep: step,
       stepData: JSON.stringify(mergedData),
     },
-  })
+  });
 
   return NextResponse.json({
     currentStep: step,
     stepData: mergedData,
-  })
+  });
 }

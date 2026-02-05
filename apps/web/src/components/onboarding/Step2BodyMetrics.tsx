@@ -1,10 +1,21 @@
-"use client";
+'use client';
 
-import { OnboardingData, UnitSystem } from "@/lib/onboarding-types";
+import { OnboardingData, UnitSystem } from '@/lib/onboarding-types';
 
 /** Block non-numeric keys on number inputs. Allows digits, navigation, and control keys. */
 function numericKeyFilter(e: React.KeyboardEvent<HTMLInputElement>, allowDecimal = false) {
-  const allowed = ['Backspace', 'Tab', 'ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown', 'Delete', 'Home', 'End', 'Enter'];
+  const allowed = [
+    'Backspace',
+    'Tab',
+    'ArrowLeft',
+    'ArrowRight',
+    'ArrowUp',
+    'ArrowDown',
+    'Delete',
+    'Home',
+    'End',
+    'Enter',
+  ];
   if (allowed.includes(e.key)) return;
   if (e.ctrlKey || e.metaKey) return;
   if (allowDecimal && e.key === '.') return;
@@ -43,7 +54,7 @@ function lbsToKg(lbs: number | null): number | null {
 
 function kgToLbs(kg: number | null): number | null {
   if (kg === null) return null;
-  return Math.round(kg / 0.453592 * 10) / 10;
+  return Math.round((kg / 0.453592) * 10) / 10;
 }
 
 export function isStep2Valid(data: OnboardingData): boolean {
@@ -72,17 +83,17 @@ export function isStep2Valid(data: OnboardingData): boolean {
 }
 
 export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
-  const isImperial = data.unitSystem === "imperial";
+  const isImperial = data.unitSystem === 'imperial';
 
   const handleUnitToggle = (unit: UnitSystem) => {
     if (unit === data.unitSystem) return;
 
-    if (unit === "metric") {
+    if (unit === 'metric') {
       // Convert imperial -> metric
       const cm = feetInchesToCm(data.heightFeet, data.heightInches);
       const kg = lbsToKg(data.weightLbs);
       updateData({
-        unitSystem: "metric",
+        unitSystem: 'metric',
         heightCm: cm,
         weightKg: kg,
       });
@@ -91,7 +102,7 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
       const { feet, inches } = cmToFeetInches(data.heightCm);
       const lbs = kgToLbs(data.weightKg);
       updateData({
-        unitSystem: "imperial",
+        unitSystem: 'imperial',
         heightFeet: feet,
         heightInches: inches,
         weightLbs: lbs,
@@ -114,12 +125,12 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
     : data.weightKg !== null && (data.weightKg < 35 || data.weightKg > 230);
   const weightError = showErrors && (weightEmpty || weightOutOfRange);
 
-  const bodyFatOutOfRange = data.bodyFatPercent !== null &&
-    (data.bodyFatPercent < 3 || data.bodyFatPercent > 60);
+  const bodyFatOutOfRange =
+    data.bodyFatPercent !== null && (data.bodyFatPercent < 3 || data.bodyFatPercent > 60);
 
   const inputClass = (hasError: boolean) =>
     `w-full rounded-lg border ${
-      hasError ? "border-red-500" : "border-border"
+      hasError ? 'border-red-500' : 'border-border'
     } bg-card px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card`;
 
   return (
@@ -130,44 +141,47 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
 
       {/* Unit System Toggle */}
       <div>
-        <label id="unit-system-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+        <label
+          id="unit-system-label"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
           Unit System
         </label>
         <div className="flex gap-2" role="group" aria-labelledby="unit-system-label">
           <button
             type="button"
-            onClick={() => handleUnitToggle("imperial")}
+            onClick={() => handleUnitToggle('imperial')}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                handleUnitToggle("imperial");
+                handleUnitToggle('imperial');
               }
             }}
             role="radio"
             aria-checked={isImperial}
             className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
               isImperial
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-card text-muted-foreground hover:bg-secondary"
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-card text-muted-foreground hover:bg-secondary'
             }`}
           >
             Imperial (ft/in, lbs)
           </button>
           <button
             type="button"
-            onClick={() => handleUnitToggle("metric")}
+            onClick={() => handleUnitToggle('metric')}
             onKeyDown={(e) => {
               if (e.key === 'Enter' || e.key === ' ') {
                 e.preventDefault();
-                handleUnitToggle("metric");
+                handleUnitToggle('metric');
               }
             }}
             role="radio"
             aria-checked={!isImperial}
             className={`flex-1 rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
               !isImperial
-                ? "border-primary bg-primary/10 text-primary"
-                : "border-border bg-card text-muted-foreground hover:bg-secondary"
+                ? 'border-primary bg-primary/10 text-primary'
+                : 'border-border bg-card text-muted-foreground hover:bg-secondary'
             }`}
           >
             Metric (cm, kg)
@@ -183,12 +197,17 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
         {isImperial ? (
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <label htmlFor="onboarding-height-feet" className="mb-1 block text-xs text-muted-foreground">Feet</label>
+              <label
+                htmlFor="onboarding-height-feet"
+                className="mb-1 block text-xs text-muted-foreground"
+              >
+                Feet
+              </label>
               <input
                 id="onboarding-height-feet"
                 type="number"
                 inputMode="numeric"
-                value={data.heightFeet ?? ""}
+                value={data.heightFeet ?? ''}
                 onChange={(e) =>
                   updateData({
                     heightFeet: e.target.value ? parseInt(e.target.value) : null,
@@ -199,24 +218,25 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
                 min={3}
                 max={8}
                 aria-invalid={!!heightError}
-                aria-describedby={heightError ? "onboarding-height-error" : undefined}
+                aria-describedby={heightError ? 'onboarding-height-error' : undefined}
                 className={inputClass(!!heightError)}
               />
             </div>
             <div>
-              <label htmlFor="onboarding-height-inches" className="mb-1 block text-xs text-muted-foreground">
+              <label
+                htmlFor="onboarding-height-inches"
+                className="mb-1 block text-xs text-muted-foreground"
+              >
                 Inches
               </label>
               <input
                 id="onboarding-height-inches"
                 type="number"
                 inputMode="numeric"
-                value={data.heightInches ?? ""}
+                value={data.heightInches ?? ''}
                 onChange={(e) =>
                   updateData({
-                    heightInches: e.target.value
-                      ? parseInt(e.target.value)
-                      : null,
+                    heightInches: e.target.value ? parseInt(e.target.value) : null,
                   })
                 }
                 onKeyDown={(e) => numericKeyFilter(e)}
@@ -224,21 +244,24 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
                 min={0}
                 max={11}
                 aria-invalid={!!heightError}
-                aria-describedby={heightError ? "onboarding-height-error" : undefined}
+                aria-describedby={heightError ? 'onboarding-height-error' : undefined}
                 className={inputClass(!!heightError)}
               />
             </div>
           </div>
         ) : (
           <div>
-            <label htmlFor="onboarding-height-cm" className="mb-1 block text-xs text-muted-foreground">
+            <label
+              htmlFor="onboarding-height-cm"
+              className="mb-1 block text-xs text-muted-foreground"
+            >
               Centimeters
             </label>
             <input
               id="onboarding-height-cm"
               type="number"
               inputMode="decimal"
-              value={data.heightCm ?? ""}
+              value={data.heightCm ?? ''}
               onChange={(e) =>
                 updateData({
                   heightCm: e.target.value ? parseFloat(e.target.value) : null,
@@ -250,18 +273,23 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
               max={250}
               step="0.1"
               aria-invalid={!!heightError}
-              aria-describedby={heightError ? "onboarding-height-error" : undefined}
+              aria-describedby={heightError ? 'onboarding-height-error' : undefined}
               className={inputClass(!!heightError)}
             />
           </div>
         )}
         {heightError && (
-          <p id="onboarding-height-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+          <p
+            id="onboarding-height-error"
+            className="mt-1 text-xs text-red-500"
+            role="alert"
+            aria-live="polite"
+          >
             {heightEmpty
-              ? "Height is required"
+              ? 'Height is required'
               : isImperial
-              ? "Height must be between 3-8 feet and 0-11 inches"
-              : "Height must be between 90 and 250 cm"}
+                ? 'Height must be between 3-8 feet and 0-11 inches'
+                : 'Height must be between 90 and 250 cm'}
           </p>
         )}
       </div>
@@ -273,12 +301,17 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
         </label>
         {isImperial ? (
           <div>
-            <label htmlFor="onboarding-weight-lbs" className="mb-1 block text-xs text-muted-foreground">Pounds</label>
+            <label
+              htmlFor="onboarding-weight-lbs"
+              className="mb-1 block text-xs text-muted-foreground"
+            >
+              Pounds
+            </label>
             <input
               id="onboarding-weight-lbs"
               type="number"
               inputMode="numeric"
-              value={data.weightLbs ?? ""}
+              value={data.weightLbs ?? ''}
               onChange={(e) =>
                 updateData({
                   weightLbs: e.target.value ? parseFloat(e.target.value) : null,
@@ -289,20 +322,23 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
               min={80}
               max={500}
               aria-invalid={!!weightError}
-              aria-describedby={weightError ? "onboarding-weight-error" : undefined}
+              aria-describedby={weightError ? 'onboarding-weight-error' : undefined}
               className={inputClass(!!weightError)}
             />
           </div>
         ) : (
           <div>
-            <label htmlFor="onboarding-weight-kg" className="mb-1 block text-xs text-muted-foreground">
+            <label
+              htmlFor="onboarding-weight-kg"
+              className="mb-1 block text-xs text-muted-foreground"
+            >
               Kilograms
             </label>
             <input
               id="onboarding-weight-kg"
               type="number"
               inputMode="decimal"
-              value={data.weightKg ?? ""}
+              value={data.weightKg ?? ''}
               onChange={(e) =>
                 updateData({
                   weightKg: e.target.value ? parseFloat(e.target.value) : null,
@@ -314,37 +350,44 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
               max={230}
               step="0.1"
               aria-invalid={!!weightError}
-              aria-describedby={weightError ? "onboarding-weight-error" : undefined}
+              aria-describedby={weightError ? 'onboarding-weight-error' : undefined}
               className={inputClass(!!weightError)}
             />
           </div>
         )}
         {weightError && (
-          <p id="onboarding-weight-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+          <p
+            id="onboarding-weight-error"
+            className="mt-1 text-xs text-red-500"
+            role="alert"
+            aria-live="polite"
+          >
             {weightEmpty
-              ? "Weight is required"
+              ? 'Weight is required'
               : isImperial
-              ? "Weight must be between 80 and 500 lbs"
-              : "Weight must be between 35 and 230 kg"}
+                ? 'Weight must be between 80 and 500 lbs'
+                : 'Weight must be between 35 and 230 kg'}
           </p>
         )}
       </div>
 
       {/* Body Fat Percentage (Optional) */}
       <div>
-        <label htmlFor="onboarding-body-fat" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
-          Body Fat % <span className="normal-case tracking-normal text-muted-foreground">(optional)</span>
+        <label
+          htmlFor="onboarding-body-fat"
+          className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground"
+        >
+          Body Fat %{' '}
+          <span className="normal-case tracking-normal text-muted-foreground">(optional)</span>
         </label>
         <input
           id="onboarding-body-fat"
           type="number"
           inputMode="decimal"
-          value={data.bodyFatPercent ?? ""}
+          value={data.bodyFatPercent ?? ''}
           onChange={(e) =>
             updateData({
-              bodyFatPercent: e.target.value
-                ? parseFloat(e.target.value)
-                : null,
+              bodyFatPercent: e.target.value ? parseFloat(e.target.value) : null,
             })
           }
           onKeyDown={(e) => numericKeyFilter(e, true)}
@@ -353,11 +396,16 @@ export function Step2BodyMetrics({ data, updateData, showErrors }: Props) {
           max={60}
           step="0.1"
           aria-invalid={!!bodyFatOutOfRange}
-          aria-describedby={bodyFatOutOfRange ? "onboarding-body-fat-error" : undefined}
+          aria-describedby={bodyFatOutOfRange ? 'onboarding-body-fat-error' : undefined}
           className={inputClass(!!bodyFatOutOfRange)}
         />
         {bodyFatOutOfRange && (
-          <p id="onboarding-body-fat-error" className="mt-1 text-xs text-red-500" role="alert" aria-live="polite">
+          <p
+            id="onboarding-body-fat-error"
+            className="mt-1 text-xs text-red-500"
+            role="alert"
+            aria-live="polite"
+          >
             Body fat must be between 3% and 60%
           </p>
         )}

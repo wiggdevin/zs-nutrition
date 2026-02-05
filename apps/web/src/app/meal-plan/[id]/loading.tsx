@@ -1,4 +1,4 @@
-import { Skeleton } from '@/components/ui/skeleton'
+import { Skeleton } from '@/components/ui/skeleton';
 
 export default function MealPlanLoading() {
   return (
@@ -10,5 +10,5 @@ export default function MealPlanLoading() {
         <Skeleton className="h-12 w-40 mx-auto rounded-lg" />
       </div>
     </div>
-  )
+  );
 }

@@ -28,11 +28,7 @@
 export function toLocalDay(date: Date = new Date()): Date {
   // Use local methods (getFullYear, getMonth, getDate) to get the user's calendar day
   // Then create a UTC date with those components
-  return new Date(Date.UTC(
-    date.getFullYear(),
-    date.getMonth(),
-    date.getDate()
-  ))
+  return new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
 }
 
 /**
@@ -46,8 +42,8 @@ export function toLocalDay(date: Date = new Date()): Date {
  * - Output: new Date('2025-02-03T00:00:00Z')
  */
 export function parseLocalDay(dateString: string): Date {
-  const [year, month, day] = dateString.split('-').map(Number)
-  return new Date(Date.UTC(year, month - 1, day)) // month is 0-indexed
+  const [year, month, day] = dateString.split('-').map(Number);
+  return new Date(Date.UTC(year, month - 1, day)); // month is 0-indexed
 }
 
 /**
@@ -61,7 +57,7 @@ export function parseLocalDay(dateString: string): Date {
  * - Output: "2025-02-03"
  */
 export function formatLocalDay(date: Date): string {
-  return toLocalDay(date).toISOString().split('T')[0]
+  return toLocalDay(date).toISOString().split('T')[0];
 }
 
 /**
@@ -71,9 +67,9 @@ export function formatLocalDay(date: Date): string {
  * @returns true if the date is today
  */
 export function isToday(date: Date): boolean {
-  const today = toLocalDay()
-  const target = toLocalDay(date)
-  return today.getTime() === target.getTime()
+  const today = toLocalDay();
+  const target = toLocalDay(date);
+  return today.getTime() === target.getTime();
 }
 
 /**
@@ -83,7 +79,7 @@ export function isToday(date: Date): boolean {
  * @returns A Date object at midnight UTC
  */
 export function startOfDay(date: Date = new Date()): Date {
-  return toLocalDay(date)
+  return toLocalDay(date);
 }
 
 /**
@@ -93,12 +89,8 @@ export function startOfDay(date: Date = new Date()): Date {
  * @returns A Date object at midnight UTC of the next day
  */
 export function endOfDay(date: Date = new Date()): Date {
-  const start = toLocalDay(date)
-  return new Date(Date.UTC(
-    start.getUTCFullYear(),
-    start.getUTCMonth(),
-    start.getUTCDate() + 1
-  ))
+  const start = toLocalDay(date);
+  return new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), start.getUTCDate() + 1));
 }
 
 /**
@@ -109,9 +101,9 @@ export function endOfDay(date: Date = new Date()): Date {
  * @returns A new Date with the days added
  */
 export function addDays(date: Date, days: number): Date {
-  const result = toLocalDay(date)
-  result.setUTCDate(result.getUTCDate() + days)
-  return result
+  const result = toLocalDay(date);
+  result.setUTCDate(result.getUTCDate() + days);
+  return result;
 }
 
 /**
@@ -122,9 +114,9 @@ export function addDays(date: Date, days: number): Date {
  * @returns Number of days between the dates
  */
 export function diffDays(date1: Date, date2: Date): number {
-  const d1 = toLocalDay(date1).getTime()
-  const d2 = toLocalDay(date2).getTime()
-  return Math.round((d2 - d1) / (1000 * 60 * 60 * 24))
+  const d1 = toLocalDay(date1).getTime();
+  const d2 = toLocalDay(date2).getTime();
+  return Math.round((d2 - d1) / (1000 * 60 * 60 * 24));
 }
 
 /**
@@ -134,7 +126,7 @@ export function diffDays(date1: Date, date2: Date): number {
  * @returns true if the date is today or in the past
  */
 export function isNotFuture(date: Date): boolean {
-  const today = toLocalDay()
-  const target = toLocalDay(date)
-  return target <= today
+  const today = toLocalDay();
+  const target = toLocalDay(date);
+  return target <= today;
 }

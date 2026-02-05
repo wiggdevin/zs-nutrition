@@ -1,4 +1,4 @@
-"use client";
+'use client';
 
 interface ProgressBarProps {
   currentStep: number;
@@ -29,11 +29,11 @@ export function ProgressBar({ currentStep, totalSteps }: ProgressBarProps) {
           <div
             key={i}
             aria-label={`Step ${i + 1} of ${totalSteps}`}
-            aria-current={i + 1 === currentStep ? "step" : undefined}
+            aria-current={i + 1 === currentStep ? 'step' : undefined}
             className={`flex h-6 w-6 items-center justify-center rounded-full text-xs font-bold transition-colors ${
               i + 1 <= currentStep
-                ? "bg-primary text-background"
-                : "bg-border text-muted-foreground"
+                ? 'bg-primary text-background'
+                : 'bg-border text-muted-foreground'
             }`}
           >
             {i + 1}
