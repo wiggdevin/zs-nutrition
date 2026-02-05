@@ -214,6 +214,12 @@ model TrackedMeal {
 
   @@index([userId, loggedDate])
   @@index([loggedDate])
+
+  // Prevent duplicate plan meal entries: same user, plan, slot, date, source
+  // This is the database-level guard against race conditions where two identical
+  // requests pass the application-level duplicate check simultaneously.
+  // NOTE: A migration is needed after this change (npx prisma migrate dev)
+  @@unique([userId, mealPlanId, loggedDate, mealSlot, source], name: "TrackedMeal_plan_dedup")
 }
 
 // ============================================================

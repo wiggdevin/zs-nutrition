@@ -340,10 +340,11 @@ export function GeneratePlanPage() {
             )}
           </div>
 
-          <div className="mt-8 space-y-3">
+          <div className="mt-8 space-y-3" aria-live="polite" aria-label="Agent pipeline progress">
             {agentStages.map((agent) => (
               <div
                 key={agent.number}
+                aria-current={agent.number === currentAgent ? "step" : undefined}
                 className={`rounded-lg border p-4 transition-all duration-500 ${
                   agent.number < currentAgent
                     ? "border-success/30 bg-success/5"
@@ -396,7 +397,7 @@ export function GeneratePlanPage() {
       <>
         <Confetti duration={2000} particleCount={60} />
         <div className="flex min-h-screen items-center justify-center bg-background px-4">
-          <div className="w-full max-w-lg text-center">
+          <div className="w-full max-w-lg text-center" role="status" aria-live="polite">
             <div className="rounded-lg border border-success/30 bg-card p-8 shadow-xl">
               <div className="mx-auto mb-4 flex h-20 w-20 items-center justify-center rounded-full bg-success/10">
                 <span className="text-4xl">&#x1F389;</span>
@@ -441,7 +442,7 @@ export function GeneratePlanPage() {
   if (status === "failed") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-lg text-center">
+        <div className="w-full max-w-lg text-center" role="alert" aria-live="assertive">
           <div className="rounded-lg border border-destructive/30 bg-card p-8 shadow-xl">
             <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-destructive/10">
               <span className="text-2xl">&#x274C;</span>

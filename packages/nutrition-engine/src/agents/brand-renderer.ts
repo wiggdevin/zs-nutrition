@@ -1,5 +1,27 @@
-import puppeteer from 'puppeteer';
+import puppeteer from 'puppeteer-core';
+import type { Browser } from 'puppeteer-core';
 import { MealPlanValidated, CompiledDay, GroceryCategory } from '../types/schemas';
+
+/**
+ * Launch a browser instance, using @sparticuz/chromium in serverless
+ * environments (AWS Lambda / Vercel) or Railway and the locally-installed
+ * Chrome for development.
+ */
+async function getBrowser(): Promise<Browser> {
+  if (process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL || process.env.RAILWAY_ENVIRONMENT) {
+    const chromium = await import('@sparticuz/chromium');
+    return puppeteer.launch({
+      args: chromium.default.args,
+      executablePath: await chromium.default.executablePath(),
+      headless: true,
+    });
+  }
+  // Local development - use installed Chrome
+  return puppeteer.launch({
+    channel: 'chrome',
+    headless: true,
+  });
+}
 
 /**
  * Agent 6: Brand Renderer
@@ -42,12 +64,9 @@ export class BrandRenderer {
     gridHtml: string,
     groceryHtml: string
   ): Promise<Buffer> {
-    let browser;
+    let browser: Browser | undefined;
     try {
-      browser = await puppeteer.launch({
-        headless: true,
-        args: ['--no-sandbox', '--disable-setuid-sandbox'],
-      });
+      browser = await getBrowser();
 
       const page = await browser.newPage();
 

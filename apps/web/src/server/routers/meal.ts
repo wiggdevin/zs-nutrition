@@ -1,9 +1,22 @@
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 import { TRPCError } from '@trpc/server'
+import { Prisma } from '@prisma/client'
 import { recalculateDailyLog, calculateAdherenceScore } from '../utils/daily-log'
 import { safeJsonParse } from '@/lib/utils/safe-json'
 import { ValidatedPlanSchema } from '@/lib/schemas/plan'
+
+/**
+ * Check if an error is a Prisma unique constraint violation (P2002).
+ * Used to gracefully handle race conditions where duplicate inserts
+ * slip past the application-level duplicate check.
+ */
+function isUniqueConstraintError(error: unknown): boolean {
+  return (
+    error instanceof Prisma.PrismaClientKnownRequestError &&
+    error.code === 'P2002'
+  )
+}
 
 /**
  * Meal Router — handles logging meals from plan, tracking, and daily logs.
@@ -145,150 +158,198 @@ export const mealRouter = router({
       const today = new Date()
       const dateOnly = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()))
 
-      // Use a serialized transaction to prevent race conditions from concurrent tabs
-      return await prisma.$transaction(async (tx) => {
-        // Duplicate detection: check if an identical plan meal was logged in the last 10 seconds
-        const tenSecondsAgo = new Date(Date.now() - 10000)
-        const recentDuplicate = await tx.trackedMeal.findFirst({
-          where: {
-            userId: dbUserId,
-            mealPlanId: input.planId,
-            loggedDate: dateOnly,
-            mealSlot: input.slot,
-            mealName: input.mealName,
-            source: 'plan_meal',
-            createdAt: { gte: tenSecondsAgo },
-          },
-          orderBy: { createdAt: 'desc' },
-        })
-
-        if (recentDuplicate) {
-          const existingDailyLog = await tx.dailyLog.findUnique({
-            where: { userId_date: { userId: dbUserId, date: dateOnly } },
+      // Use a serialized transaction to prevent race conditions from concurrent tabs.
+      // The unique constraint on TrackedMeal (userId, mealPlanId, loggedDate, mealSlot, source)
+      // acts as the ultimate guard against duplicates that slip past the app-level check.
+      try {
+        return await prisma.$transaction(async (tx) => {
+          // Duplicate detection: check if an identical plan meal was already logged today
+          const recentDuplicate = await tx.trackedMeal.findFirst({
+            where: {
+              userId: dbUserId,
+              mealPlanId: input.planId,
+              loggedDate: dateOnly,
+              mealSlot: input.slot,
+              source: 'plan_meal',
+            },
+            orderBy: { createdAt: 'desc' },
           })
+
+          if (recentDuplicate) {
+            const existingDailyLog = await tx.dailyLog.findUnique({
+              where: { userId_date: { userId: dbUserId, date: dateOnly } },
+            })
+            return {
+              trackedMeal: {
+                id: recentDuplicate.id,
+                mealName: recentDuplicate.mealName,
+                mealSlot: recentDuplicate.mealSlot,
+                kcal: recentDuplicate.kcal,
+                proteinG: recentDuplicate.proteinG,
+                carbsG: recentDuplicate.carbsG,
+                fatG: recentDuplicate.fatG,
+                source: recentDuplicate.source,
+                createdAt: recentDuplicate.createdAt,
+              },
+              dailyLog: {
+                actualKcal: existingDailyLog?.actualKcal ?? recentDuplicate.kcal,
+                actualProteinG: existingDailyLog?.actualProteinG ?? Math.round(recentDuplicate.proteinG),
+                actualCarbsG: existingDailyLog?.actualCarbsG ?? Math.round(recentDuplicate.carbsG),
+                actualFatG: existingDailyLog?.actualFatG ?? Math.round(recentDuplicate.fatG),
+                targetKcal: existingDailyLog?.targetKcal ?? null,
+                targetProteinG: existingDailyLog?.targetProteinG ?? null,
+                targetCarbsG: existingDailyLog?.targetCarbsG ?? null,
+                targetFatG: existingDailyLog?.targetFatG ?? null,
+                adherenceScore: existingDailyLog?.adherenceScore ?? 0,
+              },
+              duplicate: true,
+            }
+          }
+
+          // Apply portion multiplier
+          const portionMultiplier = input.portion
+          const kcal = Math.round(input.calories * portionMultiplier)
+          const proteinG = Math.round(input.protein * portionMultiplier * 10) / 10
+          const carbsG = Math.round(input.carbs * portionMultiplier * 10) / 10
+          const fatG = Math.round(input.fat * portionMultiplier * 10) / 10
+          const fiberG = input.fiber ? Math.round(input.fiber * portionMultiplier * 10) / 10 : null
+
+          // Create TrackedMeal
+          const trackedMeal = await tx.trackedMeal.create({
+            data: {
+              userId: dbUserId,
+              mealPlanId: input.planId,
+              loggedDate: dateOnly,
+              mealSlot: input.slot,
+              mealName: input.mealName,
+              portion: input.portion,
+              kcal,
+              proteinG,
+              carbsG,
+              fatG,
+              fiberG,
+              source: 'plan_meal',
+              confidenceScore: 0.95,
+            },
+          })
+
+          // Find or create DailyLog for today
+          let dailyLog = await tx.dailyLog.findUnique({
+            where: {
+              userId_date: {
+                userId: dbUserId,
+                date: dateOnly,
+              },
+            },
+          })
+
+          if (!dailyLog) {
+            dailyLog = await tx.dailyLog.create({
+              data: {
+                userId: dbUserId,
+                date: dateOnly,
+                targetKcal: plan.dailyKcalTarget,
+                targetProteinG: plan.dailyProteinG,
+                targetCarbsG: plan.dailyCarbsG,
+                targetFatG: plan.dailyFatG,
+                actualKcal: kcal,
+                actualProteinG: Math.round(proteinG),
+                actualCarbsG: Math.round(carbsG),
+                actualFatG: Math.round(fatG),
+              },
+            })
+          } else {
+            dailyLog = await tx.dailyLog.update({
+              where: { id: dailyLog.id },
+              data: {
+                actualKcal: dailyLog.actualKcal + kcal,
+                actualProteinG: dailyLog.actualProteinG + Math.round(proteinG),
+                actualCarbsG: dailyLog.actualCarbsG + Math.round(carbsG),
+                actualFatG: dailyLog.actualFatG + Math.round(fatG),
+              },
+            })
+          }
+
+          // Calculate adherence score
+          const adherenceScore = calculateAdherenceScore(dailyLog)
+          await tx.dailyLog.update({
+            where: { id: dailyLog.id },
+            data: { adherenceScore },
+          })
+
           return {
             trackedMeal: {
-              id: recentDuplicate.id,
-              mealName: recentDuplicate.mealName,
-              mealSlot: recentDuplicate.mealSlot,
-              kcal: recentDuplicate.kcal,
-              proteinG: recentDuplicate.proteinG,
-              carbsG: recentDuplicate.carbsG,
-              fatG: recentDuplicate.fatG,
-              source: recentDuplicate.source,
-              createdAt: recentDuplicate.createdAt,
+              id: trackedMeal.id,
+              mealName: trackedMeal.mealName,
+              mealSlot: trackedMeal.mealSlot,
+              kcal: trackedMeal.kcal,
+              proteinG: trackedMeal.proteinG,
+              carbsG: trackedMeal.carbsG,
+              fatG: trackedMeal.fatG,
+              source: trackedMeal.source,
+              createdAt: trackedMeal.createdAt,
             },
             dailyLog: {
-              actualKcal: existingDailyLog?.actualKcal ?? recentDuplicate.kcal,
-              actualProteinG: existingDailyLog?.actualProteinG ?? Math.round(recentDuplicate.proteinG),
-              actualCarbsG: existingDailyLog?.actualCarbsG ?? Math.round(recentDuplicate.carbsG),
-              actualFatG: existingDailyLog?.actualFatG ?? Math.round(recentDuplicate.fatG),
-              targetKcal: existingDailyLog?.targetKcal ?? null,
-              targetProteinG: existingDailyLog?.targetProteinG ?? null,
-              targetCarbsG: existingDailyLog?.targetCarbsG ?? null,
-              targetFatG: existingDailyLog?.targetFatG ?? null,
-              adherenceScore: existingDailyLog?.adherenceScore ?? 0,
+              actualKcal: dailyLog.actualKcal,
+              actualProteinG: dailyLog.actualProteinG,
+              actualCarbsG: dailyLog.actualCarbsG,
+              actualFatG: dailyLog.actualFatG,
+              targetKcal: dailyLog.targetKcal,
+              targetProteinG: dailyLog.targetProteinG,
+              targetCarbsG: dailyLog.targetCarbsG,
+              targetFatG: dailyLog.targetFatG,
+              adherenceScore,
             },
-            duplicate: true,
+          }
+        })
+      } catch (error) {
+        // Handle unique constraint violation (race condition: two identical requests
+        // both passed the duplicate check before either wrote to the database)
+        if (isUniqueConstraintError(error)) {
+          // Fetch the entry that won the race and return it
+          const existing = await prisma.trackedMeal.findFirst({
+            where: {
+              userId: dbUserId,
+              mealPlanId: input.planId,
+              loggedDate: dateOnly,
+              mealSlot: input.slot,
+              source: 'plan_meal',
+            },
+            orderBy: { createdAt: 'desc' },
+          })
+          if (existing) {
+            const existingDailyLog = await prisma.dailyLog.findUnique({
+              where: { userId_date: { userId: dbUserId, date: dateOnly } },
+            })
+            return {
+              trackedMeal: {
+                id: existing.id,
+                mealName: existing.mealName,
+                mealSlot: existing.mealSlot,
+                kcal: existing.kcal,
+                proteinG: existing.proteinG,
+                carbsG: existing.carbsG,
+                fatG: existing.fatG,
+                source: existing.source,
+                createdAt: existing.createdAt,
+              },
+              dailyLog: {
+                actualKcal: existingDailyLog?.actualKcal ?? existing.kcal,
+                actualProteinG: existingDailyLog?.actualProteinG ?? Math.round(existing.proteinG),
+                actualCarbsG: existingDailyLog?.actualCarbsG ?? Math.round(existing.carbsG),
+                actualFatG: existingDailyLog?.actualFatG ?? Math.round(existing.fatG),
+                targetKcal: existingDailyLog?.targetKcal ?? null,
+                targetProteinG: existingDailyLog?.targetProteinG ?? null,
+                targetCarbsG: existingDailyLog?.targetCarbsG ?? null,
+                targetFatG: existingDailyLog?.targetFatG ?? null,
+                adherenceScore: existingDailyLog?.adherenceScore ?? 0,
+              },
+              duplicate: true,
+            }
           }
         }
-
-        // Apply portion multiplier
-        const portionMultiplier = input.portion
-        const kcal = Math.round(input.calories * portionMultiplier)
-        const proteinG = Math.round(input.protein * portionMultiplier * 10) / 10
-        const carbsG = Math.round(input.carbs * portionMultiplier * 10) / 10
-        const fatG = Math.round(input.fat * portionMultiplier * 10) / 10
-        const fiberG = input.fiber ? Math.round(input.fiber * portionMultiplier * 10) / 10 : null
-
-        // Create TrackedMeal
-        const trackedMeal = await tx.trackedMeal.create({
-          data: {
-            userId: dbUserId,
-            mealPlanId: input.planId,
-            loggedDate: dateOnly,
-            mealSlot: input.slot,
-            mealName: input.mealName,
-            portion: input.portion,
-            kcal,
-            proteinG,
-            carbsG,
-            fatG,
-            fiberG,
-            source: 'plan_meal',
-            confidenceScore: 0.95,
-          },
-        })
-
-        // Find or create DailyLog for today
-        let dailyLog = await tx.dailyLog.findUnique({
-          where: {
-            userId_date: {
-              userId: dbUserId,
-              date: dateOnly,
-            },
-          },
-        })
-
-        if (!dailyLog) {
-          dailyLog = await tx.dailyLog.create({
-            data: {
-              userId: dbUserId,
-              date: dateOnly,
-              targetKcal: plan.dailyKcalTarget,
-              targetProteinG: plan.dailyProteinG,
-              targetCarbsG: plan.dailyCarbsG,
-              targetFatG: plan.dailyFatG,
-              actualKcal: kcal,
-              actualProteinG: Math.round(proteinG),
-              actualCarbsG: Math.round(carbsG),
-              actualFatG: Math.round(fatG),
-            },
-          })
-        } else {
-          dailyLog = await tx.dailyLog.update({
-            where: { id: dailyLog.id },
-            data: {
-              actualKcal: dailyLog.actualKcal + kcal,
-              actualProteinG: dailyLog.actualProteinG + Math.round(proteinG),
-              actualCarbsG: dailyLog.actualCarbsG + Math.round(carbsG),
-              actualFatG: dailyLog.actualFatG + Math.round(fatG),
-            },
-          })
-        }
-
-        // Calculate adherence score
-        const adherenceScore = calculateAdherenceScore(dailyLog)
-        await tx.dailyLog.update({
-          where: { id: dailyLog.id },
-          data: { adherenceScore },
-        })
-
-        return {
-          trackedMeal: {
-            id: trackedMeal.id,
-            mealName: trackedMeal.mealName,
-            mealSlot: trackedMeal.mealSlot,
-            kcal: trackedMeal.kcal,
-            proteinG: trackedMeal.proteinG,
-            carbsG: trackedMeal.carbsG,
-            fatG: trackedMeal.fatG,
-            source: trackedMeal.source,
-            createdAt: trackedMeal.createdAt,
-          },
-          dailyLog: {
-            actualKcal: dailyLog.actualKcal,
-            actualProteinG: dailyLog.actualProteinG,
-            actualCarbsG: dailyLog.actualCarbsG,
-            actualFatG: dailyLog.actualFatG,
-            targetKcal: dailyLog.targetKcal,
-            targetProteinG: dailyLog.targetProteinG,
-            targetCarbsG: dailyLog.targetCarbsG,
-            targetFatG: dailyLog.targetFatG,
-            adherenceScore,
-          },
-        }
-      })
+        throw error
+      }
     }),
 
   /**
@@ -336,8 +397,11 @@ export const mealRouter = router({
       // Use a serialized transaction to prevent race conditions from concurrent tabs
       // The transaction ensures the duplicate check + create are atomic
       return await prisma.$transaction(async (tx) => {
-        // Duplicate detection: check if an identical meal was logged in the last 10 seconds
-        const tenSecondsAgo = new Date(Date.now() - 10000)
+        // Duplicate detection: check if an identical meal was logged in the last 3 seconds.
+        // A shorter window reduces false positives while still catching rapid double-taps.
+        // The client-side debounce (3s cooldown + isSubmittingRef lock) provides the first
+        // line of defense; this server-side check is the fallback for concurrent tabs.
+        const threeSecondsAgo = new Date(Date.now() - 3000)
         const recentDuplicate = await tx.trackedMeal.findFirst({
           where: {
             userId: dbUserId,
@@ -345,7 +409,7 @@ export const mealRouter = router({
             mealName,
             kcal,
             source: 'quick_add',
-            createdAt: { gte: tenSecondsAgo },
+            createdAt: { gte: threeSecondsAgo },
           },
           orderBy: { createdAt: 'desc' },
         })

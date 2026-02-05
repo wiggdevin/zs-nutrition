@@ -8,7 +8,7 @@ import { trpc } from '@/lib/trpc'
 function getBaseUrl() {
   if (typeof window !== 'undefined') return '' // browser should use relative url
   if (process.env.VERCEL_URL) return `https://${process.env.VERCEL_URL}`
-  return `http://localhost:${process.env.PORT || 3456}`
+  return `http://localhost:${process.env.PORT || process.env.NEXT_PUBLIC_PORT || '3456'}`
 }
 
 const shouldRetry = (failureCount: number, error: unknown): boolean => {

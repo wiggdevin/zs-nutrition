@@ -266,7 +266,13 @@ export function OnboardingWizard() {
         </div>
 
         {/* Step Content */}
-        <div className="rounded-lg border border-border bg-card p-6 shadow-xl">
+        <div
+          className="rounded-lg border border-border bg-card p-6 shadow-xl"
+          role="form"
+          aria-label={`Step ${currentStep}: ${stepTitles[currentStep]}`}
+          aria-live="polite"
+          aria-atomic="true"
+        >
           {stepComponents[currentStep]}
         </div>
 
