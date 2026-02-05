@@ -8,21 +8,15 @@ import IORedis from 'ioredis';
 export function createRedisConnection(): IORedis {
   const redisUrl = process.env.REDIS_URL;
 
-  if (redisUrl) {
-    return new IORedis(redisUrl, {
-      maxRetriesPerRequest: null,
-      enableReadyCheck: false,
-      // Upstash requires TLS
-      ...(redisUrl.startsWith('rediss://') ? { tls: {} } : {}),
-    });
+  if (!redisUrl) {
+    console.error('[Worker] REDIS_URL is required for the queue worker. The worker cannot function without Redis.');
+    process.exit(1);
   }
 
-  return new IORedis({
-    host: process.env.REDIS_HOST || 'localhost',
-    port: parseInt(process.env.REDIS_PORT || '6379', 10),
-    password: process.env.REDIS_PASSWORD,
+  return new IORedis(redisUrl, {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    ...(redisUrl.startsWith('rediss://') ? { tls: {} } : {}),
   });
 }
 
@@ -33,6 +27,7 @@ export const QUEUE_NAMES = {
   PLAN_GENERATION: 'plan-generation',
 } as const;
 
+// IMPORTANT: Keep in sync with apps/web/src/lib/queue.ts
 /**
  * Default queue options shared across all queues.
  */

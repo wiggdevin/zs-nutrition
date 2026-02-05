@@ -19,6 +19,9 @@ function createRedisConnection() {
 
   const redisUrl = process.env.REDIS_URL
   if (!redisUrl) {
+    if (process.env.NODE_ENV === 'production') {
+      throw new Error('REDIS_URL is required in production. Set it in your Vercel environment variables.')
+    }
     console.warn('REDIS_URL not configured, using lazy Redis connection for development')
     return new IORedis({
       host: '127.0.0.1',
@@ -26,12 +29,16 @@ function createRedisConnection() {
       maxRetriesPerRequest: null,
       enableReadyCheck: false,
       lazyConnect: true,
-      retryStrategy: () => null,
+      retryStrategy: (times: number) => {
+        if (times > 3) return null;
+        return Math.min(times * 500, 2000);
+      },
     })
   }
   return new IORedis(redisUrl, {
     maxRetriesPerRequest: null,
     enableReadyCheck: false,
+    ...(redisUrl.startsWith('rediss://') ? { tls: {} } : {}),
   })
 }
 
@@ -42,4 +49,13 @@ if (process.env.NODE_ENV !== 'production') globalForRedis.redis = redis
 
 export function createNewRedisConnection() {
   return createRedisConnection()
+}
+
+export async function checkRedisHealth(): Promise<boolean> {
+  try {
+    const pong = await redis.ping();
+    return pong === 'PONG';
+  } catch {
+    return false;
+  }
 }
