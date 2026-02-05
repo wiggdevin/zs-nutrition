@@ -16,6 +16,46 @@ function safeError(err: unknown): string {
  * Deployed on Railway separately from the Next.js app.
  */
 
+async function saveToWebApp(
+  webAppUrl: string,
+  jobId: string,
+  planData: unknown,
+  metabolicProfile: unknown,
+  secret: string,
+  maxRetries = 3,
+): Promise<{ planId: string }> {
+  let lastError: Error | undefined;
+
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    try {
+      const response = await fetch(`${webAppUrl}/api/plan/complete`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${secret}`,
+        },
+        body: JSON.stringify({ jobId, planData, metabolicProfile }),
+      });
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        throw new Error(`Save failed (status: ${response.status}): ${errorText}`);
+      }
+
+      return await response.json() as { planId: string };
+    } catch (err) {
+      lastError = err instanceof Error ? err : new Error(safeError(err));
+      if (attempt < maxRetries - 1) {
+        const delay = Math.pow(2, attempt + 1) * 1000;
+        console.warn(`⚠️ Save attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay / 1000}s: ${safeError(err)}`);
+        await new Promise((resolve) => setTimeout(resolve, delay));
+      }
+    }
+  }
+
+  throw lastError ?? new Error('Failed to save plan after all retries');
+}
+
 const config: PipelineConfig = {
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
@@ -62,32 +102,22 @@ async function startWorker() {
         console.log(`✅ Job ${job.id} completed successfully`);
 
         // Save the completed plan to the database via the web app's API endpoint
-        const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3000';
-        try {
-          const saveResponse = await fetch(`${webAppUrl}/api/plan/complete`, {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${process.env.INTERNAL_API_SECRET || ''}`,
-            },
-            body: JSON.stringify({
-              jobId,
-              planData: result.plan,
-              metabolicProfile: (result.deliverables as Record<string, unknown>)?.metabolicProfile || {},
-            }),
-          });
+        await job.updateProgress({ status: 'saving', message: 'Saving your meal plan...' });
 
-          if (saveResponse.ok) {
-            const saveData = await saveResponse.json() as { planId: string };
-            console.log(`💾 Plan saved to database: ${saveData.planId}`);
-          } else {
-            const errorText = await saveResponse.text();
-            console.error(`⚠️ Failed to save plan to database (status: ${saveResponse.status})`);
-          }
-        } catch (saveError) {
-          console.error(`⚠️ Error calling /api/plan/complete:`, safeError(saveError));
-          // Non-fatal: the job itself succeeded, plan data is in the return value
+        const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3000';
+        const secret = process.env.INTERNAL_API_SECRET;
+        if (!secret && process.env.NODE_ENV === 'production') {
+          throw new Error('INTERNAL_API_SECRET is required in production.');
         }
+        const resolvedSecret = secret || 'dev-internal-secret';
+        const saveData = await saveToWebApp(
+          webAppUrl,
+          jobId,
+          result.plan,
+          (result.deliverables as Record<string, unknown>)?.metabolicProfile || {},
+          resolvedSecret,
+        );
+        console.log(`💾 Plan saved to database: ${saveData.planId}`);
 
         return { planData: result.plan, deliverables: result.deliverables };
       } catch (error) {

@@ -46,8 +46,13 @@ function createQueue(): Queue | MockQueue {
 
   return new Queue(PLAN_GENERATION_QUEUE, {
     connection: createNewRedisConnection(),
+    // IMPORTANT: Keep in sync with workers/queue-processor/src/queues.ts
     defaultJobOptions: {
-      attempts: 1,
+      attempts: 3,
+      backoff: {
+        type: 'exponential',
+        delay: 5000,
+      },
       removeOnComplete: {
         age: 24 * 3600, // keep completed jobs for 24 hours
         count: 100,
