@@ -26,16 +26,16 @@ function TestResultCard({ result }: { result: TestResult }) {
         <span className={`text-lg ${result.passed ? 'text-green-400' : 'text-red-400'}`}>
           {result.passed ? '✅' : '❌'}
         </span>
-        <h3 className="font-bold text-[#fafafa]">{result.name}</h3>
+        <h3 className="font-bold text-foreground">{result.name}</h3>
       </div>
-      <p className="text-sm text-[#a1a1aa] mb-2">{result.details}</p>
+      <p className="text-sm text-muted-foreground mb-2">{result.details}</p>
       <div className="flex gap-4 text-xs font-mono">
         <div>
-          <span className="text-[#a1a1aa]">Expected: </span>
-          <span className="text-[#f97316]">{result.expectedColor}</span>
+          <span className="text-muted-foreground">Expected: </span>
+          <span className="text-primary">{result.expectedColor}</span>
         </div>
         <div>
-          <span className="text-[#a1a1aa]">Observed: </span>
+          <span className="text-muted-foreground">Observed: </span>
           <span className={result.passed ? 'text-green-400' : 'text-red-400'}>{result.observedColor}</span>
         </div>
       </div>
@@ -242,21 +242,21 @@ export default function TestFeature425Page() {
   const allPassed = results.length > 0 && results.every((r) => r.passed)
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8">
+    <div className="min-h-screen bg-background p-8">
       <div className="max-w-4xl mx-auto">
-        <h1 className="text-3xl font-heading uppercase tracking-wider text-[#fafafa] mb-2">
+        <h1 className="text-3xl font-heading uppercase tracking-wider text-foreground mb-2">
           Error State Color Consistency Tests
         </h1>
-        <p className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa] mb-1">
+        <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground mb-1">
           /// FEATURE #425
         </p>
-        <p className="text-sm text-[#a1a1aa] mb-6">
+        <p className="text-sm text-muted-foreground mb-6">
           Verify all error messages, FAIL badges, and error indicators use red #ef4444 (red-500)
         </p>
 
-        <div className="mb-6 p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-          <h2 className="text-sm font-bold text-[#fafafa] mb-2">Expected Red Color System:</h2>
-          <div className="space-y-1 text-xs font-mono text-[#a1a1aa]">
+        <div className="mb-6 p-4 bg-card border border-border rounded-lg">
+          <h2 className="text-sm font-bold text-foreground mb-2">Expected Red Color System:</h2>
+          <div className="space-y-1 text-xs font-mono text-muted-foreground">
             <div>• Primary error: <span className="text-red-500">#ef4444 (red-500)</span></div>
             <div>• Error icons: <span className="text-red-400">#f87171 (red-400)</span> - slightly lighter</div>
             <div>• Error borders: <span className="text-red-500">#ef4444</span> with opacity (e.g., /50, /40)</div>
@@ -267,7 +267,7 @@ export default function TestFeature425Page() {
         <button
           onClick={runTests}
           disabled={isRunning}
-          className="mb-6 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:opacity-50 text-[#0a0a0a] font-bold rounded-lg transition-colors"
+          className="mb-6 px-6 py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 text-background font-bold rounded-lg transition-colors"
           data-testid="run-error-color-tests"
         >
           {isRunning ? 'Running Tests...' : 'Run All Error Color Tests'}
@@ -299,14 +299,14 @@ export default function TestFeature425Page() {
 
         {/* Live examples */}
         <div className="mt-8">
-          <h2 className="text-xl font-bold text-[#fafafa] mb-4">Live Error State Examples</h2>
+          <h2 className="text-xl font-bold text-foreground mb-4">Live Error State Examples</h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             {/* Form validation error */}
-            <div className="p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-              <h3 className="text-sm font-mono text-[#a1a1aa] mb-2">Form Validation Error</h3>
+            <div className="p-4 bg-card border border-border rounded-lg">
+              <h3 className="text-sm font-mono text-muted-foreground mb-2">Form Validation Error</h3>
               <input
                 type="text"
-                className="w-full rounded-lg border border-red-500 px-4 py-3 text-[#fafafa] bg-[#1e1e1e]"
+                className="w-full rounded-lg border border-red-500 px-4 py-3 text-foreground bg-card"
                 placeholder="Invalid input field"
                 aria-invalid
               />
@@ -314,24 +314,24 @@ export default function TestFeature425Page() {
             </div>
 
             {/* FAIL badge */}
-            <div className="p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-              <h3 className="text-sm font-mono text-[#a1a1aa] mb-2">QA Status Badge</h3>
+            <div className="p-4 bg-card border border-border rounded-lg">
+              <h3 className="text-sm font-mono text-muted-foreground mb-2">QA Status Badge</h3>
               <div className="flex gap-2">
                 <span className="rounded bg-red-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-red-500">
                   FAIL
                 </span>
-                <span className="rounded bg-[#22c55e]/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#22c55e]">
+                <span className="rounded bg-green-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-green-500">
                   PASS
                 </span>
-                <span className="rounded bg-[#f59e0b]/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#f59e0b]">
+                <span className="rounded bg-amber-500/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-amber-500">
                   WARN
                 </span>
               </div>
             </div>
 
             {/* Error message box */}
-            <div className="p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-              <h3 className="text-sm font-mono text-[#a1a1aa] mb-2">Error Message Box</h3>
+            <div className="p-4 bg-card border border-border rounded-lg">
+              <h3 className="text-sm font-mono text-muted-foreground mb-2">Error Message Box</h3>
               <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4">
                 <div className="flex items-start gap-3">
                   <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
@@ -348,8 +348,8 @@ export default function TestFeature425Page() {
             </div>
 
             {/* Error button */}
-            <div className="p-4 bg-[#1a1a1a] border border-[#2a2a2a] rounded-lg">
-              <h3 className="text-sm font-mono text-[#a1a1aa] mb-2">Error Action Button</h3>
+            <div className="p-4 bg-card border border-border rounded-lg">
+              <h3 className="text-sm font-mono text-muted-foreground mb-2">Error Action Button</h3>
               <button className="w-full px-4 py-2 bg-red-500/20 hover:bg-red-500/30 border border-red-500/40 rounded-lg text-red-300 hover:text-red-200 font-bold text-xs uppercase tracking-wider transition-colors flex items-center justify-center gap-2">
                 <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />

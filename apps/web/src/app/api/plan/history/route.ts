@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/plan/history
@@ -82,7 +82,7 @@ export async function GET() {
       })),
     });
   } catch (error) {
-    safeLogError('Error fetching plan history:', error);
+    logger.error('Error fetching plan history:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

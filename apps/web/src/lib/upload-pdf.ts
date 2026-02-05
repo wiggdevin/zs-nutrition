@@ -5,6 +5,7 @@
  * - Dev mode: Saves to /public/generated-pdfs/ and returns a local URL
  */
 import { isDevMode } from '@/lib/auth'
+import { logger } from '@/lib/safe-logger'
 import fs from 'fs'
 import path from 'path'
 
@@ -34,7 +35,7 @@ export async function uploadPlanPdf(
         })
         return { success: true, url: blob.url }
       } catch (blobError) {
-        console.error('[uploadPlanPdf] Vercel Blob upload failed:', blobError instanceof Error ? blobError.message : 'Unknown error')
+        logger.error('[uploadPlanPdf] Vercel Blob upload failed:', blobError)
         // Fall through to local storage
       }
     }
@@ -51,13 +52,13 @@ export async function uploadPlanPdf(
     const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3456'
     const url = `${webAppUrl}/generated-pdfs/${filename}`
 
-    console.log(`[uploadPlanPdf] PDF saved locally: ${filePath}`)
-    console.log(`[uploadPlanPdf] Accessible at: ${url}`)
+    logger.debug(`[uploadPlanPdf] PDF saved locally: ${filePath}`)
+    logger.debug(`[uploadPlanPdf] Accessible at: ${url}`)
 
     return { success: true, url }
   } catch (error) {
     const errorMsg = error instanceof Error ? error.message : 'Unknown upload error'
-    console.error('[uploadPlanPdf] Error:', errorMsg)
+    logger.error('[uploadPlanPdf] Error:', errorMsg)
     return { success: false, error: errorMsg }
   }
 }

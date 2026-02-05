@@ -9,6 +9,7 @@ import {
   VerifiedNutritionSchema,
 } from '../types/schemas';
 import { FatSecretAdapter, FoodSearchResult, FoodDetails } from '../adapters/fatsecret';
+import { engineLogger } from '../utils/logger';
 
 /**
  * Agent 4: Nutrition Compiler
@@ -119,7 +120,7 @@ export class NutritionCompiler {
       }
     } catch (error) {
       // FatSecret search failed — fall back to AI estimates
-      console.warn(
+      engineLogger.warn(
         `[NutritionCompiler] FatSecret search failed for "${meal.fatsecretSearchQuery}":`,
         error instanceof Error ? error.message : error
       );

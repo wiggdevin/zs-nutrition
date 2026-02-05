@@ -4,13 +4,13 @@ import { isDevMode } from "@/lib/dev-mode";
 
 export default function SignInPage() {
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a]">
+    <div className="flex min-h-screen items-center justify-center bg-background">
       <div className="w-full max-w-md px-4">
         <div className="mb-8 text-center">
-          <h1 className="text-3xl font-bold uppercase tracking-wide text-[#fafafa]">
-            Zero Sum <span className="text-[#f97316]">Nutrition</span>
+          <h1 className="text-3xl font-bold uppercase tracking-wide text-foreground">
+            Zero Sum <span className="text-primary">Nutrition</span>
           </h1>
-          <p className="mt-2 text-sm text-[#a1a1aa]">
+          <p className="mt-2 text-sm text-muted-foreground">
             AI-powered meal planning &amp; macro tracking
           </p>
         </div>
@@ -21,21 +21,21 @@ export default function SignInPage() {
             appearance={{
               elements: {
                 rootBox: "mx-auto w-full",
-                card: "bg-[#1a1a1a] border border-[#2a2a2a] shadow-2xl rounded-xl",
-                headerTitle: "text-[#fafafa] font-bold text-xl",
-                headerSubtitle: "text-[#a1a1aa]",
+                card: "bg-card border border-border shadow-2xl rounded-xl",
+                headerTitle: "text-foreground font-bold text-xl",
+                headerSubtitle: "text-muted-foreground",
                 formButtonPrimary:
-                  "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] font-bold uppercase tracking-wide transition-colors",
+                  "bg-primary hover:bg-primary/90 text-background font-bold uppercase tracking-wide transition-colors",
                 formFieldInput:
-                  "bg-[#0a0a0a] border border-[#2a2a2a] text-[#fafafa] focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]",
-                formFieldLabel: "text-[#a1a1aa]",
+                  "bg-background border border-border text-foreground focus:border-primary focus:ring-1 focus:ring-primary",
+                formFieldLabel: "text-muted-foreground",
                 socialButtonsBlockButton:
-                  "bg-[#0a0a0a] border border-[#2a2a2a] text-[#fafafa] hover:bg-[#1e1e1e] transition-colors",
-                socialButtonsBlockButtonText: "text-[#fafafa] font-medium",
-                dividerLine: "bg-[#2a2a2a]",
-                dividerText: "text-[#a1a1aa]",
+                  "bg-background border border-border text-foreground hover:bg-card transition-colors",
+                socialButtonsBlockButtonText: "text-foreground font-medium",
+                dividerLine: "bg-border",
+                dividerText: "text-muted-foreground",
                 footerActionLink:
-                  "text-[#f97316] hover:text-[#ea580c] font-medium",
+                  "text-primary hover:text-primary/90 font-medium",
               },
             }}
             signUpUrl="/sign-up"

@@ -2,7 +2,7 @@ import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireActiveUser } from '@/lib/auth'
 import { calculateAdherenceScore } from '@/lib/adherence'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 import { toLocalDay, parseLocalDay } from '@/lib/date-utils'
 
 /**
@@ -189,7 +189,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(result)
   } catch (error) {
-    safeLogError('Manual entry error:', error)
+    logger.error('Manual entry error:', error)
     return NextResponse.json(
       { success: false, error: 'Something went wrong. Please try again later.' },
       { status: 500 }

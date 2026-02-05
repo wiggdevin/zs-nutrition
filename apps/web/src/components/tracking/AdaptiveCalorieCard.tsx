@@ -102,18 +102,18 @@ export function AdaptiveCalorieCard() {
     )
   }
 
-  const isIncrease = suggestion.calorieDifference > 0
-  const difference = Math.abs(suggestion.calorieDifference)
+  const isIncrease = (suggestion.calorieDifference ?? 0) > 0
+  const difference = Math.abs(suggestion.calorieDifference ?? 0)
 
   return (
     <>
-      <Card className={isIncrease ? 'border-blue-200 bg-blue-50/50' : 'border-orange-200 bg-orange-50/50'}>
+      <Card className={isIncrease ? 'border-blue-200 bg-blue-50/50' : 'border-primary/30 bg-primary/5'}>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
             {isIncrease ? (
               <TrendingUp className="h-5 w-5 text-blue-600" />
             ) : (
-              <AlertTriangle className="h-5 w-5 text-orange-600" />
+              <AlertTriangle className="h-5 w-5 text-primary/90" />
             )}
             Adaptive Calorie Suggestion
           </CardTitle>
@@ -134,7 +134,7 @@ export function AdaptiveCalorieCard() {
                   <div className="flex items-baseline gap-2">
                     <span className="text-2xl font-bold">{suggestion.currentGoalKcal}</span>
                     <span className="text-muted-foreground">→</span>
-                    <span className={`text-2xl font-bold ${isIncrease ? 'text-blue-600' : 'text-orange-600'}`}>
+                    <span className={`text-2xl font-bold ${isIncrease ? 'text-blue-600' : 'text-primary/90'}`}>
                       {suggestion.suggestedGoalKcal}
                     </span>
                     <span className="text-sm text-muted-foreground">calories/day</span>
@@ -144,9 +144,9 @@ export function AdaptiveCalorieCard() {
                     {isIncrease ? (
                       <TrendingUp className="h-4 w-4 text-blue-600" />
                     ) : (
-                      <TrendingUp className="h-4 w-4 text-orange-600 rotate-180" />
+                      <TrendingUp className="h-4 w-4 text-primary/90 rotate-180" />
                     )}
-                    <span className={`font-medium ${isIncrease ? 'text-blue-600' : 'text-orange-600'}`}>
+                    <span className={`font-medium ${isIncrease ? 'text-blue-600' : 'text-primary/90'}`}>
                       {isIncrease ? '+' : '-'}
                       {difference} calories/day
                     </span>
@@ -175,8 +175,8 @@ export function AdaptiveCalorieCard() {
               <AlertDescription className="text-sm">
                 <p className="font-medium mb-1">Safe Bounds:</p>
                 <p>
-                  Your calories will stay within a healthy range ({suggestion.safeBounds.min} -{' '}
-                  {suggestion.safeBounds.max}) based on your BMR of {suggestion.currentGoalKcal - 200}.
+                  Your calories will stay within a healthy range ({suggestion.safeBounds?.min} -{' '}
+                  {suggestion.safeBounds?.max}) based on your BMR of {(suggestion.currentGoalKcal ?? 0) - 200}.
                 </p>
               </AlertDescription>
             </Alert>
@@ -185,7 +185,7 @@ export function AdaptiveCalorieCard() {
             <div className="flex gap-2">
               <Button
                 onClick={handleApplyAdjustment}
-                className={isIncrease ? 'bg-blue-600 hover:bg-blue-700' : 'bg-orange-600 hover:bg-orange-700'}
+                className={isIncrease ? 'bg-blue-600 hover:bg-blue-700' : 'bg-primary hover:bg-primary/80'}
                 disabled={applyAdjustmentMutation.isPending}
               >
                 {applyAdjustmentMutation.isPending ? (

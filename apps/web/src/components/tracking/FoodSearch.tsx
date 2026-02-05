@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react'
 import { toast } from '@/lib/toast-store'
+import { logger } from '@/lib/safe-logger'
 
 type MealSlot = 'breakfast' | 'lunch' | 'dinner' | 'snack'
 
@@ -191,7 +192,7 @@ export default function FoodSearch() {
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
       if (generation !== searchGenRef.current) return
-      console.error('Autocomplete error:', err)
+      logger.error('Autocomplete error:', err)
     } finally {
       if (generation === searchGenRef.current) {
         setIsLoading(false)
@@ -289,7 +290,7 @@ export default function FoodSearch() {
       }
     } catch (err) {
       if (err instanceof DOMException && err.name === 'AbortError') return
-      console.error('Food details error:', err)
+      logger.error('Food details error:', err)
     } finally {
       setIsLoadingDetails(false)
     }
@@ -378,7 +379,7 @@ export default function FoodSearch() {
       <div className="relative">
         <div className="relative">
           <svg
-            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-[#a1a1aa]"
+            className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -410,16 +411,16 @@ export default function FoodSearch() {
             }}
             placeholder="Search foods (e.g. chicken, rice, banana...)"
             maxLength={MAX_SEARCH_LENGTH}
-            className={`w-full pl-10 pr-10 py-3 bg-[#1a1a1a] border rounded-xl text-[#fafafa] placeholder-[#666] focus:outline-none focus:ring-1 transition-colors ${
+            className={`w-full pl-10 pr-10 py-3 bg-card border rounded-xl text-foreground placeholder-muted-foreground focus:outline-none focus:ring-1 transition-colors ${
               queryTooLong
                 ? 'border-red-500 focus:border-red-500 focus:ring-red-500'
-                : 'border-[#333] focus:border-[#f97316] focus:ring-[#f97316]'
+                : 'border-border focus:border-primary focus:ring-primary'
             }`}
             autoComplete="off"
           />
           {isLoading && (
             <div className="absolute right-10 top-1/2 -translate-y-1/2">
-              <div className="w-5 h-5 border-2 border-[#f97316] border-t-transparent rounded-full animate-spin" />
+              <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
             </div>
           )}
           {query.length > 0 && !isLoading && (
@@ -445,7 +446,7 @@ export default function FoodSearch() {
                 setCurrentQuery('')
                 inputRef.current?.focus()
               }}
-              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-[#666] hover:text-[#fafafa] transition-colors rounded-full hover:bg-[#333]"
+              className="absolute right-3 top-1/2 -translate-y-1/2 w-5 h-5 flex items-center justify-center text-muted-foreground hover:text-foreground transition-colors rounded-full hover:bg-secondary"
               aria-label="Clear search"
               data-testid="food-search-clear"
             >
@@ -489,12 +490,12 @@ export default function FoodSearch() {
         {/* Empty Query Placeholder */}
         {isFocused && query.trim().length < 2 && !showDropdown && !selectedFood && !isLoading && (
           <div
-            className="absolute z-50 w-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-2xl overflow-hidden"
+            className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
             data-testid="food-search-placeholder"
           >
             <div className="px-4 py-6 text-center">
               <svg
-                className="w-8 h-8 mx-auto mb-2 text-[#444]"
+                className="w-8 h-8 mx-auto mb-2 text-muted-foreground"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -506,10 +507,10 @@ export default function FoodSearch() {
                   d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
                 />
               </svg>
-              <p className="text-sm text-[#a1a1aa] font-medium">
+              <p className="text-sm text-muted-foreground font-medium">
                 Type at least 2 characters to search
               </p>
-              <p className="text-xs text-[#666] mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 Search over 1M+ verified foods from FatSecret
               </p>
             </div>
@@ -519,12 +520,12 @@ export default function FoodSearch() {
         {/* No Results Empty State */}
         {showDropdown && !isLoading && suggestions.length === 0 && searchResults.length === 0 && query.trim().length >= 2 && !selectedFood && (
           <div
-            className="absolute z-50 w-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-2xl overflow-hidden"
+            className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-2xl overflow-hidden"
             data-testid="food-search-no-results"
           >
             <div className="px-4 py-6 text-center">
               <svg
-                className="w-10 h-10 mx-auto mb-3 text-[#444]"
+                className="w-10 h-10 mx-auto mb-3 text-muted-foreground"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -536,13 +537,13 @@ export default function FoodSearch() {
                   d="M9.172 16.172a4 4 0 015.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
                 />
               </svg>
-              <p className="text-sm font-medium text-[#fafafa]">
+              <p className="text-sm font-medium text-foreground">
                 No results found
               </p>
-              <p className="text-xs text-[#a1a1aa] mt-1">
+              <p className="text-xs text-muted-foreground mt-1">
                 No foods matched &ldquo;{query.trim()}&rdquo;
               </p>
-              <p className="text-xs text-[#666] mt-2">
+              <p className="text-xs text-muted-foreground mt-2">
                 Try a different spelling, a simpler term, or a more common food name
               </p>
             </div>
@@ -553,22 +554,22 @@ export default function FoodSearch() {
         {showDropdown && (suggestions.length > 0 || searchResults.length > 0) && (
           <div
             ref={dropdownRef}
-            className="absolute z-50 w-full mt-1 bg-[#1a1a1a] border border-[#333] rounded-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto"
+            className="absolute z-50 w-full mt-1 bg-card border border-border rounded-xl shadow-2xl overflow-hidden max-h-80 overflow-y-auto"
           >
             {/* Autocomplete suggestions */}
             {suggestions.length > 0 && (
               <div>
-                <div className="px-3 py-2 text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider bg-[#111]">
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-background">
                   Suggestions
                 </div>
                 {suggestions.map((suggestion, idx) => (
                   <button
                     key={`sug-${idx}`}
                     onClick={() => handleSuggestionClick(suggestion)}
-                    className="w-full px-4 py-2.5 text-left text-[#fafafa] hover:bg-[#f97316]/10 hover:text-[#f97316] transition-colors flex items-center gap-2"
+                    className="w-full px-4 py-2.5 text-left text-foreground hover:bg-primary/10 hover:text-primary transition-colors flex items-center gap-2"
                     title={suggestion}
                   >
-                    <svg className="w-4 h-4 text-[#666] flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-muted-foreground flex-shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <span className="truncate">{suggestion}</span>
@@ -580,24 +581,24 @@ export default function FoodSearch() {
             {/* Search results (foods) */}
             {searchResults.length > 0 && (
               <div>
-                <div className="px-3 py-2 text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider bg-[#111]">
+                <div className="px-3 py-2 text-xs font-semibold text-muted-foreground uppercase tracking-wider bg-background">
                   Foods
                 </div>
                 {searchResults.map((food) => (
                   <button
                     key={food.foodId}
                     onClick={() => handleFoodSelect(food)}
-                    className="w-full px-4 py-3 text-left hover:bg-[#f97316]/10 transition-colors border-b border-[#222] last:border-0"
+                    className="w-full px-4 py-3 text-left hover:bg-primary/10 transition-colors border-b border-border last:border-0"
                   >
                     <div className="flex items-center justify-between gap-2">
                       <div
-                        className="font-medium text-[#fafafa] truncate"
+                        className="font-medium text-foreground truncate"
                         title={food.name}
                       >
                         {food.name}
                       </div>
                       {food.verified && (
-                        <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-[#22c55e]/20 text-[#22c55e] border border-[#22c55e]/30">
+                        <span className="flex-shrink-0 inline-flex items-center gap-1 px-2 py-0.5 rounded-full text-[10px] font-bold uppercase tracking-wider bg-success/20 text-success border border-success/30">
                           <svg className="w-3 h-3" fill="currentColor" viewBox="0 0 20 20">
                             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
                           </svg>
@@ -607,7 +608,7 @@ export default function FoodSearch() {
                     </div>
                     {food.brandName && (
                       <div
-                        className="text-xs text-[#f97316] mt-0.5 truncate"
+                        className="text-xs text-primary mt-0.5 truncate"
                         title={food.brandName}
                       >
                         {food.brandName}
@@ -615,10 +616,10 @@ export default function FoodSearch() {
                     )}
                     {food.nutrition && (
                       <div className="mt-1.5 flex items-center gap-1.5 flex-wrap">
-                        <span className="text-[10px] text-[#a1a1aa]">
+                        <span className="text-[10px] text-muted-foreground">
                           {food.nutrition.servingDescription}:
                         </span>
-                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-[#f97316]/15 text-[#f97316]">
+                        <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-primary/15 text-primary">
                           {food.nutrition.calories} kcal
                         </span>
                         <span className="inline-flex items-center px-1.5 py-0.5 rounded text-[10px] font-semibold bg-blue-500/15 text-blue-400">
@@ -633,7 +634,7 @@ export default function FoodSearch() {
                       </div>
                     )}
                     {food.servings && food.servings.length > 1 && (
-                      <div className="mt-1 text-[10px] text-[#666]">
+                      <div className="mt-1 text-[10px] text-muted-foreground">
                         {food.servings.length} serving sizes available
                       </div>
                     )}
@@ -644,19 +645,19 @@ export default function FoodSearch() {
                   <button
                     onClick={handleLoadMore}
                     disabled={isLoadingMore}
-                    className="w-full px-4 py-3 text-center hover:bg-[#f97316]/10 transition-colors border-t border-[#222] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    className="w-full px-4 py-3 text-center hover:bg-primary/10 transition-colors border-t border-border disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                   >
                     {isLoadingMore ? (
                       <>
-                        <div className="w-4 h-4 border-2 border-[#f97316] border-t-transparent rounded-full animate-spin" />
-                        <span className="text-sm text-[#a1a1aa]">Loading more...</span>
+                        <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+                        <span className="text-sm text-muted-foreground">Loading more...</span>
                       </>
                     ) : (
                       <>
-                        <svg className="w-4 h-4 text-[#a1a1aa]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <svg className="w-4 h-4 text-muted-foreground" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                         </svg>
-                        <span className="text-sm text-[#a1a1aa] font-medium">Load More Results</span>
+                        <span className="text-sm text-muted-foreground font-medium">Load More Results</span>
                       </>
                     )}
                   </button>
@@ -669,20 +670,20 @@ export default function FoodSearch() {
 
       {/* Loading food details */}
       {isLoadingDetails && (
-        <div className="mt-4 p-6 bg-[#1a1a1a] border border-[#333] rounded-xl flex items-center justify-center gap-3">
-          <div className="w-5 h-5 border-2 border-[#f97316] border-t-transparent rounded-full animate-spin" />
-          <span className="text-[#a1a1aa]">Loading food details...</span>
+        <div className="mt-4 p-6 bg-card border border-border rounded-xl flex items-center justify-center gap-3">
+          <div className="w-5 h-5 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+          <span className="text-muted-foreground">Loading food details...</span>
         </div>
       )}
 
       {/* Selected Food Details */}
       {selectedFood && !isLoadingDetails && (
-        <div className="mt-4 p-4 sm:p-6 bg-[#1a1a1a] border border-[#333] rounded-xl">
+        <div className="mt-4 p-4 sm:p-6 bg-card border border-border rounded-xl">
           <div className="flex items-start justify-between mb-4">
             <div className="min-w-0 flex-1 mr-2">
-              <h3 className="text-lg font-bold text-[#fafafa] break-words">{selectedFood.name}</h3>
+              <h3 className="text-lg font-bold text-foreground break-words">{selectedFood.name}</h3>
               {selectedFood.brandName && (
-                <p className="text-sm text-[#f97316]">{selectedFood.brandName}</p>
+                <p className="text-sm text-primary">{selectedFood.brandName}</p>
               )}
             </div>
             <button
@@ -691,7 +692,7 @@ export default function FoodSearch() {
                 setQuery('')
                 inputRef.current?.focus()
               }}
-              className="text-[#666] hover:text-[#fafafa] transition-colors"
+              className="text-muted-foreground hover:text-foreground transition-colors"
             >
               <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -702,7 +703,7 @@ export default function FoodSearch() {
           {/* Serving Size Selector */}
           {selectedFood.servings.length > 0 && (
             <div className="mb-4">
-              <label id="food-serving-size-label" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-2">
+              <label id="food-serving-size-label" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                 Serving Size
               </label>
               <div className="flex flex-wrap gap-2" role="group" aria-labelledby="food-serving-size-label">
@@ -712,8 +713,8 @@ export default function FoodSearch() {
                     onClick={() => setSelectedServingIdx(idx)}
                     className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors max-w-[200px] ${
                       selectedServingIdx === idx
-                        ? 'bg-[#f97316] text-[#0a0a0a]'
-                        : 'bg-[#222] text-[#a1a1aa] hover:bg-[#333] hover:text-[#fafafa]'
+                        ? 'bg-primary text-background'
+                        : 'bg-secondary text-muted-foreground hover:bg-secondary hover:text-foreground'
                     }`}
                     title={serving.servingDescription}
                   >
@@ -727,41 +728,41 @@ export default function FoodSearch() {
           {/* Nutrition Info */}
           {currentServing && (
             <div className="grid grid-cols-4 gap-2 sm:gap-3">
-              <div className="bg-[#111] rounded-lg p-2 sm:p-3 text-center">
-                <div className="text-xl sm:text-2xl font-bold text-[#f97316]">{currentServing.calories}</div>
-                <div className="text-[10px] sm:text-xs text-[#a1a1aa] uppercase tracking-wider mt-1">Calories</div>
+              <div className="bg-background rounded-lg p-2 sm:p-3 text-center">
+                <div className="text-xl sm:text-2xl font-bold text-primary">{currentServing.calories}</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mt-1">Calories</div>
               </div>
-              <div className="bg-[#111] rounded-lg p-2 sm:p-3 text-center">
+              <div className="bg-background rounded-lg p-2 sm:p-3 text-center">
                 <div className="text-xl sm:text-2xl font-bold text-blue-400">{currentServing.protein}g</div>
-                <div className="text-[10px] sm:text-xs text-[#a1a1aa] uppercase tracking-wider mt-1">Protein</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mt-1">Protein</div>
               </div>
-              <div className="bg-[#111] rounded-lg p-2 sm:p-3 text-center">
+              <div className="bg-background rounded-lg p-2 sm:p-3 text-center">
                 <div className="text-xl sm:text-2xl font-bold text-green-400">{currentServing.carbohydrate}g</div>
-                <div className="text-[10px] sm:text-xs text-[#a1a1aa] uppercase tracking-wider mt-1">Carbs</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mt-1">Carbs</div>
               </div>
-              <div className="bg-[#111] rounded-lg p-2 sm:p-3 text-center">
+              <div className="bg-background rounded-lg p-2 sm:p-3 text-center">
                 <div className="text-xl sm:text-2xl font-bold text-yellow-400">{currentServing.fat}g</div>
-                <div className="text-[10px] sm:text-xs text-[#a1a1aa] uppercase tracking-wider mt-1">Fat</div>
+                <div className="text-[10px] sm:text-xs text-muted-foreground uppercase tracking-wider mt-1">Fat</div>
               </div>
             </div>
           )}
 
           {currentServing?.fiber !== undefined && currentServing.fiber !== null && (
-            <div className="mt-3 text-sm text-[#a1a1aa]">
-              Fiber: <span className="text-[#fafafa] font-medium">{currentServing.fiber}g</span>
+            <div className="mt-3 text-sm text-muted-foreground">
+              Fiber: <span className="text-foreground font-medium">{currentServing.fiber}g</span>
             </div>
           )}
 
           {/* Meal Slot Selector */}
           <div className="mt-4">
-            <label htmlFor="food-meal-slot" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-2">
-              Meal Slot <span className="text-[#666] normal-case font-normal">(optional)</span>
+            <label htmlFor="food-meal-slot" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
+              Meal Slot <span className="text-muted-foreground normal-case font-normal">(optional)</span>
             </label>
             <select
               id="food-meal-slot"
               value={mealSlot}
               onChange={(e) => setMealSlot(e.target.value as MealSlot | '')}
-              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
               data-testid="food-meal-slot"
             >
               <option value="">No meal slot</option>
@@ -774,7 +775,7 @@ export default function FoodSearch() {
 
           {/* Date Selector */}
           <div className="mt-4">
-            <label htmlFor="food-date" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-2">
+            <label htmlFor="food-date" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
               Date
             </label>
             <input
@@ -782,24 +783,24 @@ export default function FoodSearch() {
               type="date"
               value={loggedDate}
               onChange={(e) => setLoggedDate(e.target.value)}
-              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
               data-testid="food-date"
             />
           </div>
 
           {/* Quantity Selector and Log Button */}
           {currentServing && (
-            <div className="mt-5 pt-4 border-t border-[#333]">
+            <div className="mt-5 pt-4 border-t border-border">
               <div className="flex flex-wrap items-end gap-3 sm:gap-4">
                 {/* Quantity Input */}
                 <div className="flex-shrink-0">
-                  <label htmlFor="food-quantity" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-2">
+                  <label htmlFor="food-quantity" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2">
                     Quantity
                   </label>
                   <div className="flex items-center gap-1">
                     <button
                       onClick={() => setQuantity(Math.max(0.5, quantity - 0.5))}
-                      className="w-8 h-10 flex items-center justify-center bg-[#222] text-[#a1a1aa] rounded-lg hover:bg-[#333] hover:text-[#fafafa] transition-colors text-lg font-bold"
+                      className="w-8 h-10 flex items-center justify-center bg-secondary text-muted-foreground rounded-lg hover:bg-secondary hover:text-foreground transition-colors text-lg font-bold"
                       aria-label="Decrease quantity"
                     >
                       -
@@ -811,11 +812,11 @@ export default function FoodSearch() {
                       onChange={(e) => setQuantity(Math.max(0.1, Number(e.target.value) || 0.1))}
                       step="0.5"
                       min="0.1"
-                      className="w-16 h-10 text-center bg-[#222] border border-[#333] rounded-lg text-[#fafafa] font-semibold focus:outline-none focus:border-[#f97316]"
+                      className="w-16 h-10 text-center bg-secondary border border-border rounded-lg text-foreground font-semibold focus:outline-none focus:border-primary"
                     />
                     <button
                       onClick={() => setQuantity(quantity + 0.5)}
-                      className="w-8 h-10 flex items-center justify-center bg-[#222] text-[#a1a1aa] rounded-lg hover:bg-[#333] hover:text-[#fafafa] transition-colors text-lg font-bold"
+                      className="w-8 h-10 flex items-center justify-center bg-secondary text-muted-foreground rounded-lg hover:bg-secondary hover:text-foreground transition-colors text-lg font-bold"
                       aria-label="Increase quantity"
                     >
                       +
@@ -825,8 +826,8 @@ export default function FoodSearch() {
 
                 {/* Adjusted Totals Preview */}
                 {quantity !== 1 && (
-                  <div className="flex-1 min-w-0 text-sm text-[#a1a1aa]">
-                    <span className="text-[#f97316] font-semibold">{Math.round(currentServing.calories * quantity)}</span> kcal
+                  <div className="flex-1 min-w-0 text-sm text-muted-foreground">
+                    <span className="text-primary font-semibold">{Math.round(currentServing.calories * quantity)}</span> kcal
                     {' · '}
                     <span className="text-blue-400 font-semibold">{Math.round(currentServing.protein * quantity * 10) / 10}g</span> P
                     {' · '}
@@ -840,7 +841,7 @@ export default function FoodSearch() {
                 <button
                   onClick={handleLogFood}
                   disabled={isLogging}
-                  className="flex-1 sm:flex-none px-6 py-2.5 bg-[#f97316] text-[#0a0a0a] font-bold uppercase tracking-wider rounded-xl hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
+                  className="flex-1 sm:flex-none px-6 py-2.5 bg-primary text-background font-bold uppercase tracking-wider rounded-xl hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed transition-colors flex items-center justify-center gap-2"
                 >
                   {isLogging ? (
                     <>

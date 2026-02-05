@@ -1,4 +1,5 @@
 import IORedis from 'ioredis'
+import { logger } from '@/lib/safe-logger'
 
 const globalForRedis = globalThis as unknown as {
   redis: IORedis | undefined
@@ -22,7 +23,7 @@ function createRedisConnection() {
     if (process.env.NODE_ENV === 'production') {
       throw new Error('REDIS_URL is required in production. Set it in your Vercel environment variables.')
     }
-    console.warn('REDIS_URL not configured, using lazy Redis connection for development')
+    logger.warn('REDIS_URL not configured, using lazy Redis connection for development')
     return new IORedis({
       host: '127.0.0.1',
       port: 6379,

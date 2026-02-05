@@ -2,11 +2,13 @@
 // Error Handling and Retry Logic for Fitness Platform APIs
 // ============================================================
 
+import { logger } from '@/lib/safe-logger';
+
 export class FitnessApiError extends Error {
   constructor(
     public platform: string,
     public statusCode: number,
-    public errorCode?: string,
+    public errorCode: string | undefined,
     message: string,
   ) {
     super(message);
@@ -71,7 +73,9 @@ export async function retryWithBackoff<T>(
       lastError = error as Error;
 
       // Check if error is retryable
-      const statusCode = (error as any)?.statusCode;
+      const statusCode = typeof error === 'object' && error !== null && 'statusCode' in error
+        ? (error as { statusCode: number }).statusCode
+        : undefined;
       const isRetryable = statusCode
         ? config.retryableErrors.includes(statusCode)
         : false;
@@ -83,7 +87,7 @@ export async function retryWithBackoff<T>(
       // Calculate delay with exponential backoff
       const currentDelay = Math.min(delay, config.maxDelayMs);
 
-      console.log(
+      logger.debug(
         `Retry attempt ${attempt + 1}/${config.maxRetries} after ${currentDelay}ms`,
       );
 
@@ -265,12 +269,10 @@ export function logSyncError(
   error: Error,
   context?: Record<string, any>,
 ): void {
-  console.error({
-    type: 'fitness_sync_error',
+  logger.error('fitness_sync_error', {
     userId,
     platform,
     error: error.message,
-    stack: error.stack,
     context,
     timestamp: new Date().toISOString(),
   });

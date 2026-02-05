@@ -3,6 +3,7 @@
 import { notFound } from 'next/navigation'
 import { useEffect, useState } from "react";
 import NavBar from "@/components/navigation/NavBar";
+import { logger } from '@/lib/safe-logger';
 
 interface SwapRecord {
   id: string;
@@ -36,7 +37,7 @@ export default function TestFeature137Page() {
         }
 
         const signInData = await signInRes.json();
-        console.log("Signed in:", signInData.userId);
+        logger.debug("Signed in:", signInData.userId);
 
         // Step 2: Create profile if needed
         setStatus("Creating user profile...");
@@ -46,7 +47,7 @@ export default function TestFeature137Page() {
 
         if (!profileRes.ok) {
           // Might already exist, that's ok
-          console.log("Profile might already exist");
+          logger.debug("Profile might already exist");
         }
 
         // Step 3: Create meal plan
@@ -58,10 +59,10 @@ export default function TestFeature137Page() {
         if (!planRes.ok) {
           const planError = await planRes.json();
           // Plan might already exist, try to get active plan
-          console.log("Plan might already exist:", planError.error);
+          logger.debug("Plan might already exist:", planError.error);
         } else {
           const planData = await planRes.json();
-          console.log("Plan created:", planData.planId);
+          logger.debug("Plan created:", planData.planId);
         }
 
         setStatus("✅ Test environment ready! Redirecting to meal plan...");
@@ -71,7 +72,7 @@ export default function TestFeature137Page() {
           window.location.href = "/meal-plan";
         }, 2000);
       } catch (err: any) {
-        console.error("Setup error:", err);
+        logger.error("Setup error", err);
         setError(err.message || "Failed to set up test environment");
         setStatus("❌ Setup failed");
       }
@@ -84,17 +85,17 @@ export default function TestFeature137Page() {
     <>
       <NavBar />
       <div className="md:pt-14 pb-20 md:pb-0">
-        <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] px-4 py-12">
+        <div className="min-h-screen bg-background text-foreground px-4 py-12">
           <div className="mx-auto max-w-2xl">
-            <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8">
+            <div className="rounded-lg border border-border bg-card p-8">
               <div className="mb-6">
-                <p className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+                <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
                   /// FEATURE TEST
                 </p>
-                <h1 className="mt-2 text-2xl font-bold uppercase tracking-wider text-[#fafafa]">
+                <h1 className="mt-2 text-2xl font-bold uppercase tracking-wider text-foreground">
                   Feature #137: Meal Swap Undo
                 </h1>
-                <p className="mt-2 text-sm text-[#a1a1aa]">
+                <p className="mt-2 text-sm text-muted-foreground">
                   Testing that undo functionality reverts to original meal
                 </p>
               </div>
@@ -105,7 +106,7 @@ export default function TestFeature137Page() {
                   <p className="mt-1 text-xs text-red-400">{error}</p>
                   <button
                     onClick={() => window.location.reload()}
-                    className="mt-3 rounded-lg bg-red-500 px-4 py-2 text-xs font-bold uppercase text-[#0a0a0a] hover:bg-red-600"
+                    className="mt-3 rounded-lg bg-red-500 px-4 py-2 text-xs font-bold uppercase text-background hover:bg-red-600"
                   >
                     Retry
                   </button>
@@ -113,9 +114,9 @@ export default function TestFeature137Page() {
               ) : (
                 <div className="space-y-4">
                   <div className="flex items-center gap-3">
-                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-[#f97316]/20">
+                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-primary/20">
                       <svg
-                        className="h-4 w-4 animate-spin text-[#f97316]"
+                        className="h-4 w-4 animate-spin text-primary"
                         fill="none"
                         viewBox="0 0 24 24"
                       >
@@ -134,12 +135,12 @@ export default function TestFeature137Page() {
                         />
                       </svg>
                     </div>
-                    <p className="text-sm text-[#a1a1aa]">{status}</p>
+                    <p className="text-sm text-muted-foreground">{status}</p>
                   </div>
 
-                  <div className="rounded-lg border border-[#2a2a2a] bg-[#0d0d0d] p-4">
-                    <p className="text-xs font-semibold text-[#a1a1aa] mb-2">Test Steps:</p>
-                    <ol className="space-y-1 text-xs text-[#a1a1aa] list-decimal list-inside">
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Test Steps:</p>
+                    <ol className="space-y-1 text-xs text-muted-foreground list-decimal list-inside">
                       <li>Sign in as dev user</li>
                       <li>Create user profile</li>
                       <li>Generate meal plan with 7 days</li>
@@ -152,15 +153,15 @@ export default function TestFeature137Page() {
                     </ol>
                   </div>
 
-                  <div className="rounded-lg border border-[#2a2a2a] bg-[#0d0d0d] p-4">
-                    <p className="text-xs font-semibold text-[#a1a1aa] mb-2">Expected Result:</p>
-                    <p className="text-xs text-[#22c55e]">
+                  <div className="rounded-lg border border-border bg-background p-4">
+                    <p className="text-xs font-semibold text-muted-foreground mb-2">Expected Result:</p>
+                    <p className="text-xs text-green-500">
                       ✓ Original meal name should reappear after undo
                     </p>
-                    <p className="text-xs text-[#22c55e]">
+                    <p className="text-xs text-green-500">
                       ✓ Undo button should disappear after click
                     </p>
-                    <p className="text-xs text-[#22c55e]">
+                    <p className="text-xs text-green-500">
                       ✓ Swap history record should be deleted
                     </p>
                   </div>

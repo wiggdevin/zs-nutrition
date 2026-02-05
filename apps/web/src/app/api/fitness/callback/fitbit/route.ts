@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { auth } from '@clerk/nextjs/server';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/fitness/callback/fitbit
@@ -90,7 +91,7 @@ export async function GET(req: NextRequest) {
       new URL('/settings?fitness=fitbit&status=connected', req.url),
     );
   } catch (error) {
-    console.error('Error in Fitbit OAuth callback:', error);
+    logger.error('Error in Fitbit OAuth callback:', error);
     return NextResponse.redirect(
       new URL('/settings?fitness=fitbit&error=server_error', req.url),
     );

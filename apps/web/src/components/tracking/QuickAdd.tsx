@@ -111,20 +111,20 @@ export default function QuickAdd() {
 
   return (
     <div className="w-full max-w-2xl mx-auto">
-      <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-6">
+      <div className="bg-card border border-border rounded-xl p-6">
         <div className="flex items-center gap-2 mb-4">
           <span className="text-xl">⚡</span>
-          <h2 className="text-lg font-bold text-[#fafafa] uppercase tracking-wider">Quick Add</h2>
+          <h2 className="text-lg font-bold text-foreground uppercase tracking-wider">Quick Add</h2>
         </div>
-        <p className="text-sm text-[#a1a1aa] mb-5">
+        <p className="text-sm text-muted-foreground mb-5">
           Quickly log calories and optional macros without searching for a food.
         </p>
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Optional Label */}
           <div>
-            <label htmlFor="quick-add-label" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
-              Label <span className="text-[#666] font-normal">(optional)</span>
+            <label htmlFor="quick-add-label" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Label <span className="text-muted-foreground font-normal">(optional)</span>
             </label>
             <input
               id="quick-add-label"
@@ -132,14 +132,14 @@ export default function QuickAdd() {
               value={label}
               onChange={(e) => setLabel(e.target.value)}
               placeholder="e.g. Afternoon snack"
-              className="w-full px-4 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#666] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
             />
           </div>
 
           {/* Calories (required) */}
           <div>
-            <label htmlFor="quick-add-calories" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
-              Calories <span className="text-[#f97316]">*</span>
+            <label htmlFor="quick-add-calories" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Calories <span className="text-primary">*</span>
             </label>
             <input
               id="quick-add-calories"
@@ -150,14 +150,14 @@ export default function QuickAdd() {
               min="1"
               step="1"
               required
-              className="w-full px-4 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#666] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors text-lg font-semibold"
+              className="w-full px-4 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors text-lg font-semibold"
             />
           </div>
 
           {/* Optional Macros Row */}
           <div>
-            <label className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
-              Macros <span className="text-[#666] font-normal">(optional, in grams)</span>
+            <label className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+              Macros <span className="text-muted-foreground font-normal">(optional, in grams)</span>
             </label>
             <div className="grid grid-cols-3 gap-3">
               <div>
@@ -170,7 +170,7 @@ export default function QuickAdd() {
                   placeholder="0"
                   min="0"
                   step="0.1"
-                  className="w-full px-3 py-2 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#666] focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors text-center"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors text-center"
                 />
               </div>
               <div>
@@ -183,7 +183,7 @@ export default function QuickAdd() {
                   placeholder="0"
                   min="0"
                   step="0.1"
-                  className="w-full px-3 py-2 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#666] focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors text-center"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors text-center"
                 />
               </div>
               <div>
@@ -196,7 +196,7 @@ export default function QuickAdd() {
                   placeholder="0"
                   min="0"
                   step="0.1"
-                  className="w-full px-3 py-2 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#666] focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-colors text-center"
+                  className="w-full px-3 py-2 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-colors text-center"
                 />
               </div>
             </div>
@@ -243,7 +243,7 @@ export default function QuickAdd() {
           <button
             type="submit"
             disabled={isSubmitting || !calories}
-            className="w-full py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:bg-[#333] disabled:text-[#666] text-[#0a0a0a] font-bold rounded-xl uppercase tracking-wider transition-colors"
+            className="w-full py-3 bg-primary hover:bg-primary/90 disabled:bg-secondary disabled:text-muted-foreground text-background font-bold rounded-xl uppercase tracking-wider transition-colors"
           >
             {isSubmitting ? (
               <span className="flex items-center justify-center gap-2">
@@ -258,14 +258,14 @@ export default function QuickAdd() {
 
         {/* Success Result */}
         {result?.success && result.trackedMeal && (
-          <div className="mt-4 bg-[#22c55e]/10 border border-[#22c55e]/30 rounded-xl p-4">
+          <div className="mt-4 bg-success/10 border border-success/30 rounded-xl p-4">
             <div className="flex items-center gap-2 mb-2">
-              <span className="text-[#22c55e] text-lg">✓</span>
-              <span className="text-[#22c55e] font-bold text-sm uppercase tracking-wider">Added Successfully</span>
+              <span className="text-success text-lg">✓</span>
+              <span className="text-success font-bold text-sm uppercase tracking-wider">Added Successfully</span>
             </div>
-            <div className="text-[#fafafa] font-medium mb-2">{result.trackedMeal.mealName}</div>
+            <div className="text-foreground font-medium mb-2">{result.trackedMeal.mealName}</div>
             <div className="flex gap-3 flex-wrap">
-              <span className="px-2.5 py-1 bg-[#f97316]/10 text-[#f97316] rounded-full text-xs font-semibold">
+              <span className="px-2.5 py-1 bg-primary/10 text-primary rounded-full text-xs font-semibold">
                 {result.trackedMeal.kcal} kcal
               </span>
               {result.trackedMeal.proteinG > 0 && (
@@ -285,9 +285,9 @@ export default function QuickAdd() {
               )}
             </div>
             {result.dailyLog && (
-              <div className="mt-3 pt-3 border-t border-[#333] text-xs text-[#a1a1aa]">
-                Today&apos;s total: <span className="text-[#fafafa] font-medium">{result.dailyLog.actualKcal} kcal</span>
-                {' '} | Adherence: <span className="text-[#fafafa] font-medium">{result.dailyLog.adherenceScore}%</span>
+              <div className="mt-3 pt-3 border-t border-border text-xs text-muted-foreground">
+                Today&apos;s total: <span className="text-foreground font-medium">{result.dailyLog.actualKcal} kcal</span>
+                {' '} | Adherence: <span className="text-foreground font-medium">{result.dailyLog.adherenceScore}%</span>
               </div>
             )}
           </div>

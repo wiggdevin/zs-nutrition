@@ -6,6 +6,7 @@ import {
   defaultOnboardingData,
   TOTAL_STEPS,
 } from "@/lib/onboarding-types";
+import { logger } from "@/lib/safe-logger";
 import { Step1Demographics, isStep1Valid } from "./Step1Demographics";
 import { Step2BodyMetrics, isStep2Valid } from "./Step2BodyMetrics";
 import { Step3Goals, isStep3Valid } from "./Step3Goals";
@@ -80,7 +81,7 @@ export function OnboardingWizard() {
         }
       } catch (err) {
         // If server request fails, fall back to localStorage
-        console.warn("Failed to load onboarding state from server, using localStorage:", err);
+        logger.warn("Failed to load onboarding state from server, using localStorage:", err);
       }
 
       // Fall back to localStorage if server didn't have data or request failed
@@ -133,7 +134,7 @@ export function OnboardingWizard() {
         });
       } catch (err) {
         // Silent fail - localStorage has the data
-        console.warn("Failed to save onboarding state to server:", err);
+        logger.warn("Failed to save onboarding state to server:", err);
       }
     }, 500); // Debounce to avoid too many requests
 
@@ -190,10 +191,10 @@ export function OnboardingWizard() {
         body: JSON.stringify({ profileData: data }),
       });
       if (!res.ok) {
-        console.error("Failed to save profile: status", res.status);
+        logger.error("Failed to save profile: status", res.status);
       }
     } catch (err) {
-      console.error("Error saving profile:", err instanceof Error ? err.message : "Unknown error");
+      logger.error("Error saving profile:", err instanceof Error ? err.message : "Unknown error");
     }
     // Clear onboarding state from localStorage
     localStorage.removeItem(STORAGE_KEY);
@@ -227,10 +228,10 @@ export function OnboardingWizard() {
   // Show loading state while hydrating from localStorage to prevent flicker
   if (!isHydrated) {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4 py-8">
+      <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
         <div className="text-center">
-          <div className="h-8 w-8 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent mx-auto" />
-          <p className="mt-4 font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+          <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent mx-auto" />
+          <p className="mt-4 font-mono text-xs uppercase tracking-widest text-muted-foreground">
             Loading...
           </p>
         </div>
@@ -239,14 +240,14 @@ export function OnboardingWizard() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4 py-8">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4 py-8">
       <div className="w-full max-w-2xl space-y-6">
         {/* Header */}
         <div className="text-center">
-          <h1 className="text-3xl font-heading uppercase tracking-wider text-[#fafafa]">
+          <h1 className="text-3xl font-heading uppercase tracking-wider text-foreground">
             Welcome to Zero Sum
           </h1>
-          <p className="mt-2 font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+          <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
             /// ONBOARDING PROTOCOL INITIATED
           </p>
         </div>
@@ -256,16 +257,16 @@ export function OnboardingWizard() {
 
         {/* Step Title */}
         <div className="text-center">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#f97316]">
+          <p className="font-mono text-xs uppercase tracking-widest text-primary">
             Step {currentStep} of {TOTAL_STEPS}
           </p>
-          <h2 className="mt-1 text-xl font-bold text-[#fafafa]">
+          <h2 className="mt-1 text-xl font-bold text-foreground">
             {stepTitles[currentStep]}
           </h2>
         </div>
 
         {/* Step Content */}
-        <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6 shadow-xl">
+        <div className="rounded-lg border border-border bg-card p-6 shadow-xl">
           {stepComponents[currentStep]}
         </div>
 
@@ -276,7 +277,7 @@ export function OnboardingWizard() {
             onClick={prevStep}
             disabled={currentStep === 1}
             aria-label="Go to previous step"
-            className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#fafafa] transition-colors hover:bg-[#252525] disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
+            className="rounded-lg border border-border bg-card px-6 py-3 text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:bg-secondary disabled:cursor-not-allowed disabled:opacity-30 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
           >
             Back
           </button>
@@ -286,7 +287,7 @@ export function OnboardingWizard() {
               type="button"
               onClick={nextStep}
               aria-label="Continue to next step"
-              className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
+              className="rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               Continue
             </button>
@@ -297,7 +298,7 @@ export function OnboardingWizard() {
               disabled={isCompleting}
               data-testid="onboarding-complete-btn"
               aria-label="Complete setup and generate meal plan"
-              className="rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#0a0a0a]"
+              className="rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-background"
             >
               {isCompleting ? (
                 <span className="flex items-center gap-2">

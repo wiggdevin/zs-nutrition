@@ -4,6 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { syncAllUserActivity } from '@/lib/fitness/scheduler';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * POST /api/fitness/sync-all
@@ -33,7 +34,7 @@ export async function POST(req: NextRequest) {
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
-    console.error('Error in fitness sync-all:', error);
+    logger.error('Error in fitness sync-all:', error);
     return NextResponse.json(
       {
         success: false,

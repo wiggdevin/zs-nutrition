@@ -74,19 +74,19 @@ export default function MealDetailModal({
       onClick={onClose}
     >
       <div
-        className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-xl border border-[#2a2a2a] bg-[#141414] shadow-2xl flex flex-col"
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-xl border border-border bg-card shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
         data-testid="meal-detail-modal-content"
       >
         {/* Header - Fixed */}
-        <div className="flex-shrink-0 border-b border-[#2a2a2a] px-6 py-5">
+        <div className="flex-shrink-0 border-b border-border px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               {/* Breadcrumb navigation */}
               <nav className="flex items-center gap-2 mb-3" aria-label="Breadcrumb" data-testid="meal-detail-breadcrumb">
                 <button
                   onClick={onClose}
-                  className="flex items-center gap-1 text-xs font-medium text-[#a1a1aa] hover:text-[#f97316] transition-colors focus-visible:outline-2 focus-visible:outline-[#f97316] focus-visible:outline-offset-1 rounded"
+                  className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-1 rounded"
                   data-testid="breadcrumb-back"
                 >
                   <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
@@ -94,25 +94,25 @@ export default function MealDetailModal({
                   </svg>
                   <span>Meal Plan</span>
                 </button>
-                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-[#52525b]" aria-hidden="true">
+                <svg width="12" height="12" viewBox="0 0 24 24" fill="none" className="text-muted-foreground" aria-hidden="true">
                   <path d="M9 5L5 9M5 5L9 9M19 19L15 15M15 19L19 15" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
                 </svg>
-                <span className="text-xs font-medium text-[#fafafa] truncate max-w-[200px]" data-testid="breadcrumb-current">
+                <span className="text-xs font-medium text-foreground truncate max-w-[200px]" data-testid="breadcrumb-current">
                   {meal.name}
                 </span>
               </nav>
 
               {/* Slot badge */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center rounded bg-[#f97316]/20 px-2 py-1 text-xs font-bold uppercase text-[#f97316]">
+                <span className="inline-flex items-center rounded bg-primary/20 px-2 py-1 text-xs font-bold uppercase text-primary">
                   {meal.slot}
                 </span>
                 {meal.confidenceLevel && (
                   <span
                     className={`inline-flex items-center rounded px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
                       meal.confidenceLevel === "verified"
-                        ? "bg-[#22c55e]/20 text-[#22c55e]"
-                        : "bg-[#f59e0b]/20 text-[#f59e0b]"
+                        ? "bg-success/20 text-success"
+                        : "bg-warning/20 text-warning"
                     }`}
                     data-testid="meal-detail-confidence-badge"
                   >
@@ -123,14 +123,14 @@ export default function MealDetailModal({
 
               {/* Meal name */}
               <h2
-                className="text-xl sm:text-2xl font-heading font-bold uppercase tracking-wider text-[#fafafa] leading-tight"
+                className="text-xl sm:text-2xl font-heading font-bold uppercase tracking-wider text-foreground leading-tight"
                 data-testid="meal-detail-name"
               >
                 {meal.name}
               </h2>
 
               {/* Cuisine and time */}
-              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-[#a1a1aa]">
+              <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 {meal.cuisine && (
                   <span data-testid="meal-detail-cuisine">{meal.cuisine}</span>
                 )}
@@ -151,7 +151,7 @@ export default function MealDetailModal({
             {/* Close button */}
             <button
               onClick={onClose}
-              className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] text-[#a1a1aa] transition-colors hover:bg-[#2a2a2a] hover:text-[#fafafa]"
+              className="flex-shrink-0 flex h-10 w-10 items-center justify-center rounded-lg border border-border bg-card text-muted-foreground transition-colors hover:bg-border hover:text-foreground"
               data-testid="meal-detail-close"
               aria-label="Close meal details"
             >
@@ -163,20 +163,20 @@ export default function MealDetailModal({
 
           {/* Macro summary pills */}
           <div className="mt-4 flex flex-wrap gap-2">
-            <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-3 py-1.5 text-sm font-bold text-[#f97316]">
+            <span className="inline-flex items-center rounded-full bg-primary/15 px-3 py-1.5 text-sm font-bold text-primary">
               {meal.nutrition.kcal} kcal
             </span>
-            <span className="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-3 py-1.5 text-sm font-bold text-[#3b82f6]">
+            <span className="inline-flex items-center rounded-full bg-chart-3/15 px-3 py-1.5 text-sm font-bold text-chart-3">
               P {meal.nutrition.proteinG}g
             </span>
-            <span className="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-3 py-1.5 text-sm font-bold text-[#f59e0b]">
+            <span className="inline-flex items-center rounded-full bg-warning/15 px-3 py-1.5 text-sm font-bold text-warning">
               C {meal.nutrition.carbsG}g
             </span>
-            <span className="inline-flex items-center rounded-full bg-[#ef4444]/15 px-3 py-1.5 text-sm font-bold text-[#ef4444]">
+            <span className="inline-flex items-center rounded-full bg-destructive/15 px-3 py-1.5 text-sm font-bold text-destructive">
               F {meal.nutrition.fatG}g
             </span>
             {meal.nutrition.fiberG && (
-              <span className="inline-flex items-center rounded-full bg-[#8b5cf6]/15 px-3 py-1.5 text-sm font-bold text-[#8b5cf6]">
+              <span className="inline-flex items-center rounded-full bg-chart-4/15 px-3 py-1.5 text-sm font-bold text-chart-4">
                 Fiber {meal.nutrition.fiberG}g
               </span>
             )}
@@ -189,7 +189,7 @@ export default function MealDetailModal({
             {/* Ingredients section */}
             {hasIngredients && (
               <div data-testid="meal-detail-ingredients-section">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#fafafa] mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
                   <span>🥄</span>
                   <span>Ingredients</span>
                 </h3>
@@ -210,10 +210,10 @@ export default function MealDetailModal({
                     return (
                       <li
                         key={idx}
-                        className="flex items-start gap-3 text-sm text-[#fafafa] py-2 border-b border-[#2a2a2a]/50 last:border-0"
+                        className="flex items-start gap-3 text-sm text-foreground py-2 border-b border-border/50 last:border-0"
                         data-testid={`meal-detail-ingredient-${idx}`}
                       >
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-[#f97316]/20 flex items-center justify-center text-xs font-bold text-[#f97316] mt-0.5">
+                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary mt-0.5">
                           {idx + 1}
                         </span>
                         <div className="flex-1 min-w-0">
@@ -221,7 +221,7 @@ export default function MealDetailModal({
                             <span className="font-medium">{ingredient.name}</span>
                             {isVerified && (
                               <span
-                                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide bg-[#22c55e]/20 text-[#22c55e]"
+                                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide bg-success/20 text-success"
                                 data-testid={`ingredient-verified-badge-${idx}`}
                               >
                                 ✓ Verified
@@ -230,10 +230,10 @@ export default function MealDetailModal({
                           </div>
                           <div className="flex items-center gap-2 mt-0.5 flex-wrap">
                             {amountDisplay && (
-                              <span className="text-[#a1a1aa]">({amountDisplay})</span>
+                              <span className="text-muted-foreground">({amountDisplay})</span>
                             )}
                             {ingredient.fatsecretFoodId && (
-                              <span className="text-xs text-[#a1a1aa] bg-[#2a2a2a] px-1.5 py-0.5 rounded" data-testid={`ingredient-fatsecret-id-${idx}`}>
+                              <span className="text-xs text-muted-foreground bg-border px-1.5 py-0.5 rounded" data-testid={`ingredient-fatsecret-id-${idx}`}>
                                 FS: {ingredient.fatsecretFoodId}
                               </span>
                             )}
@@ -249,7 +249,7 @@ export default function MealDetailModal({
             {/* Instructions section */}
             {hasInstructions && (
               <div data-testid="meal-detail-instructions-section">
-                <h3 className="text-sm font-bold uppercase tracking-wider text-[#fafafa] mb-3 flex items-center gap-2">
+                <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
                   <span>📝</span>
                   <span>Instructions</span>
                 </h3>
@@ -257,10 +257,10 @@ export default function MealDetailModal({
                   {meal.instructions!.map((instruction, idx) => (
                     <li
                       key={idx}
-                      className="flex items-start gap-4 text-sm text-[#fafafa]"
+                      className="flex items-start gap-4 text-sm text-foreground"
                       data-testid={`meal-detail-instruction-${idx}`}
                     >
-                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-[#f97316] flex items-center justify-center text-xs font-bold text-[#0a0a0a]">
+                      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-primary flex items-center justify-center text-xs font-bold text-background">
                         {idx + 1}
                       </span>
                       <p className="flex-1 leading-relaxed">{instruction}</p>
@@ -273,7 +273,7 @@ export default function MealDetailModal({
             {/* No details available message */}
             {!hasIngredients && !hasInstructions && (
               <div className="text-center py-8">
-                <p className="text-sm text-[#a1a1aa]" data-testid="meal-detail-no-details">
+                <p className="text-sm text-muted-foreground" data-testid="meal-detail-no-details">
                   No detailed recipe information available for this meal.
                 </p>
               </div>
@@ -282,10 +282,10 @@ export default function MealDetailModal({
         </div>
 
         {/* Footer - Fixed at bottom */}
-        <div className="flex-shrink-0 border-t border-[#2a2a2a] px-6 py-4 bg-[#0f0f0f]">
+        <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-background">
           <button
             onClick={onClose}
-            className="w-full rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#0a0a0a] transition-colors hover:bg-[#ea580c]"
+            className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
             data-testid="meal-detail-close-button"
           >
             Close

@@ -61,51 +61,51 @@ function TrackingPageContent() {
     <>
       <NavBar />
       <div className="md:pt-14 pb-20 md:pb-0">
-        <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] p-6 md:p-8">
+        <div className="min-h-screen bg-background text-foreground p-6 md:p-8">
           <div className="max-w-2xl mx-auto">
             <h1 className="text-2xl font-heading uppercase tracking-wider mb-2">Tracking</h1>
-            <p className="text-[#a1a1aa] mb-6">Search and log foods to track your daily macros.</p>
+            <p className="text-muted-foreground mb-6">Search and log foods to track your daily macros.</p>
 
             {/* Daily Totals - shows same data as dashboard (from Zustand) */}
             <div
               data-testid="tracking-daily-totals"
-              className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-4 mb-6"
+              className="bg-card border border-border rounded-xl p-4 mb-6"
             >
-              <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-3">
+              <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
                 /// Daily Totals
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#f97316]" />
-                  <span className="text-sm text-[#a1a1aa]">Calories</span>
-                  <span data-testid="tracking-calories" className="text-sm font-bold text-[#fafafa] ml-auto">
+                  <span className="w-2 h-2 rounded-full bg-primary" />
+                  <span className="text-sm text-muted-foreground">Calories</span>
+                  <span data-testid="tracking-calories" className="text-sm font-bold text-foreground ml-auto">
                     {current.calories} / {targets.calories}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
-                  <span className="text-sm text-[#a1a1aa]">Protein</span>
-                  <span data-testid="tracking-protein" className="text-sm font-bold text-[#fafafa] ml-auto">
+                  <span className="w-2 h-2 rounded-full bg-chart-3" />
+                  <span className="text-sm text-muted-foreground">Protein</span>
+                  <span data-testid="tracking-protein" className="text-sm font-bold text-foreground ml-auto">
                     {current.protein}g / {targets.protein}g
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
-                  <span className="text-sm text-[#a1a1aa]">Carbs</span>
-                  <span data-testid="tracking-carbs" className="text-sm font-bold text-[#fafafa] ml-auto">
+                  <span className="w-2 h-2 rounded-full bg-success" />
+                  <span className="text-sm text-muted-foreground">Carbs</span>
+                  <span data-testid="tracking-carbs" className="text-sm font-bold text-foreground ml-auto">
                     {current.carbs}g / {targets.carbs}g
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-[#eab308]" />
-                  <span className="text-sm text-[#a1a1aa]">Fat</span>
-                  <span data-testid="tracking-fat" className="text-sm font-bold text-[#fafafa] ml-auto">
+                  <span className="w-2 h-2 rounded-full bg-warning" />
+                  <span className="text-sm text-muted-foreground">Fat</span>
+                  <span data-testid="tracking-fat" className="text-sm font-bold text-foreground ml-auto">
                     {current.fat}g / {targets.fat}g
                   </span>
                 </div>
               </div>
-              <div className="mt-3 pt-3 border-t border-[#2a2a2a] text-center">
-                <p className="text-xs text-[#a1a1aa]">
+              <div className="mt-3 pt-3 border-t border-border text-center">
+                <p className="text-xs text-muted-foreground">
                   {trackedMeals.length} item{trackedMeals.length !== 1 ? 's' : ''} logged today
                 </p>
               </div>
@@ -113,14 +113,14 @@ function TrackingPageContent() {
 
             {/* Mode-specific message */}
             {mode === 'plan' && !planId && (
-              <div className="bg-[#f97316]/10 border border-[#f97316]/30 rounded-xl p-4 mb-6">
-                <p className="text-sm text-[#f97316] font-semibold mb-1">No Active Meal Plan</p>
-                <p className="text-xs text-[#a1a1aa] mb-3">
+              <div className="bg-primary/10 border border-primary/30 rounded-xl p-4 mb-6">
+                <p className="text-sm text-primary font-semibold mb-1">No Active Meal Plan</p>
+                <p className="text-xs text-muted-foreground mb-3">
                   Generate a meal plan to log meals from your plan, or use the options below.
                 </p>
                 <Link
                   href="/meal-plan"
-                  className="inline-block px-4 py-2 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-xs font-bold uppercase tracking-wide rounded-lg transition-colors"
+                  className="inline-block px-4 py-2 bg-primary hover:bg-primary/90 text-background text-xs font-bold uppercase tracking-wide rounded-lg transition-colors"
                 >
                   View Meal Plan
                 </Link>
@@ -156,10 +156,10 @@ function TrackingPageContent() {
 
             {/* Show all sections backlink when in specific mode */}
             {mode && (
-              <div className="mt-8 pt-6 border-t border-[#2a2a2a] text-center">
+              <div className="mt-8 pt-6 border-t border-border text-center">
                 <Link
                   href="/tracking"
-                  className="inline-flex items-center gap-2 text-sm text-[#a1a1aa] hover:text-[#f97316] transition-colors"
+                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
                 >
                   <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -178,10 +178,10 @@ function TrackingPageContent() {
 export default function TrackingPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] flex items-center justify-center">
+      <div className="min-h-screen bg-background text-foreground flex items-center justify-center">
         <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-[#f97316] mx-auto mb-4"></div>
-          <p className="text-sm text-[#a1a1aa]">Loading...</p>
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+          <p className="text-sm text-muted-foreground">Loading...</p>
         </div>
       </div>
     }>

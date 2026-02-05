@@ -168,11 +168,11 @@ export function aggregateActivityData(
   };
 
   for (const activity of activities) {
-    if (activity.steps) aggregated.steps += activity.steps;
-    if (activity.activeCalories) aggregated.activeCalories += activity.activeCalories;
-    if (activity.totalCalories) aggregated.totalCalories += activity.totalCalories;
-    if (activity.distanceKm) aggregated.distanceKm += activity.distanceKm;
-    if (activity.activeMinutes) aggregated.activeMinutes += activity.activeMinutes;
+    if (activity.steps) aggregated.steps = (aggregated.steps ?? 0) + activity.steps;
+    if (activity.activeCalories) aggregated.activeCalories = (aggregated.activeCalories ?? 0) + activity.activeCalories;
+    if (activity.totalCalories) aggregated.totalCalories = (aggregated.totalCalories ?? 0) + activity.totalCalories;
+    if (activity.distanceKm) aggregated.distanceKm = (aggregated.distanceKm ?? 0) + activity.distanceKm;
+    if (activity.activeMinutes) aggregated.activeMinutes = (aggregated.activeMinutes ?? 0) + activity.activeMinutes;
     if (activity.workouts) {
       allWorkouts.push(...activity.workouts);
     }

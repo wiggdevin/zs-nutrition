@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { requireActiveUser } from '@/lib/auth'
 import { calculateAdherenceScore } from '@/lib/adherence'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 import { toLocalDay } from '@/lib/date-utils'
 
 export async function POST(request: NextRequest) {
@@ -188,7 +188,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    safeLogError('Log from plan error:', error);
+    logger.error('Log from plan error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

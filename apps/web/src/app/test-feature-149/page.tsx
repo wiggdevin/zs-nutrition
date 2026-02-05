@@ -2,8 +2,8 @@
 
 import { notFound } from 'next/navigation'
 import { useState, useRef } from "react";
-
 import { useEffect } from "react";
+import { logger } from '@/lib/safe-logger';
 
 /**
  * Test page for Feature #149: SSE connection handles reconnection gracefully
@@ -31,7 +31,7 @@ const quickDevAuth = async () => {
       window.location.reload();
     }
   } catch (err) {
-    console.error("Auth failed:", err);
+    logger.error("Auth failed", err);
   }
 };
 

@@ -4,6 +4,8 @@ import { getVisionClient, FoodAnalysisResult } from '@/lib/vision/claude-vision'
 import { prisma } from '@/lib/prisma'
 import { v4 as uuidv4 } from 'uuid'
 import { visionLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit'
+import { uploadFoodImage } from '@/lib/storage/image-upload'
+import { logger } from '@/lib/safe-logger'
 
 interface AnalyzeRequest {
   imageData: string // Base64 data URL
@@ -66,6 +68,9 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Upload image to blob storage (falls back to base64 in dev)
+    const photoUrl = await uploadFoodImage(imageData, dbUserId || clerkUserId)
+
     // Create FoodScan record for tracking
     const scanId = uuidv4()
 
@@ -74,7 +79,7 @@ export async function POST(request: NextRequest) {
         id: scanId,
         userId: clerkUserId,
         scanType,
-        photoUrl: imageData, // Store base64 data (will be moved to blob storage in production)
+        photoUrl,
         status: 'processing',
       },
     })
@@ -116,7 +121,7 @@ export async function POST(request: NextRequest) {
       throw analysisError
     }
   } catch (error) {
-    console.error('Error in /api/vision/analyze:', error)
+    logger.error('Error in /api/vision/analyze:', error)
 
     const message = error instanceof Error ? error.message : 'Failed to analyze image'
 

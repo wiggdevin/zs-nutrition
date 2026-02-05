@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/plan/active
@@ -61,7 +61,7 @@ export async function GET() {
         ? JSON.parse(activePlan.validatedPlan)
         : activePlan.validatedPlan;
     } catch {
-      console.error('Failed to parse validatedPlan');
+      logger.error('Failed to parse validatedPlan');
     }
 
     let metabolicProfile = null;
@@ -70,7 +70,7 @@ export async function GET() {
         ? JSON.parse(activePlan.metabolicProfile)
         : activePlan.metabolicProfile;
     } catch {
-      console.error('Failed to parse metabolicProfile');
+      logger.error('Failed to parse metabolicProfile');
     }
 
     return NextResponse.json({
@@ -97,7 +97,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    safeLogError('Error fetching active plan:', error);
+    logger.error('Error fetching active plan:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

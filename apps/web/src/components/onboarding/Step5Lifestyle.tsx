@@ -37,13 +37,13 @@ export function Step5Lifestyle({ data, updateData }: Props) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-[#a1a1aa]">
+      <p className="text-sm text-muted-foreground">
         Your activity level affects your calorie targets and training day adjustments.
       </p>
 
       {/* Activity Level */}
       <div>
-        <label id="onboarding-activity-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label id="onboarding-activity-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Activity Level
         </label>
         <div className="space-y-2" role="radiogroup" aria-labelledby="onboarding-activity-label">
@@ -60,16 +60,16 @@ export function Step5Lifestyle({ data, updateData }: Props) {
               }}
               role="radio"
               aria-checked={data.activityLevel === value}
-              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+              className={`w-full rounded-lg border px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.activityLevel === value
-                  ? "border-[#f97316] bg-[#f97316]/10"
-                  : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
+                  ? "border-primary bg-primary/10"
+                  : "border-border bg-card hover:border-border/80"
               }`}
             >
-              <span className={`block text-sm font-bold ${data.activityLevel === value ? "text-[#f97316]" : "text-[#fafafa]"}`}>
+              <span className={`block text-sm font-bold ${data.activityLevel === value ? "text-primary" : "text-foreground"}`}>
                 {label}
               </span>
-              <span className="block text-xs text-[#a1a1aa]">{desc}</span>
+              <span className="block text-xs text-muted-foreground">{desc}</span>
             </button>
           ))}
         </div>
@@ -77,7 +77,7 @@ export function Step5Lifestyle({ data, updateData }: Props) {
 
       {/* Training Days */}
       <div>
-        <label id="onboarding-training-days-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label id="onboarding-training-days-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Training Days
         </label>
         <div className="grid grid-cols-7 gap-1 sm:gap-2" role="group" aria-labelledby="onboarding-training-days-label">
@@ -93,10 +93,10 @@ export function Step5Lifestyle({ data, updateData }: Props) {
                 }
               }}
               aria-pressed={data.trainingDays.includes(value)}
-              className={`rounded-lg border px-1 sm:px-2 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+              className={`rounded-lg border px-1 sm:px-2 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.trainingDays.includes(value)
-                  ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                  : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:border-border/80"
               }`}
             >
               {label}
@@ -107,7 +107,7 @@ export function Step5Lifestyle({ data, updateData }: Props) {
 
       {/* Cooking Skill */}
       <div>
-        <label htmlFor="onboarding-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label htmlFor="onboarding-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Cooking Skill: {data.cookingSkill}/10
         </label>
         <input
@@ -122,9 +122,9 @@ export function Step5Lifestyle({ data, updateData }: Props) {
           aria-valuemin={1}
           aria-valuemax={10}
           aria-valuetext={`Cooking skill level ${data.cookingSkill} out of 10`}
-          className="w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+          className="w-full accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         />
-        <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
           <span>Beginner</span>
           <span>Expert</span>
         </div>
@@ -132,7 +132,7 @@ export function Step5Lifestyle({ data, updateData }: Props) {
 
       {/* Prep Time */}
       <div>
-        <label htmlFor="onboarding-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label htmlFor="onboarding-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Max Prep Time: {data.prepTimeMax} min
         </label>
         <input
@@ -147,9 +147,9 @@ export function Step5Lifestyle({ data, updateData }: Props) {
           aria-valuemin={10}
           aria-valuemax={120}
           aria-valuetext={`Maximum prep time ${data.prepTimeMax} minutes`}
-          className="w-full accent-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+          className="w-full accent-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
         />
-        <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+        <div className="mt-1 flex justify-between text-xs text-muted-foreground">
           <span>10 min</span>
           <span>120 min</span>
         </div>

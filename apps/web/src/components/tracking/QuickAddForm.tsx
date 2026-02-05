@@ -185,7 +185,7 @@ export default function QuickAddForm() {
     return (
       <button
         onClick={() => setIsOpen(true)}
-        className="w-full mt-4 px-4 py-3 bg-[#1a1a1a] border border-dashed border-[#444] rounded-xl text-[#a1a1aa] hover:border-[#f97316] hover:text-[#f97316] transition-colors flex items-center justify-center gap-2"
+        className="w-full mt-4 px-4 py-3 bg-card border border-dashed border-border rounded-xl text-muted-foreground hover:border-primary hover:text-primary transition-colors flex items-center justify-center gap-2"
       >
         <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
@@ -197,9 +197,9 @@ export default function QuickAddForm() {
   }
 
   return (
-    <div className="mt-4 bg-[#1a1a1a] border border-[#333] rounded-xl p-5">
+    <div className="mt-4 bg-card border border-border rounded-xl p-5">
       <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-bold text-[#fafafa]">Quick Add</h3>
+        <h3 className="text-lg font-bold text-foreground">Quick Add</h3>
         <button
           onClick={() => {
             setIsOpen(false)
@@ -208,7 +208,7 @@ export default function QuickAddForm() {
             setSuccessMessage(null)
             setMealSlot('')
           }}
-          className="text-[#666] hover:text-[#fafafa] transition-colors"
+          className="text-muted-foreground hover:text-foreground transition-colors"
         >
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
@@ -219,8 +219,8 @@ export default function QuickAddForm() {
       <form onSubmit={handleSubmit} noValidate className="space-y-4">
         {/* Optional meal name */}
         <div>
-          <label htmlFor="quick-add-name" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
-            Name <span className="text-[#666] normal-case font-normal">(optional)</span>
+          <label htmlFor="quick-add-name" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+            Name <span className="text-muted-foreground normal-case font-normal">(optional)</span>
           </label>
           <input
             id="quick-add-name"
@@ -228,20 +228,20 @@ export default function QuickAddForm() {
             value={mealName}
             onChange={(e) => setMealName(e.target.value)}
             placeholder="e.g. Protein shake, Snack bar..."
-            className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+            className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
           />
         </div>
 
         {/* Meal Slot Selector */}
         <div>
-          <label htmlFor="quick-add-meal-slot" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
-            Meal Slot <span className="text-[#666] normal-case font-normal">(optional)</span>
+          <label htmlFor="quick-add-meal-slot" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
+            Meal Slot <span className="text-muted-foreground normal-case font-normal">(optional)</span>
           </label>
           <select
             id="quick-add-meal-slot"
             value={mealSlot}
             onChange={(e) => setMealSlot(e.target.value as MealSlot | '')}
-            className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+            className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
             data-testid="quick-add-meal-slot"
           >
             <option value="">No meal slot</option>
@@ -254,7 +254,7 @@ export default function QuickAddForm() {
 
         {/* Date Selector */}
         <div>
-          <label htmlFor="quick-add-date" className="block text-xs font-semibold text-[#a1a1aa] uppercase tracking-wider mb-1.5">
+          <label htmlFor="quick-add-date" className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5">
             Date
           </label>
           <input
@@ -262,15 +262,15 @@ export default function QuickAddForm() {
             type="date"
             value={loggedDate}
             onChange={(e) => setLoggedDate(e.target.value)}
-            className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] focus:outline-none focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316] transition-colors"
+            className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-colors"
             data-testid="quick-add-date"
           />
         </div>
 
         {/* Calories - required */}
         <div>
-          <label htmlFor="quick-add-calories" className="block text-xs font-semibold text-[#f97316] uppercase tracking-wider mb-1.5">
-            Calories <span className="text-[#f97316]">*</span>
+          <label htmlFor="quick-add-calories" className="block text-xs font-semibold text-primary uppercase tracking-wider mb-1.5">
+            Calories <span className="text-primary">*</span>
           </label>
           <input
             id="quick-add-calories"
@@ -293,10 +293,10 @@ export default function QuickAddForm() {
             required
             aria-invalid={!!fieldErrors.calories}
             aria-describedby={fieldErrors.calories ? "quick-add-calories-error" : undefined}
-            className={`w-full px-3 py-2.5 bg-[#111] border rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none transition-colors text-lg font-semibold ${
+            className={`w-full px-3 py-2.5 bg-background border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none transition-colors text-lg font-semibold ${
               fieldErrors.calories
                 ? 'border-red-500 focus:border-red-500 focus:ring-1 focus:ring-red-500'
-                : 'border-[#333] focus:border-[#f97316] focus:ring-1 focus:ring-[#f97316]'
+                : 'border-border focus:border-primary focus:ring-1 focus:ring-primary'
             }`}
             data-testid="quick-add-calories"
           />
@@ -311,7 +311,7 @@ export default function QuickAddForm() {
         <div className="grid grid-cols-3 gap-3">
           <div>
             <label htmlFor="quick-add-protein" className="block text-xs font-semibold text-blue-400 uppercase tracking-wider mb-1.5">
-              Protein <span className="text-[#666] normal-case font-normal">(g)</span>
+              Protein <span className="text-muted-foreground normal-case font-normal">(g)</span>
             </label>
             <input
               id="quick-add-protein"
@@ -324,13 +324,13 @@ export default function QuickAddForm() {
               min="0"
               max="1000"
               step="0.1"
-              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors"
+              className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-blue-400 focus:ring-1 focus:ring-blue-400 transition-colors"
               data-testid="quick-add-protein"
             />
           </div>
           <div>
             <label htmlFor="quick-add-carbs" className="block text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5">
-              Carbs <span className="text-[#666] normal-case font-normal">(g)</span>
+              Carbs <span className="text-muted-foreground normal-case font-normal">(g)</span>
             </label>
             <input
               id="quick-add-carbs"
@@ -343,13 +343,13 @@ export default function QuickAddForm() {
               min="0"
               max="1000"
               step="0.1"
-              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors"
+              className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-green-400 focus:ring-1 focus:ring-green-400 transition-colors"
               data-testid="quick-add-carbs"
             />
           </div>
           <div>
             <label htmlFor="quick-add-fat" className="block text-xs font-semibold text-yellow-400 uppercase tracking-wider mb-1.5">
-              Fat <span className="text-[#666] normal-case font-normal">(g)</span>
+              Fat <span className="text-muted-foreground normal-case font-normal">(g)</span>
             </label>
             <input
               id="quick-add-fat"
@@ -362,7 +362,7 @@ export default function QuickAddForm() {
               min="0"
               max="1000"
               step="0.1"
-              className="w-full px-3 py-2.5 bg-[#111] border border-[#333] rounded-lg text-[#fafafa] placeholder-[#555] focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-colors"
+              className="w-full px-3 py-2.5 bg-background border border-border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none focus:border-yellow-400 focus:ring-1 focus:ring-yellow-400 transition-colors"
               data-testid="quick-add-fat"
             />
           </div>
@@ -372,7 +372,7 @@ export default function QuickAddForm() {
         <button
           type="submit"
           disabled={quickAddMutation.isPending}
-          className="w-full py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed text-[#0a0a0a] font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
+          className="w-full py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-background font-bold rounded-lg transition-colors flex items-center justify-center gap-2"
           data-testid="quick-add-submit"
         >
           {quickAddMutation.isPending ? (

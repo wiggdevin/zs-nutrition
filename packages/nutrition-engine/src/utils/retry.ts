@@ -1,3 +1,5 @@
+import { engineLogger } from './logger';
+
 export interface RetryOptions {
   maxRetries: number;
   baseDelay: number;
@@ -32,7 +34,7 @@ export async function withRetry<T>(
         options.maxDelay
       );
 
-      console.warn(
+      engineLogger.warn(
         `[Retry] Attempt ${attempt + 1}/${options.maxRetries} failed, ` +
           `retrying in ${Math.round(delay)}ms: ${error.message}`
       );

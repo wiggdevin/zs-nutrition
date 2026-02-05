@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireActiveUser } from "@/lib/auth";
+import { logger } from "@/lib/safe-logger";
 
 export async function POST(request: NextRequest) {
   try {
@@ -69,7 +70,7 @@ export async function POST(request: NextRequest) {
     });
 
   } catch (error) {
-    console.error('Error setting active plan:', error);
+    logger.error('Error setting active plan:', error);
     return NextResponse.json(
       {
         error: 'Failed to set active plan',

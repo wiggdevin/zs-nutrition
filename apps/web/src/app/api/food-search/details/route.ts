@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FatSecretAdapter } from '@zero-sum/nutrition-engine'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 
 // Singleton FatSecret adapter instance
 let fatSecretAdapter: FatSecretAdapter | null = null
@@ -31,7 +31,7 @@ export async function GET(request: NextRequest) {
     const food = await fatSecret.getFood(foodId)
     return NextResponse.json({ food })
   } catch (error) {
-    safeLogError('Food details error:', error)
+    logger.error('Food details error:', error)
     return NextResponse.json({ error: 'Food not found' }, { status: 404 })
   }
 }

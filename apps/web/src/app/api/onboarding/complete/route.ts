@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { calculateMetabolicProfile } from '@/lib/metabolic';
 import { requireActiveUser } from '@/lib/auth';
-import { safeLogError } from '@/lib/safe-logger';
+import { logger } from '@/lib/safe-logger';
 import { profileSchemas, validateMealsPerDay, validateSnacksPerDay, validateCookingSkill, validatePrepTimeMax } from '@/lib/validation';
 import { ZodError } from 'zod';
 
@@ -208,7 +208,7 @@ export async function POST(request: NextRequest) {
       metabolic,
     });
   } catch (error) {
-    safeLogError('Onboarding complete error:', error);
+    logger.error('Onboarding complete error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
   }
 }

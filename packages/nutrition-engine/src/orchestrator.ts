@@ -118,18 +118,4 @@ export class NutritionPipelineOrchestrator {
       };
     }
   }
-
-  /**
-   * Run a meal swap: Agents 3 → 4 → 5 in isolation
-   * Used for swapping individual meals within an existing plan.
-   */
-  async swapMeal(
-    metabolicProfile: any,
-    clientIntake: any,
-    exclusions: string[],
-    onProgress?: ProgressCallback
-  ): Promise<PipelineResult> {
-    // TODO: Implement isolated swap pipeline
-    throw new Error('Meal swap pipeline not yet implemented');
-  }
 }

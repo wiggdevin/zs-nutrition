@@ -74,17 +74,17 @@ export default function TestFeature128Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <div className="mx-auto max-w-4xl">
         <h1 className="text-3xl font-bold uppercase tracking-wider mb-4">
           Test Feature #128
         </h1>
-        <p className="text-[#a1a1aa] mb-8">
+        <p className="text-muted-foreground mb-8">
           Tap meal card expands to full recipe with ingredients and instructions
         </p>
 
         {/* Test Instructions */}
-        <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6 mb-8">
+        <div className="rounded-lg border border-border bg-card p-6 mb-8">
           <h2 className="text-xl font-bold mb-4">Test Steps:</h2>
           <ol className="list-decimal list-inside space-y-2 text-sm">
             <li>Click on the meal card below</li>
@@ -96,43 +96,43 @@ export default function TestFeature128Page() {
         </div>
 
         {/* Sample Meal Card */}
-        <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6 cursor-pointer hover:border-[#f97316]/50 transition-colors"
+        <div className="rounded-lg border border-border bg-card p-6 cursor-pointer hover:border-primary/50 transition-colors"
              onClick={() => setSelectedMeal(sampleMeal)}
              data-testid="test-meal-card">
           <div className="flex items-center gap-2 mb-3">
-            <span className="rounded-md bg-[#f97316]/20 px-3 py-1 text-xs font-bold uppercase text-[#f97316]">
+            <span className="rounded-md bg-primary/20 px-3 py-1 text-xs font-bold uppercase text-primary">
               {sampleMeal.slot}
             </span>
-            <span className="rounded-md bg-[#22c55e]/20 px-3 py-1 text-xs font-bold uppercase text-[#22c55e]">
+            <span className="rounded-md bg-green-500/20 px-3 py-1 text-xs font-bold uppercase text-green-500">
               ✓ Verified
             </span>
           </div>
 
           <h3 className="text-lg font-bold mb-2">{sampleMeal.name}</h3>
-          <p className="text-[#a1a1aa] mb-3">{sampleMeal.cuisine}</p>
+          <p className="text-muted-foreground mb-3">{sampleMeal.cuisine}</p>
 
-          <div className="flex items-center gap-2 text-sm text-[#a1a1aa] mb-4">
+          <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
             <span>🕒</span>
             <span>{sampleMeal.prepTimeMin}m prep + {sampleMeal.cookTimeMin}m cook</span>
           </div>
 
           <div className="flex flex-wrap gap-2">
-            <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-3 py-1 text-sm font-bold text-[#f97316]">
+            <span className="inline-flex items-center rounded-full bg-primary/15 px-3 py-1 text-sm font-bold text-primary">
               {sampleMeal.nutrition.kcal} kcal
             </span>
-            <span className="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-3 py-1 text-sm font-bold text-[#3b82f6]">
+            <span className="inline-flex items-center rounded-full bg-blue-500/15 px-3 py-1 text-sm font-bold text-blue-500">
               P {sampleMeal.nutrition.proteinG}g
             </span>
-            <span className="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-3 py-1 text-sm font-bold text-[#f59e0b]">
+            <span className="inline-flex items-center rounded-full bg-amber-500/15 px-3 py-1 text-sm font-bold text-amber-500">
               C {sampleMeal.nutrition.carbsG}g
             </span>
-            <span className="inline-flex items-center rounded-full bg-[#ef4444]/15 px-3 py-1 text-sm font-bold text-[#ef4444]">
+            <span className="inline-flex items-center rounded-full bg-red-500/15 px-3 py-1 text-sm font-bold text-red-500">
               F {sampleMeal.nutrition.fatG}g
             </span>
           </div>
         </div>
 
-        <p className="text-center text-[#a1a1aa] mt-6 text-sm">
+        <p className="text-center text-muted-foreground mt-6 text-sm">
           ↑ Click the meal card above to test the modal ↑
         </p>
 

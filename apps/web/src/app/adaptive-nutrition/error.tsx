@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/safe-logger'
 
 export default function AdaptiveNutritionError({
   error,
@@ -11,7 +12,7 @@ export default function AdaptiveNutritionError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Adaptive nutrition error:', error)
+    logger.error('Adaptive nutrition error:', error)
   }, [error])
 
   return (

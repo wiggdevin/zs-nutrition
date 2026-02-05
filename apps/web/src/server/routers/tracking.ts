@@ -21,7 +21,7 @@ export const trackingRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Parse date input or default to today
       // Use local day utilities to ensure consistent date boundaries
@@ -110,7 +110,7 @@ export const trackingRouter = router({
     )
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Validate date is not in the future
       const todayOnly = toLocalDay()
@@ -169,7 +169,23 @@ export const trackingRouter = router({
       }
 
       // Build 7-day summary array
-      const days = []
+      const days: Array<{
+        date: string
+        targets: {
+          kcal: number | null
+          proteinG: number | null
+          carbsG: number | null
+          fatG: number | null
+        } | null
+        actuals: {
+          kcal: number
+          proteinG: number
+          carbsG: number
+          fatG: number
+        }
+        adherenceScore: number | null
+        mealCount: number
+      }> = []
       for (let i = 0; i < 7; i++) {
         const dayDate = new Date(startOnly)
         dayDate.setUTCDate(dayDate.getUTCDate() + i)
@@ -235,7 +251,7 @@ export const trackingRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Parse date input or default to today
       // Use local day utilities to ensure consistent date boundaries

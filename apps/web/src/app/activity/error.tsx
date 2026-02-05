@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/safe-logger'
 
 export default function ActivityError({
   error,
@@ -11,7 +12,7 @@ export default function ActivityError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Activity error:', error)
+    logger.error('Activity error:', error)
   }, [error])
 
   return (

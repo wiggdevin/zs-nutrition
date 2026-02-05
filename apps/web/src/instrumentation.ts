@@ -5,6 +5,8 @@
  * Used here to validate environment variables at startup so developers
  * get a clear error message immediately instead of cryptic runtime failures.
  */
+import { logger } from '@/lib/safe-logger';
+
 export async function register() {
   // Only validate on the server (Node.js runtime)
   if (process.env.NEXT_RUNTIME === 'nodejs' || !process.env.NEXT_RUNTIME) {
@@ -12,7 +14,7 @@ export async function register() {
 
     try {
       const env = validateServerEnv();
-      console.log('✅ Environment variables validated successfully');
+      logger.info('Environment variables validated successfully');
 
       // Log which optional services are configured (without exposing secrets)
       const services = {
@@ -33,16 +35,16 @@ export async function register() {
         .map(([k]) => k);
 
       if (configured.length > 0) {
-        console.log(`  ✓ Configured: ${configured.join(', ')}`);
+        logger.info(`  Configured: ${configured.join(', ')}`);
       }
       if (notConfigured.length > 0) {
-        console.log(`  ○ Not configured: ${notConfigured.join(', ')}`);
+        logger.info(`  Not configured: ${notConfigured.join(', ')}`);
       }
     } catch (error) {
       // In development, log the error but don't crash so devs can fix incrementally
       if (process.env.NODE_ENV === 'development') {
-        console.error(error instanceof Error ? error.message : error);
-        console.warn('⚠️  Continuing in development mode with missing env vars...');
+        logger.error('Environment validation failed:', error instanceof Error ? error.message : error);
+        logger.warn('Continuing in development mode with missing env vars...');
       } else {
         // In production, fail hard — missing env vars will cause runtime errors
         throw error;

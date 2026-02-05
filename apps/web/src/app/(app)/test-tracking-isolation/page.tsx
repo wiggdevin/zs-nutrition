@@ -70,7 +70,7 @@ export default function TestTrackingIsolationPage() {
           onClick={runTest}
           disabled={loading}
           data-testid="run-isolation-test"
-          className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-neutral-700 disabled:text-neutral-400 text-[#0a0a0a] font-semibold rounded-lg transition-colors mb-6"
+          className="px-6 py-3 bg-orange-500 hover:bg-orange-600 disabled:bg-neutral-700 disabled:text-neutral-400 text-background font-semibold rounded-lg transition-colors mb-6"
         >
           {loading ? (
             <span className="flex items-center gap-2">

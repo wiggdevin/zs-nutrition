@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { getClerkUserId } from '@/lib/auth'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 
 /**
  * GET /api/account/status
@@ -69,7 +69,7 @@ export async function GET() {
       },
     })
   } catch (error) {
-    safeLogError('Account status error:', error)
+    logger.error('Account status error:', error)
     return NextResponse.json(
       { error: 'Something went wrong. Please try again later.' },
       { status: 500 }

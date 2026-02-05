@@ -122,10 +122,10 @@ export default function SettingsGoals() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+      <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-          <span className="text-sm text-[#a1a1aa]">Loading goals...</span>
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-sm text-muted-foreground">Loading goals...</span>
         </div>
       </div>
     );
@@ -135,12 +135,12 @@ export default function SettingsGoals() {
   const displayRate = isMaintain ? 0 : goalRate;
 
   return (
-    <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6" data-testid="goals-section">
+    <div className="rounded-2xl border border-border bg-card p-6" data-testid="goals-section">
       <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
-          <span className="text-[#f97316]">///</span> Goals
+        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
+          <span className="text-primary">///</span> Goals
         </h2>
-        <p className="mt-1 text-sm text-[#a1a1aa]">
+        <p className="mt-1 text-sm text-muted-foreground">
           Set your nutrition goal and target rate
         </p>
       </div>
@@ -148,7 +148,7 @@ export default function SettingsGoals() {
       <div className="space-y-5">
         {/* Goal Type */}
         <div>
-          <label id="settings-goal-type-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label id="settings-goal-type-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Goal Type
           </label>
           <div className="space-y-2">
@@ -159,14 +159,14 @@ export default function SettingsGoals() {
                 data-testid={`settings-goal-${goal}`}
                 className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                   goalType === goal
-                    ? "border-[#f97316] bg-[#f97316]/10"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-card hover:border-border/80"
                 }`}
               >
-                <span className={`block text-sm font-bold uppercase tracking-wide ${goalType === goal ? "text-[#f97316]" : "text-[#fafafa]"}`}>
+                <span className={`block text-sm font-bold uppercase tracking-wide ${goalType === goal ? "text-primary" : "text-foreground"}`}>
                   {goal}
                 </span>
-                <span className="block text-xs text-[#a1a1aa]">
+                <span className="block text-xs text-muted-foreground">
                   {goalDescriptions[goal]}
                 </span>
               </button>
@@ -177,7 +177,7 @@ export default function SettingsGoals() {
         {/* Goal Rate */}
         {goalType && (
           <div>
-            <label htmlFor="settings-goal-rate" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+            <label htmlFor="settings-goal-rate" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
               {isMaintain
                 ? "Rate: N/A (maintaining weight)"
                 : `${goalType === "cut" ? "Weight Loss" : "Weight Gain"} Rate: ${displayRate} lbs/week`}
@@ -192,9 +192,9 @@ export default function SettingsGoals() {
               step={0.25}
               disabled={isMaintain}
               data-testid="settings-goal-rate"
-              className={`w-full accent-[#f97316] ${isMaintain ? "opacity-40 cursor-not-allowed" : ""}`}
+              className={`w-full accent-primary ${isMaintain ? "opacity-40 cursor-not-allowed" : ""}`}
             />
-            <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+            <div className="mt-1 flex justify-between text-xs text-muted-foreground">
               <span>0 lbs/wk</span>
               <span>2 lbs/wk (Aggressive)</span>
             </div>
@@ -208,11 +208,11 @@ export default function SettingsGoals() {
         </div>
       )}
       {success && (
-        <div className="mt-4 rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-3 flex items-center gap-2" data-testid="goals-save-success">
-          <svg className="w-5 h-5 flex-shrink-0 text-[#22c55e]" fill="currentColor" viewBox="0 0 20 20">
+        <div className="mt-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3 flex items-center gap-2" data-testid="goals-save-success">
+          <svg className="w-5 h-5 flex-shrink-0 text-success" fill="currentColor" viewBox="0 0 20 20">
             <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
           </svg>
-          <p className="text-sm text-[#22c55e]">Goals updated successfully!</p>
+          <p className="text-sm text-success">Goals updated successfully!</p>
         </div>
       )}
 
@@ -223,8 +223,8 @@ export default function SettingsGoals() {
           data-testid="settings-goals-save"
           className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
-              ? "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] cursor-pointer"
-              : "bg-[#f97316]/30 text-white/50 cursor-not-allowed"
+              ? "bg-primary hover:bg-primary/90 text-background cursor-pointer"
+              : "bg-primary/30 text-white/50 cursor-not-allowed"
           }`}
         >
           {saving ? (
@@ -237,7 +237,7 @@ export default function SettingsGoals() {
           )}
         </button>
         {dirty && (
-          <button onClick={handleReset} className="rounded-lg border border-[#2a2a2a] px-4 py-2.5 text-sm text-[#a1a1aa] hover:bg-[#252525] transition-colors">
+          <button onClick={handleReset} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors">
             Reset
           </button>
         )}

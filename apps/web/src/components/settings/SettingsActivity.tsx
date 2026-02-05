@@ -184,22 +184,22 @@ export default function SettingsActivity() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+      <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-[#f97316] border-t-transparent" />
-          <span className="text-sm text-[#a1a1aa]">Loading activity settings...</span>
+          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+          <span className="text-sm text-muted-foreground">Loading activity settings...</span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6" data-testid="activity-section">
+    <div className="rounded-2xl border border-border bg-card p-6" data-testid="activity-section">
       <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
-          <span className="text-[#f97316]">///</span> Activity & Training
+        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
+          <span className="text-primary">///</span> Activity & Training
         </h2>
-        <p className="mt-1 text-sm text-[#a1a1aa]">
+        <p className="mt-1 text-sm text-muted-foreground">
           Update your activity level, training schedule, and cooking preferences
         </p>
       </div>
@@ -207,7 +207,7 @@ export default function SettingsActivity() {
       <div className="space-y-5">
         {/* Activity Level */}
         <div>
-          <label id="settings-activity-level-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label id="settings-activity-level-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Activity Level
           </label>
           <div className="space-y-2">
@@ -218,14 +218,14 @@ export default function SettingsActivity() {
                 data-testid={`settings-activity-${value}`}
                 className={`w-full rounded-lg border px-4 py-3 text-left transition-colors ${
                   activityLevel === value
-                    ? "border-[#f97316] bg-[#f97316]/10"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] hover:border-[#3a3a3a]"
+                    ? "border-primary bg-primary/10"
+                    : "border-border bg-card hover:border-border/80"
                 }`}
               >
-                <span className={`block text-sm font-bold ${activityLevel === value ? "text-[#f97316]" : "text-[#fafafa]"}`}>
+                <span className={`block text-sm font-bold ${activityLevel === value ? "text-primary" : "text-foreground"}`}>
                   {label}
                 </span>
-                <span className="block text-xs text-[#a1a1aa]">{desc}</span>
+                <span className="block text-xs text-muted-foreground">{desc}</span>
               </button>
             ))}
           </div>
@@ -233,7 +233,7 @@ export default function SettingsActivity() {
 
         {/* Training Days */}
         <div>
-          <label id="settings-training-days-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label id="settings-training-days-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Training Days
           </label>
           <div className="grid grid-cols-7 gap-1">
@@ -244,8 +244,8 @@ export default function SettingsActivity() {
                 data-testid={`settings-training-${value}`}
                 className={`rounded-lg border px-0.5 py-3 text-center text-xs font-bold uppercase transition-colors min-h-[44px] ${
                   trainingDays.includes(value)
-                    ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                    ? "border-primary bg-primary/10 text-primary"
+                    : "border-border bg-card text-muted-foreground hover:border-border/80"
                 }`}
               >
                 {label}
@@ -256,7 +256,7 @@ export default function SettingsActivity() {
 
         {/* Cooking Skill */}
         <div>
-          <label htmlFor="settings-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label htmlFor="settings-cooking-skill" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Cooking Skill: {cookingSkill}/10
           </label>
           <input
@@ -276,9 +276,9 @@ export default function SettingsActivity() {
             max={10}
             step={1}
             data-testid="settings-cooking-skill"
-            className="w-full accent-[#f97316]"
+            className="w-full accent-primary"
           />
-          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
             <span>Beginner</span>
             <span>Expert</span>
           </div>
@@ -289,7 +289,7 @@ export default function SettingsActivity() {
 
         {/* Prep Time */}
         <div>
-          <label htmlFor="settings-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+          <label htmlFor="settings-prep-time" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
             Max Prep Time: {prepTimeMax} min
           </label>
           <input
@@ -301,9 +301,9 @@ export default function SettingsActivity() {
             max={120}
             step={5}
             data-testid="settings-prep-time"
-            className="w-full accent-[#f97316]"
+            className="w-full accent-primary"
           />
-          <div className="mt-1 flex justify-between text-xs text-[#a1a1aa]">
+          <div className="mt-1 flex justify-between text-xs text-muted-foreground">
             <span>10 min</span>
             <span>120 min</span>
           </div>
@@ -316,8 +316,8 @@ export default function SettingsActivity() {
         </div>
       )}
       {success && (
-        <div className="mt-4 rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/10 px-4 py-3">
-          <p className="text-sm text-[#22c55e]">Activity settings updated!</p>
+        <div className="mt-4 rounded-lg border border-success/30 bg-success/10 px-4 py-3">
+          <p className="text-sm text-success">Activity settings updated!</p>
         </div>
       )}
 
@@ -328,8 +328,8 @@ export default function SettingsActivity() {
           data-testid="settings-activity-save"
           className={`rounded-lg px-6 py-3.5 text-sm font-bold uppercase tracking-wide transition-colors min-h-[44px] ${
             dirty && !saving
-              ? "bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] cursor-pointer"
-              : "bg-[#f97316]/30 text-white/50 cursor-not-allowed"
+              ? "bg-primary hover:bg-primary/90 text-background cursor-pointer"
+              : "bg-primary/30 text-white/50 cursor-not-allowed"
           }`}
         >
           {saving ? (
@@ -342,7 +342,7 @@ export default function SettingsActivity() {
           )}
         </button>
         {dirty && (
-          <button onClick={handleReset} className="rounded-lg border border-[#2a2a2a] px-4 py-2.5 text-sm text-[#a1a1aa] hover:bg-[#252525] transition-colors">
+          <button onClick={handleReset} className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors">
             Reset
           </button>
         )}

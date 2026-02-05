@@ -1,6 +1,9 @@
 import { z } from 'zod'
 import { protectedProcedure, router } from '../trpc'
 import { TRPCError } from '@trpc/server'
+import { recalculateDailyLog, calculateAdherenceScore } from '../utils/daily-log'
+import { safeJsonParse } from '@/lib/utils/safe-json'
+import { ValidatedPlanSchema } from '@/lib/schemas/plan'
 
 /**
  * Meal Router — handles logging meals from plan, tracking, and daily logs.
@@ -11,7 +14,7 @@ export const mealRouter = router({
    */
   getActivePlan: protectedProcedure.query(async ({ ctx }) => {
     const { prisma } = ctx
-    const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+    const dbUserId = ctx.dbUserId
 
     const plan = await prisma.mealPlan.findFirst({
       where: {
@@ -24,12 +27,7 @@ export const mealRouter = router({
 
     if (!plan) return null
 
-    let parsedPlan: Record<string, unknown> = {}
-    try {
-      parsedPlan = JSON.parse(plan.validatedPlan)
-    } catch {
-      /* empty plan */
-    }
+    const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] })
 
     return {
       id: plan.id,
@@ -57,7 +55,7 @@ export const mealRouter = router({
     .input(z.object({ date: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       const plan = await prisma.mealPlan.findFirst({
         where: {
@@ -70,12 +68,8 @@ export const mealRouter = router({
 
       if (!plan) return { meals: [], planId: null }
 
-      let parsedPlan: Record<string, unknown> = {}
-      try {
-        parsedPlan = JSON.parse(plan.validatedPlan)
-      } catch {
-        return { meals: [], planId: plan.id }
-      }
+      const parsedPlan = safeJsonParse(plan.validatedPlan, ValidatedPlanSchema, { days: [] })
+      if (!parsedPlan.days.length) return { meals: [], planId: plan.id }
 
       // Figure out which day of the plan we're on
       const today = input?.date ? new Date(input.date) : new Date()
@@ -84,13 +78,13 @@ export const mealRouter = router({
       const dayNumber = (dayDiff % plan.planDays) + 1 // 1-indexed, wraps around
 
       // Extract meals for this day from the validated plan
-      const days = (parsedPlan.days || []) as Array<Record<string, unknown>>
+      const days = parsedPlan.days
       const todayPlan = days.find((d) => d.dayNumber === dayNumber) || days[0]
 
       if (!todayPlan) return { meals: [], planId: plan.id }
 
-      const meals = ((todayPlan.meals || []) as Array<Record<string, unknown>>).map((meal) => {
-        const nutrition = (meal.nutrition || meal.estimatedNutrition || {}) as Record<string, unknown>
+      const meals = (todayPlan.meals || []).map((meal) => {
+        const nutrition = meal.nutrition || meal.estimatedNutrition || {}
         return {
           slot: (meal.slot as string) || 'meal',
           name: (meal.name as string) || 'Unknown Meal',
@@ -130,7 +124,7 @@ export const mealRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Verify the plan belongs to this user
       const plan = await prisma.mealPlan.findFirst({
@@ -315,7 +309,7 @@ export const mealRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Use provided loggedDate or default to today
       let dateOnly: Date
@@ -497,7 +491,7 @@ export const mealRouter = router({
     )
     .mutation(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Find the tracked meal, ensuring it belongs to this user
       const trackedMeal = await prisma.trackedMeal.findFirst({
@@ -526,23 +520,8 @@ export const mealRouter = router({
         where: { id: input.trackedMealId },
       })
 
-      // Recalculate DailyLog totals from remaining tracked meals
-      const remainingMeals = await prisma.trackedMeal.findMany({
-        where: {
-          userId: dbUserId,
-          loggedDate: dateOnly,
-        },
-      })
-
-      const newTotals = remainingMeals.reduce(
-        (acc, meal) => ({
-          kcal: acc.kcal + meal.kcal,
-          proteinG: acc.proteinG + meal.proteinG,
-          carbsG: acc.carbsG + meal.carbsG,
-          fatG: acc.fatG + meal.fatG,
-        }),
-        { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }
-      )
+      // Recalculate DailyLog totals using database aggregate
+      const newTotals = await recalculateDailyLog(prisma, dbUserId, dateOnly)
 
       // Update the DailyLog
       const dailyLog = await prisma.dailyLog.findUnique({
@@ -558,10 +537,10 @@ export const mealRouter = router({
         const updatedLog = await prisma.dailyLog.update({
           where: { id: dailyLog.id },
           data: {
-            actualKcal: Math.round(newTotals.kcal),
-            actualProteinG: Math.round(newTotals.proteinG),
-            actualCarbsG: Math.round(newTotals.carbsG),
-            actualFatG: Math.round(newTotals.fatG),
+            actualKcal: newTotals.actualKcal,
+            actualProteinG: newTotals.actualProteinG,
+            actualCarbsG: newTotals.actualCarbsG,
+            actualFatG: newTotals.actualFatG,
           },
         })
 
@@ -576,10 +555,10 @@ export const mealRouter = router({
           deleted: true,
           deletedMealName: trackedMeal.mealName,
           dailyLog: {
-            actualKcal: Math.round(newTotals.kcal),
-            actualProteinG: Math.round(newTotals.proteinG),
-            actualCarbsG: Math.round(newTotals.carbsG),
-            actualFatG: Math.round(newTotals.fatG),
+            actualKcal: newTotals.actualKcal,
+            actualProteinG: newTotals.actualProteinG,
+            actualCarbsG: newTotals.actualCarbsG,
+            actualFatG: newTotals.actualFatG,
             targetKcal: updatedLog.targetKcal,
             targetProteinG: updatedLog.targetProteinG,
             targetCarbsG: updatedLog.targetCarbsG,
@@ -600,7 +579,7 @@ export const mealRouter = router({
     .input(z.object({ date: z.string().optional() }).optional())
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Use UTC midnight for consistent date handling
       const today = input?.date ? new Date(input.date) : new Date()
@@ -653,47 +632,3 @@ export const mealRouter = router({
     }),
 })
 
-/**
- * Calculate adherence score (0-100) based on how close actuals are to targets.
- */
-function calculateAdherenceScore(dailyLog: {
-  actualKcal: number
-  actualProteinG: number
-  actualCarbsG: number
-  actualFatG: number
-  targetKcal: number | null
-  targetProteinG: number | null
-  targetCarbsG: number | null
-  targetFatG: number | null
-}): number {
-  const targets = {
-    kcal: dailyLog.targetKcal || 2000,
-    protein: dailyLog.targetProteinG || 150,
-    carbs: dailyLog.targetCarbsG || 200,
-    fat: dailyLog.targetFatG || 65,
-  }
-
-  // Score each macro: 100 if exact, decreasing as you deviate
-  // Being under target is slightly better than being over
-  function macroScore(actual: number, target: number): number {
-    if (target === 0) return 100
-    const ratio = actual / target
-    if (ratio <= 1) {
-      // Under target: score from 0-100 based on how close
-      return Math.round(ratio * 100)
-    } else {
-      // Over target: penalize going over
-      const overBy = ratio - 1
-      return Math.max(0, Math.round(100 - overBy * 200))
-    }
-  }
-
-  const kcalScore = macroScore(dailyLog.actualKcal, targets.kcal)
-  const proteinScore = macroScore(dailyLog.actualProteinG, targets.protein)
-  const carbsScore = macroScore(dailyLog.actualCarbsG, targets.carbs)
-  const fatScore = macroScore(dailyLog.actualFatG, targets.fat)
-
-  // Weighted average: calories and protein matter more
-  const score = Math.round(kcalScore * 0.35 + proteinScore * 0.3 + carbsScore * 0.2 + fatScore * 0.15)
-  return Math.min(100, Math.max(0, score))
-}

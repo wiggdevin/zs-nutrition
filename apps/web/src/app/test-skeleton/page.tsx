@@ -16,26 +16,26 @@ export default function TestSkeletonPage() {
   })
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-4xl mx-auto space-y-8">
         <div>
-          <h1 className="text-3xl font-heading uppercase tracking-wider text-[#fafafa] mb-2">
+          <h1 className="text-3xl font-heading uppercase tracking-wider text-foreground mb-2">
             Skeleton Loader Test
           </h1>
-          <p className="text-[#a1a1aa]">
+          <p className="text-muted-foreground">
             Dark theme skeleton shimmer animation test
           </p>
           <button
             onClick={() => setLoading(!loading)}
-            className="mt-4 px-4 py-2 bg-[#f97316] text-[#0a0a0a] rounded-lg font-semibold"
+            className="mt-4 px-4 py-2 bg-primary text-background rounded-lg font-semibold"
           >
             Toggle Loading (currently: {loading ? 'ON' : 'OFF'})
           </button>
         </div>
 
         {/* Test 1: Basic skeleton blocks */}
-        <section className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-          <h2 className="text-sm font-mono uppercase tracking-wider text-[#a1a1aa] mb-4">
+        <section className="bg-card border border-border rounded-xl p-6">
+          <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">
             /// Basic Skeleton Blocks
           </h2>
           {loading ? (
@@ -46,18 +46,18 @@ export default function TestSkeletonPage() {
             </div>
           ) : (
             <div className="space-y-3">
-              <p className="text-[#fafafa]">This is actual content that appears after loading.</p>
-              <p className="text-[#a1a1aa]">The skeleton blocks should have a subtle shimmer animation.</p>
-              <div className="h-12 w-full bg-[#2a2a2a] rounded flex items-center justify-center">
-                <span className="text-[#a1a1aa]">Content area</span>
+              <p className="text-foreground">This is actual content that appears after loading.</p>
+              <p className="text-muted-foreground">The skeleton blocks should have a subtle shimmer animation.</p>
+              <div className="h-12 w-full bg-muted rounded flex items-center justify-center">
+                <span className="text-muted-foreground">Content area</span>
               </div>
             </div>
           )}
         </section>
 
         {/* Test 2: Card skeletons (like meal cards) */}
-        <section className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-          <h2 className="text-sm font-mono uppercase tracking-wider text-[#a1a1aa] mb-4">
+        <section className="bg-card border border-border rounded-xl p-6">
+          <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">
             /// Card Skeletons (Meal Card Style)
           </h2>
           <div className="space-y-3">
@@ -66,7 +66,7 @@ export default function TestSkeletonPage() {
                 {[1, 2, 3].map((i) => (
                   <div
                     key={i}
-                    className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-4"
+                    className="rounded-md border border-border bg-background p-4"
                   >
                     <div className="flex items-center gap-2 mb-2">
                       <div className="h-4 w-16 rounded skeleton-shimmer" />
@@ -85,46 +85,46 @@ export default function TestSkeletonPage() {
               </>
             ) : (
               <>
-                <div className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-4">
+                <div className="rounded-md border border-border bg-background p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-[#f97316]/20 text-[#f97316] rounded">BREAKFAST</span>
-                    <span className="px-2 py-0.5 text-[8px] font-semibold uppercase bg-[#22c55e]/20 text-[#22c55e] rounded">✓ Verified</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-primary/20 text-primary rounded">BREAKFAST</span>
+                    <span className="px-2 py-0.5 text-[8px] font-semibold uppercase bg-green-500/20 text-green-500 rounded">✓ Verified</span>
                   </div>
-                  <p className="text-sm font-semibold text-[#fafafa]">Greek Yogurt Parfait with Berries</p>
-                  <p className="text-xs text-[#a1a1aa] mt-1">🕒 10m prep</p>
+                  <p className="text-sm font-semibold text-foreground">Greek Yogurt Parfait with Berries</p>
+                  <p className="text-xs text-muted-foreground mt-1">🕒 10m prep</p>
                   <div className="flex gap-2 mt-2">
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#f97316]/15 text-[#f97316] rounded-full">320 kcal</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#3b82f6]/15 text-[#3b82f6] rounded-full">P 18g</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#f59e0b]/15 text-[#f59e0b] rounded-full">C 42g</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#ef4444]/15 text-[#ef4444] rounded-full">F 8g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-primary/15 text-primary rounded-full">320 kcal</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/15 text-blue-500 rounded-full">P 18g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/15 text-amber-500 rounded-full">C 42g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/15 text-red-500 rounded-full">F 8g</span>
                   </div>
                 </div>
-                <div className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-4">
+                <div className="rounded-md border border-border bg-background p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-[#f97316]/20 text-[#f97316] rounded">LUNCH</span>
-                    <span className="px-2 py-0.5 text-[8px] font-semibold uppercase bg-[#22c55e]/20 text-[#22c55e] rounded">✓ Verified</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-primary/20 text-primary rounded">LUNCH</span>
+                    <span className="px-2 py-0.5 text-[8px] font-semibold uppercase bg-green-500/20 text-green-500 rounded">✓ Verified</span>
                   </div>
-                  <p className="text-sm font-semibold text-[#fafafa]">Grilled Chicken Salad with Quinoa</p>
-                  <p className="text-xs text-[#a1a1aa] mt-1">🕒 15m prep + 20m cook</p>
+                  <p className="text-sm font-semibold text-foreground">Grilled Chicken Salad with Quinoa</p>
+                  <p className="text-xs text-muted-foreground mt-1">🕒 15m prep + 20m cook</p>
                   <div className="flex gap-2 mt-2">
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#f97316]/15 text-[#f97316] rounded-full">450 kcal</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#3b82f6]/15 text-[#3b82f6] rounded-full">P 38g</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#f59e0b]/15 text-[#f59e0b] rounded-full">C 35g</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#ef4444]/15 text-[#ef4444] rounded-full">F 18g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-primary/15 text-primary rounded-full">450 kcal</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/15 text-blue-500 rounded-full">P 38g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/15 text-amber-500 rounded-full">C 35g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/15 text-red-500 rounded-full">F 18g</span>
                   </div>
                 </div>
-                <div className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-4">
+                <div className="rounded-md border border-border bg-background p-4">
                   <div className="flex items-center gap-2 mb-2">
-                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-[#f97316]/20 text-[#f97316] rounded">DINNER</span>
-                    <span className="px-2 py-0.5 text-[8px] font-semibold uppercase bg-[#22c55e]/20 text-[#22c55e] rounded">✓ Verified</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold uppercase bg-primary/20 text-primary rounded">DINNER</span>
+                    <span className="px-2 py-0.5 text-[8px] font-semibold uppercase bg-green-500/20 text-green-500 rounded">✓ Verified</span>
                   </div>
-                  <p className="text-sm font-semibold text-[#fafafa]">Salmon with Roasted Vegetables</p>
-                  <p className="text-xs text-[#a1a1aa] mt-1">🕒 10m prep + 25m cook</p>
+                  <p className="text-sm font-semibold text-foreground">Salmon with Roasted Vegetables</p>
+                  <p className="text-xs text-muted-foreground mt-1">🕒 10m prep + 25m cook</p>
                   <div className="flex gap-2 mt-2">
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#f97316]/15 text-[#f97316] rounded-full">520 kcal</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#3b82f6]/15 text-[#3b82f6] rounded-full">P 42g</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#f59e0b]/15 text-[#f59e0b] rounded-full">C 28g</span>
-                    <span className="px-2 py-0.5 text-[10px] font-bold bg-[#ef4444]/15 text-[#ef4444] rounded-full">F 22g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-primary/15 text-primary rounded-full">520 kcal</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-blue-500/15 text-blue-500 rounded-full">P 42g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-amber-500/15 text-amber-500 rounded-full">C 28g</span>
+                    <span className="px-2 py-0.5 text-[10px] font-bold bg-red-500/15 text-red-500 rounded-full">F 22g</span>
                   </div>
                 </div>
               </>
@@ -133,66 +133,66 @@ export default function TestSkeletonPage() {
         </section>
 
         {/* Test 3: Comparison - Shimmer vs Pulse */}
-        <section className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-          <h2 className="text-sm font-mono uppercase tracking-wider text-[#a1a1aa] mb-4">
+        <section className="bg-card border border-border rounded-xl p-6">
+          <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">
             /// Animation Comparison
           </h2>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div>
-              <p className="text-xs text-[#a1a1aa] mb-2">Shimmer (NEW):</p>
+              <p className="text-xs text-muted-foreground mb-2">Shimmer (NEW):</p>
               <div className="h-20 rounded skeleton-shimmer" />
             </div>
             <div>
-              <p className="text-xs text-[#a1a1aa] mb-2">Pulse (OLD):</p>
-              <div className="h-20 rounded bg-[#1a1a1a] animate-pulse" />
+              <p className="text-xs text-muted-foreground mb-2">Pulse (OLD):</p>
+              <div className="h-20 rounded bg-card animate-pulse" />
             </div>
           </div>
         </section>
 
         {/* Test 4: Color variants */}
-        <section className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-          <h2 className="text-sm font-mono uppercase tracking-wider text-[#a1a1aa] mb-4">
+        <section className="bg-card border border-border rounded-xl p-6">
+          <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">
             /// Color Variants (Dark Theme)
           </h2>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
-              <p className="text-xs text-[#a1a1aa] mb-2">Background (#1a1a1a):</p>
-              <div className="h-16 rounded bg-[#1a1a1a] border border-[#2a2a2a]" />
+              <p className="text-xs text-muted-foreground mb-2">Background (#1a1a1a):</p>
+              <div className="h-16 rounded bg-card border border-border" />
             </div>
             <div>
-              <p className="text-xs text-[#a1a1aa] mb-2">Card Background (#0f0f0f):</p>
-              <div className="h-16 rounded bg-[#0f0f0f] border border-[#2a2a2a]" />
+              <p className="text-xs text-muted-foreground mb-2">Card Background (#0f0f0f):</p>
+              <div className="h-16 rounded bg-background border border-border" />
             </div>
             <div>
-              <p className="text-xs text-[#a1a1aa] mb-2">Border (#2a2a2a):</p>
-              <div className="h-16 rounded bg-[#1a1a1a] border-2 border-[#2a2a2a]" />
+              <p className="text-xs text-muted-foreground mb-2">Border (#2a2a2a):</p>
+              <div className="h-16 rounded bg-card border-2 border-border" />
             </div>
           </div>
         </section>
 
-        <section className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-xl p-6">
-          <h2 className="text-sm font-mono uppercase tracking-wider text-[#a1a1aa] mb-4">
+        <section className="bg-card border border-border rounded-xl p-6">
+          <h2 className="text-sm font-mono uppercase tracking-wider text-muted-foreground mb-4">
             /// Verification Checklist
           </h2>
-          <ul className="space-y-2 text-sm text-[#a1a1aa]">
+          <ul className="space-y-2 text-sm text-muted-foreground">
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Skeleton color is slightly lighter than background
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Shimmer animation moves left to right
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Animation is smooth and subtle (2s duration)
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Skeleton shapes match content layout
             </li>
             <li className="flex items-center gap-2">
-              <span className="text-[#22c55e]">✓</span>
+              <span className="text-green-500">✓</span>
               Smooth transition to real content
             </li>
           </ul>

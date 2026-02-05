@@ -4,6 +4,7 @@ import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { z } from 'zod';
 import { safeStorage } from './storage';
+import { logger } from '@/lib/safe-logger';
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -31,6 +32,7 @@ export interface TrackedMealEntry {
   portion: number; // Portion multiplier (e.g., 1.0, 1.5, 2.0)
   source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual';
   mealSlot: string | null;
+  confidenceScore?: number | null;
   createdAt: string;
 }
 
@@ -240,7 +242,7 @@ export const useTrackingStore = create<DailyLogState>()(
       migrate: (persisted: unknown) => {
         const parsed = trackingPersistedSchema.safeParse(persisted);
         if (!parsed.success) {
-          console.warn('[TrackingStore] Migration failed, resetting to defaults:', parsed.error);
+          logger.warn('[TrackingStore] Migration failed, resetting to defaults:', parsed.error);
           return {
             targets: defaultTargets,
             current: defaultCurrent,
@@ -256,7 +258,7 @@ export const useTrackingStore = create<DailyLogState>()(
       onRehydrateStorage: () => {
         return (_state, error) => {
           if (error) {
-            console.warn('[TrackingStore] Rehydration error:', error);
+            logger.warn('[TrackingStore] Rehydration error:', error);
           }
         };
       },

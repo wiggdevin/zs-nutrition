@@ -119,7 +119,7 @@ function MacroRing({
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="#2a2a2a"
+            stroke="var(--border)"
             strokeWidth={strokeWidth}
           />
           <circle
@@ -143,13 +143,13 @@ function MacroRing({
           <span className="text-lg font-bold font-mono transition-all duration-500 ease-out" style={{ color }}>
             {animatedCurrent}
           </span>
-          <span className="text-[10px] text-[#a1a1aa] font-mono">
+          <span className="text-[10px] text-muted-foreground font-mono">
             / {target}
             {unit}
           </span>
         </div>
       </div>
-      <span className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+      <span className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
         {label}
       </span>
     </div>
@@ -170,10 +170,10 @@ function QuickAction({
     <Link
       href={href}
       aria-label={label}
-      className="flex items-center gap-3 px-5 py-3 card-elevation border border-[#2a2a2a] rounded-xl hover:border-[#f97316]/30 transition-all duration-200 group"
+      className="flex items-center gap-3 px-5 py-3 card-elevation border border-border rounded-xl hover:border-primary/30 transition-all duration-200 group"
     >
       <span className="text-xl" aria-hidden="true">{icon}</span>
-      <span className="text-sm font-semibold uppercase tracking-wide text-[#a1a1aa] group-hover:text-[#fafafa] transition-colors">
+      <span className="text-sm font-semibold uppercase tracking-wide text-muted-foreground group-hover:text-foreground transition-colors">
         {label}
       </span>
     </Link>
@@ -205,18 +205,18 @@ function PlanMealCard({
   onLog: () => void
 }) {
   return (
-    <div className="p-4 card-elevation border border-[#2a2a2a] rounded-xl hover:border-[#3a3a3a] transition-colors">
+    <div className="p-4 card-elevation border border-border rounded-xl hover:border-border/80 transition-colors">
       <div className="flex items-start justify-between gap-3">
         <div className="flex-1 min-w-0">
-          <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-1">
+          <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-1">
             {mealSlot}
           </p>
-          <p className="text-sm font-semibold text-[#fafafa] truncate">{name}</p>
+          <p className="text-sm font-semibold text-foreground truncate">{name}</p>
         </div>
         <div className="flex items-center gap-2 shrink-0">
-          <span className="text-xs text-[#a1a1aa] hidden sm:inline">{prepTime}</span>
+          <span className="text-xs text-muted-foreground hidden sm:inline">{prepTime}</span>
           {isLogged ? (
-            <span className="px-3 py-2 min-h-[44px] text-xs font-bold uppercase tracking-wide bg-[#22c55e]/20 text-[#22c55e] rounded-lg flex items-center gap-1">
+            <span className="px-3 py-2 min-h-[44px] text-xs font-bold uppercase tracking-wide bg-success/20 text-success rounded-lg flex items-center gap-1">
               ✓ Logged
             </span>
           ) : (
@@ -225,7 +225,7 @@ function PlanMealCard({
               disabled={isLogging}
               data-testid={`log-btn-${mealSlot.toLowerCase()}`}
               aria-label={`Log ${mealSlot}`}
-              className="px-4 py-2 min-h-[44px] min-w-[44px] text-xs font-bold uppercase tracking-wide bg-[#f97316] hover:bg-[#ea580c] disabled:bg-[#f97316]/50 disabled:cursor-not-allowed text-[#0a0a0a] rounded-lg transition-colors"
+              className="px-4 py-2 min-h-[44px] min-w-[44px] text-xs font-bold uppercase tracking-wide bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-background rounded-lg transition-colors"
             >
               {isLogging ? (
                 <span className="flex items-center gap-1.5">
@@ -238,19 +238,19 @@ function PlanMealCard({
         </div>
       </div>
       <div className="flex flex-wrap gap-2 mt-2">
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#f97316]/10 text-[#f97316] font-mono">
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/10 text-primary font-mono">
           {calories} kcal
         </span>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#3b82f6]/10 text-[#3b82f6] font-mono">
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-chart-3/10 text-chart-3 font-mono">
           P {protein}g
         </span>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#22c55e]/10 text-[#22c55e] font-mono">
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-success/10 text-success font-mono">
           C {carbs}g
         </span>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#eab308]/10 text-[#eab308] font-mono">
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-warning/10 text-warning font-mono">
           F {fat}g
         </span>
-        <span className="text-[10px] px-2 py-0.5 rounded-full bg-[#a1a1aa]/10 text-[#a1a1aa] font-mono sm:hidden">
+        <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted-foreground/10 text-muted-foreground font-mono sm:hidden">
           {prepTime}
         </span>
       </div>
@@ -286,21 +286,21 @@ function LogConfirmModal({
     >
       <div
         data-testid="log-confirm-modal"
-        className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        className="bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
         role="document"
       >
-        <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-1">
+        <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-1">
           /// Log Meal
         </p>
-        <h3 id="log-meal-title" className="text-lg font-bold text-[#fafafa] mb-4">{meal.name}</h3>
+        <h3 id="log-meal-title" className="text-lg font-bold text-foreground mb-4">{meal.name}</h3>
 
         {/* Portion Slider */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm text-[#a1a1aa]">Portion</label>
+            <label className="text-sm text-muted-foreground">Portion</label>
             <span
               data-testid="portion-value"
-              className="text-sm font-bold text-[#f97316]"
+              className="text-sm font-bold text-primary"
             >
               {portion.toFixed(1)}×
             </span>
@@ -313,9 +313,9 @@ function LogConfirmModal({
             value={portion}
             onChange={(e) => setPortion(parseFloat(e.target.value))}
             data-testid="portion-slider"
-            className="w-full h-2 bg-[#2a2a2a] rounded-full appearance-none cursor-pointer accent-[#f97316]"
+            className="w-full h-2 bg-border rounded-full appearance-none cursor-pointer accent-primary"
           />
-          <div className="flex justify-between text-[10px] text-[#a1a1aa] mt-1">
+          <div className="flex justify-between text-[10px] text-muted-foreground mt-1">
             <span>0.25×</span>
             <span>1×</span>
             <span>2×</span>
@@ -326,37 +326,37 @@ function LogConfirmModal({
         {/* Auto-filled Nutrition Preview */}
         <div
           data-testid="nutrition-preview"
-          className="card-elevation border border-[#2a2a2a] rounded-xl p-4 mb-6"
+          className="card-elevation border border-border rounded-xl p-4 mb-6"
         >
-          <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-3">
+          <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
             Nutrition
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#f97316]" />
-              <span className="text-sm text-[#a1a1aa]">Calories</span>
-              <span data-testid="preview-calories" className="text-sm font-bold text-[#fafafa] ml-auto">
+              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span className="text-sm text-muted-foreground">Calories</span>
+              <span data-testid="preview-calories" className="text-sm font-bold text-foreground ml-auto">
                 {adjustedCalories} kcal
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
-              <span className="text-sm text-[#a1a1aa]">Protein</span>
-              <span data-testid="preview-protein" className="text-sm font-bold text-[#fafafa] ml-auto">
+              <span className="w-2 h-2 rounded-full bg-chart-3" />
+              <span className="text-sm text-muted-foreground">Protein</span>
+              <span data-testid="preview-protein" className="text-sm font-bold text-foreground ml-auto">
                 {adjustedProtein}g
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
-              <span className="text-sm text-[#a1a1aa]">Carbs</span>
-              <span data-testid="preview-carbs" className="text-sm font-bold text-[#fafafa] ml-auto">
+              <span className="w-2 h-2 rounded-full bg-success" />
+              <span className="text-sm text-muted-foreground">Carbs</span>
+              <span data-testid="preview-carbs" className="text-sm font-bold text-foreground ml-auto">
                 {adjustedCarbs}g
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#eab308]" />
-              <span className="text-sm text-[#a1a1aa]">Fat</span>
-              <span data-testid="preview-fat" className="text-sm font-bold text-[#fafafa] ml-auto">
+              <span className="w-2 h-2 rounded-full bg-warning" />
+              <span className="text-sm text-muted-foreground">Fat</span>
+              <span data-testid="preview-fat" className="text-sm font-bold text-foreground ml-auto">
                 {adjustedFat}g
               </span>
             </div>
@@ -368,7 +368,7 @@ function LogConfirmModal({
           <button
             onClick={onCancel}
             disabled={isLogging}
-            className="flex-1 px-4 py-2.5 text-sm font-bold uppercase tracking-wide border border-[#2a2a2a] text-[#a1a1aa] hover:bg-[#252525] rounded-xl transition-colors"
+            className="flex-1 px-4 py-2.5 text-sm font-bold uppercase tracking-wide border border-border text-muted-foreground hover:bg-secondary rounded-xl transition-colors"
           >
             Cancel
           </button>
@@ -377,7 +377,7 @@ function LogConfirmModal({
             disabled={isLogging}
             data-testid="confirm-log-btn"
             aria-label={`Confirm logging ${meal.name}`}
-            className="flex-1 px-4 py-2.5 text-sm font-bold uppercase tracking-wide bg-[#f97316] hover:bg-[#ea580c] disabled:bg-[#f97316]/50 disabled:cursor-not-allowed text-[#0a0a0a] rounded-xl transition-colors"
+            className="flex-1 px-4 py-2.5 text-sm font-bold uppercase tracking-wide bg-primary hover:bg-primary/90 disabled:bg-primary/50 disabled:cursor-not-allowed text-background rounded-xl transition-colors"
           >
             {isLogging ? (
               <span className="flex items-center justify-center gap-2">
@@ -437,21 +437,21 @@ function PortionAdjustModal({
     >
       <div
         data-testid="adjust-portion-modal"
-        className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        className="bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
         role="document"
       >
-        <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-1">
+        <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-1">
           /// Adjust Portion
         </p>
-        <h3 id="adjust-portion-title" className="text-lg font-bold text-[#fafafa] mb-4">{mealName}</h3>
+        <h3 id="adjust-portion-title" className="text-lg font-bold text-foreground mb-4">{mealName}</h3>
 
         {/* Portion Slider */}
         <div className="mb-6">
           <div className="flex items-center justify-between mb-2">
-            <label className="text-sm text-[#a1a1aa]">Portion</label>
+            <label className="text-sm text-muted-foreground">Portion</label>
             <span
               data-testid="adjust-portion-value"
-              className="text-sm font-bold text-[#f97316]"
+              className="text-sm font-bold text-primary"
             >
               {portion}x
             </span>
@@ -463,10 +463,10 @@ function PortionAdjustModal({
             step="0.1"
             value={portion}
             onChange={(e) => setPortion(parseFloat(e.target.value))}
-            className="w-full h-2 bg-[#2a2a2a] rounded-lg appearance-none cursor-pointer accent-[#f97316]"
+            className="w-full h-2 bg-border rounded-lg appearance-none cursor-pointer accent-primary"
             data-testid="adjust-portion-slider"
           />
-          <div className="flex justify-between text-xs text-[#666] mt-1">
+          <div className="flex justify-between text-xs text-muted-foreground mt-1">
             <span>0.5x</span>
             <span>1x</span>
             <span>2x</span>
@@ -475,36 +475,36 @@ function PortionAdjustModal({
         </div>
 
         {/* Nutrition Preview */}
-        <div className="bg-[#111] border border-[#2a2a2a] rounded-xl p-4 mb-6">
-          <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-3">
+        <div className="bg-background border border-border rounded-xl p-4 mb-6">
+          <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
             Adjusted Nutrition
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#f97316]" />
-              <span className="text-xs text-[#a1a1aa]">Calories</span>
-              <span className="text-sm font-bold text-[#fafafa] ml-auto">
+              <span className="w-2 h-2 rounded-full bg-primary" />
+              <span className="text-xs text-muted-foreground">Calories</span>
+              <span className="text-sm font-bold text-foreground ml-auto">
                 {adjustedKcal} kcal
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#3b82f6]" />
-              <span className="text-xs text-[#a1a1aa]">Protein</span>
-              <span className="text-sm font-bold text-[#fafafa] ml-auto">
+              <span className="w-2 h-2 rounded-full bg-chart-3" />
+              <span className="text-xs text-muted-foreground">Protein</span>
+              <span className="text-sm font-bold text-foreground ml-auto">
                 {adjustedProtein}g
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#22c55e]" />
-              <span className="text-xs text-[#a1a1aa]">Carbs</span>
-              <span className="text-sm font-bold text-[#fafafa] ml-auto">
+              <span className="w-2 h-2 rounded-full bg-success" />
+              <span className="text-xs text-muted-foreground">Carbs</span>
+              <span className="text-sm font-bold text-foreground ml-auto">
                 {adjustedCarbs}g
               </span>
             </div>
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-[#eab308]" />
-              <span className="text-xs text-[#a1a1aa]">Fat</span>
-              <span className="text-sm font-bold text-[#fafafa] ml-auto">
+              <span className="w-2 h-2 rounded-full bg-warning" />
+              <span className="text-xs text-muted-foreground">Fat</span>
+              <span className="text-sm font-bold text-foreground ml-auto">
                 {adjustedFat}g
               </span>
             </div>
@@ -516,14 +516,14 @@ function PortionAdjustModal({
           <button
             onClick={onCancel}
             disabled={isAdjusting}
-            className="flex-1 px-4 py-3 bg-[#2a2a2a] hover:bg-[#333] disabled:opacity-50 disabled:cursor-not-allowed text-[#fafafa] font-bold rounded-lg transition-colors"
+            className="flex-1 px-4 py-3 bg-border hover:bg-secondary disabled:opacity-50 disabled:cursor-not-allowed text-foreground font-bold rounded-lg transition-colors"
           >
             Cancel
           </button>
           <button
             onClick={() => onConfirm(portion)}
             disabled={isAdjusting}
-            className="flex-1 px-4 py-3 bg-[#f97316] hover:bg-[#ea580c] disabled:opacity-50 disabled:cursor-not-allowed text-[#0a0a0a] font-bold rounded-lg transition-colors"
+            className="flex-1 px-4 py-3 bg-primary hover:bg-primary/90 disabled:opacity-50 disabled:cursor-not-allowed text-background font-bold rounded-lg transition-colors"
             data-testid="adjust-portion-confirm"
           >
             {isAdjusting ? 'Adjusting...' : 'Confirm'}
@@ -570,20 +570,20 @@ function LogEntry({
   // - Quick Add and Manual use their original badges
   const getConfidenceBadge = () => {
     if (source === 'fatsecret_search') {
-      return { label: 'Verified', color: 'bg-[#22c55e]/10 text-[#22c55e]' }
+      return { label: 'Verified', color: 'bg-success/10 text-success' }
     }
     if (source === 'plan_meal') {
       // confidenceScore >= 1.0 means verified, < 1.0 means ai_estimated
-      if (confidenceScore !== undefined && confidenceScore >= 1.0) {
-        return { label: 'Verified', color: 'bg-[#22c55e]/10 text-[#22c55e]' }
+      if (confidenceScore != null && confidenceScore >= 1.0) {
+        return { label: 'Verified', color: 'bg-success/10 text-success' }
       }
-      return { label: 'AI-Estimated', color: 'bg-[#f59e0b]/10 text-[#f59e0b]' }
+      return { label: 'AI-Estimated', color: 'bg-warning/10 text-warning' }
     }
     if (source === 'quick_add') {
-      return { label: 'Quick Add', color: 'bg-[#f59e0b]/10 text-[#f59e0b]' }
+      return { label: 'Quick Add', color: 'bg-warning/10 text-warning' }
     }
     // manual
-    return { label: 'Manual', color: 'bg-[#a1a1aa]/10 text-[#a1a1aa]' }
+    return { label: 'Manual', color: 'bg-muted-foreground/10 text-muted-foreground' }
   }
 
   const badge = getConfidenceBadge()
@@ -595,29 +595,29 @@ function LogEntry({
 
   return (
     <>
-      <div className="flex items-center justify-between py-3 border-b border-[#2a2a2a] last:border-b-0">
+      <div className="flex items-center justify-between py-3 border-b border-border last:border-b-0">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-sm text-[#fafafa] truncate">{name}</p>
+            <p className="text-sm text-foreground truncate">{name}</p>
             <span
               className={`text-[10px] px-2 py-0.5 rounded-full font-mono ${badge.color}`}
             >
               {badge.label}
             </span>
             {portion !== 1 && (
-              <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-[#f97316]/10 text-[#f97316]">
+              <span className="text-[10px] px-2 py-0.5 rounded-full font-mono bg-primary/10 text-primary">
                 {portion}x
               </span>
             )}
           </div>
-          <p className="text-xs text-[#a1a1aa] mt-0.5">
+          <p className="text-xs text-muted-foreground mt-0.5">
             {time} · {calories} kcal · {protein}g protein
           </p>
         </div>
         <button
           onClick={() => setShowAdjustModal(true)}
           disabled={isAdjusting}
-          className="px-3 py-1.5 text-xs font-semibold text-[#a1a1aa] hover:text-[#f97316] border border-[#2a2a2a] hover:border-[#f97316] rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+          className="px-3 py-1.5 text-xs font-semibold text-muted-foreground hover:text-primary border border-border hover:border-primary rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           data-testid={`adjust-btn-${id}`}
         >
           Adjust
@@ -643,7 +643,7 @@ function LogEntry({
 
 /* ── Skeleton Pulse Block ── */
 function SkeletonBlock({ className }: { className?: string }) {
-  return <div className={`bg-[#1a1a1a] rounded skeleton-shimmer ${className ?? ''}`} />
+  return <div className={`bg-card rounded skeleton-shimmer ${className ?? ''}`} />
 }
 
 /* ── Macro Ring Skeleton ── */
@@ -661,7 +661,7 @@ function MacroRingSkeleton({ size = 120 }: { size?: number }) {
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="#2a2a2a"
+            stroke="var(--border)"
             strokeWidth={strokeWidth}
           />
           <circle
@@ -669,14 +669,14 @@ function MacroRingSkeleton({ size = 120 }: { size?: number }) {
             cy={size / 2}
             r={radius}
             fill="none"
-            stroke="#2a2a2a"
+            stroke="var(--border)"
             strokeWidth={strokeWidth}
             strokeLinecap="round"
             strokeDasharray={circumference}
             strokeDashoffset={circumference * 0.7}
             className="skeleton-shimmer"
             style={{
-              background: 'linear-gradient(90deg, #1a1a1a 0%, #2a2a2a 50%, #1a1a1a 100%)',
+              background: 'linear-gradient(90deg, var(--card) 0%, var(--border) 50%, var(--card) 100%)',
               backgroundSize: '200% 100%',
             }}
           />
@@ -694,7 +694,7 @@ function MacroRingSkeleton({ size = 120 }: { size?: number }) {
 /* ── Meal Card Skeleton ── */
 function MealCardSkeleton() {
   return (
-    <div className="flex items-center justify-between p-4 card-elevation border border-[#2a2a2a] rounded-xl" data-testid="meal-card-skeleton">
+    <div className="flex items-center justify-between p-4 card-elevation border border-border rounded-xl" data-testid="meal-card-skeleton">
       <div className="flex-1 min-w-0 space-y-2">
         <SkeletonBlock className="h-3 w-16" />
         <SkeletonBlock className="h-4 w-40" />
@@ -716,7 +716,7 @@ function MealCardSkeleton() {
 /* ── Log Entry Skeleton ── */
 function LogEntrySkeleton() {
   return (
-    <div className="flex items-center justify-between py-3 border-b border-[#2a2a2a] last:border-b-0" data-testid="log-entry-skeleton">
+    <div className="flex items-center justify-between py-3 border-b border-border last:border-b-0" data-testid="log-entry-skeleton">
       <div className="flex-1 min-w-0 space-y-2">
         <div className="flex items-center gap-2">
           <SkeletonBlock className="h-4 w-32" />
@@ -731,12 +731,12 @@ function LogEntrySkeleton() {
 /* ── Loading Skeleton ── */
 function DashboardSkeleton() {
   return (
-    <div className="min-h-screen bg-[#0a0a0a]" data-testid="dashboard-skeleton">
+    <div className="min-h-screen bg-background" data-testid="dashboard-skeleton">
       {/* Header */}
-      <header className="border-b border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-[#f97316] text-2xl font-heading">///</span>
+            <span className="text-primary text-2xl font-heading">///</span>
             <SkeletonBlock className="h-7 w-32" />
           </div>
           <SkeletonBlock className="h-10 w-10 rounded-full" />
@@ -754,7 +754,7 @@ function DashboardSkeleton() {
         {/* ═══ MACRO RINGS SKELETON ═══ */}
         <section
           data-testid="macro-rings-skeleton"
-          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
+          className="bg-card border border-border rounded-2xl p-6"
         >
           <div className="flex items-center justify-between mb-6">
             <SkeletonBlock className="h-3 w-24" />
@@ -775,19 +775,19 @@ function DashboardSkeleton() {
         </section>
 
         {/* ═══ ADHERENCE SCORE SKELETON ═══ */}
-        <section className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6">
+        <section className="bg-card border border-border rounded-2xl p-6">
           <SkeletonBlock className="h-3 w-32 mb-4" />
           <div className="flex items-center gap-8">
             <div className="flex flex-col items-center gap-1">
               <SkeletonBlock className="h-12 w-16" />
               <SkeletonBlock className="h-3 w-10" />
             </div>
-            <div className="h-12 w-px bg-[#2a2a2a]" />
+            <div className="h-12 w-px bg-border" />
             <div className="flex flex-col items-center gap-1">
               <SkeletonBlock className="h-8 w-12" />
               <SkeletonBlock className="h-3 w-16" />
             </div>
-            <div className="h-12 w-px bg-[#2a2a2a]" />
+            <div className="h-12 w-px bg-border" />
             <div className="flex-1 space-y-1">
               <SkeletonBlock className="h-3 w-full rounded-full" />
               <SkeletonBlock className="h-2 w-24" />
@@ -800,7 +800,7 @@ function DashboardSkeleton() {
           {/* ═══ TODAY'S PLAN SKELETON ═══ */}
           <section
             data-testid="todays-plan-skeleton"
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
+            className="bg-card border border-border rounded-2xl p-6"
           >
             <div className="flex items-center justify-between mb-4">
               <SkeletonBlock className="h-3 w-24" />
@@ -816,7 +816,7 @@ function DashboardSkeleton() {
           {/* ═══ TODAY'S LOG SKELETON ═══ */}
           <section
             data-testid="todays-log-skeleton"
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
+            className="bg-card border border-border rounded-2xl p-6"
           >
             <div className="flex items-center justify-between mb-4">
               <SkeletonBlock className="h-3 w-20" />
@@ -827,14 +827,14 @@ function DashboardSkeleton() {
               <LogEntrySkeleton />
               <LogEntrySkeleton />
             </div>
-            <div className="mt-4 pt-4 border-t border-[#2a2a2a] flex justify-center">
+            <div className="mt-4 pt-4 border-t border-border flex justify-center">
               <SkeletonBlock className="h-3 w-64" />
             </div>
           </section>
         </div>
 
         {/* ═══ QUICK ACTIONS SKELETON ═══ */}
-        <section className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6">
+        <section className="bg-card border border-border rounded-2xl p-6">
           <SkeletonBlock className="h-3 w-28 mb-4" />
           <div className="flex flex-wrap gap-3">
             <SkeletonBlock className="h-12 w-36 rounded-xl" />
@@ -1114,6 +1114,7 @@ export default function DashboardClient() {
       }
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Something went wrong'
+      const isFriendly = msg.includes('Something went wrong') || msg.includes('Unable to') || msg.includes('Please try')
       const errorMsg = isFriendly ? msg : 'Something went wrong while adjusting portion. Please try again.'
       setError(errorMsg)
       toast.error(errorMsg)
@@ -1126,10 +1127,10 @@ export default function DashboardClient() {
   // Show loading while redirecting to onboarding
   if (needsOnboarding) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center" data-testid="onboarding-redirect">
+      <div className="min-h-screen bg-background flex items-center justify-center" data-testid="onboarding-redirect">
         <div className="text-center space-y-4">
-          <div className="w-12 h-12 mx-auto animate-spin rounded-full border-4 border-[#f97316] border-t-transparent" />
-          <p className="text-sm text-[#a1a1aa] font-mono uppercase tracking-wider">
+          <div className="w-12 h-12 mx-auto animate-spin rounded-full border-4 border-primary border-t-transparent" />
+          <p className="text-sm text-muted-foreground font-mono uppercase tracking-wider">
             Redirecting to onboarding...
           </p>
         </div>
@@ -1141,7 +1142,7 @@ export default function DashboardClient() {
 
   if (error && trackedMeals.length === 0 && targets.calories === 0) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a] flex items-center justify-center" data-testid="network-error-state">
+      <div className="min-h-screen bg-background flex items-center justify-center" data-testid="network-error-state">
         <div className="text-center space-y-6 max-w-md mx-auto px-4">
           <div className="w-16 h-16 mx-auto rounded-full bg-red-500/10 border-2 border-red-500/20 flex items-center justify-center">
             <svg className="w-8 h-8 text-red-400" fill="currentColor" viewBox="0 0 20 20">
@@ -1149,14 +1150,14 @@ export default function DashboardClient() {
             </svg>
           </div>
           <div>
-            <p className="text-lg font-bold text-[#fafafa] mb-2">Oops! Something went wrong</p>
-            <p className="text-sm text-[#a1a1aa]" data-testid="error-message">{error}</p>
+            <p className="text-lg font-bold text-foreground mb-2">Oops! Something went wrong</p>
+            <p className="text-sm text-muted-foreground" data-testid="error-message">{error}</p>
           </div>
           <button
             onClick={() => { setLoading(true); setError(null); fetchData(true) }}
             data-testid="retry-button"
             aria-label="Retry loading dashboard"
-            className="inline-flex items-center gap-2 px-6 py-3 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-sm font-bold uppercase tracking-wide rounded-xl transition-colors"
+            className="inline-flex items-center gap-2 px-6 py-3 bg-primary hover:bg-primary/90 text-background text-sm font-bold uppercase tracking-wide rounded-xl transition-colors"
           >
             <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24" aria-hidden="true">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
@@ -1173,23 +1174,23 @@ export default function DashboardClient() {
 
   if (hasNoPlan) {
     return (
-      <div className="min-h-screen bg-[#0a0a0a]">
+      <div className="min-h-screen bg-background">
         {/* Header */}
-        <header className="border-b border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm sticky top-0 z-50">
+        <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
           <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-            <h1 className="text-2xl font-heading uppercase tracking-wide text-[#fafafa]">
-              <span className="text-[#f97316]">///</span> Dashboard
+            <h1 className="text-2xl font-heading uppercase tracking-wide text-foreground">
+              <span className="text-primary">///</span> Dashboard
             </h1>
             <div className="flex items-center gap-3">
               <div className="flex flex-col items-end">
-                <span className="text-[10px] font-mono uppercase tracking-wider text-[#a1a1aa]">
+                <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                   Daily Target
                 </span>
-                <span className="text-lg font-bold font-mono text-[#f97316]">
+                <span className="text-lg font-bold font-mono text-primary">
                   {targets.calories.toLocaleString()} kcal
                 </span>
               </div>
-              <div className="h-10 w-10 rounded-full bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-bold">
+              <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-background text-sm font-bold">
                 D
               </div>
             </div>
@@ -1211,20 +1212,20 @@ export default function DashboardClient() {
             className="flex flex-col items-center justify-center text-center py-20 px-4"
           >
             {/* Icon */}
-            <div className="w-24 h-24 rounded-full bg-[#f97316]/10 border-2 border-[#f97316]/20 flex items-center justify-center mb-8">
+            <div className="w-24 h-24 rounded-full bg-primary/10 border-2 border-primary/20 flex items-center justify-center mb-8">
               <span className="text-5xl">🍽️</span>
             </div>
 
             {/* Heading */}
-            <p className="text-xs font-mono tracking-[0.2em] uppercase text-[#a1a1aa] mb-3">
+            <p className="text-xs font-mono tracking-[0.2em] uppercase text-muted-foreground mb-3">
               /// GET STARTED
             </p>
-            <h2 className="text-3xl md:text-4xl font-heading uppercase tracking-tight text-[#fafafa] mb-4">
-              NO MEAL PLANS YET<span className="text-[#f97316]">.</span>
+            <h2 className="text-3xl md:text-4xl font-heading uppercase tracking-tight text-foreground mb-4">
+              NO MEAL PLANS YET<span className="text-primary">.</span>
             </h2>
 
             {/* Description */}
-            <p className="text-[#a1a1aa] text-base max-w-md mb-8 leading-relaxed">
+            <p className="text-muted-foreground text-base max-w-md mb-8 leading-relaxed">
               Generate your first personalized 7-day meal plan tailored to your goals, preferences, and macros.
             </p>
 
@@ -1232,7 +1233,7 @@ export default function DashboardClient() {
             <Link
               href="/generate"
               data-testid="generate-first-plan-cta"
-              className="inline-flex items-center gap-3 px-8 py-4 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-sm font-bold uppercase tracking-wider rounded-xl transition-all duration-200 shadow-lg shadow-[#f97316]/20 hover:shadow-[#f97316]/30 hover:scale-[1.02]"
+              className="inline-flex items-center gap-3 px-8 py-4 bg-primary hover:bg-primary/90 text-background text-sm font-bold uppercase tracking-wider rounded-xl transition-all duration-200 shadow-lg shadow-primary/20 hover:shadow-primary/30 hover:scale-[1.02]"
             >
               <span>⚡</span>
               Generate Your First Plan
@@ -1241,27 +1242,27 @@ export default function DashboardClient() {
 
             {/* Sub-actions */}
             <div className="mt-12 grid grid-cols-1 sm:grid-cols-3 gap-4 max-w-lg w-full">
-              <div className="flex flex-col items-center p-4 card-elevation border border-[#2a2a2a] rounded-xl">
+              <div className="flex flex-col items-center p-4 card-elevation border border-border rounded-xl">
                 <span className="text-2xl mb-2">🎯</span>
-                <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+                <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
                   Set Goals
                 </p>
               </div>
-              <div className="flex flex-col items-center p-4 card-elevation border border-[#2a2a2a] rounded-xl">
+              <div className="flex flex-col items-center p-4 card-elevation border border-border rounded-xl">
                 <span className="text-2xl mb-2">📊</span>
-                <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+                <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
                   Track Macros
                 </p>
               </div>
-              <div className="flex flex-col items-center p-4 card-elevation border border-[#2a2a2a] rounded-xl">
+              <div className="flex flex-col items-center p-4 card-elevation border border-border rounded-xl">
                 <span className="text-2xl mb-2">🛒</span>
-                <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+                <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
                   Grocery Lists
                 </p>
               </div>
             </div>
 
-            <p className="text-xs text-[#a1a1aa] mt-8">
+            <p className="text-xs text-muted-foreground mt-8">
               Your AI-powered nutrition protocol starts here
             </p>
           </div>
@@ -1269,23 +1270,23 @@ export default function DashboardClient() {
           {/* ═══ TODAY'S LOG (EMPTY STATE) ═══ */}
           <section
             data-testid="todays-log-section"
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 mt-8 max-w-2xl mx-auto"
+            className="bg-card border border-border rounded-2xl p-6 mt-8 max-w-2xl mx-auto"
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+              <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
                 /// Today&apos;s Log
               </p>
-              <span className="text-xs text-[#a1a1aa]">
+              <span className="text-xs text-muted-foreground">
                 0 items logged
               </span>
             </div>
             <div data-testid="empty-log-state" className="text-center py-8 space-y-4">
-              <div className="w-16 h-16 mx-auto rounded-full bg-[#f97316]/10 flex items-center justify-center">
+              <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
                 <span className="text-3xl">🍽️</span>
               </div>
               <div>
-                <p className="text-[#fafafa] text-sm font-semibold">No meals logged yet today</p>
-                <p className="text-xs text-[#a1a1aa] mt-1">
+                <p className="text-foreground text-sm font-semibold">No meals logged yet today</p>
+                <p className="text-xs text-muted-foreground mt-1">
                   Start tracking to see your progress toward today&apos;s goals.
                 </p>
               </div>
@@ -1293,7 +1294,7 @@ export default function DashboardClient() {
                 <Link
                   href="/tracking"
                   data-testid="log-first-meal-btn"
-                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-wide bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] rounded-xl transition-colors"
+                  className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-wide bg-primary hover:bg-primary/90 text-background rounded-xl transition-colors"
                 >
                   <span>🔥</span> Log Your First Meal
                 </Link>
@@ -1304,9 +1305,9 @@ export default function DashboardClient() {
           {/* ═══ QUICK ACTIONS BAR ═══ */}
           <section
             data-testid="quick-actions-section"
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6 mt-4 max-w-2xl mx-auto"
+            className="bg-card border border-border rounded-2xl p-6 mt-4 max-w-2xl mx-auto"
           >
-            <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-4">
+            <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-4">
               /// Quick Actions
             </p>
             <div className="flex flex-wrap gap-3">
@@ -1361,23 +1362,23 @@ export default function DashboardClient() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a]">
+    <div className="min-h-screen bg-background">
       {/* Header */}
-      <header className="border-b border-[#2a2a2a] bg-[#0a0a0a]/80 backdrop-blur-sm sticky top-0 z-50">
+      <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
-          <h1 className="text-2xl font-heading uppercase tracking-wide text-[#fafafa]">
-            <span className="text-[#f97316]">///</span> Dashboard
+          <h1 className="text-2xl font-heading uppercase tracking-wide text-foreground">
+            <span className="text-primary">///</span> Dashboard
           </h1>
           <div className="flex items-center gap-3">
             <div className="flex flex-col items-end">
-              <span className="text-[10px] font-mono uppercase tracking-wider text-[#a1a1aa]">
+              <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
                 Daily Target
               </span>
-              <span className="text-lg font-bold font-mono text-[#f97316]">
+              <span className="text-lg font-bold font-mono text-primary">
                 {macros.calories.target.toLocaleString()} kcal
               </span>
             </div>
-            <div className="h-10 w-10 rounded-full bg-[#f97316] flex items-center justify-center text-[#0a0a0a] text-sm font-bold">
+            <div className="h-10 w-10 rounded-full bg-primary flex items-center justify-center text-background text-sm font-bold">
               D
             </div>
           </div>
@@ -1395,13 +1396,13 @@ export default function DashboardClient() {
 
         {/* Page Title */}
         <div className="space-y-2">
-          <p className="text-xs font-mono tracking-[0.2em] uppercase text-[#a1a1aa]">
+          <p className="text-xs font-mono tracking-[0.2em] uppercase text-muted-foreground">
             /// DASHBOARD
           </p>
           <h2 className="text-4xl font-heading uppercase tracking-tight">
-            WELCOME BACK<span className="text-[#f97316]">.</span>
+            WELCOME BACK<span className="text-primary">.</span>
           </h2>
-          <p className="text-[#a1a1aa]">
+          <p className="text-muted-foreground">
             Your nutrition protocol is ready.
           </p>
         </div>
@@ -1409,29 +1410,29 @@ export default function DashboardClient() {
         {/* ═══ MACRO RINGS SECTION ═══ */}
         <section
           data-testid="macro-rings-section"
-          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
+          className="bg-card border border-border rounded-2xl p-6"
         >
           <div className="flex items-center justify-between mb-6">
-            <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+            <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
               /// Macro Rings
             </p>
             <div className="flex items-center gap-3">
               {isTrainingDay ? (
                 <span
                   data-testid="training-day-badge"
-                  className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full bg-[#f97316]/15 text-[#f97316] border border-[#f97316]/30"
+                  className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full bg-primary/15 text-primary border border-primary/30"
                 >
                   Training Day +{trainingBonusKcal} kcal
                 </span>
               ) : (
                 <span
                   data-testid="rest-day-badge"
-                  className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full bg-[#3b82f6]/15 text-[#3b82f6] border border-[#3b82f6]/30"
+                  className="px-3 py-1 text-[11px] font-bold uppercase tracking-wider rounded-full bg-chart-3/15 text-chart-3 border border-chart-3/30"
                 >
                   Rest Day
                 </span>
               )}
-              <p className="text-xs text-[#a1a1aa]">Today</p>
+              <p className="text-xs text-muted-foreground">Today</p>
             </div>
           </div>
 
@@ -1441,7 +1442,7 @@ export default function DashboardClient() {
               current={macros.calories.current}
               target={macros.calories.target}
               unit="kcal"
-              color="#f97316"
+              color="var(--primary)"
               size={120}
             />
             <MacroRing
@@ -1449,7 +1450,7 @@ export default function DashboardClient() {
               current={macros.protein.current}
               target={macros.protein.target}
               unit="g"
-              color="#3b82f6"
+              color="var(--chart-3)"
               size={120}
             />
             <MacroRing
@@ -1457,7 +1458,7 @@ export default function DashboardClient() {
               current={macros.carbs.current}
               target={macros.carbs.target}
               unit="g"
-              color="#f59e0b"
+              color="var(--color-warning)"
               size={120}
             />
             <MacroRing
@@ -1465,30 +1466,30 @@ export default function DashboardClient() {
               current={macros.fat.current}
               target={macros.fat.target}
               unit="g"
-              color="#ef4444"
+              color="var(--destructive)"
               size={120}
             />
           </div>
 
           {/* Remaining Budget */}
           <div className="mt-6 text-center">
-            <p className="text-sm text-[#a1a1aa]">
+            <p className="text-sm text-muted-foreground">
               {isOverProtein ? (
-                <span className="text-[#ef4444] font-semibold">
+                <span className="text-destructive font-semibold">
                   {Math.abs(remaining.protein)}g protein over
                 </span>
               ) : (
-                <span className="text-[#3b82f6] font-semibold">
+                <span className="text-chart-3 font-semibold">
                   {remaining.protein}g protein
                 </span>
               )}
               {' '}·{' '}
               {isOverCalories ? (
-                <span className="text-[#ef4444] font-semibold">
+                <span className="text-destructive font-semibold">
                   {Math.abs(remaining.calories)} kcal over
                 </span>
               ) : (
-                <span className="text-[#f97316] font-semibold">
+                <span className="text-primary font-semibold">
                   {remaining.calories} kcal
                 </span>
               )}{' '}
@@ -1500,48 +1501,48 @@ export default function DashboardClient() {
         {/* ═══ ADHERENCE SCORE SECTION ═══ */}
         <section
           data-testid="adherence-score-section"
-          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
+          className="bg-card border border-border rounded-2xl p-6"
         >
           <div className="flex items-center justify-between mb-4">
-            <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+            <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
               /// Adherence Score
             </p>
           </div>
           <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">
             <div className="flex items-center gap-4 sm:gap-8">
               <div className="flex flex-col items-center">
-                <span data-testid="adherence-score-today" className="text-4xl sm:text-5xl font-black text-[#22c55e] font-mono">
+                <span data-testid="adherence-score-today" className="text-4xl sm:text-5xl font-black text-success font-mono">
                   {adherenceScore}
                 </span>
-                <span className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mt-1">
+                <span className="text-xs font-mono tracking-wider uppercase text-muted-foreground mt-1">
                   Today
                 </span>
               </div>
-              <div className="h-12 w-px bg-[#2a2a2a]" />
+              <div className="h-12 w-px bg-border" />
               {weeklyAverageAdherence !== null && weeklyAverageAdherence !== undefined ? (
                 <div className="flex flex-col items-center">
                   <span data-testid="adherence-score-weekly" className="text-2xl sm:text-3xl font-bold font-mono" style={{
-                    color: weeklyAverageAdherence >= 80 ? '#22c55e' : weeklyAverageAdherence >= 50 ? '#eab308' : '#ef4444'
+                    color: weeklyAverageAdherence >= 80 ? 'var(--color-success)' : weeklyAverageAdherence >= 50 ? 'var(--color-warning)' : 'var(--destructive)'
                   }}>
                     {weeklyAverageAdherence}
                   </span>
-                  <span className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mt-1">
+                  <span className="text-xs font-mono tracking-wider uppercase text-muted-foreground mt-1">
                     7-Day Avg
                   </span>
                 </div>
               ) : (
                 <div className="flex flex-col items-center">
-                  <span className="text-2xl sm:text-3xl font-bold font-mono text-[#a1a1aa]">—</span>
-                  <span className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mt-1">
+                  <span className="text-2xl sm:text-3xl font-bold font-mono text-muted-foreground">—</span>
+                  <span className="text-xs font-mono tracking-wider uppercase text-muted-foreground mt-1">
                     7-Day Avg
                   </span>
                 </div>
               )}
             </div>
-            <div className="hidden sm:block h-12 w-px bg-[#2a2a2a]" />
+            <div className="hidden sm:block h-12 w-px bg-border" />
             <div className="w-full sm:flex-1">
               <div
-                className="h-3 bg-[#2a2a2a] rounded-full overflow-hidden"
+                className="h-3 bg-border rounded-full overflow-hidden"
                 role="progressbar"
                 aria-label="Daily adherence score"
                 aria-valuenow={adherenceScore}
@@ -1549,11 +1550,11 @@ export default function DashboardClient() {
                 aria-valuetext={`${adherenceScore}% daily adherence`}
               >
                 <div
-                  className="h-full bg-gradient-to-r from-[#22c55e] to-[#22c55e]/70 rounded-full transition-all duration-700"
+                  className="h-full bg-gradient-to-r from-success to-success/70 rounded-full transition-all duration-700"
                   style={{ width: `${adherenceScore}%` }}
                 />
               </div>
-              <p className="text-[10px] text-[#a1a1aa] mt-1">
+              <p className="text-[10px] text-muted-foreground mt-1">
                 0 — 100 daily score
               </p>
             </div>
@@ -1566,25 +1567,25 @@ export default function DashboardClient() {
           <section
             id="todays-plan"
             data-testid="todays-plan-section"
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
+            className="bg-card border border-border rounded-2xl p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+              <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
                 /// Today&apos;s Plan
               </p>
               <Link
                 href="/meal-plan"
-                className="text-xs text-[#f97316] hover:text-[#ea580c] font-semibold uppercase tracking-wide transition-colors py-4 px-2 -mx-2 inline-block"
+                className="text-xs text-primary hover:text-primary/90 font-semibold uppercase tracking-wide transition-colors py-4 px-2 -mx-2 inline-block"
               >
                 View Full Plan →
               </Link>
             </div>
             {todayPlanMeals.length === 0 ? (
               <div className="text-center py-8">
-                <p className="text-[#a1a1aa] text-sm">No meal plan for today.</p>
+                <p className="text-muted-foreground text-sm">No meal plan for today.</p>
                 <Link
                   href="/generate"
-                  className="text-[#f97316] text-sm mt-2 inline-block hover:underline py-4 px-2 -mx-2"
+                  className="text-primary text-sm mt-2 inline-block hover:underline py-4 px-2 -mx-2"
                 >
                   Generate a plan →
                 </Link>
@@ -1613,37 +1614,37 @@ export default function DashboardClient() {
           {/* ═══ TODAY'S LOG SECTION ═══ */}
           <section
             data-testid="todays-log-section"
-            className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
+            className="bg-card border border-border rounded-2xl p-6"
           >
             <div className="flex items-center justify-between mb-4">
-              <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
+              <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
                 /// Today&apos;s Log
               </p>
-              <span className="text-xs text-[#a1a1aa]">
+              <span className="text-xs text-muted-foreground">
                 {trackedMeals.length} item{trackedMeals.length !== 1 ? 's' : ''} logged
               </span>
             </div>
             {trackedMeals.length === 0 ? (
               <div data-testid="empty-log-state" className="text-center py-8 space-y-4">
-                <div className="w-16 h-16 mx-auto rounded-full bg-[#f97316]/10 flex items-center justify-center">
+                <div className="w-16 h-16 mx-auto rounded-full bg-primary/10 flex items-center justify-center">
                   <span className="text-3xl">🍽️</span>
                 </div>
                 <div>
-                  <p className="text-[#fafafa] text-sm font-semibold">No meals logged yet today</p>
-                  <p className="text-xs text-[#a1a1aa] mt-1">
+                  <p className="text-foreground text-sm font-semibold">No meals logged yet today</p>
+                  <p className="text-xs text-muted-foreground mt-1">
                     Start tracking to see your progress toward today&apos;s goals.
                   </p>
                 </div>
                 <div className="flex flex-col sm:flex-row items-center justify-center gap-2 pt-2">
                   {todayPlanMeals.length > 0 ? (
-                    <p className="text-xs text-[#a1a1aa]">
-                      Tap <span className="text-[#f97316] font-bold">&quot;Log&quot;</span> on a plan meal to get started!
+                    <p className="text-xs text-muted-foreground">
+                      Tap <span className="text-primary font-bold">&quot;Log&quot;</span> on a plan meal to get started!
                     </p>
                   ) : (
                     <Link
                       href="/tracking"
                       data-testid="log-first-meal-btn"
-                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-wide bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] rounded-xl transition-colors"
+                      className="inline-flex items-center gap-2 px-4 py-2 text-sm font-bold uppercase tracking-wide bg-primary hover:bg-primary/90 text-background rounded-xl transition-colors"
                     >
                       <span>🔥</span> Log Your First Meal
                     </Link>
@@ -1651,7 +1652,7 @@ export default function DashboardClient() {
                 </div>
               </div>
             ) : (
-              <div className="divide-y divide-[#2a2a2a]">
+              <div className="divide-y divide-border">
                 {trackedMeals.map((entry) => (
                   <LogEntry
                     key={entry.id}
@@ -1671,8 +1672,8 @@ export default function DashboardClient() {
                 ))}
               </div>
             )}
-            <div className="mt-4 pt-4 border-t border-[#2a2a2a] text-center">
-              <p className="text-xs text-[#a1a1aa]">
+            <div className="mt-4 pt-4 border-t border-border text-center">
+              <p className="text-xs text-muted-foreground">
                 Log meals to see your progress update in real-time
               </p>
             </div>
@@ -1682,9 +1683,9 @@ export default function DashboardClient() {
         {/* ═══ QUICK ACTIONS BAR ═══ */}
         <section
           data-testid="quick-actions-section"
-          className="bg-[#1a1a1a] border border-[#2a2a2a] rounded-2xl p-6"
+          className="bg-card border border-border rounded-2xl p-6"
         >
-          <p className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa] mb-4">
+          <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-4">
             /// Quick Actions
           </p>
           <div className="flex flex-wrap gap-3">

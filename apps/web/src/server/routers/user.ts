@@ -1,10 +1,12 @@
 import { z } from 'zod'
 import { TRPCError } from '@trpc/server'
 import { router, protectedProcedure } from '../trpc'
+import { safeJsonParse } from '@/lib/utils/safe-json'
+import { StepDataSchema } from '@/lib/schemas/plan'
 
 export const userRouter = router({
   getOnboardingState: protectedProcedure.query(async ({ ctx }) => {
-    const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+    const dbUserId = ctx.dbUserId
     const state = await ctx.prisma.onboardingState.findUnique({
       where: { userId: dbUserId },
     })
@@ -19,13 +21,13 @@ export const userRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
       const existing = await ctx.prisma.onboardingState.findUnique({
         where: { userId: dbUserId },
       })
 
       // Merge step data
-      const existingData = existing?.stepData ? JSON.parse(existing.stepData) : {}
+      const existingData = safeJsonParse(existing?.stepData, StepDataSchema, {})
       const mergedData = { ...existingData, ...input.data }
 
       if (existing) {
@@ -85,7 +87,7 @@ export const userRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Calculate metabolic profile
       const bmr =
@@ -166,7 +168,7 @@ export const userRouter = router({
     }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {
-    const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+    const dbUserId = ctx.dbUserId
     const profile = await ctx.prisma.userProfile.findFirst({
       where: { userId: dbUserId, isActive: true },
     })
@@ -206,7 +208,7 @@ export const userRouter = router({
       })
     )
     .mutation(async ({ ctx, input }) => {
-      const dbUserId = (ctx as Record<string, unknown>).dbUserId as string
+      const dbUserId = ctx.dbUserId
 
       // Find existing active profile
       const existing = await ctx.prisma.userProfile.findFirst({

@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { cookies } from "next/headers";
-import { safeLogError } from "@/lib/safe-logger";
+import { logger } from "@/lib/safe-logger";
 import { isDevMode } from "@/lib/dev-mode";
 
 /**
@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
     const cookieStore = await cookies();
     cookieStore.set("dev-user-id", user.id, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === 'production',
+      secure: (process.env.NODE_ENV as string) === 'production',
       path: "/",
       maxAge: 60 * 60 * 24 * 7, // 1 week
       sameSite: "lax",
@@ -107,7 +107,7 @@ export async function POST(request: NextRequest) {
       message: "Signed in successfully",
     });
   } catch (error: any) {
-    safeLogError("Dev auth signin error:", error);
+    logger.error("Dev auth signin error:", error);
     return NextResponse.json(
       { error: "Failed to sign in" },
       { status: 500 }

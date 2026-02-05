@@ -55,8 +55,8 @@ export default function DevSignInPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] flex items-center justify-center p-8">
-      <div className="max-w-md w-full bg-[#1a1a1a] rounded-lg p-8 border border-[#2a2a2a]">
+    <div className="min-h-screen bg-background text-foreground flex items-center justify-center p-8">
+      <div className="max-w-md w-full bg-card rounded-lg p-8 border border-border">
         <h1 className="text-2xl font-bold mb-6 text-center">Dev Mode Sign In</h1>
 
         <div className="space-y-4">
@@ -69,7 +69,7 @@ export default function DevSignInPage() {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              className="w-full px-4 py-2 bg-[#0a0a0a] border border-[#2a2a2a] rounded focus:outline-none focus:border-[#f97316]"
+              className="w-full px-4 py-2 bg-background border border-border rounded focus:outline-none focus:border-primary"
               placeholder="test@example.com"
             />
           </div>
@@ -77,7 +77,7 @@ export default function DevSignInPage() {
           <button
             onClick={handleSignIn}
             disabled={loading}
-            className="w-full py-3 bg-[#f97316] hover:bg-[#f97316]/90 rounded font-semibold disabled:opacity-50"
+            className="w-full py-3 bg-primary hover:bg-primary/90 rounded font-semibold disabled:opacity-50"
           >
             {loading ? 'Signing in...' : 'Sign In'}
           </button>
@@ -89,7 +89,7 @@ export default function DevSignInPage() {
           )}
         </div>
 
-        <div className="mt-6 pt-6 border-t border-[#2a2a2a] text-sm text-[#a1a1aa]">
+        <div className="mt-6 pt-6 border-t border-border text-sm text-muted-foreground">
           <p className="mb-2">This is a dev-only sign-in page for testing purposes.</p>
           <p>After signing in, you'll be redirected to the test page.</p>
         </div>

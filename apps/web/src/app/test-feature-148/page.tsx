@@ -74,22 +74,22 @@ export default function TestFeature148Page() {
   };
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] p-8 text-[#fafafa]">
+    <div className="min-h-screen bg-background p-8 text-foreground">
       <div className="mx-auto max-w-2xl">
         <h1 className="text-2xl font-black uppercase tracking-wider">
           Feature #148 Test
         </h1>
-        <p className="mt-2 font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+        <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
           /// FatSecret adapter autocomplete returns suggestions
         </p>
 
         <div className="mt-8 space-y-4">
           {/* Test Steps */}
-          <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-            <h2 className="text-sm font-bold uppercase text-[#f97316]">
+          <div className="rounded-lg border border-border bg-card p-6">
+            <h2 className="text-sm font-bold uppercase text-primary">
               Verification Steps
             </h2>
-            <ul className="mt-3 space-y-2 text-sm text-[#a1a1aa]">
+            <ul className="mt-3 space-y-2 text-sm text-muted-foreground">
               <li>✅ Call autocomplete with query 'chick'</li>
               <li>✅ Verify array of string suggestions returned</li>
               <li>✅ Verify suggestions are relevant to query</li>
@@ -98,8 +98,8 @@ export default function TestFeature148Page() {
           </div>
 
           {/* Query Input */}
-          <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-4">
-            <label className="text-xs font-bold uppercase text-[#a1a1aa]">
+          <div className="rounded-lg border border-border bg-card p-4">
+            <label className="text-xs font-bold uppercase text-muted-foreground">
               Test Query
             </label>
             <div className="mt-2 flex gap-2">
@@ -107,13 +107,13 @@ export default function TestFeature148Page() {
                 type="text"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                className="flex-1 rounded bg-[#0a0a0a] border border-[#2a2a2a] px-3 py-2 text-sm text-[#fafafa] focus:outline-none focus:border-[#f97316]"
+                className="flex-1 rounded bg-background border border-border px-3 py-2 text-sm text-foreground focus:outline-none focus:border-primary"
                 placeholder="Enter search query..."
               />
               <button
                 onClick={() => runTest(query)}
                 disabled={loading || query.length < 2}
-                className="rounded-lg bg-[#f97316] px-6 py-2 text-sm font-black uppercase tracking-wider text-[#0a0a0a] transition-colors hover:bg-[#ea580c] disabled:opacity-50"
+                className="rounded-lg bg-primary px-6 py-2 text-sm font-black uppercase tracking-wider text-background transition-colors hover:bg-primary/90 disabled:opacity-50"
               >
                 {loading ? "Testing..." : "Test"}
               </button>
@@ -125,28 +125,28 @@ export default function TestFeature148Page() {
             <button
               onClick={() => { setQuery("chick"); runTest("chick"); }}
               disabled={loading}
-              className="rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#a1a1aa] transition-colors hover:bg-[#252525] disabled:opacity-50"
+              className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
             >
               Test "chick"
             </button>
             <button
               onClick={() => { setQuery("chicken"); runTest("chicken"); }}
               disabled={loading}
-              className="rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#a1a1aa] transition-colors hover:bg-[#252525] disabled:opacity-50"
+              className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
             >
               Test "chicken"
             </button>
             <button
               onClick={() => { setQuery("broc"); runTest("broc"); }}
               disabled={loading}
-              className="rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#a1a1aa] transition-colors hover:bg-[#252525] disabled:opacity-50"
+              className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
             >
               Test "broc"
             </button>
             <button
               onClick={() => { setQuery("sal"); runTest("sal"); }}
               disabled={loading}
-              className="rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-xs font-bold uppercase tracking-wide text-[#a1a1aa] transition-colors hover:bg-[#252525] disabled:opacity-50"
+              className="rounded-lg border border-border bg-card px-4 py-2 text-xs font-bold uppercase tracking-wide text-muted-foreground transition-colors hover:bg-muted disabled:opacity-50"
             >
               Test "sal"
             </button>
@@ -157,15 +157,15 @@ export default function TestFeature148Page() {
             <div
               className={`rounded-lg border p-6 ${
                 !result.error && result.isArray && result.hasRelevantSuggestions && result.isFast
-                  ? "border-[#22c55e]/30 bg-[#22c55e]/5"
-                  : "border-[#ef4444]/30 bg-[#ef4444]/5"
+                  ? "border-green-500/30 bg-green-500/5"
+                  : "border-red-500/30 bg-red-500/5"
               }`}
             >
               <h3
                 className={`text-sm font-bold uppercase ${
                   !result.error && result.isArray && result.hasRelevantSuggestions && result.isFast
-                    ? "text-[#22c55e]"
-                    : "text-[#ef4444]"
+                    ? "text-green-500"
+                    : "text-red-500"
                 }`}
               >
                 {!result.error && result.isArray && result.hasRelevantSuggestions && result.isFast
@@ -176,36 +176,36 @@ export default function TestFeature148Page() {
               {!result.error && (
                 <div className="mt-4 space-y-2 font-mono text-xs">
                   <div className="flex justify-between">
-                    <span className="text-[#a1a1aa]">Query:</span>
-                    <span className="text-[#fafafa]">&quot;{result.query}&quot;</span>
+                    <span className="text-muted-foreground">Query:</span>
+                    <span className="text-foreground">&quot;{result.query}&quot;</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#a1a1aa]">Array Returned:</span>
-                    <span className={result.isArray ? "text-[#22c55e]" : "text-[#ef4444]"}>
+                    <span className="text-muted-foreground">Array Returned:</span>
+                    <span className={result.isArray ? "text-green-500" : "text-red-500"}>
                       {result.isArray ? "YES" : "NO"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#a1a1aa]">Suggestion Count:</span>
-                    <span className={result.suggestionCount > 0 ? "text-[#22c55e]" : "text-[#f59e0b]"}>
+                    <span className="text-muted-foreground">Suggestion Count:</span>
+                    <span className={result.suggestionCount > 0 ? "text-green-500" : "text-amber-500"}>
                       {result.suggestionCount}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#a1a1aa]">Relevant to Query:</span>
-                    <span className={result.hasRelevantSuggestions ? "text-[#22c55e]" : "text-[#ef4444]"}>
+                    <span className="text-muted-foreground">Relevant to Query:</span>
+                    <span className={result.hasRelevantSuggestions ? "text-green-500" : "text-red-500"}>
                       {result.hasRelevantSuggestions ? "YES" : "NO"}
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#a1a1aa]">Response Time:</span>
-                    <span className={result.isFast ? "text-[#22c55e]" : "text-[#f59e0b]"}>
+                    <span className="text-muted-foreground">Response Time:</span>
+                    <span className={result.isFast ? "text-green-500" : "text-amber-500"}>
                       {result.responseTimeMs}ms
                     </span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-[#a1a1aa]">Fast Response (&lt;500ms):</span>
-                    <span className={result.isFast ? "text-[#22c55e]" : "text-[#ef4444]"}>
+                    <span className="text-muted-foreground">Fast Response (&lt;500ms):</span>
+                    <span className={result.isFast ? "text-green-500" : "text-red-500"}>
                       {result.isFast ? "YES" : "NO"}
                     </span>
                   </div>
@@ -214,12 +214,12 @@ export default function TestFeature148Page() {
 
               {result.suggestions.length > 0 && (
                 <div className="mt-4">
-                  <h4 className="text-xs font-bold uppercase text-[#a1a1aa] mb-2">
+                  <h4 className="text-xs font-bold uppercase text-muted-foreground mb-2">
                     Suggestions:
                   </h4>
                   <ul className="space-y-1">
                     {result.suggestions.map((s, i) => (
-                      <li key={i} className="font-mono text-xs text-[#fafafa] bg-[#0a0a0a] px-3 py-2 rounded">
+                      <li key={i} className="font-mono text-xs text-foreground bg-background px-3 py-2 rounded">
                         {s}
                       </li>
                     ))}
@@ -228,7 +228,7 @@ export default function TestFeature148Page() {
               )}
 
               {result.error && (
-                <p className="mt-3 text-sm text-[#ef4444]">Error: {result.error}</p>
+                <p className="mt-3 text-sm text-red-500">Error: {result.error}</p>
               )}
             </div>
           )}

@@ -3,6 +3,7 @@
 // ============================================================
 
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * Sync frequencies in milliseconds
@@ -63,7 +64,7 @@ export async function syncAllUserActivity(): Promise<{
       } catch (error) {
         const errorMsg = `Failed to sync user ${userId}: ${error instanceof Error ? error.message : 'Unknown error'}`;
         errors.push(errorMsg);
-        console.error(errorMsg);
+        logger.error(errorMsg);
       }
     }
 
@@ -74,7 +75,7 @@ export async function syncAllUserActivity(): Promise<{
       errors,
     };
   } catch (error) {
-    console.error('Error in syncAllUserActivity:', error);
+    logger.error('Error in syncAllUserActivity:', error);
     return {
       success: false,
       usersSynced,
@@ -102,7 +103,7 @@ export async function syncUserActivity(
   }
 
   if (connections.length === 0) {
-    console.log(`No active fitness connections for user ${userId}`);
+    logger.debug(`No active fitness connections for user ${userId}`);
     return;
   }
 
@@ -129,10 +130,10 @@ export async function syncUserActivity(
           data: { lastSyncAt: now },
         });
 
-        console.log(`Successfully synced ${connection.platform} for user ${userId}`);
+        logger.info(`Successfully synced ${connection.platform} for user ${userId}`);
       }
     } catch (error) {
-      console.error(
+      logger.error(
         `Error syncing ${connection.platform} for user ${userId}:`,
         error,
       );
@@ -222,7 +223,8 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
     },
   );
 
-  let sleepData = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let sleepData: any = null;
   if (sleepResponse.ok) {
     sleepData = await sleepResponse.json();
   }
@@ -270,7 +272,8 @@ async function syncOuraData(accessToken: string, syncDate: Date) {
     },
   );
 
-  let sleepData = null;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  let sleepData: any = null;
   if (sleepResponse.ok) {
     sleepData = await sleepResponse.json();
   }
@@ -280,7 +283,7 @@ async function syncOuraData(accessToken: string, syncDate: Date) {
     data: {
       platform: 'oura',
       activity: activityData.data?.[0] || null,
-      sleep: sleepData.data?.[0] || null,
+      sleep: sleepData?.data?.[0] || null,
     },
   };
 }

@@ -70,13 +70,13 @@ export function Step4Dietary({ data, updateData }: Props) {
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-[#a1a1aa]">
+      <p className="text-sm text-muted-foreground">
         Your dietary preferences help us curate meals you&apos;ll enjoy.
       </p>
 
       {/* Dietary Style */}
       <div>
-        <label id="onboarding-dietary-style-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label id="onboarding-dietary-style-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Dietary Style
         </label>
         <div className="grid grid-cols-2 gap-2 sm:grid-cols-3" role="group" aria-labelledby="onboarding-dietary-style-label">
@@ -93,10 +93,10 @@ export function Step4Dietary({ data, updateData }: Props) {
               }}
               role="radio"
               aria-checked={data.dietaryStyle === value}
-              className={`rounded-lg border px-4 py-3 text-xs font-bold uppercase tracking-wide transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+              className={`rounded-lg border px-4 py-3 text-xs font-bold uppercase tracking-wide transition-colors min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.dietaryStyle === value
-                  ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
-                  : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-border bg-card text-muted-foreground hover:border-border/80"
               }`}
             >
               {label}
@@ -107,7 +107,7 @@ export function Step4Dietary({ data, updateData }: Props) {
 
       {/* Allergies */}
       <div>
-        <label id="onboarding-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label id="onboarding-allergies-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Allergies (select common or add custom)
         </label>
 
@@ -125,10 +125,10 @@ export function Step4Dietary({ data, updateData }: Props) {
                 }
               }}
               aria-pressed={data.allergies.includes(allergy.toLowerCase())}
-              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[200px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+              className={`rounded-full border px-4 py-2 text-xs font-medium transition-colors min-h-[44px] max-w-[200px] truncate focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.allergies.includes(allergy.toLowerCase())
-                  ? "border-[#ef4444] bg-[#ef4444]/10 text-[#ef4444]"
-                  : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                  ? "border-destructive bg-destructive/10 text-destructive"
+                  : "border-border bg-card text-muted-foreground hover:border-border/80"
               }`}
               title={allergy}
             >
@@ -146,7 +146,7 @@ export function Step4Dietary({ data, updateData }: Props) {
             onChange={(e) => setAllergyInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addAllergy()}
             placeholder="Type custom allergy and press Enter"
-            className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+            className="flex-1 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground placeholder-muted-foreground/50 outline-none focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           />
           <button
             type="button"
@@ -157,7 +157,7 @@ export function Step4Dietary({ data, updateData }: Props) {
                 addAllergy();
               }
             }}
-            className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+            className="rounded-lg bg-border px-4 py-3 text-sm font-bold text-foreground hover:bg-secondary min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           >
             Add
           </button>
@@ -169,7 +169,7 @@ export function Step4Dietary({ data, updateData }: Props) {
             {data.allergies.map((allergy) => (
               <span
                 key={allergy}
-                className="inline-flex flex-shrink-0 max-w-[250px] items-center gap-1 rounded-full border border-[#ef4444] bg-[#ef4444]/10 px-3 py-1 text-xs text-[#ef4444]"
+                className="inline-flex flex-shrink-0 max-w-[250px] items-center gap-1 rounded-full border border-destructive bg-destructive/10 px-3 py-1 text-xs text-destructive"
                 role="listitem"
                 title={allergy}
               >
@@ -183,7 +183,7 @@ export function Step4Dietary({ data, updateData }: Props) {
                       removeAllergy(allergy);
                     }
                   }}
-                  className="ml-1 flex-shrink-0 hover:text-[#f87171] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] rounded"
+                  className="ml-1 flex-shrink-0 hover:text-destructive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded"
                   aria-label={`Remove ${allergy} from allergies`}
                 >
                   &times;
@@ -196,7 +196,7 @@ export function Step4Dietary({ data, updateData }: Props) {
 
       {/* Exclusions */}
       <div>
-        <label htmlFor="onboarding-exclusions" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
+        <label htmlFor="onboarding-exclusions" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
           Food Exclusions
         </label>
         <div className="flex gap-2">
@@ -207,7 +207,7 @@ export function Step4Dietary({ data, updateData }: Props) {
             onChange={(e) => setExclusionInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && addExclusion()}
             placeholder="e.g., mushrooms, cilantro"
-            className="flex-1 rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-sm text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none focus:border-[#f97316] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+            className="flex-1 rounded-lg border border-border bg-card px-4 py-2 text-sm text-foreground placeholder-muted-foreground/50 outline-none focus:border-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           />
           <button
             type="button"
@@ -218,7 +218,7 @@ export function Step4Dietary({ data, updateData }: Props) {
                 addExclusion();
               }
             }}
-            className="rounded-lg bg-[#2a2a2a] px-4 py-3 text-sm font-bold text-[#fafafa] hover:bg-[#3a3a3a] min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a]"
+            className="rounded-lg bg-border px-4 py-3 text-sm font-bold text-foreground hover:bg-secondary min-h-[44px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card"
           >
             Add
           </button>
@@ -228,7 +228,7 @@ export function Step4Dietary({ data, updateData }: Props) {
             {data.exclusions.map((item) => (
               <span
                 key={item}
-                className="inline-flex flex-shrink-0 max-w-[250px] items-center gap-1 rounded-full border border-[#2a2a2a] bg-[#1e1e1e] px-3 py-1 text-xs text-[#a1a1aa]"
+                className="inline-flex flex-shrink-0 max-w-[250px] items-center gap-1 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground"
                 title={item}
               >
                 <span className="truncate">{item}</span>
@@ -241,7 +241,7 @@ export function Step4Dietary({ data, updateData }: Props) {
                       removeExclusion(item);
                     }
                   }}
-                  className="ml-1 flex-shrink-0 text-[#ef4444] hover:text-[#f87171] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#ef4444] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] rounded"
+                  className="ml-1 flex-shrink-0 text-destructive hover:text-destructive/80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-destructive focus-visible:ring-offset-2 focus-visible:ring-offset-card rounded"
                   aria-label={`Remove ${item} from exclusions`}
                 >
                   &times;

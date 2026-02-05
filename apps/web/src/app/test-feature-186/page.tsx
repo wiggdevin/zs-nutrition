@@ -53,12 +53,12 @@ export default function TestFeature186Page() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-2xl mx-auto">
         <h1 className="text-2xl font-heading uppercase tracking-wider mb-2">
           Feature #186 Test: Weekly Trend Chart
         </h1>
-        <p className="text-[#a1a1aa] mb-6">
+        <p className="text-muted-foreground mb-6">
           Tests that the weekly trend chart displays correctly for all metrics (calories, protein, carbs, fat).
         </p>
 
@@ -66,7 +66,7 @@ export default function TestFeature186Page() {
           <button
             onClick={runTest}
             disabled={loading}
-            className="px-4 py-2 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-sm font-bold uppercase tracking-wide rounded-lg transition-colors disabled:opacity-50"
+            className="px-4 py-2 bg-primary hover:bg-primary/90 text-background text-sm font-bold uppercase tracking-wide rounded-lg transition-colors disabled:opacity-50"
           >
             {loading ? 'Running...' : 'Run Test'}
           </button>
@@ -74,7 +74,7 @@ export default function TestFeature186Page() {
           <button
             onClick={cleanup}
             disabled={loading}
-            className="ml-4 px-4 py-2 bg-[#27272a] hover:bg-[#3f3f46] text-[#fafafa] text-sm font-bold uppercase tracking-wide rounded-lg transition-colors disabled:opacity-50"
+            className="ml-4 px-4 py-2 bg-muted hover:bg-accent text-foreground text-sm font-bold uppercase tracking-wide rounded-lg transition-colors disabled:opacity-50"
           >
             Cleanup
           </button>
@@ -83,7 +83,7 @@ export default function TestFeature186Page() {
             href="/tracking/weekly-trend"
             target="_blank"
             rel="noopener noreferrer"
-            className="ml-4 inline-block px-4 py-2 bg-[#22c55e] hover:bg-[#16a34a] text-[#0a0a0a] text-sm font-bold uppercase tracking-wide rounded-lg transition-colors"
+            className="ml-4 inline-block px-4 py-2 bg-green-500 hover:bg-green-600 text-background text-sm font-bold uppercase tracking-wide rounded-lg transition-colors"
           >
             View Weekly Trend
           </a>
@@ -98,43 +98,43 @@ export default function TestFeature186Page() {
 
         {result && (
           <div className="space-y-3">
-            <div className="bg-[#18181b] border border-[#27272a] rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <h2 className="text-white font-semibold mb-3">Test Results</h2>
 
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <span className={`w-3 h-3 rounded-full ${result.step1_seeded ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className="text-sm text-[#a1a1aa]">Step 1: Seed 7 days of meal data</span>
+                  <span className="text-sm text-muted-foreground">Step 1: Seed 7 days of meal data</span>
                   {result.step1_seeded && <span className="text-green-400 text-xs ml-auto">✓ PASS</span>}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className={`w-3 h-3 rounded-full ${result.step2_caloriesChart ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className="text-sm text-[#a1a1aa]">Step 2: Calories chart data available</span>
+                  <span className="text-sm text-muted-foreground">Step 2: Calories chart data available</span>
                   {result.step2_caloriesChart && <span className="text-green-400 text-xs ml-auto">✓ PASS</span>}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className={`w-3 h-3 rounded-full ${result.step3_proteinChart ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className="text-sm text-[#a1a1aa]">Step 3: Protein chart data available</span>
+                  <span className="text-sm text-muted-foreground">Step 3: Protein chart data available</span>
                   {result.step3_proteinChart && <span className="text-green-400 text-xs ml-auto">✓ PASS</span>}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className={`w-3 h-3 rounded-full ${result.step4_carbsChart ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className="text-sm text-[#a1a1aa]">Step 4: Carbs chart data available</span>
+                  <span className="text-sm text-muted-foreground">Step 4: Carbs chart data available</span>
                   {result.step4_carbsChart && <span className="text-green-400 text-xs ml-auto">✓ PASS</span>}
                 </div>
 
                 <div className="flex items-center gap-2">
                   <span className={`w-3 h-3 rounded-full ${result.step5_fatChart ? 'bg-green-500' : 'bg-red-500'}`} />
-                  <span className="text-sm text-[#a1a1aa]">Step 5: Fat chart data available</span>
+                  <span className="text-sm text-muted-foreground">Step 5: Fat chart data available</span>
                   {result.step5_fatChart && <span className="text-green-400 text-xs ml-auto">✓ PASS</span>}
                 </div>
               </div>
 
               {result.errors.length > 0 && (
-                <div className="mt-4 pt-4 border-t border-[#27272a]">
+                <div className="mt-4 pt-4 border-t border-border">
                   <p className="text-red-400 text-sm font-semibold mb-2">Errors:</p>
                   <ul className="text-red-300 text-xs space-y-1">
                     {result.errors.map((err, i) => (
@@ -144,8 +144,8 @@ export default function TestFeature186Page() {
                 </div>
               )}
 
-              <div className="mt-4 pt-4 border-t border-[#27272a]">
-                <p className="text-[#a1a1aa] text-xs">
+              <div className="mt-4 pt-4 border-t border-border">
+                <p className="text-muted-foreground text-xs">
                   All steps passed?{' '}
                   <span
                     className={`font-bold ${
@@ -170,9 +170,9 @@ export default function TestFeature186Page() {
               </div>
             </div>
 
-            <div className="bg-[#18181b] border border-[#27272a] rounded-lg p-4">
+            <div className="bg-card border border-border rounded-lg p-4">
               <h3 className="text-white font-semibold mb-2">Manual Verification Steps</h3>
-              <ol className="text-[#a1a1aa] text-sm space-y-2 list-decimal list-inside">
+              <ol className="text-muted-foreground text-sm space-y-2 list-decimal list-inside">
                 <li>Click "View Weekly Trend" button above</li>
                 <li>Verify chart shows for Calories (default)</li>
                 <li>Use the "Metric" dropdown to select Protein</li>

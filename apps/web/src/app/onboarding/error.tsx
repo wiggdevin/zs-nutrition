@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/safe-logger'
 
 export default function OnboardingError({
   error,
@@ -11,7 +12,7 @@ export default function OnboardingError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Onboarding error:', error)
+    logger.error('Onboarding error:', error)
   }, [error])
 
   return (

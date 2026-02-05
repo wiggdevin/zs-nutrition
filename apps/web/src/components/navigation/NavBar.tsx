@@ -78,11 +78,11 @@ export default function NavBar() {
   return (
     <>
       {/* Desktop: Top navigation bar */}
-      <nav className="hidden md:flex fixed top-0 left-0 right-0 z-50 h-14 items-center border-b border-[#2a2a2a] bg-[#0a0a0a]/95 backdrop-blur-sm px-6" data-testid="desktop-nav" aria-label="Main navigation">
+      <nav className="hidden md:flex fixed top-0 left-0 right-0 z-50 h-14 items-center border-b border-border bg-background/95 backdrop-blur-sm px-6" data-testid="desktop-nav" aria-label="Main navigation">
         {/* Brand */}
         <Link href="/dashboard" className="flex items-center gap-2 mr-8">
-          <span className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">///</span>
-          <span className="font-black text-sm uppercase tracking-wider text-[#f97316]">Zero Sum</span>
+          <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">///</span>
+          <span className="font-black text-sm uppercase tracking-wider text-primary">Zero Sum</span>
         </Link>
 
         {/* Nav links */}
@@ -97,10 +97,10 @@ export default function NavBar() {
                 aria-selected={!!isActive}
                 aria-current={isActive ? 'page' : undefined}
                 data-testid={`nav-${item.label.toLowerCase()}`}
-                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-[#f97316] focus-visible:outline-offset-2 ${
+                className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${
                   isActive
-                    ? 'bg-[#f97316]/10 text-[#f97316]'
-                    : 'text-[#a1a1aa] hover:bg-[#1a1a1a] hover:text-[#fafafa]'
+                    ? 'bg-primary/10 text-primary'
+                    : 'text-muted-foreground hover:bg-card hover:text-foreground'
                 }`}
               >
                 {item.icon(!!isActive)}
@@ -112,7 +112,7 @@ export default function NavBar() {
       </nav>
 
       {/* Mobile: Bottom tab bar */}
-      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-[#2a2a2a] bg-[#0a0a0a]/95 backdrop-blur-sm safe-area-bottom" data-testid="mobile-nav" aria-label="Main navigation">
+      <nav className="md:hidden fixed bottom-0 left-0 right-0 z-50 border-t border-border bg-background/95 backdrop-blur-sm safe-area-bottom" data-testid="mobile-nav" aria-label="Main navigation">
         <div className="flex items-center justify-around h-16 px-2" role="tablist">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/')
@@ -124,10 +124,10 @@ export default function NavBar() {
                 aria-selected={!!isActive}
                 aria-current={isActive ? 'page' : undefined}
                 data-testid={`nav-${item.label.toLowerCase()}`}
-                className={`flex flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1.5 min-w-[60px] transition-colors focus-visible:outline-2 focus-visible:outline-[#f97316] focus-visible:outline-offset-2 ${
+                className={`flex flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1.5 min-w-[60px] transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${
                   isActive
-                    ? 'text-[#f97316]'
-                    : 'text-[#a1a1aa] hover:text-[#fafafa]'
+                    ? 'text-primary'
+                    : 'text-muted-foreground hover:text-foreground'
                 }`}
               >
                 {item.icon(!!isActive)}

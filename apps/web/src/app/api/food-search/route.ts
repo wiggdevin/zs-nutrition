@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { FatSecretAdapter } from '@zero-sum/nutrition-engine'
-import { safeLogError } from '@/lib/safe-logger'
+import { logger } from '@/lib/safe-logger'
 import { foodSearchLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit'
 
 // Singleton FatSecret adapter instance
@@ -97,7 +97,7 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json({ results: enrichedResults, page, hasMore: foods.length === max })
   } catch (error) {
-    safeLogError('Food search error:', error)
+    logger.error('Food search error:', error)
     return NextResponse.json({ error: 'Search failed' }, { status: 500 })
   }
 }

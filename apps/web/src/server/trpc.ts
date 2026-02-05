@@ -10,6 +10,11 @@ export type Context = {
   prisma: typeof prisma
 }
 
+export type AuthedContext = Context & {
+  userId: string
+  dbUserId: string
+}
+
 export async function createContext(): Promise<Context> {
   const userId = await getClerkUserId()
   return {

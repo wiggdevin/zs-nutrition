@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { clearAllStores } from "@/lib/stores/clearStores";
-import { ClerkSignOutHandler } from "@/hooks/useClerkSignOut.tsx";
+import { ClerkSignOutHandler } from "@/hooks/useClerkSignOut";
 
 export default function SettingsAccount() {
   const [showDeactivateConfirm, setShowDeactivateConfirm] = useState(false);
@@ -59,17 +59,17 @@ export default function SettingsAccount() {
       {(clerkSignOut) => (
         <div className="space-y-6">
           {/* Sign Out */}
-          <div className="rounded-2xl border border-[#2a2a2a] bg-[#1a1a1a] p-6" data-testid="signout-section">
+          <div className="rounded-2xl border border-border bg-card p-6" data-testid="signout-section">
             <div className="mb-4">
-              <h2 className="text-xs font-mono tracking-wider uppercase text-[#a1a1aa]">
-                <span className="text-[#f97316]">///</span> Session
+              <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
+                <span className="text-primary">///</span> Session
               </h2>
             </div>
             <button
               onClick={() => handleSignOut(clerkSignOut)}
               disabled={signingOut}
               data-testid="settings-signout-btn"
-              className="w-full rounded-lg border border-[#2a2a2a] bg-[#1e1e1e] px-6 py-3 text-sm font-bold uppercase tracking-wide text-[#fafafa] hover:bg-[#252525] transition-colors disabled:opacity-50"
+              className="w-full rounded-lg border border-border bg-card px-6 py-3 text-sm font-bold uppercase tracking-wide text-foreground hover:bg-secondary transition-colors disabled:opacity-50"
             >
               {signingOut ? (
                 <span className="flex items-center justify-center gap-2">
@@ -83,12 +83,12 @@ export default function SettingsAccount() {
           </div>
 
           {/* Account Deactivation */}
-          <div className="rounded-2xl border border-red-500/20 bg-[#1a1a1a] p-6" data-testid="deactivation-section">
+          <div className="rounded-2xl border border-red-500/20 bg-card p-6" data-testid="deactivation-section">
             <div className="mb-4">
               <h2 className="text-xs font-mono tracking-wider uppercase text-red-400">
                 <span className="text-red-500">///</span> Danger Zone
               </h2>
-              <p className="mt-1 text-sm text-[#a1a1aa]">
+              <p className="mt-1 text-sm text-muted-foreground">
                 Deactivate your account. Your data will be preserved but inaccessible.
               </p>
             </div>
@@ -124,7 +124,7 @@ export default function SettingsAccount() {
                   </button>
                   <button
                     onClick={() => setShowDeactivateConfirm(false)}
-                    className="rounded-lg border border-[#2a2a2a] px-4 py-2.5 text-sm text-[#a1a1aa] hover:bg-[#252525] transition-colors"
+                    className="rounded-lg border border-border px-4 py-2.5 text-sm text-muted-foreground hover:bg-secondary transition-colors"
                   >
                     Cancel
                   </button>

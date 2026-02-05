@@ -45,14 +45,14 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-[#a1a1aa]">
+      <p className="text-sm text-muted-foreground">
         Tell us a bit about yourself so we can personalize your nutrition plan.
       </p>
 
       {/* Name */}
       <div>
-        <label htmlFor="onboarding-name" className="mb-1 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-          Name <span className="text-[#f97316]">*</span>
+        <label htmlFor="onboarding-name" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          Name <span className="text-primary">*</span>
         </label>
         <input
           id="onboarding-name"
@@ -62,10 +62,10 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           placeholder="Enter your name"
           aria-invalid={showErrors && !!errors.name}
           aria-describedby={showErrors && errors.name ? "onboarding-name-error" : undefined}
-          className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+          className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
             showErrors && errors.name
               ? "border-red-500 focus:border-red-500"
-              : "border-[#2a2a2a] focus:border-[#f97316]"
+              : "border-border focus:border-primary"
           }`}
         />
         {showErrors && errors.name && (
@@ -77,8 +77,8 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
 
       {/* Sex */}
       <div>
-        <label id="onboarding-sex-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-          Biological Sex <span className="text-[#f97316]">*</span>
+        <label id="onboarding-sex-label" className="mb-2 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          Biological Sex <span className="text-primary">*</span>
         </label>
         <div className="grid grid-cols-2 gap-3" role="group" aria-labelledby="onboarding-sex-label" aria-invalid={showErrors && !!errors.sex}>
           {(["male", "female"] as Sex[]).map((sex) => (
@@ -94,12 +94,12 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
               }}
               role="radio"
               aria-checked={data.sex === sex}
-              className={`rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+              className={`rounded-lg border px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
                 data.sex === sex
-                  ? "border-[#f97316] bg-[#f97316]/10 text-[#f97316]"
+                  ? "border-primary bg-primary/10 text-primary"
                   : showErrors && errors.sex
-                    ? "border-red-500 bg-[#1e1e1e] text-[#a1a1aa] hover:border-red-400"
-                    : "border-[#2a2a2a] bg-[#1e1e1e] text-[#a1a1aa] hover:border-[#3a3a3a]"
+                    ? "border-red-500 bg-card text-muted-foreground hover:border-red-400"
+                    : "border-border bg-card text-muted-foreground hover:border-border/80"
               }`}
             >
               {sex}
@@ -115,8 +115,8 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
 
       {/* Age */}
       <div>
-        <label htmlFor="onboarding-age" className="mb-1 block font-mono text-xs uppercase tracking-wider text-[#a1a1aa]">
-          Age <span className="text-[#f97316]">*</span>
+        <label htmlFor="onboarding-age" className="mb-1 block font-mono text-xs uppercase tracking-wider text-muted-foreground">
+          Age <span className="text-primary">*</span>
         </label>
         <input
           id="onboarding-age"
@@ -133,10 +133,10 @@ export function Step1Demographics({ data, updateData, showErrors = false }: Prop
           data-testid="onboarding-age"
           aria-invalid={showErrors && !!errors.age}
           aria-describedby={showErrors && errors.age ? "onboarding-age-error" : undefined}
-          className={`w-full rounded-lg border px-4 py-3 text-[#fafafa] placeholder-[#a1a1aa]/50 outline-none transition-colors bg-[#1e1e1e] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#f97316] focus-visible:ring-offset-2 focus-visible:ring-offset-[#1a1a1a] ${
+          className={`w-full rounded-lg border px-4 py-3 text-foreground placeholder-muted-foreground/50 outline-none transition-colors bg-card focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 focus-visible:ring-offset-card ${
             showErrors && errors.age
               ? "border-red-500 focus:border-red-500"
-              : "border-[#2a2a2a] focus:border-[#f97316]"
+              : "border-border focus:border-primary"
           }`}
         />
         {showErrors && errors.age && (

@@ -113,18 +113,18 @@ export default function Test500ErrorPage() {
                     testResults.serverLogged === true
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] p-6">
+    <div className="min-h-screen bg-background text-foreground p-6">
       <div className="max-w-2xl mx-auto space-y-6">
         <h1 className="text-2xl font-bold uppercase tracking-wider">
           Feature #262: API 500 Error Handling
         </h1>
-        <p className="text-[#a1a1aa] text-sm">
+        <p className="text-muted-foreground text-sm">
           Tests that internal server errors show a friendly message, no stack traces, and provide a retry option.
         </p>
 
         {/* Trigger Button */}
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-3">Test Controls</h2>
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">Test Controls</h2>
           <button
             onClick={triggerError}
             disabled={isLoading}
@@ -137,8 +137,8 @@ export default function Test500ErrorPage() {
 
         {/* Error Display — simulates what user would see */}
         {errorMessage && (
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-5" data-testid="error-display">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-3">User-Facing Error</h2>
+          <div className="bg-card border border-border rounded-xl p-5" data-testid="error-display">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">User-Facing Error</h2>
             <div className="bg-red-900/20 border border-red-500/30 rounded-xl p-4">
               <div className="flex items-start gap-3">
                 <div className="w-10 h-10 rounded-full bg-red-500/20 flex items-center justify-center flex-shrink-0">
@@ -177,9 +177,9 @@ export default function Test500ErrorPage() {
 
         {/* Raw Response (for verification) */}
         {rawResponse && (
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-3">Raw API Response</h2>
-            <pre className="bg-[#111] rounded-lg p-3 text-xs font-mono text-[#a1a1aa] overflow-x-auto whitespace-pre-wrap" data-testid="raw-response">
+          <div className="bg-card border border-border rounded-xl p-4">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">Raw API Response</h2>
+            <pre className="bg-background rounded-lg p-3 text-xs font-mono text-muted-foreground overflow-x-auto whitespace-pre-wrap" data-testid="raw-response">
               {rawResponse}
             </pre>
           </div>
@@ -187,8 +187,8 @@ export default function Test500ErrorPage() {
 
         {/* Test Results */}
         {testResults.friendlyMessage !== null && (
-          <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4" data-testid="test-results">
-            <h2 className="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-3">
+          <div className="bg-card border border-border rounded-xl p-4" data-testid="test-results">
+            <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">
               Test Results {allPassed ? '✅ ALL PASSED' : ''}
             </h2>
             <div className="space-y-2 text-sm">
@@ -213,11 +213,11 @@ export default function Test500ErrorPage() {
         )}
 
         {/* Test Log */}
-        <div className="bg-[#1a1a1a] border border-[#333] rounded-xl p-4">
-          <h2 className="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-3">Test Log</h2>
-          <div className="space-y-1 text-xs font-mono text-[#a1a1aa] max-h-60 overflow-y-auto" data-testid="test-log">
+        <div className="bg-card border border-border rounded-xl p-4">
+          <h2 className="text-sm font-bold uppercase tracking-wider text-muted-foreground mb-3">Test Log</h2>
+          <div className="space-y-1 text-xs font-mono text-muted-foreground max-h-60 overflow-y-auto" data-testid="test-log">
             {testLog.length === 0 ? (
-              <p className="text-[#666]">No actions yet. Click &quot;Trigger 500 Error&quot; to start testing.</p>
+              <p className="text-muted-foreground">No actions yet. Click &quot;Trigger 500 Error&quot; to start testing.</p>
             ) : (
               testLog.map((entry, i) => <p key={i}>{entry}</p>)
             )}

@@ -21,13 +21,13 @@ export default function TestFeature150Page() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-white p-8">
+    <div className="min-h-screen bg-background text-white p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Feature #150: getJobStatus Test</h1>
         <p className="text-gray-400 mb-8">Testing planRouter.getJobStatus functionality</p>
 
         {/* Test Configuration */}
-        <div className="bg-[#1a1a1a] rounded-lg p-6 mb-6">
+        <div className="bg-card rounded-lg p-6 mb-6">
           <h2 className="text-xl font-semibold mb-4">Test Configuration</h2>
           <div className="space-y-4">
             <div>
@@ -37,13 +37,13 @@ export default function TestFeature150Page() {
                 value={jobId}
                 onChange={(e) => setJobId(e.target.value)}
                 placeholder="Enter a plan generation job ID"
-                className="w-full bg-[#0a0a0a] border border-[#2a2a2a] rounded px-4 py-2 text-white"
+                className="w-full bg-background border border-border rounded px-4 py-2 text-white"
               />
             </div>
             <button
               onClick={testGetJobStatus}
               disabled={isLoading || !jobId}
-              className="bg-[#f97316] hover:bg-[#ea580c] disabled:bg-gray-600 px-6 py-2 rounded font-semibold transition-colors"
+              className="bg-primary hover:bg-primary/90 disabled:bg-gray-600 px-6 py-2 rounded font-semibold transition-colors"
             >
               {isLoading ? 'Fetching...' : 'Fetch Job Status'}
             </button>
@@ -60,11 +60,11 @@ export default function TestFeature150Page() {
 
         {/* Job Status Display */}
         {jobStatus && (
-          <div className="bg-[#1a1a1a] rounded-lg p-6 mb-6">
+          <div className="bg-card rounded-lg p-6 mb-6">
             <h2 className="text-xl font-semibold mb-4">Job Status Result</h2>
             <div className="space-y-4">
               {/* Status Field */}
-              <div className="flex items-center justify-between p-4 bg-[#0a0a0a] rounded">
+              <div className="flex items-center justify-between p-4 bg-background rounded">
                 <div>
                   <p className="text-sm text-gray-400">Status</p>
                   <p className="text-lg font-semibold">{jobStatus.status}</p>
@@ -80,7 +80,7 @@ export default function TestFeature150Page() {
               </div>
 
               {/* Current Agent Field */}
-              <div className="flex items-center justify-between p-4 bg-[#0a0a0a] rounded">
+              <div className="flex items-center justify-between p-4 bg-background rounded">
                 <div>
                   <p className="text-sm text-gray-400">Current Agent</p>
                   <p className="text-lg font-semibold">
@@ -91,7 +91,7 @@ export default function TestFeature150Page() {
 
               {/* Progress Field */}
               {jobStatus.progress && (
-                <div className="p-4 bg-[#0a0a0a] rounded">
+                <div className="p-4 bg-background rounded">
                   <p className="text-sm text-gray-400 mb-2">Progress</p>
                   <pre className="text-sm text-gray-300 overflow-x-auto">
                     {JSON.stringify(jobStatus.progress, null, 2)}
@@ -101,7 +101,7 @@ export default function TestFeature150Page() {
 
               {/* Plan ID Field (when completed) */}
               {jobStatus.planId && (
-                <div className="flex items-center justify-between p-4 bg-[#0a0a0a] rounded">
+                <div className="flex items-center justify-between p-4 bg-background rounded">
                   <div>
                     <p className="text-sm text-gray-400">Plan ID</p>
                     <p className="text-lg font-semibold">{jobStatus.planId}</p>
@@ -121,7 +121,7 @@ export default function TestFeature150Page() {
         )}
 
         {/* Verification Checklist */}
-        <div className="bg-[#1a1a1a] rounded-lg p-6">
+        <div className="bg-card rounded-lg p-6">
           <h2 className="text-xl font-semibold mb-4">Verification Checklist</h2>
           <ul className="space-y-2">
             <li className={`flex items-center ${jobStatus?.status ? 'text-green-400' : 'text-gray-400'}`}>
@@ -149,7 +149,7 @@ export default function TestFeature150Page() {
 
         {/* Raw Response */}
         {jobStatus && (
-          <div className="bg-[#1a1a1a] rounded-lg p-6 mt-6">
+          <div className="bg-card rounded-lg p-6 mt-6">
             <h2 className="text-xl font-semibold mb-4">Raw Response</h2>
             <pre className="text-sm text-gray-300 overflow-x-auto">
               {JSON.stringify(jobStatus, null, 2)}

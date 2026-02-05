@@ -40,9 +40,9 @@ export function Skeleton({
 }: SkeletonProps) {
   // Color variants optimized for dark theme
   const baseColors = {
-    default: 'bg-[#1a1a1a]',
-    light: 'bg-[#2a2a2a]',
-    dark: 'bg-[#0f0f0f]',
+    default: 'bg-card',
+    light: 'bg-border',
+    dark: 'bg-background',
   }
 
   const animationClasses = {

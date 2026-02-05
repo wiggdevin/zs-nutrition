@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { logger } from '@/lib/safe-logger';
 
 /**
  * GET /api/fitness/connections
@@ -50,7 +51,7 @@ export async function GET(req: NextRequest) {
       connections: sanitizedConnections,
     });
   } catch (error) {
-    console.error('Error fetching fitness connections:', error);
+    logger.error('Error fetching fitness connections:', error);
     return NextResponse.json(
       { error: 'Failed to fetch connections' },
       { status: 500 },
@@ -105,7 +106,7 @@ export async function DELETE(req: NextRequest) {
       message: `${platform} disconnected successfully`,
     });
   } catch (error) {
-    console.error('Error disconnecting fitness platform:', error);
+    logger.error('Error disconnecting fitness platform:', error);
     return NextResponse.json(
       { error: 'Failed to disconnect platform' },
       { status: 500 },
@@ -168,7 +169,7 @@ export async function PATCH(req: NextRequest) {
       message: 'Connection updated successfully',
     });
   } catch (error) {
-    console.error('Error updating fitness connection:', error);
+    logger.error('Error updating fitness connection:', error);
     return NextResponse.json(
       { error: 'Failed to update connection' },
       { status: 500 },

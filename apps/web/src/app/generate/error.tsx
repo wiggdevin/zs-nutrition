@@ -2,6 +2,7 @@
 
 import { useEffect } from 'react'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/safe-logger'
 
 export default function GenerateError({
   error,
@@ -11,7 +12,7 @@ export default function GenerateError({
   reset: () => void
 }) {
   useEffect(() => {
-    console.error('Generate error:', error)
+    logger.error('Generate error:', error)
   }, [error])
 
   return (

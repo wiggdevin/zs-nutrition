@@ -8,6 +8,7 @@
 import { notFound } from 'next/navigation'
 import { useState } from 'react'
 import { Button } from '@/components/ui/button'
+import { logger } from '@/lib/safe-logger'
 
 interface TestResult {
   scenario: string
@@ -69,9 +70,9 @@ export default function Test416Page() {
       await new Promise(resolve => setTimeout(resolve, 500))
 
       // Test exact match
-      console.log('Running exact_match test...')
+      logger.debug('Running exact_match test...')
       const exactResult = await runTest('exact_match')
-      console.log('Exact match result:', exactResult)
+      logger.debug('Exact match result:', exactResult)
 
       await new Promise(resolve => setTimeout(resolve, 500))
 
@@ -79,31 +80,31 @@ export default function Test416Page() {
       await runTest('clear')
       await new Promise(resolve => setTimeout(resolve, 500))
 
-      console.log('Running half_match test...')
+      logger.debug('Running half_match test...')
       const halfResult = await runTest('half_match')
-      console.log('Half match result:', halfResult)
+      logger.debug('Half match result:', halfResult)
 
     } catch (err) {
-      console.error('Test error:', err)
+      logger.error('Test error', err)
     }
   }
 
   return (
-    <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa] p-8">
+    <div className="min-h-screen bg-background text-foreground p-8">
       <div className="max-w-4xl mx-auto">
         <h1 className="text-3xl font-bold mb-2">Feature #416: Adherence Score Test</h1>
-        <p className="text-[#a1a1aa] mb-8">
+        <p className="text-muted-foreground mb-8">
           Verify that adherence score displays 100 when actuals match targets exactly
         </p>
 
-        <div className="bg-[#1a1a1a] rounded-lg p-6 mb-6 border border-[#2a2a2a]">
+        <div className="bg-card rounded-lg p-6 mb-6 border border-border">
           <h2 className="text-xl font-semibold mb-4">Test Controls</h2>
 
           <div className="flex gap-4 flex-wrap">
             <Button
               onClick={runAllTests}
               disabled={loading}
-              className="bg-[#f97316] hover:bg-[#f97316]/90"
+              className="bg-primary hover:bg-primary/90"
             >
               {loading ? 'Running Tests...' : 'Run All Tests'}
             </Button>
@@ -112,7 +113,7 @@ export default function Test416Page() {
               onClick={() => runTest('exact_match')}
               disabled={loading}
               variant="outline"
-              className="border-[#2a2a2a]"
+              className="border-border"
             >
               Test Exact Match
             </Button>
@@ -121,7 +122,7 @@ export default function Test416Page() {
               onClick={() => runTest('half_match')}
               disabled={loading}
               variant="outline"
-              className="border-[#2a2a2a]"
+              className="border-border"
             >
               Test Half Match
             </Button>
@@ -130,7 +131,7 @@ export default function Test416Page() {
               onClick={() => runTest('clear')}
               disabled={loading}
               variant="outline"
-              className="border-[#2a2a2a]"
+              className="border-border"
             >
               Clear Data
             </Button>
@@ -156,7 +157,7 @@ export default function Test416Page() {
               return (
                 <div
                   key={idx}
-                  className={`bg-[#1a1a1a] rounded-lg p-6 border ${
+                  className={`bg-card rounded-lg p-6 border ${
                     isPassing ? 'border-green-500/50' : 'border-red-500/50'
                   }`}
                 >
@@ -175,7 +176,7 @@ export default function Test416Page() {
 
                   <div className="grid grid-cols-2 gap-4 text-sm">
                     <div>
-                      <h4 className="font-semibold text-[#a1a1aa] mb-2">Targets</h4>
+                      <h4 className="font-semibold text-muted-foreground mb-2">Targets</h4>
                       <div className="space-y-1 font-mono">
                         <div>🔥 Calories: {result.targets.kcal} kcal</div>
                         <div>💪 Protein: {result.targets.proteinG}g</div>
@@ -185,7 +186,7 @@ export default function Test416Page() {
                     </div>
 
                     <div>
-                      <h4 className="font-semibold text-[#a1a1aa] mb-2">Actuals</h4>
+                      <h4 className="font-semibold text-muted-foreground mb-2">Actuals</h4>
                       <div className="space-y-1 font-mono">
                         <div>🔥 Calories: {result.actuals.kcal} kcal</div>
                         <div>💪 Protein: {result.actuals.proteinG}g</div>
@@ -195,14 +196,14 @@ export default function Test416Page() {
                     </div>
                   </div>
 
-                  <div className="mt-4 pt-4 border-t border-[#2a2a2a]">
+                  <div className="mt-4 pt-4 border-t border-border">
                     <div className="flex items-center justify-between">
-                      <span className="text-[#a1a1aa]">Adherence Score:</span>
-                      <span className="text-3xl font-bold text-[#f97316]">
+                      <span className="text-muted-foreground">Adherence Score:</span>
+                      <span className="text-3xl font-bold text-primary">
                         {result.adherenceScore}
                       </span>
                     </div>
-                    <div className="text-sm text-[#a1a1aa] mt-1">
+                    <div className="text-sm text-muted-foreground mt-1">
                       Expected: {result.expectedRange}
                     </div>
                   </div>
@@ -214,7 +215,7 @@ export default function Test416Page() {
 
         {/* Summary */}
         {results.length >= 2 && (
-          <div className="mt-6 bg-[#1a1a1a] rounded-lg p-6 border border-[#2a2a2a]">
+          <div className="mt-6 bg-card rounded-lg p-6 border border-border">
             <h2 className="text-xl font-semibold mb-4">Summary</h2>
 
             <div className="space-y-2">
@@ -233,7 +234,7 @@ export default function Test416Page() {
                 )
               })}
 
-              <div className="pt-4 border-t border-[#2a2a2a] flex items-center justify-between font-semibold">
+              <div className="pt-4 border-t border-border flex items-center justify-between font-semibold">
                 <span>Overall</span>
                 <span className={results.every(r =>
                   r.scenario === 'exact_match' ? r.adherenceScore === 100 :
@@ -250,7 +251,7 @@ export default function Test416Page() {
         )}
 
         {/* Verification Checklist */}
-        <div className="mt-6 bg-[#1a1a1a] rounded-lg p-6 border border-[#2a2a2a]">
+        <div className="mt-6 bg-card rounded-lg p-6 border border-border">
           <h2 className="text-xl font-semibold mb-4">Verification Checklist</h2>
 
           <ul className="space-y-2">

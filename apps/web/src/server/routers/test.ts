@@ -17,7 +17,7 @@ export const testRouter = router({
     return {
       greeting: `Hello from protected route!`,
       userId: ctx.userId,
-      dbUserId: (ctx as Record<string, unknown>).dbUserId,
+      dbUserId: ctx.dbUserId,
       timestamp: new Date().toISOString(),
     }
   }),

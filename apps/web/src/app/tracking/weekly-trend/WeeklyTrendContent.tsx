@@ -29,28 +29,28 @@ const metricConfigs: Record<Metric, MetricConfig> = {
   kcal: {
     label: 'Calories',
     unit: 'kcal',
-    color: '#f97316',
+    color: 'var(--primary)',
     dataKeyActual: 'actualKcal',
     dataKeyTarget: 'targetKcal',
   },
   proteinG: {
     label: 'Protein',
     unit: 'g',
-    color: '#3b82f6',
+    color: 'var(--chart-3)',
     dataKeyActual: 'actualProteinG',
     dataKeyTarget: 'targetProteinG',
   },
   carbsG: {
     label: 'Carbs',
     unit: 'g',
-    color: '#22c55e',
+    color: 'var(--color-success)',
     dataKeyActual: 'actualCarbsG',
     dataKeyTarget: 'targetCarbsG',
   },
   fatG: {
     label: 'Fat',
     unit: 'g',
-    color: '#eab308',
+    color: 'var(--color-warning)',
     dataKeyActual: 'actualFatG',
     dataKeyTarget: 'targetFatG',
   },
@@ -85,7 +85,7 @@ function CustomTooltip({ active, payload, label, metric }: { active?: boolean; p
   if (!active || !payload || !payload.length) return null
   const config = metricConfigs[metric]
   return (
-    <div className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 shadow-xl">
+    <div className="bg-card border border-secondary rounded-lg p-3 shadow-xl">
       <p className="text-white font-semibold text-sm mb-1">{label}</p>
       {payload.map((entry, i) => (
         <p key={i} className="text-sm" style={{ color: entry.color }}>
@@ -117,7 +117,7 @@ export default function WeeklyTrendContent() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center min-h-[200px]">
-        <div className="animate-pulse text-[#a1a1aa]">Loading weekly trend...</div>
+        <div className="animate-pulse text-muted-foreground">Loading weekly trend...</div>
       </div>
     )
   }
@@ -131,7 +131,7 @@ export default function WeeklyTrendContent() {
           <button
             onClick={() => refetch()}
             data-testid="retry-button"
-            className="px-4 py-2 bg-[#f97316] hover:bg-[#ea580c] text-[#0a0a0a] text-sm font-bold uppercase tracking-wide rounded-lg transition-colors"
+            className="px-4 py-2 bg-primary hover:bg-primary/90 text-background text-sm font-bold uppercase tracking-wide rounded-lg transition-colors"
           >
             Retry
           </button>
@@ -141,7 +141,7 @@ export default function WeeklyTrendContent() {
   }
 
   if (!data) {
-    return <p className="text-[#a1a1aa]">No data returned.</p>
+    return <p className="text-muted-foreground">No data returned.</p>
   }
 
   // Build chart data from API response
@@ -178,15 +178,15 @@ export default function WeeklyTrendContent() {
       {/* ── Weekly Average Display ── */}
       {weeklyAverage !== null && (
         <div
-          className="mb-4 md:mb-6 bg-[#18181b] border border-[#27272a] rounded-lg p-4 md:p-6"
+          className="mb-4 md:mb-6 bg-card border border-secondary rounded-lg p-4 md:p-6"
           data-testid="weekly-average-display"
         >
           <div className="flex items-center justify-between">
             <div>
-              <h3 className="text-xs md:text-sm text-[#a1a1aa] uppercase tracking-wider mb-1">
+              <h3 className="text-xs md:text-sm text-muted-foreground uppercase tracking-wider mb-1">
                 Weekly Average
               </h3>
-              <p className="text-[10px] md:text-xs text-[#a1a1aa]">
+              <p className="text-[10px] md:text-xs text-muted-foreground">
                 Based on {daysWithScores.length} day{daysWithScores.length !== 1 ? 's' : ''} of data
               </p>
             </div>
@@ -203,7 +203,7 @@ export default function WeeklyTrendContent() {
               >
                 {weeklyAverage}%
               </div>
-              <div className="text-xs md:text-sm text-[#a1a1aa]">adherence</div>
+              <div className="text-xs md:text-sm text-muted-foreground">adherence</div>
             </div>
           </div>
         </div>
@@ -211,7 +211,7 @@ export default function WeeklyTrendContent() {
 
       <div className="mb-4 flex flex-col sm:flex-row sm:flex-wrap gap-3 sm:gap-4">
         <div className="flex flex-col sm:flex-row sm:items-center">
-          <label htmlFor="start-date-input" className="text-xs sm:text-sm text-[#a1a1aa] sm:mr-2 mb-1 sm:mb-0">
+          <label htmlFor="start-date-input" className="text-xs sm:text-sm text-muted-foreground sm:mr-2 mb-1 sm:mb-0">
             Start date:
           </label>
           <input
@@ -220,20 +220,20 @@ export default function WeeklyTrendContent() {
             value={startDate}
             max={todayStr}
             onChange={(e) => setStartDate(e.target.value)}
-            className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-xs sm:text-sm text-white w-full sm:w-auto"
+            className="bg-card border border-secondary rounded px-2 py-1 text-xs sm:text-sm text-white w-full sm:w-auto"
             data-testid="start-date-input"
           />
         </div>
 
         <div className="flex flex-col sm:flex-row sm:items-center">
-          <label htmlFor="metric-selector" className="text-xs sm:text-sm text-[#a1a1aa] sm:mr-2 mb-1 sm:mb-0">
+          <label htmlFor="metric-selector" className="text-xs sm:text-sm text-muted-foreground sm:mr-2 mb-1 sm:mb-0">
             Metric:
           </label>
           <select
             id="metric-selector"
             value={selectedMetric}
             onChange={(e) => setSelectedMetric(e.target.value as Metric)}
-            className="bg-[#18181b] border border-[#27272a] rounded px-2 py-1 text-xs sm:text-sm text-white w-full sm:w-auto"
+            className="bg-card border border-secondary rounded px-2 py-1 text-xs sm:text-sm text-white w-full sm:w-auto"
             data-testid="metric-selector"
           >
             <option value="kcal">Calories</option>
@@ -244,7 +244,7 @@ export default function WeeklyTrendContent() {
         </div>
       </div>
 
-      <div className="mb-4 text-xs sm:text-sm text-[#a1a1aa]">
+      <div className="mb-4 text-xs sm:text-sm text-muted-foreground">
         <span>Period: </span>
         <span data-testid="trend-start-date">{formatUTCDateFull(data.startDate)}</span>
         <span> - </span>
@@ -255,7 +255,7 @@ export default function WeeklyTrendContent() {
       {/* ── Recharts Line Chart: Actual vs Target for selected metric ── */}
       <div
         data-testid="weekly-trend-chart"
-        className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 md:p-4 mb-6"
+        className="bg-card border border-secondary rounded-lg p-3 md:p-4 mb-6"
       >
         <h2 className="text-white font-semibold text-xs md:text-sm uppercase tracking-wider mb-3 md:mb-4">
           {metricConfig.label} — Actual vs Target
@@ -263,22 +263,22 @@ export default function WeeklyTrendContent() {
         <div data-testid="chart-responsive-wrapper" style={{ width: '100%', minHeight: 250 }}>
           <ResponsiveContainer width="100%" height={280}>
             <LineChart data={chartData} margin={{ top: 5, right: 10, left: 0, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#27272a" />
+              <CartesianGrid strokeDasharray="3 3" stroke="var(--secondary)" />
               <XAxis
                 dataKey="label"
-                tick={{ fill: '#a1a1aa', fontSize: 10 }}
-                stroke="#27272a"
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
+                stroke="var(--secondary)"
                 interval={0}
               />
               <YAxis
-                tick={{ fill: '#a1a1aa', fontSize: 10 }}
-                stroke="#27272a"
+                tick={{ fill: 'var(--muted-foreground)', fontSize: 10 }}
+                stroke="var(--secondary)"
                 width={40}
-                label={{ value: metricConfig.unit, angle: -90, position: 'insideLeft', fill: '#a1a1aa', fontSize: 10 }}
+                label={{ value: metricConfig.unit, angle: -90, position: 'insideLeft', fill: 'var(--muted-foreground)', fontSize: 10 }}
               />
               <Tooltip content={<CustomTooltip metric={selectedMetric} />} />
               <Legend
-                wrapperStyle={{ color: '#a1a1aa', fontSize: '11px', paddingTop: 4 }}
+                wrapperStyle={{ color: 'var(--muted-foreground)', fontSize: '11px', paddingTop: 4 }}
               />
               <Line
                 type="monotone"
@@ -295,9 +295,9 @@ export default function WeeklyTrendContent() {
                 type="monotone"
                 dataKey={metricConfig.dataKeyActual}
                 name="Actual"
-                stroke="#22d3ee"
+                stroke="var(--chart-5)"
                 strokeWidth={2}
-                dot={{ fill: '#22d3ee', r: 3 }}
+                dot={{ fill: 'var(--chart-5)', r: 3 }}
                 activeDot={{ r: 5 }}
                 data-testid="actual-line"
               />
@@ -317,12 +317,12 @@ export default function WeeklyTrendContent() {
             <div
               key={day.date}
               data-testid={`day-summary-${i}`}
-              className="bg-[#18181b] border border-[#27272a] rounded-lg p-3 md:p-4"
+              className="bg-card border border-secondary rounded-lg p-3 md:p-4"
             >
               <div className="flex items-center justify-between mb-2">
                 <div className="flex items-center gap-1 md:gap-2">
                   <span className="text-white font-semibold text-sm md:text-base">{dayName}</span>
-                  <span className="text-[#a1a1aa] text-xs md:text-sm">{dateStr}</span>
+                  <span className="text-muted-foreground text-xs md:text-sm">{dateStr}</span>
                 </div>
                 {day.adherenceScore !== null && (
                   <span
@@ -342,31 +342,31 @@ export default function WeeklyTrendContent() {
 
               {/* Targets */}
               <div className="mb-1">
-                <span className="text-[10px] md:text-xs text-[#a1a1aa] uppercase tracking-wider">Targets:</span>
+                <span className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider">Targets:</span>
                 {day.targets ? (
                   <div className="flex gap-2 md:gap-3 mt-1 flex-wrap" data-testid={`day-targets-${i}`}>
-                    <span className="text-orange-400 text-xs md:text-sm">{day.targets.kcal ?? '-'} kcal</span>
+                    <span className="text-primary text-xs md:text-sm">{day.targets.kcal ?? '-'} kcal</span>
                     <span className="text-blue-400 text-xs md:text-sm">P {day.targets.proteinG ?? '-'}g</span>
                     <span className="text-green-400 text-xs md:text-sm">C {day.targets.carbsG ?? '-'}g</span>
                     <span className="text-yellow-400 text-xs md:text-sm">F {day.targets.fatG ?? '-'}g</span>
                   </div>
                 ) : (
-                  <span className="text-[#a1a1aa] text-xs md:text-sm ml-2">No targets set</span>
+                  <span className="text-muted-foreground text-xs md:text-sm ml-2">No targets set</span>
                 )}
               </div>
 
               {/* Actuals */}
               <div>
-                <span className="text-[10px] md:text-xs text-[#a1a1aa] uppercase tracking-wider">Actuals:</span>
+                <span className="text-[10px] md:text-xs text-muted-foreground uppercase tracking-wider">Actuals:</span>
                 <div className="flex gap-2 md:gap-3 mt-1 flex-wrap" data-testid={`day-actuals-${i}`}>
-                  <span className="text-orange-400 text-xs md:text-sm">{day.actuals.kcal} kcal</span>
+                  <span className="text-primary text-xs md:text-sm">{day.actuals.kcal} kcal</span>
                   <span className="text-blue-400 text-xs md:text-sm">P {day.actuals.proteinG}g</span>
                   <span className="text-green-400 text-xs md:text-sm">C {day.actuals.carbsG}g</span>
                   <span className="text-yellow-400 text-xs md:text-sm">F {day.actuals.fatG}g</span>
                 </div>
               </div>
 
-              <div className="mt-1 text-[10px] md:text-xs text-[#a1a1aa]">{day.mealCount} meals logged</div>
+              <div className="mt-1 text-[10px] md:text-xs text-muted-foreground">{day.mealCount} meals logged</div>
             </div>
           )
         })}
@@ -374,10 +374,10 @@ export default function WeeklyTrendContent() {
 
       {/* Raw JSON for testing */}
       <details className="mt-6">
-        <summary className="text-[#a1a1aa] text-sm cursor-pointer">Raw API Response</summary>
+        <summary className="text-muted-foreground text-sm cursor-pointer">Raw API Response</summary>
         <pre
           data-testid="raw-api-response"
-          className="mt-2 bg-[#18181b] border border-[#27272a] rounded-lg p-4 text-xs text-[#a1a1aa] overflow-auto max-h-96"
+          className="mt-2 bg-card border border-secondary rounded-lg p-4 text-xs text-muted-foreground overflow-auto max-h-96"
         >
           {JSON.stringify(data, null, 2)}
         </pre>

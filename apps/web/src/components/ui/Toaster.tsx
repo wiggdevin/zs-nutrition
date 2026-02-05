@@ -8,7 +8,7 @@ const AUTO_DISMISS_MS = 5000
 
 const iconMap: Record<ToastType, ReactElement> = {
   success: (
-    <svg className="w-5 h-5 flex-shrink-0 text-[#22c55e]" fill="currentColor" viewBox="0 0 20 20">
+    <svg className="w-5 h-5 flex-shrink-0 text-success" fill="currentColor" viewBox="0 0 20 20">
       <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
     </svg>
   ),
@@ -18,7 +18,7 @@ const iconMap: Record<ToastType, ReactElement> = {
     </svg>
   ),
   warning: (
-    <svg className="w-5 h-5 flex-shrink-0 text-[#f59e0b]" fill="currentColor" viewBox="0 0 20 20">
+    <svg className="w-5 h-5 flex-shrink-0 text-warning" fill="currentColor" viewBox="0 0 20 20">
       <path fillRule="evenodd" d="M8.257 3.099c.765-1.36 2.722-1.36 3.486 0l5.58 9.92c.75 1.334-.213 2.98-1.742 2.98H4.42c-1.53 0-2.493-1.646-1.743-2.98l5.58-9.92zM11 13a1 1 0 11-2 0 1 1 0 012 0zm-1-8a1 1 0 00-1 1v3a1 1 0 002 0V6a1 1 0 00-1-1z" clipRule="evenodd" />
     </svg>
   ),
@@ -32,14 +32,14 @@ const iconMap: Record<ToastType, ReactElement> = {
 const borderColorMap: Record<ToastType, string> = {
   success: 'border-green-500/40',
   error: 'border-red-500/40',
-  warning: 'border-[#f59e0b]/40',
+  warning: 'border-warning/40',
   info: 'border-blue-500/40',
 }
 
 const bgColorMap: Record<ToastType, string> = {
   success: 'bg-green-500/10',
   error: 'bg-red-500/10',
-  warning: 'bg-[#f59e0b]/10',
+  warning: 'bg-warning/10',
   info: 'bg-blue-500/10',
 }
 
@@ -66,15 +66,15 @@ function ToastItem({ toast }: { toast: Toast }) {
         flex items-center gap-3 rounded-xl border px-4 py-3 shadow-lg backdrop-blur-sm
         animate-[slideIn_0.3s_ease-out]
         ${borderColorMap[toast.type]} ${bgColorMap[toast.type]}
-        bg-[#1a1a1a]/95
+        bg-card/95
       `}
     >
       {iconMap[toast.type]}
-      <p className="flex-1 text-sm text-[#fafafa]">{toast.message}</p>
+      <p className="flex-1 text-sm text-foreground">{toast.message}</p>
       <button
         onClick={() => removeToast(toast.id)}
         data-testid="toast-dismiss"
-        className="flex-shrink-0 rounded-md p-1 text-[#a1a1aa] hover:text-[#fafafa] hover:bg-white/10 transition-colors"
+        className="flex-shrink-0 rounded-md p-1 text-muted-foreground hover:text-foreground hover:bg-white/10 transition-colors"
         aria-label="Dismiss notification"
       >
         <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">

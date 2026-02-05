@@ -9,26 +9,26 @@ export default function TestFeature143Page() {
   const [showConfetti, setShowConfetti] = useState(false);
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+    <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="w-full max-w-lg">
         <div className="space-y-2">
-          <p className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+          <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
             /// FEATURE 143 TEST
           </p>
-          <h1 className="text-4xl font-heading uppercase tracking-wider text-[#fafafa]">
+          <h1 className="text-4xl font-heading uppercase tracking-wider text-foreground">
             Confetti Animation Test
           </h1>
         </div>
 
-        <div className="mt-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8 shadow-xl">
-          <p className="text-sm text-[#a1a1aa]">
+        <div className="mt-8 rounded-lg border border-border bg-card p-8 shadow-xl">
+          <p className="text-sm text-muted-foreground">
             Testing Feature #143: Confetti animation on plan generation complete
           </p>
 
           <div className="mt-6 space-y-4">
-            <div className="rounded border border-[#2a2a2a] bg-[#1e1e1e] p-4">
-              <h3 className="text-sm font-bold text-[#fafafa]">What to test:</h3>
-              <ul className="mt-2 space-y-1 text-xs text-[#a1a1aa]">
+            <div className="rounded border border-border bg-card p-4">
+              <h3 className="text-sm font-bold text-foreground">What to test:</h3>
+              <ul className="mt-2 space-y-1 text-xs text-muted-foreground">
                 <li>✓ Confetti particles fall from top of screen</li>
                 <li>✓ Particles use brand colors (orange, green, blue, etc.)</li>
                 <li>✓ Animation lasts for 2 seconds</li>
@@ -40,21 +40,21 @@ export default function TestFeature143Page() {
             {!showConfetti ? (
               <button
                 onClick={() => setShowConfetti(true)}
-                className="w-full rounded-lg bg-[#f97316] px-6 py-4 text-sm font-black uppercase tracking-wider text-white transition-colors hover:bg-[#ea580c]"
+                className="w-full rounded-lg bg-primary px-6 py-4 text-sm font-black uppercase tracking-wider text-white transition-colors hover:bg-primary/90"
               >
                 Trigger Confetti Animation
               </button>
             ) : (
-              <div className="rounded-lg border border-[#22c55e]/30 bg-[#22c55e]/5 p-4 text-center">
-                <p className="text-sm font-bold text-[#22c55e]">
+              <div className="rounded-lg border border-green-500/30 bg-green-500/5 p-4 text-center">
+                <p className="text-sm font-bold text-green-500">
                   ✓ Confetti Animation Playing
                 </p>
-                <p className="mt-2 text-xs text-[#a1a1aa]">
+                <p className="mt-2 text-xs text-muted-foreground">
                   Watch the particles fall from the top of the screen
                 </p>
                 <button
                   onClick={() => setShowConfetti(false)}
-                  className="mt-4 rounded border border-[#2a2a2a] bg-[#1e1e1e] px-4 py-2 text-xs font-bold uppercase text-[#fafafa] hover:bg-[#252525]"
+                  className="mt-4 rounded border border-border bg-card px-4 py-2 text-xs font-bold uppercase text-foreground hover:bg-muted"
                 >
                   Reset
                 </button>
@@ -62,9 +62,9 @@ export default function TestFeature143Page() {
             )}
           </div>
 
-          <div className="mt-6 rounded border border-[#2a2a2a] bg-[#1e1e1e] p-4">
-            <h3 className="text-xs font-bold text-[#fafafa]">Verification Steps:</h3>
-            <ol className="mt-2 space-y-1 text-xs text-[#a1a1aa] list-decimal list-inside">
+          <div className="mt-6 rounded border border-border bg-card p-4">
+            <h3 className="text-xs font-bold text-foreground">Verification Steps:</h3>
+            <ol className="mt-2 space-y-1 text-xs text-muted-foreground list-decimal list-inside">
               <li>Click "Trigger Confetti Animation" button</li>
               <li>Observe particles falling from top of screen</li>
               <li>Verify particles use brand colors</li>
