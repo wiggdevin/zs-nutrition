@@ -6,6 +6,6 @@
  * live in @zero-sum/nutrition-engine.
  */
 
-export type { PlanGenerationJobData, JobStatus, JobProgressUpdate } from './queue-jobs.js';
+export type { PlanGenerationJobData, JobStatus, JobProgressUpdate } from './queue-jobs';
 
-export type { PlanCompletePayload, PlanCompleteResponse } from './api-responses.js';
+export type { PlanCompletePayload, PlanCompleteResponse } from './api-responses';
