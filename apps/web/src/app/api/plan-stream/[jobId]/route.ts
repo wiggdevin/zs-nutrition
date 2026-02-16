@@ -5,8 +5,11 @@ import { logger } from '@/lib/safe-logger';
 import { JobResultSchema } from '@/lib/schemas/plan';
 import { createNewRedisConnection } from '@/lib/redis';
 
-/** SSE connection timeout: 5 minutes max for plan generation */
-const SSE_TIMEOUT_MS = 5 * 60 * 1000;
+/** SSE connection timeout: 10 minutes max for plan generation */
+const SSE_TIMEOUT_MS = 10 * 60 * 1000;
+
+/** Heartbeat interval to prevent proxy/CDN disconnects */
+const HEARTBEAT_INTERVAL_MS = 30 * 1000;
 
 /**
  * SSE endpoint for streaming plan generation progress.
@@ -243,9 +246,15 @@ async function handleRedisPubSub(
   let lastAgent = 0;
   let isCleanedUp = false;
 
+  let heartbeatInterval: NodeJS.Timeout | null = null;
+
   const cleanup = async () => {
     if (isCleanedUp) return;
     isCleanedUp = true;
+    if (heartbeatInterval) {
+      clearInterval(heartbeatInterval);
+      heartbeatInterval = null;
+    }
     try {
       await subscriber.unsubscribe(channel);
       await subscriber.quit();
@@ -287,6 +296,19 @@ async function handleRedisPubSub(
     await handleDatabasePolling(controller, jobId, request, send);
     return;
   }
+
+  // Start heartbeat to prevent proxy/CDN disconnects during long generations
+  heartbeatInterval = setInterval(() => {
+    try {
+      controller.enqueue(_encoder.encode(': heartbeat\n\n'));
+    } catch {
+      // Stream may be closed — stop heartbeat
+      if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
+    }
+  }, HEARTBEAT_INTERVAL_MS);
 
   // Timeout after 5 minutes - declared before message handler so it can be cleared on completion
   const timeout = setTimeout(async () => {

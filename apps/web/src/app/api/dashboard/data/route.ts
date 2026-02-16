@@ -111,6 +111,12 @@ export async function GET(request: Request) {
 
       // validatedPlan is now a Prisma Json type - no parsing needed
       const validatedPlan = activePlan.validatedPlan as { days?: Array<{ dayNumber: number; meals?: Array<any> }> } | null;
+
+      // If validatedPlan is null or has no valid days, treat as no plan
+      if (!validatedPlan?.days || validatedPlan.days.length === 0) {
+        planId = null;
+      }
+
       // Get current day of week as plan day number (1=Mon, 7=Sun)
       const dow = today.getDay();
       const dayNumber = dow === 0 ? 7 : dow;
@@ -240,6 +246,15 @@ export async function GET(request: Request) {
       where: { userId: user.id },
     });
     const hasCompletedOnboarding = onboardingState?.completed === true;
+
+    // Self-healing: if onboarding is marked completed but no profile exists,
+    // reset the onboarding state so the user can re-complete
+    if (!activeProfile && hasCompletedOnboarding && onboardingState) {
+      await prisma.onboardingState.update({
+        where: { userId: user.id },
+        data: { completed: false },
+      });
+    }
 
     return NextResponse.json({
       hasProfile,

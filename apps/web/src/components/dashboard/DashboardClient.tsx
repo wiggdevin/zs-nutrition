@@ -945,8 +945,8 @@ export default function DashboardClient() {
         // Double-check generation again after async json parsing
         if (generation !== fetchGenerationRef.current) return;
 
-        // If user has no profile and hasn't completed onboarding, redirect to onboarding
-        if (!json.hasProfile && !json.hasCompletedOnboarding) {
+        // If user has no profile, redirect to onboarding (regardless of onboarding state)
+        if (!json.hasProfile) {
           setNeedsOnboarding(true);
           router.push('/onboarding');
           return;

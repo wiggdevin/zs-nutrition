@@ -45,7 +45,6 @@ export async function POST() {
           where: { isActive: true },
           take: 1,
         },
-        onboarding: true,
       },
     });
 
@@ -60,18 +59,14 @@ export async function POST() {
             where: { isActive: true },
             take: 1,
           },
-          onboarding: true,
         },
       });
     }
 
-    if (!user.onboarding?.completed) {
-      return NextResponse.json({ error: 'Onboarding not completed' }, { status: 400 });
-    }
-
     const activeProfile = user.profiles[0];
     if (!activeProfile) {
-      return NextResponse.json({ error: 'No active profile found' }, { status: 400 });
+      // No profile means onboarding wasn't completed (or state is inconsistent)
+      return NextResponse.json({ error: 'No active profile found. Please complete onboarding first.' }, { status: 400 });
     }
 
     // allergies and exclusions are now Prisma Json types - no parsing needed
@@ -121,6 +116,13 @@ export async function POST() {
           snacksPerDay: activeProfile.snacksPerDay,
           allergies,
           exclusions,
+          cuisinePreferences: (Array.isArray(activeProfile.cuisinePrefs) ? activeProfile.cuisinePrefs : []) as string[],
+          trainingDays: (Array.isArray(activeProfile.trainingDays) ? activeProfile.trainingDays : []) as string[],
+          trainingTime: activeProfile.trainingTime || undefined,
+          cookingSkill: activeProfile.cookingSkill || 5,
+          prepTimeMaxMin: activeProfile.prepTimeMax || 30,
+          bodyFatPercent: activeProfile.bodyFatPercent || undefined,
+          planDurationDays: 7,
         },
       },
     });
