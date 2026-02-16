@@ -60,7 +60,15 @@ function csrfCheck(request: NextRequest): NextResponse | null {
  * - Webhook endpoints (Clerk, Stripe, etc.)
  * - Static assets handled by Next.js (_next)
  */
-const productionPublicPaths = ['/', '/sign-in', '/sign-up', '/api/webhooks', '/api/food-search', '/robots.txt', '/sitemap.xml'];
+const productionPublicPaths = [
+  '/',
+  '/sign-in',
+  '/sign-up',
+  '/api/webhooks',
+  '/api/food-search',
+  '/robots.txt',
+  '/sitemap.xml',
+];
 
 const devOnlyPublicPaths = [
   // API: dev, test, debug, seed routes (prefix-matched)

@@ -66,13 +66,9 @@ describe('date-utils', () => {
     });
 
     it('handles different dates correctly', () => {
-      const dates = [
-        '2025-01-01',
-        '2025-06-15',
-        '2025-12-31',
-      ];
+      const dates = ['2025-01-01', '2025-06-15', '2025-12-31'];
 
-      dates.forEach(dateStr => {
+      dates.forEach((dateStr) => {
         const result = parseLocalDay(dateStr);
         expect(result.toISOString().split('T')[0]).toBe(dateStr);
       });
@@ -340,7 +336,7 @@ describe('date-utils', () => {
         '2024-02-29', // Leap year
       ];
 
-      dates.forEach(dateStr => {
+      dates.forEach((dateStr) => {
         const parsed = parseLocalDay(dateStr);
         const formatted = parsed.toISOString().split('T')[0];
         expect(formatted).toBe(dateStr);

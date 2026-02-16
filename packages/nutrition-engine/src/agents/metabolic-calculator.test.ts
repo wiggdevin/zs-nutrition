@@ -374,14 +374,14 @@ describe('MetabolicCalculator', () => {
       expect(result.mealTargets).toHaveLength(5);
 
       // Each snack should be 10%
-      const snacks = result.mealTargets.filter(m => m.slot.startsWith('snack'));
+      const snacks = result.mealTargets.filter((m) => m.slot.startsWith('snack'));
       expect(snacks).toHaveLength(2);
-      snacks.forEach(snack => {
+      snacks.forEach((snack) => {
         expect(snack.percentOfDaily).toBe(10);
       });
 
       // Meals should total 80% (100% - 20% for snacks)
-      const meals = result.mealTargets.filter(m => m.slot.startsWith('meal'));
+      const meals = result.mealTargets.filter((m) => m.slot.startsWith('meal'));
       const mealTotal = meals.reduce((sum, m) => sum + m.percentOfDaily, 0);
       expect(mealTotal).toBe(80);
     });
@@ -389,7 +389,7 @@ describe('MetabolicCalculator', () => {
     it('handles different meal counts correctly', () => {
       const configs = [2, 3, 4, 5, 6];
 
-      configs.forEach(mealCount => {
+      configs.forEach((mealCount) => {
         const intake = createBaseIntake({
           mealsPerDay: mealCount,
           snacksPerDay: 0,
@@ -476,8 +476,21 @@ describe('MetabolicCalculator', () => {
       expect(MEAL_LABELS[2]).toEqual(['breakfast', 'dinner']);
       expect(MEAL_LABELS[3]).toEqual(['breakfast', 'lunch', 'dinner']);
       expect(MEAL_LABELS[4]).toEqual(['breakfast', 'lunch', 'dinner', 'evening_snack']);
-      expect(MEAL_LABELS[5]).toEqual(['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner']);
-      expect(MEAL_LABELS[6]).toEqual(['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner', 'evening_snack']);
+      expect(MEAL_LABELS[5]).toEqual([
+        'breakfast',
+        'morning_snack',
+        'lunch',
+        'afternoon_snack',
+        'dinner',
+      ]);
+      expect(MEAL_LABELS[6]).toEqual([
+        'breakfast',
+        'morning_snack',
+        'lunch',
+        'afternoon_snack',
+        'dinner',
+        'evening_snack',
+      ]);
     });
   });
 });

@@ -14,7 +14,12 @@ const clerkPublishable = process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY ?? '';
 
 // Fail hard if production is missing real Clerk keys
 if (process.env.NODE_ENV === 'production') {
-  if (!clerkSecret || clerkSecret === 'sk_test_placeholder' || clerkSecret === 'sk_...' || clerkSecret.startsWith('sk_...')) {
+  if (
+    !clerkSecret ||
+    clerkSecret === 'sk_test_placeholder' ||
+    clerkSecret === 'sk_...' ||
+    clerkSecret.startsWith('sk_...')
+  ) {
     throw new Error('FATAL: CLERK_SECRET_KEY is required in production');
   }
   if (!clerkPublishable || clerkPublishable === 'pk_...' || clerkPublishable.startsWith('pk_...')) {
@@ -23,9 +28,9 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 export const isDevMode =
-  process.env.NODE_ENV !== 'production' && (
-    // No key configured at all
-    !clerkSecret ||
+  process.env.NODE_ENV !== 'production' &&
+  // No key configured at all
+  (!clerkSecret ||
     // Explicit placeholder value
     clerkSecret === 'sk_test_placeholder' ||
     // Empty string (redundant with !clerkSecret but explicit for clarity)
@@ -35,5 +40,4 @@ export const isDevMode =
     clerkSecret.startsWith('sk_...') ||
     // Publishable key placeholders
     clerkPublishable === 'pk_...' ||
-    clerkPublishable.startsWith('pk_...')
-  );
+    clerkPublishable.startsWith('pk_...'));

@@ -272,16 +272,10 @@ describe('IntakeNormalizer', () => {
 
   describe('Dietary style normalization', () => {
     it('preserves valid dietary styles', () => {
-      const styles: Array<'omnivore' | 'vegetarian' | 'vegan' | 'pescatarian' | 'keto' | 'paleo'> = [
-        'omnivore',
-        'vegetarian',
-        'vegan',
-        'pescatarian',
-        'keto',
-        'paleo',
-      ];
+      const styles: Array<'omnivore' | 'vegetarian' | 'vegan' | 'pescatarian' | 'keto' | 'paleo'> =
+        ['omnivore', 'vegetarian', 'vegan', 'pescatarian', 'keto', 'paleo'];
 
-      styles.forEach(style => {
+      styles.forEach((style) => {
         const input = createBaseRawIntake({ dietaryStyle: style });
         const result = normalizer.normalize(input);
 

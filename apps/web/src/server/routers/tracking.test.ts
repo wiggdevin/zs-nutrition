@@ -1,32 +1,31 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { TRPCError } from '@trpc/server'
-import { prisma } from '@/lib/prisma'
-import { createCaller, createAuthedTestContext } from '@/test/trpc-test-utils'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { prisma } from '@/lib/prisma';
+import { createCaller, createAuthedTestContext } from '@/test/trpc-test-utils';
 
 describe('tracking router', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   describe('getDailySummary', () => {
     it('returns null dailyLog and empty trackedMeals when no data exists', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-no-data' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-no-data' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([])
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([]);
 
-      const result = await caller.tracking.getDailySummary()
+      const result = await caller.tracking.getDailySummary();
 
-      expect(result.dailyLog).toBeNull()
-      expect(result.trackedMeals).toEqual([])
-      expect(result.mealCount).toBe(0)
-      expect(result.totals).toEqual({ kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 })
-    })
+      expect(result.dailyLog).toBeNull();
+      expect(result.trackedMeals).toEqual([]);
+      expect(result.mealCount).toBe(0);
+      expect(result.totals).toEqual({ kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 });
+    });
 
     it('returns dailyLog with tracked meals and calculated totals', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockDailyLog = {
         id: 'log-123',
@@ -41,7 +40,7 @@ describe('tracking router', () => {
         actualCarbsG: 180,
         actualFatG: 60,
         adherenceScore: 92,
-      }
+      };
 
       const mockTrackedMeals = [
         {
@@ -78,48 +77,48 @@ describe('tracking router', () => {
           confidenceScore: 0.95,
           createdAt: new Date('2026-02-05T12:30:00'),
         },
-      ]
+      ];
 
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(mockDailyLog)
-      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue(mockTrackedMeals)
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(mockDailyLog);
+      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue(mockTrackedMeals);
 
       const result = await caller.tracking.getDailySummary({
         date: '2026-02-05',
-      })
+      });
 
-      expect(result.dailyLog).toBeTruthy()
-      expect(result.dailyLog?.targetKcal).toBe(2000)
-      expect(result.dailyLog?.actualKcal).toBe(1800)
-      expect(result.trackedMeals).toHaveLength(2)
-      expect(result.mealCount).toBe(2)
-      expect(result.totals.kcal).toBe(1000) // 400 + 600
-      expect(result.totals.proteinG).toBe(60.5) // 10.5 + 50.0, rounded to 1 decimal
-    })
+      expect(result.dailyLog).toBeTruthy();
+      expect(result.dailyLog?.targetKcal).toBe(2000);
+      expect(result.dailyLog?.actualKcal).toBe(1800);
+      expect(result.trackedMeals).toHaveLength(2);
+      expect(result.mealCount).toBe(2);
+      expect(result.totals.kcal).toBe(1000); // 400 + 600
+      expect(result.totals.proteinG).toBe(60.5); // 10.5 + 50.0, rounded to 1 decimal
+    });
 
     it('defaults to today when no date is provided', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([])
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([]);
 
-      await caller.tracking.getDailySummary()
+      await caller.tracking.getDailySummary();
 
-      expect(prisma.dailyLog.findUnique).toHaveBeenCalled()
+      expect(prisma.dailyLog.findUnique).toHaveBeenCalled();
       // Verify it was called with a date parameter
-      const call = vi.mocked(prisma.dailyLog.findUnique).mock.calls[0][0]
-      expect(call.where.userId_date.userId).toBe('user-123')
-      expect(call.where.userId_date.date).toBeInstanceOf(Date)
-    })
-  })
+      const call = vi.mocked(prisma.dailyLog.findUnique).mock.calls[0][0];
+      expect(call.where.userId_date.userId).toBe('user-123');
+      expect(call.where.userId_date.date).toBeInstanceOf(Date);
+    });
+  });
 
   describe('getWeeklyTrend', () => {
     it('throws BAD_REQUEST when startDate is in the future', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
-      const futureDate = new Date()
-      futureDate.setDate(futureDate.getDate() + 10)
+      const futureDate = new Date();
+      futureDate.setDate(futureDate.getDate() + 10);
 
       await expect(
         caller.tracking.getWeeklyTrend({
@@ -128,14 +127,14 @@ describe('tracking router', () => {
       ).rejects.toMatchObject({
         code: 'BAD_REQUEST',
         message: 'Start date cannot be in the future',
-      })
-    })
+      });
+    });
 
     it('returns 7 days of summary data', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
-      const startDate = new Date('2026-02-01')
+      const startDate = new Date('2026-02-01');
       const mockDailyLogs = [
         {
           id: 'log-1',
@@ -165,33 +164,33 @@ describe('tracking router', () => {
           actualFatG: 70,
           adherenceScore: 88,
         },
-      ]
+      ];
 
-      vi.mocked(prisma.dailyLog.findMany).mockResolvedValue(mockDailyLogs)
-      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([])
+      vi.mocked(prisma.dailyLog.findMany).mockResolvedValue(mockDailyLogs);
+      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([]);
 
       const result = await caller.tracking.getWeeklyTrend({
         startDate: startDate.toISOString(),
-      })
+      });
 
-      expect(result.days).toHaveLength(7)
-      expect(result.totalDays).toBe(7)
-      expect(result.startDate).toBeDefined()
-      expect(result.endDate).toBeDefined()
+      expect(result.days).toHaveLength(7);
+      expect(result.totalDays).toBe(7);
+      expect(result.startDate).toBeDefined();
+      expect(result.endDate).toBeDefined();
 
       // First two days should have targets (from dailyLogs)
-      expect(result.days[0].targets).toBeTruthy()
-      expect(result.days[1].targets).toBeTruthy()
+      expect(result.days[0].targets).toBeTruthy();
+      expect(result.days[1].targets).toBeTruthy();
 
       // Days without logs should have null targets
-      expect(result.days[2].targets).toBeNull()
-    })
-  })
+      expect(result.days[2].targets).toBeNull();
+    });
+  });
 
   describe('logMeal', () => {
     it('creates a tracked meal and updates daily log', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockProfile = {
         id: 'profile-123',
@@ -202,7 +201,7 @@ describe('tracking router', () => {
         carbsTargetG: 200,
         fatTargetG: 65,
         createdAt: new Date(),
-      }
+      };
 
       const mockTrackedMeal = {
         id: 'meal-new',
@@ -220,7 +219,7 @@ describe('tracking router', () => {
         source: 'manual',
         confidenceScore: 1.0,
         createdAt: new Date(),
-      }
+      };
 
       const mockDailyLog = {
         id: 'log-new',
@@ -235,7 +234,7 @@ describe('tracking router', () => {
         actualCarbsG: 10,
         actualFatG: 15,
         adherenceScore: 0,
-      }
+      };
 
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         // @ts-expect-error - Mock transaction client
@@ -250,8 +249,8 @@ describe('tracking router', () => {
             findUnique: vi.fn().mockResolvedValue(null),
             create: vi.fn().mockResolvedValue(mockDailyLog),
           },
-        })
-      })
+        });
+      });
 
       const result = await caller.tracking.logMeal({
         mealName: 'Grilled Chicken',
@@ -260,16 +259,16 @@ describe('tracking router', () => {
         carbs: 10,
         fat: 15,
         mealSlot: 'lunch',
-      })
+      });
 
-      expect(result.trackedMeal.mealName).toBe('Grilled Chicken')
-      expect(result.trackedMeal.kcal).toBe(500)
-      expect(result.dailyLog.actualKcal).toBe(500)
-    })
+      expect(result.trackedMeal.mealName).toBe('Grilled Chicken');
+      expect(result.trackedMeal.kcal).toBe(500);
+      expect(result.dailyLog.actualKcal).toBe(500);
+    });
 
     it('validates negative values are rejected', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       await expect(
         caller.tracking.logMeal({
@@ -279,12 +278,12 @@ describe('tracking router', () => {
           carbs: 10,
           fat: 5,
         })
-      ).rejects.toThrow()
-    })
+      ).rejects.toThrow();
+    });
 
     it('validates meal name is required', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       await expect(
         caller.tracking.logMeal({
@@ -294,12 +293,12 @@ describe('tracking router', () => {
           carbs: 10,
           fat: 5,
         })
-      ).rejects.toThrow()
-    })
+      ).rejects.toThrow();
+    });
 
     it('rounds macros to correct precision', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockProfile = {
         id: 'profile-123',
@@ -310,7 +309,7 @@ describe('tracking router', () => {
         carbsTargetG: 200,
         fatTargetG: 65,
         createdAt: new Date(),
-      }
+      };
 
       const mockTrackedMeal = {
         id: 'meal-new',
@@ -328,7 +327,7 @@ describe('tracking router', () => {
         source: 'manual',
         confidenceScore: 1.0,
         createdAt: new Date(),
-      }
+      };
 
       const mockDailyLog = {
         id: 'log-new',
@@ -343,7 +342,7 @@ describe('tracking router', () => {
         actualCarbsG: 46,
         actualFatG: 7,
         adherenceScore: 0,
-      }
+      };
 
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         // @ts-expect-error - Mock transaction client
@@ -358,8 +357,8 @@ describe('tracking router', () => {
             findUnique: vi.fn().mockResolvedValue(null),
             create: vi.fn().mockResolvedValue(mockDailyLog),
           },
-        })
-      })
+        });
+      });
 
       const result = await caller.tracking.logMeal({
         mealName: 'Test Meal',
@@ -367,12 +366,12 @@ describe('tracking router', () => {
         protein: 12.345,
         carbs: 45.678,
         fat: 6.789,
-      })
+      });
 
-      expect(result.trackedMeal.kcal).toBe(123)
-      expect(result.trackedMeal.proteinG).toBe(12.3)
-      expect(result.trackedMeal.carbsG).toBe(45.7)
-      expect(result.trackedMeal.fatG).toBe(6.8)
-    })
-  })
-})
+      expect(result.trackedMeal.kcal).toBe(123);
+      expect(result.trackedMeal.proteinG).toBe(12.3);
+      expect(result.trackedMeal.carbsG).toBe(45.7);
+      expect(result.trackedMeal.fatG).toBe(6.8);
+    });
+  });
+});

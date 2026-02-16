@@ -8,9 +8,9 @@ import {
   DraftMeal,
   DraftDay,
   Ingredient,
-  VerifiedNutritionSchema,
 } from '../types/schemas';
-import { FatSecretAdapter, FoodSearchResult, FoodDetails } from '../adapters/fatsecret';
+import { FatSecretAdapter, FoodDetails } from '../adapters/fatsecret';
+import { USDAAdapter } from '../adapters/usda';
 import { engineLogger } from '../utils/logger';
 
 /** Maximum concurrent FatSecret API calls to respect rate limits */
@@ -27,16 +27,17 @@ const FATSECRET_CONCURRENCY_LIMIT = 5;
 export class NutritionCompiler {
   private readonly limit = pLimit(FATSECRET_CONCURRENCY_LIMIT);
 
-  constructor(private fatSecretAdapter: FatSecretAdapter) {}
+  constructor(
+    private fatSecretAdapter: FatSecretAdapter,
+    private usdaAdapter?: USDAAdapter
+  ) {}
 
   async compile(draft: MealPlanDraft): Promise<MealPlanCompiled> {
     const startTime = Date.now();
     engineLogger.info('[NutritionCompiler] Starting compilation with parallel processing');
 
     // Process all days in parallel (each day's meals are processed concurrently with rate limiting)
-    const compiledDays = await Promise.all(
-      draft.days.map(day => this.compileDay(day))
-    );
+    const compiledDays = await Promise.all(draft.days.map((day) => this.compileDay(day)));
 
     // Calculate weekly averages
     const weeklyAverages = this.calculateWeeklyAverages(compiledDays);
@@ -59,7 +60,7 @@ export class NutritionCompiler {
   private async compileDay(day: DraftDay): Promise<CompiledDay> {
     // Process all meals in this day concurrently, limited by p-limit
     const compiledMeals = await Promise.all(
-      day.meals.map(meal => this.limit(() => this.compileMeal(meal)))
+      day.meals.map((meal) => this.limit(() => this.compileMeal(meal)))
     );
 
     // Calculate daily totals
@@ -136,6 +137,49 @@ export class NutritionCompiler {
 
           // Build ingredient list from food details
           ingredients = this.buildIngredientsFromFood(foodDetails, meal, scaleFactor);
+        }
+      }
+
+      // USDA fallback: when FatSecret returns no results, try USDA FoodData Central
+      if (searchResults.length === 0 && this.usdaAdapter) {
+        try {
+          const usdaResults = await this.usdaAdapter.searchFoods(meal.fatsecretSearchQuery, 5);
+
+          if (usdaResults.length > 0) {
+            const bestMatch = usdaResults[0];
+            const foodDetails = await this.usdaAdapter.getFood(bestMatch.foodId);
+
+            if (foodDetails.servings.length > 0) {
+              const serving = foodDetails.servings[0];
+              const servingScale = meal.suggestedServings || 1;
+
+              const baseKcal = serving.calories * servingScale;
+              const targetKcal = meal.targetNutrition.kcal;
+              const scaleFactor =
+                baseKcal > 0 ? Math.min(Math.max(targetKcal / baseKcal, 0.5), 3.0) : 1;
+
+              nutrition = {
+                kcal: Math.round(serving.calories * servingScale * scaleFactor),
+                proteinG: Math.round(serving.protein * servingScale * scaleFactor * 10) / 10,
+                carbsG: Math.round(serving.carbohydrate * servingScale * scaleFactor * 10) / 10,
+                fatG: Math.round(serving.fat * servingScale * scaleFactor * 10) / 10,
+                fiberG:
+                  serving.fiber !== undefined
+                    ? Math.round(serving.fiber * servingScale * scaleFactor * 10) / 10
+                    : undefined,
+              };
+
+              confidenceLevel = 'verified';
+              fatsecretRecipeId = `usda-${bestMatch.foodId}`;
+
+              ingredients = this.buildIngredientsFromFood(foodDetails, meal, scaleFactor);
+            }
+          }
+        } catch (usdaError) {
+          engineLogger.warn(
+            `[NutritionCompiler] USDA fallback failed for "${meal.fatsecretSearchQuery}":`,
+            usdaError instanceof Error ? usdaError.message : usdaError
+          );
         }
       }
     } catch (error) {

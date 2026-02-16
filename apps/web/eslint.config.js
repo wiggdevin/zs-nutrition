@@ -3,16 +3,50 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import js from "@eslint/js";
 import tseslint from "typescript-eslint";
+import nextPlugin from "@next/eslint-plugin-next";
 import prettier from "eslint-plugin-prettier";
+import reactPlugin from "eslint-plugin-react";
+import hooksPlugin from "eslint-plugin-react-hooks";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const gitignorePath = path.join(__dirname, ".gitignore");
+const gitignorePath = path.join(__dirname, "../../.gitignore");
 
 export default [
   // Base JavaScript/TypeScript rules
   js.configs.recommended,
   ...tseslint.configs.recommended,
+
+  // React rules
+  {
+    plugins: {
+      react: reactPlugin,
+      "react-hooks": hooksPlugin,
+    },
+    rules: {
+      ...reactPlugin.configs.recommended.rules,
+      ...hooksPlugin.configs.recommended.rules,
+      "react/react-in-jsx-scope": "off", // Not needed with React 19+
+      "react/prop-types": "off", // Using TypeScript instead
+      "react/display-name": "off",
+    },
+    settings: {
+      react: {
+        version: "detect",
+      },
+    },
+  },
+
+  // Next.js plugin (using object format for flat config)
+  {
+    plugins: {
+      "@next/next": nextPlugin,
+    },
+    rules: {
+      ...nextPlugin.configs.recommended.rules,
+      ...nextPlugin.configs["core-web-vitals"].rules,
+    },
+  },
 
   // Prettier integration (must be last to override other configs)
   {
@@ -63,25 +97,9 @@ export default [
       "no-var": "error",
       "eqeqeq": ["error", "always"],
       "curly": "off",
-    },
-  },
 
-  // Workers need console.log for operational logging
-  {
-    files: ["workers/**/*.ts", "workers/**/*.js"],
-    rules: {
-      "no-console": ["error", { allow: ["log", "warn", "error", "info"] }],
-    },
-  },
-
-  // Relaxed rules for test files
-  {
-    files: ["**/test-*.{ts,mjs,js}", "**/*.test.{ts,tsx,js,mjs}"],
-    rules: {
-      "no-console": "off",
-      "no-undef": "off",
-      "@typescript-eslint/no-unused-vars": "warn",
-      "@typescript-eslint/no-require-imports": "off",
+      // Next.js specific
+      "@next/next/no-html-link-for-pages": "error",
     },
   },
 ];

@@ -15,9 +15,9 @@ async function getOrCreateUser(clerkUserId: string) {
 // GET - fetch onboarding state
 export async function GET() {
   let clerkUserId: string;
-  let dbUserId: string;
+  let _dbUserId: string;
   try {
-    ({ clerkUserId, dbUserId } = await requireActiveUser());
+    ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unauthorized';
     const status = message === 'Account is deactivated' ? 403 : 401;
@@ -86,9 +86,9 @@ export async function GET() {
 // POST - update onboarding step
 export async function POST(request: NextRequest) {
   let clerkUserId: string;
-  let dbUserId: string;
+  let _dbUserId: string;
   try {
-    ({ clerkUserId, dbUserId } = await requireActiveUser());
+    ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
   } catch (error) {
     const message = error instanceof Error ? error.message : 'Unauthorized';
     const status = message === 'Account is deactivated' ? 403 : 401;

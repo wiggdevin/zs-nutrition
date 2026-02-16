@@ -257,7 +257,7 @@ export class FatSecretAdapter {
               engineLogger.warn(
                 `[FatSecret] ${response.status} on attempt ${attempt + 1}, retrying in ${Math.round(delay)}ms`
               );
-              await new Promise(resolve => setTimeout(resolve, delay));
+              await new Promise((resolve) => setTimeout(resolve, delay));
               continue;
             }
           }
@@ -274,7 +274,7 @@ export class FatSecretAdapter {
           engineLogger.warn(
             `[FatSecret] Network error on attempt ${attempt + 1}, retrying in ${delay}ms: ${(error as Error).message}`
           );
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
@@ -305,7 +305,7 @@ export class FatSecretAdapter {
           throw new Error(`FatSecret auth failed: ${response.status} ${response.statusText}`);
         }
 
-        const data = await response.json() as FatSecretTokenResponse;
+        const data = (await response.json()) as FatSecretTokenResponse;
         this.accessToken = data.access_token;
         // Expire 60s early to avoid edge cases
         this.tokenExpiry = Date.now() + (data.expires_in - 60) * 1000;
@@ -318,7 +318,7 @@ export class FatSecretAdapter {
           engineLogger.warn(
             `[FatSecret] Auth error on attempt ${attempt + 1}, retrying in ${delay}ms: ${(error as Error).message}`
           );
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
@@ -360,18 +360,22 @@ export class FatSecretAdapter {
     const cached = this.searchCache.get(cacheKey);
     if (cached) {
       this.cacheStats.searchHits++;
-      engineLogger.debug(`[FatSecret] Search cache HIT for "${query}" (total hits: ${this.cacheStats.searchHits})`);
+      engineLogger.debug(
+        `[FatSecret] Search cache HIT for "${query}" (total hits: ${this.cacheStats.searchHits})`
+      );
       return cached;
     }
 
     this.cacheStats.searchMisses++;
-    engineLogger.debug(`[FatSecret] Search cache MISS for "${query}" (total misses: ${this.cacheStats.searchMisses})`);
+    engineLogger.debug(
+      `[FatSecret] Search cache MISS for "${query}" (total misses: ${this.cacheStats.searchMisses})`
+    );
 
-    const data = await this.apiRequest('foods.search', {
+    const data = (await this.apiRequest('foods.search', {
       search_expression: query,
       max_results: String(maxResults),
       page_number: String(pageNumber),
-    }) as FatSecretSearchResponse;
+    })) as FatSecretSearchResponse;
 
     const foods = data?.foods?.food;
     if (!foods) {
@@ -402,14 +406,20 @@ export class FatSecretAdapter {
     const cached = this.foodCache.get(foodId);
     if (cached) {
       this.cacheStats.foodHits++;
-      engineLogger.debug(`[FatSecret] Food cache HIT for ID "${foodId}" (total hits: ${this.cacheStats.foodHits})`);
+      engineLogger.debug(
+        `[FatSecret] Food cache HIT for ID "${foodId}" (total hits: ${this.cacheStats.foodHits})`
+      );
       return cached;
     }
 
     this.cacheStats.foodMisses++;
-    engineLogger.debug(`[FatSecret] Food cache MISS for ID "${foodId}" (total misses: ${this.cacheStats.foodMisses})`);
+    engineLogger.debug(
+      `[FatSecret] Food cache MISS for ID "${foodId}" (total misses: ${this.cacheStats.foodMisses})`
+    );
 
-    const data = await this.apiRequest('food.get.v4', { food_id: foodId }) as FatSecretFoodResponse;
+    const data = (await this.apiRequest('food.get.v4', {
+      food_id: foodId,
+    })) as FatSecretFoodResponse;
     const food = data?.food;
     if (!food) {
       throw new Error(`Food ${foodId} not found`);
@@ -466,10 +476,10 @@ export class FatSecretAdapter {
       return LocalRecipeDatabase.searchRecipes(query, maxResults);
     }
 
-    const data = await this.apiRequest('recipes.search', {
+    const data = (await this.apiRequest('recipes.search', {
       search_expression: query,
       max_results: String(maxResults),
-    }) as FatSecretRecipeSearchResponse;
+    })) as FatSecretRecipeSearchResponse;
 
     const recipes = data?.recipes?.recipe;
     if (!recipes) {
@@ -530,9 +540,9 @@ export class FatSecretAdapter {
       return LocalFoodDatabase.autocomplete(query);
     }
 
-    const data = await this.apiRequest('foods.autocomplete', {
+    const data = (await this.apiRequest('foods.autocomplete', {
       expression: query,
-    }) as FatSecretAutocompleteResponse;
+    })) as FatSecretAutocompleteResponse;
 
     const suggestions = data?.suggestions?.suggestion;
     if (!suggestions) {

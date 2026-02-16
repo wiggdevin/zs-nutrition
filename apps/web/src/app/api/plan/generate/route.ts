@@ -6,9 +6,6 @@ import { requireActiveUser, isDevMode } from '@/lib/auth';
 import { planGenerationLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/safe-logger';
 import {
-  ACTIVITY_MULTIPLIERS,
-  MACRO_SPLITS,
-  TRAINING_DAY_BONUS,
   calculateBMR,
   calculateTDEE,
   calculateGoalCalories,
@@ -22,9 +19,9 @@ const useMockQueue = process.env.USE_MOCK_QUEUE === 'true';
 export async function POST() {
   try {
     let clerkUserId: string;
-    let dbUserId: string;
+    let _dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser());
+      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
@@ -66,12 +63,19 @@ export async function POST() {
     const activeProfile = user.profiles[0];
     if (!activeProfile) {
       // No profile means onboarding wasn't completed (or state is inconsistent)
-      return NextResponse.json({ error: 'No active profile found. Please complete onboarding first.' }, { status: 400 });
+      return NextResponse.json(
+        { error: 'No active profile found. Please complete onboarding first.' },
+        { status: 400 }
+      );
     }
 
     // allergies and exclusions are now Prisma Json types - no parsing needed
-    const allergies = (Array.isArray(activeProfile.allergies) ? activeProfile.allergies : []) as string[];
-    const exclusions = (Array.isArray(activeProfile.exclusions) ? activeProfile.exclusions : []) as string[];
+    const allergies = (
+      Array.isArray(activeProfile.allergies) ? activeProfile.allergies : []
+    ) as string[];
+    const exclusions = (
+      Array.isArray(activeProfile.exclusions) ? activeProfile.exclusions : []
+    ) as string[];
 
     // Check for existing pending/running jobs to prevent duplicates
     const existingJob = await prisma.planGenerationJob.findFirst({
@@ -116,8 +120,12 @@ export async function POST() {
           snacksPerDay: activeProfile.snacksPerDay,
           allergies,
           exclusions,
-          cuisinePreferences: (Array.isArray(activeProfile.cuisinePrefs) ? activeProfile.cuisinePrefs : []) as string[],
-          trainingDays: (Array.isArray(activeProfile.trainingDays) ? activeProfile.trainingDays : []) as string[],
+          cuisinePreferences: (Array.isArray(activeProfile.cuisinePrefs)
+            ? activeProfile.cuisinePrefs
+            : []) as string[],
+          trainingDays: (Array.isArray(activeProfile.trainingDays)
+            ? activeProfile.trainingDays
+            : []) as string[],
           trainingTime: activeProfile.trainingTime || undefined,
           cookingSkill: activeProfile.cookingSkill || 5,
           prepTimeMaxMin: activeProfile.prepTimeMax || 30,

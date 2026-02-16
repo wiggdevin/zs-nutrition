@@ -361,7 +361,9 @@ export const adaptiveNutritionRouter = router({
     }
 
     // Round to nearest 50 calories for cleaner targets
-    suggestedKcal = Math.round(suggestedKcal / ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR) * ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR;
+    suggestedKcal =
+      Math.round(suggestedKcal / ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR) *
+      ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR;
 
     return {
       hasSuggestion: shouldAdjust,
@@ -513,10 +515,18 @@ export const adaptiveNutritionRouter = router({
 
       if (activePlan) {
         // Build intake data from updated profile for plan regeneration
-        const allergies = (Array.isArray(updatedProfile.allergies) ? updatedProfile.allergies : []) as string[];
-        const exclusions = (Array.isArray(updatedProfile.exclusions) ? updatedProfile.exclusions : []) as string[];
-        const cuisinePreferences = (Array.isArray(updatedProfile.cuisinePrefs) ? updatedProfile.cuisinePrefs : []) as string[];
-        const trainingDays = (Array.isArray(updatedProfile.trainingDays) ? updatedProfile.trainingDays : []) as string[];
+        const allergies = (
+          Array.isArray(updatedProfile.allergies) ? updatedProfile.allergies : []
+        ) as string[];
+        const exclusions = (
+          Array.isArray(updatedProfile.exclusions) ? updatedProfile.exclusions : []
+        ) as string[];
+        const cuisinePreferences = (
+          Array.isArray(updatedProfile.cuisinePrefs) ? updatedProfile.cuisinePrefs : []
+        ) as string[];
+        const trainingDays = (
+          Array.isArray(updatedProfile.trainingDays) ? updatedProfile.trainingDays : []
+        ) as string[];
 
         const intakeData = {
           name: updatedProfile.name,
@@ -536,7 +546,11 @@ export const adaptiveNutritionRouter = router({
           trainingDays: trainingDays as Array<
             'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
           >,
-          trainingTime: updatedProfile.trainingTime as 'morning' | 'afternoon' | 'evening' | undefined,
+          trainingTime: updatedProfile.trainingTime as
+            | 'morning'
+            | 'afternoon'
+            | 'evening'
+            | undefined,
           dietaryStyle: updatedProfile.dietaryStyle as
             | 'omnivore'
             | 'vegetarian'
@@ -551,7 +565,11 @@ export const adaptiveNutritionRouter = router({
           snacksPerDay: updatedProfile.snacksPerDay,
           cookingSkill: updatedProfile.cookingSkill,
           prepTimeMaxMin: updatedProfile.prepTimeMax,
-          macroStyle: updatedProfile.macroStyle as 'balanced' | 'high_protein' | 'low_carb' | 'keto',
+          macroStyle: updatedProfile.macroStyle as
+            | 'balanced'
+            | 'high_protein'
+            | 'low_carb'
+            | 'keto',
           planDurationDays: 7,
         };
 
@@ -581,7 +599,10 @@ export const adaptiveNutritionRouter = router({
         } catch (queueError) {
           // If Redis/BullMQ is unavailable, log and continue
           // The job is still created in DB - worker will pick it up when available
-          logger.warn('BullMQ enqueue failed during calorie adjustment (Redis may be unavailable):', queueError);
+          logger.warn(
+            'BullMQ enqueue failed during calorie adjustment (Redis may be unavailable):',
+            queueError
+          );
           planRegenerated = true; // Job was created, will be processed eventually
         }
       }
@@ -603,9 +624,7 @@ export const adaptiveNutritionRouter = router({
           } as Prisma.InputJsonValue,
           weightChangeKg,
           weightChangeLbs,
-          trendAnalysis: trendAnalysis
-            ? (trendAnalysis as Prisma.InputJsonValue)
-            : Prisma.JsonNull,
+          trendAnalysis: trendAnalysis ? (trendAnalysis as Prisma.InputJsonValue) : Prisma.JsonNull,
           milestoneAchieved,
           planRegenerated,
         },
@@ -752,7 +771,8 @@ export const adaptiveNutritionRouter = router({
     if (!profile.bmrKcal) {
       throw new TRPCError({
         code: 'PRECONDITION_FAILED',
-        message: 'Metabolic profile is incomplete (missing BMR). Please regenerate your meal plan to recalculate metabolic data.',
+        message:
+          'Metabolic profile is incomplete (missing BMR). Please regenerate your meal plan to recalculate metabolic data.',
       });
     }
 
@@ -766,8 +786,13 @@ export const adaptiveNutritionRouter = router({
       const deviation = weeklyRateLbs - expectedRate;
 
       // Plateau detection: less than threshold lbs/week loss for 2+ weeks on a cut
-      if (timeSpanDays >= 14 && weeklyRateLbs > -ADAPTIVE_NUTRITION_CONFIG.PLATEAU_THRESHOLD_LBS_PER_WEEK) {
-        const decrease = Math.round(Math.abs(deviation) * ADAPTIVE_NUTRITION_CONFIG.ADJUSTMENT_MULTIPLIERS.CUT_DECREASE_PER_LB);
+      if (
+        timeSpanDays >= 14 &&
+        weeklyRateLbs > -ADAPTIVE_NUTRITION_CONFIG.PLATEAU_THRESHOLD_LBS_PER_WEEK
+      ) {
+        const decrease = Math.round(
+          Math.abs(deviation) * ADAPTIVE_NUTRITION_CONFIG.ADJUSTMENT_MULTIPLIERS.CUT_DECREASE_PER_LB
+        );
         suggestedKcal = Math.max(minSafeKcal, currentGoalKcal - decrease);
         adjustmentNeeded = true;
         adjustmentReason = `Weight loss has stalled (${weeklyRateLbs.toFixed(2)} lbs/week vs ${expectedRate.toFixed(2)} target). Consider reducing calories to restart progress.`;
@@ -823,7 +848,9 @@ export const adaptiveNutritionRouter = router({
     }
 
     // Round to nearest 50 calories
-    suggestedKcal = Math.round(suggestedKcal / ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR) * ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR;
+    suggestedKcal =
+      Math.round(suggestedKcal / ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR) *
+      ADAPTIVE_NUTRITION_CONFIG.CALORIE_ROUNDING_FACTOR;
 
     const trend = {
       startWeightLbs: firstEntry.weightLbs,
@@ -931,7 +958,9 @@ export const adaptiveNutritionRouter = router({
     if (totalActiveCalories > ADAPTIVE_NUTRITION_CONFIG.MIN_ACTIVITY_THRESHOLD_KCAL) {
       // Apply replenishment rate
       // This balances recovery needs with weight management goals
-      bonusCalories = Math.round(totalActiveCalories * ADAPTIVE_NUTRITION_CONFIG.ACTIVITY_REPLENISHMENT_RATE);
+      bonusCalories = Math.round(
+        totalActiveCalories * ADAPTIVE_NUTRITION_CONFIG.ACTIVITY_REPLENISHMENT_RATE
+      );
 
       // Get user's profile to determine base targets
       const profile = await prisma.userProfile.findFirst({
@@ -1032,36 +1061,34 @@ export const adaptiveNutritionRouter = router({
     const now = new Date();
     const startOfToday = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
 
-    // Get today's syncs
-    const todaysSyncs = await prisma.activitySync.findMany({
-      where: {
-        userId: dbUserId,
-        syncDate: { gte: startOfToday },
-      },
-      include: {
-        connection: {
-          select: {
-            platform: true,
-            isActive: true,
+    // Fetch all three independent queries in parallel to avoid sequential round-trips
+    const [todaysSyncs, todaysLog, profile] = await Promise.all([
+      prisma.activitySync.findMany({
+        where: {
+          userId: dbUserId,
+          syncDate: { gte: startOfToday },
+        },
+        include: {
+          connection: {
+            select: {
+              platform: true,
+              isActive: true,
+            },
           },
         },
-      },
-    });
-
-    // Get today's daily log to see current bonus
-    const todaysLog = await prisma.dailyLog.findUnique({
-      where: {
-        userId_date: {
-          userId: dbUserId,
-          date: startOfToday,
+      }),
+      prisma.dailyLog.findUnique({
+        where: {
+          userId_date: {
+            userId: dbUserId,
+            date: startOfToday,
+          },
         },
-      },
-    });
-
-    // Get user profile for base target
-    const profile = await prisma.userProfile.findFirst({
-      where: { userId: dbUserId, isActive: true },
-    });
+      }),
+      prisma.userProfile.findFirst({
+        where: { userId: dbUserId, isActive: true },
+      }),
+    ]);
 
     const totalActiveCalories = todaysSyncs.reduce((sum, sync) => {
       return sum + (sync.activeCalories || 0);
@@ -1077,9 +1104,10 @@ export const adaptiveNutritionRouter = router({
         unprocessed: unprocessedCount,
       },
       totalActiveCalories: Math.round(totalActiveCalories),
-      bonusApplied: todaysLog?.targetKcal && profile?.goalKcal
-        ? Math.max(0, todaysLog.targetKcal - profile.goalKcal)
-        : 0,
+      bonusApplied:
+        todaysLog?.targetKcal && profile?.goalKcal
+          ? Math.max(0, todaysLog.targetKcal - profile.goalKcal)
+          : 0,
       platforms: [...new Set(todaysSyncs.map((s) => s.connection.platform))],
       hasUnprocessed: unprocessedCount > 0,
     };

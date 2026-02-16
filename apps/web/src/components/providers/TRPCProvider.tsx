@@ -24,35 +24,40 @@ const shouldRetry = (failureCount: number, error: unknown): boolean => {
 };
 
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = React.useState(() => new QueryClient({
-    defaultOptions: {
-      queries: {
-        staleTime: CACHE_TIMES.ACTIVE_PLAN,
-        refetchOnWindowFocus: false,
-        retry: shouldRetry,
-        retryDelay: (attemptIndex: number) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
-      },
-      mutations: {
-        retry: (failureCount: number, error: unknown) => {
-          if (failureCount >= 1) return false;
-          return shouldRetry(failureCount, error);
+  const [queryClient] = React.useState(
+    () =>
+      new QueryClient({
+        defaultOptions: {
+          queries: {
+            staleTime: CACHE_TIMES.ACTIVE_PLAN,
+            refetchOnWindowFocus: false,
+            retry: shouldRetry,
+            retryDelay: (attemptIndex: number) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
+          },
+          mutations: {
+            retry: (failureCount: number, error: unknown) => {
+              if (failureCount >= 1) return false;
+              return shouldRetry(failureCount, error);
+            },
+            retryDelay: 1000,
+          },
         },
-        retryDelay: 1000,
-      },
-    },
-  }));
+      })
+  );
 
-  const [trpcClient] = React.useState(() => trpc.createClient({
-    links: [
-      httpBatchLink({
-        url: `${getBaseUrl()}/api/trpc`,
-        transformer: superjson,
-        headers() {
-          return { 'x-trpc-source': 'nextjs-react' };
-        },
-      }),
-    ],
-  }));
+  const [trpcClient] = React.useState(() =>
+    trpc.createClient({
+      links: [
+        httpBatchLink({
+          url: `${getBaseUrl()}/api/trpc`,
+          transformer: superjson,
+          headers() {
+            return { 'x-trpc-source': 'nextjs-react' };
+          },
+        }),
+      ],
+    })
+  );
 
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>

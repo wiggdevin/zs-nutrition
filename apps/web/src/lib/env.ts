@@ -47,6 +47,9 @@ const serverEnvSchema = z.object({
   FATSECRET_PROXY_URL: z.string().optional().default(''),
   FATSECRET_PROXY_SECRET: z.string().optional().default(''),
 
+  // USDA FoodData Central (optional fallback)
+  USDA_API_KEY: z.string().optional().default(''),
+
   // Redis
   REDIS_URL: isProduction
     ? z.string().min(1, 'REDIS_URL is required in production')

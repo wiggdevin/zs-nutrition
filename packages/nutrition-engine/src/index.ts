@@ -30,6 +30,7 @@ export {
 
 // Adapters
 export { FatSecretAdapter } from './adapters/fatsecret';
+export { USDAAdapter } from './adapters/usda';
 
 // Data - Meal Database
 export {

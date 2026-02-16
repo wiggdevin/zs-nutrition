@@ -55,7 +55,8 @@ export async function GET(request: NextRequest) {
         profileInfo: plan.profile,
         validatedPlanHasDays: Array.isArray(validatedPlanObj?.days),
         validatedPlanDaysCount: validatedPlanObj?.days?.length || 0,
-        metabolicProfileHasData: metabolicProfileObj !== null && Object.keys(metabolicProfileObj || {}).length > 0,
+        metabolicProfileHasData:
+          metabolicProfileObj !== null && Object.keys(metabolicProfileObj || {}).length > 0,
         dailyKcalTarget: plan.dailyKcalTarget,
         dailyProteinG: plan.dailyProteinG,
         dailyCarbsG: plan.dailyCarbsG,

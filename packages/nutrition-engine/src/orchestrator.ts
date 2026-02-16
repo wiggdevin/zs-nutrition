@@ -6,11 +6,13 @@ import { NutritionCompiler } from './agents/nutrition-compiler';
 import { QAValidator } from './agents/qa-validator';
 import { BrandRenderer } from './agents/brand-renderer';
 import { FatSecretAdapter } from './adapters/fatsecret';
+import { USDAAdapter } from './adapters/usda';
 
 export interface PipelineConfig {
   anthropicApiKey: string;
   fatsecretClientId: string;
   fatsecretClientSecret: string;
+  usdaApiKey?: string;
 }
 
 export interface PipelineResult {
@@ -46,10 +48,12 @@ export class NutritionPipelineOrchestrator {
       config.fatsecretClientSecret
     );
 
+    const usdaAdapter = config.usdaApiKey ? new USDAAdapter(config.usdaApiKey) : undefined;
+
     this.intakeNormalizer = new IntakeNormalizer();
     this.metabolicCalculator = new MetabolicCalculator();
     this.recipeCurator = new RecipeCurator(config.anthropicApiKey);
-    this.nutritionCompiler = new NutritionCompiler(fatSecretAdapter);
+    this.nutritionCompiler = new NutritionCompiler(fatSecretAdapter, usdaAdapter);
     this.qaValidator = new QAValidator();
     this.brandRenderer = new BrandRenderer();
   }
@@ -107,13 +111,16 @@ export class NutritionPipelineOrchestrator {
       const totalTime = Date.now() - pipelineStart;
 
       // Log structured timing data
-      console.log(JSON.stringify({
-        level: 'info',
-        message: 'Pipeline completed',
-        timings,
-        totalTime,
-        timestamp: new Date().toISOString(),
-      }));
+      // eslint-disable-next-line no-console
+      console.log(
+        JSON.stringify({
+          level: 'info',
+          message: 'Pipeline completed',
+          timings,
+          totalTime,
+          timestamp: new Date().toISOString(),
+        })
+      );
 
       onProgress?.({
         status: 'completed',
@@ -132,14 +139,16 @@ export class NutritionPipelineOrchestrator {
       const totalTime = Date.now() - pipelineStart;
 
       // Log structured error data with timings
-      console.error(JSON.stringify({
-        level: 'error',
-        message: 'Pipeline failed',
-        error: errorMessage,
-        timings,
-        totalTime,
-        timestamp: new Date().toISOString(),
-      }));
+      console.error(
+        JSON.stringify({
+          level: 'error',
+          message: 'Pipeline failed',
+          error: errorMessage,
+          timings,
+          totalTime,
+          timestamp: new Date().toISOString(),
+        })
+      );
 
       onProgress?.({
         status: 'failed',

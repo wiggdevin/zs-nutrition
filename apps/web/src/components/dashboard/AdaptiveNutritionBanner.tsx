@@ -135,10 +135,7 @@ export function AdaptiveNutritionBanner() {
       data-testid="adaptive-nutrition-banner"
       role="alert"
       aria-live="polite"
-      className={cn(
-        'relative rounded-2xl border p-5',
-        'bg-blue-500/10 border-blue-500/30'
-      )}
+      className={cn('relative rounded-2xl border p-5', 'bg-blue-500/10 border-blue-500/30')}
     >
       {/* Dismiss button */}
       <button
@@ -146,12 +143,7 @@ export function AdaptiveNutritionBanner() {
         aria-label="Dismiss notification"
         className="absolute top-3 right-3 p-1.5 rounded-lg text-blue-400 hover:text-blue-300 hover:bg-blue-500/20 transition-colors"
       >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
           <path
             strokeLinecap="round"
             strokeLinejoin="round"
@@ -212,7 +204,8 @@ export function AdaptiveNutritionBanner() {
             <span className="font-semibold text-foreground">{absDifference} kcal</span>
             {displayResult.currentGoalKcal && displayResult.suggestedGoalKcal && (
               <span className="text-muted-foreground">
-                {' '}({displayResult.currentGoalKcal} → {displayResult.suggestedGoalKcal} kcal/day)
+                {' '}
+                ({displayResult.currentGoalKcal} → {displayResult.suggestedGoalKcal} kcal/day)
               </span>
             )}
           </p>
@@ -223,18 +216,8 @@ export function AdaptiveNutritionBanner() {
             className="inline-flex items-center gap-2 px-4 py-2 text-xs font-bold uppercase tracking-wide bg-blue-500/20 hover:bg-blue-500/30 text-blue-400 rounded-lg transition-colors"
           >
             Review & Accept
-            <svg
-              className="w-3 h-3"
-              fill="none"
-              stroke="currentColor"
-              viewBox="0 0 24 24"
-            >
-              <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                strokeWidth={2}
-                d="M9 5l7 7-7 7"
-              />
+            <svg className="w-3 h-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
             </svg>
           </Link>
         </div>

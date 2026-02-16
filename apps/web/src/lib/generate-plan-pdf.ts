@@ -64,7 +64,7 @@ function pdfEscape(text: string): string {
  * Uses PDF 1.4 spec with basic text content streams.
  */
 export function generatePlanPdf(planData: PdfPlanData, metadata: PdfMetadata): Buffer {
-  const lines: string[] = [];
+  const _lines: string[] = [];
 
   // Helper to add a line of text content at a y position
   function textLine(x: number, y: number, text: string, fontSize: number = 10): string {
@@ -246,7 +246,7 @@ export function generatePlanPdf(planData: PdfPlanData, metadata: PdfMetadata): B
 
   // === BUILD PDF ===
   // PDF objects: 1=catalog, 2=pages, 3+=page objects, font objects, content streams
-  const objects: string[] = [];
+  const _objects: string[] = [];
   const offsets: number[] = [];
   let currentObj = 0;
 
@@ -257,7 +257,7 @@ export function generatePlanPdf(planData: PdfPlanData, metadata: PdfMetadata): B
   const boldFontObj = ++currentObj; // 4  (Helvetica-Bold)
 
   // Each page needs: page object + content stream object = 2 objects per page
-  const pageObjStart = currentObj + 1;
+  const _pageObjStart = currentObj + 1;
   const pageObjIds: number[] = [];
   const contentObjIds: number[] = [];
   for (let i = 0; i < pages.length; i++) {

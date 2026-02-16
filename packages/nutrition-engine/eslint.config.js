@@ -1,13 +1,13 @@
-import { includeIgnoreFile } from "@eslint/compat";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import prettier from "eslint-plugin-prettier";
+import { includeIgnoreFile } from '@eslint/compat';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import prettier from 'eslint-plugin-prettier';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const gitignorePath = path.join(__dirname, "../../.gitignore");
+const gitignorePath = path.join(__dirname, '../../.gitignore');
 
 export default [
   // Base JavaScript/TypeScript rules
@@ -20,7 +20,7 @@ export default [
       prettier,
     },
     rules: {
-      "prettier/prettier": "error",
+      'prettier/prettier': 'error',
     },
   },
 
@@ -29,14 +29,14 @@ export default [
 
   {
     ignores: [
-      "**/node_modules/**",
-      "**/.next/**",
-      "**/dist/**",
-      "**/build/**",
-      "**/.turbo/**",
-      "**/coverage/**",
-      "**/*.min.js",
-      "**/*.generated.*",
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/.turbo/**',
+      '**/coverage/**',
+      '**/*.min.js',
+      '**/*.generated.*',
     ],
   },
 
@@ -44,25 +44,36 @@ export default [
   {
     rules: {
       // TypeScript specific
-      "@typescript-eslint/no-unused-vars": [
-        "error",
+      '@typescript-eslint/no-unused-vars': [
+        'error',
         {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
         },
       ],
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/explicit-function-return-type": "off",
-      "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-non-null-assertion": "warn",
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'warn',
 
       // General code quality
-      "no-console": ["error", { allow: ["warn", "error"] }],
-      "prefer-const": "error",
-      "no-var": "error",
-      "eqeqeq": ["error", "always"],
-      "curly": "off",
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'prefer-const': 'error',
+      'no-var': 'error',
+      eqeqeq: ['error', 'always'],
+      curly: 'off',
+    },
+  },
+
+  // Relaxed rules for test files
+  {
+    files: ['**/test-*.{ts,mjs,js}', '**/*.test.{ts,tsx,js,mjs}'],
+    rules: {
+      'no-console': 'off',
+      'no-undef': 'off',
+      '@typescript-eslint/no-unused-vars': 'warn',
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 ];

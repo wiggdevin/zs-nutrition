@@ -4,14 +4,10 @@ import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue';
 import { logger } from '@/lib/safe-logger';
-import { safeJsonParse } from '@/lib/utils/safe-json';
 import { isUniqueConstraintError } from '@/lib/plan-utils';
 import {
   ValidatedPlanSchema,
   MetabolicProfileSchema as MetabolicProfileDbSchema,
-  JobProgressSchema,
-  JobResultSchema,
-  StringArraySchema,
 } from '@/lib/schemas/plan';
 
 /**
@@ -458,8 +454,12 @@ export const planRouter = router({
     // Json fields are now native arrays - no parsing needed
     const allergies = (Array.isArray(profile.allergies) ? profile.allergies : []) as string[];
     const exclusions = (Array.isArray(profile.exclusions) ? profile.exclusions : []) as string[];
-    const cuisinePreferences = (Array.isArray(profile.cuisinePrefs) ? profile.cuisinePrefs : []) as string[];
-    const trainingDays = (Array.isArray(profile.trainingDays) ? profile.trainingDays : []) as string[];
+    const cuisinePreferences = (
+      Array.isArray(profile.cuisinePrefs) ? profile.cuisinePrefs : []
+    ) as string[];
+    const trainingDays = (
+      Array.isArray(profile.trainingDays) ? profile.trainingDays : []
+    ) as string[];
 
     // Construct intake data from active profile (matching RawIntakeFormSchema)
     const intakeData = {

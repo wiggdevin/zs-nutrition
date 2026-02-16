@@ -9,9 +9,9 @@ import { toLocalDay } from '@/lib/date-utils';
 export async function POST(request: NextRequest) {
   try {
     let clerkUserId: string;
-    let dbUserId: string;
+    let _dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser());
+      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
@@ -52,7 +52,23 @@ export async function POST(request: NextRequest) {
     }
 
     // validatedPlan is now a Prisma Json type - no parsing needed
-    const validatedPlan = mealPlan.validatedPlan as { days?: Array<{ dayNumber: number; meals?: Array<{ slot: string; name: string; nutrition: { kcal: number; proteinG: number; carbsG: number; fatG: number; fiberG?: number }; confidenceLevel?: string }> }> };
+    const validatedPlan = mealPlan.validatedPlan as {
+      days?: Array<{
+        dayNumber: number;
+        meals?: Array<{
+          slot: string;
+          name: string;
+          nutrition: {
+            kcal: number;
+            proteinG: number;
+            carbsG: number;
+            fatG: number;
+            fiberG?: number;
+          };
+          confidenceLevel?: string;
+        }>;
+      }>;
+    };
     const day = validatedPlan?.days?.find((d) => d.dayNumber === dayNumber);
 
     if (!day) {

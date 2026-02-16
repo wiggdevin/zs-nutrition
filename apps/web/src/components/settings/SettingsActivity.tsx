@@ -39,7 +39,7 @@ export default function SettingsActivity() {
   const [cookingSkill, setCookingSkill] = useState(5);
   const [cookingSkillError, setCookingSkillError] = useState<string | null>(null);
   const [prepTimeMax, setPrepTimeMax] = useState(30);
-  const [prepTimeMaxError, setPrepTimeMaxError] = useState<string | null>(null);
+  const [_prepTimeMaxError, setPrepTimeMaxError] = useState<string | null>(null);
   const [originalData, setOriginalData] = useState({
     activityLevel: '' as string,
     trainingDays: [] as string[],

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef, Suspense } from 'react';
+import { useEffect, useRef, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import NavBar from '@/components/navigation/NavBar';
 import FoodSearch from '@/components/tracking/FoodSearch';
@@ -23,7 +23,7 @@ function TrackingPageContent() {
   const targets = useTrackingStore((state) => state.targets);
   const current = useTrackingStore((state) => state.current);
   const trackedMeals = useTrackingStore((state) => state.trackedMeals);
-  const isLoading = useTrackingStore((state) => state.isLoading);
+  const _isLoading = useTrackingStore((state) => state.isLoading);
   const planId = useTrackingStore((state) => state.planId);
 
   // Scroll to and focus the relevant section based on mode

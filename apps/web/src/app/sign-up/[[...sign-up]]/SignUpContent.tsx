@@ -56,7 +56,7 @@ export function DevSignUpForm() {
 
       // Account created successfully — redirect to onboarding
       router.push('/onboarding');
-    } catch (err) {
+    } catch (_err) {
       setError('Network error. Please try again.');
       setIsLoading(false);
     }
@@ -85,7 +85,7 @@ export function DevSignUpForm() {
 
       // OAuth sign-up successful — redirect to onboarding
       router.push('/onboarding');
-    } catch (err) {
+    } catch (_err) {
       setError('Network error. Please try again.');
       setIsLoading(false);
     }

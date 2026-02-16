@@ -9,7 +9,9 @@ export function createRedisConnection(): IORedis {
   const redisUrl = process.env.REDIS_URL;
 
   if (!redisUrl) {
-    console.error('[Worker] REDIS_URL is required for the queue worker. The worker cannot function without Redis.');
+    console.error(
+      '[Worker] REDIS_URL is required for the queue worker. The worker cannot function without Redis.'
+    );
     process.exit(1);
   }
 
