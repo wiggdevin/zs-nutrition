@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { savePlanToDatabase } from '@/lib/save-plan';
 import { isDevMode } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
+import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue';
 import {
   authenticateAndRateLimit,
   findOrCreateUserWithProfile,
@@ -67,6 +68,23 @@ export async function POST() {
         }
       } catch (saveError) {
         logger.warn('[Dev Mode] Error saving simulated plan:', saveError);
+      }
+    }
+
+    // Production: enqueue to BullMQ for worker processing
+    if (!isDevMode && !useMockQueue) {
+      const bullmqJobData: PlanGenerationJobData = {
+        jobId: job.id,
+        userId: user.id,
+        intakeData: intakeData as Record<string, unknown>,
+      };
+
+      try {
+        await planGenerationQueue.add('generate-plan', bullmqJobData, {
+          jobId: job.id,
+        });
+      } catch (queueError) {
+        logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError);
       }
     }
 
