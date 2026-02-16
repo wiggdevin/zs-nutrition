@@ -14,7 +14,7 @@ export function AdherenceScoreSection({
     >
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          /// Adherence Score
+          {'/// Adherence Score'}
         </p>
       </div>
       <div className="flex flex-col sm:flex-row items-center gap-4 sm:gap-8">

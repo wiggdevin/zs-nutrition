@@ -139,7 +139,7 @@ export default function DashboardClient() {
 
         <div className="space-y-2">
           <p className="text-xs font-mono tracking-[0.2em] uppercase text-muted-foreground">
-            /// DASHBOARD
+            {'/// DASHBOARD'}
           </p>
           <h2 className="text-4xl font-heading uppercase tracking-tight">
             WELCOME BACK<span className="text-primary">.</span>

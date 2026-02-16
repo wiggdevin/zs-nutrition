@@ -21,7 +21,7 @@ export default function ActivityPage() {
               {/* Page Header */}
               <div>
                 <h1 className="text-3xl font-heading uppercase tracking-wider">
-                  <span className="text-primary">///</span> Activity & Adjustments
+                  <span className="text-primary">{'///'}</span> Activity & Adjustments
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   Connect fitness trackers and view synced activity data with automatic calorie

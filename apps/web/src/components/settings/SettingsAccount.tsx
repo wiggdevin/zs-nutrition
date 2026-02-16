@@ -65,7 +65,7 @@ export default function SettingsAccount() {
           >
             <div className="mb-4">
               <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-                <span className="text-primary">///</span> Session
+                <span className="text-primary">{'///'}</span> Session
               </h2>
             </div>
             <button
@@ -92,7 +92,7 @@ export default function SettingsAccount() {
           >
             <div className="mb-4">
               <h2 className="text-xs font-mono tracking-wider uppercase text-red-400">
-                <span className="text-red-500">///</span> Danger Zone
+                <span className="text-red-500">{'///'}</span> Danger Zone
               </h2>
               <p className="mt-1 text-sm text-muted-foreground">
                 Deactivate your account. Your data will be preserved but inaccessible.

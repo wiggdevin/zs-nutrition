@@ -230,7 +230,7 @@ export default function SettingsDietary() {
     <div className="rounded-2xl border border-border bg-card p-6" data-testid="dietary-section">
       <div className="mb-6">
         <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          <span className="text-primary">///</span> Dietary Preferences
+          <span className="text-primary">{'///'}</span> Dietary Preferences
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Manage your dietary style, allergies, and exclusions

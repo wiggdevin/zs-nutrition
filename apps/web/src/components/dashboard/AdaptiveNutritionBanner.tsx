@@ -190,7 +190,7 @@ export function AdaptiveNutritionBanner() {
         {/* Content */}
         <div className="flex-1 min-w-0">
           <p className="text-xs font-mono tracking-wider uppercase text-blue-400 mb-1">
-            /// Adaptive Nutrition
+            {'/// Adaptive Nutrition'}
           </p>
           <h3 className="text-sm font-semibold text-foreground mb-1">
             Calorie Adjustment Suggested

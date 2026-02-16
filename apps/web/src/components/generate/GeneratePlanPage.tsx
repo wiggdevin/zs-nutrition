@@ -1,308 +1,22 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
-import { useRouter, useSearchParams } from 'next/navigation';
+import Link from 'next/link';
 import { Confetti } from '../ui/Confetti';
-import { logger } from '@/lib/safe-logger';
-
-type GenerationStatus = 'idle' | 'generating' | 'enqueued' | 'completed' | 'failed';
-
-const agentStages = [
-  { number: 1, name: 'Intake Normalizer', desc: 'Cleaning and validating your data...' },
-  { number: 2, name: 'Metabolic Calculator', desc: 'Calculating BMR, TDEE, and macro targets...' },
-  { number: 3, name: 'Recipe Curator', desc: 'AI generating meal ideas matching your targets...' },
-  { number: 4, name: 'Nutrition Compiler', desc: 'Verifying nutrition data via FatSecret...' },
-  { number: 5, name: 'QA Validator', desc: 'Enforcing calorie and macro tolerances...' },
-  { number: 6, name: 'Brand Renderer', desc: 'Generating your deliverables...' },
-];
+import { usePlanGeneration } from './usePlanGeneration';
+import { AgentProgress, agentStages } from './AgentProgress';
 
 export function GeneratePlanPage() {
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const [status, setStatus] = useState<GenerationStatus>('idle');
-  const [currentAgent, setCurrentAgent] = useState(0);
-  const [hasProfile, setHasProfile] = useState(false);
-  const [jobId, setJobId] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [isReconnecting, setIsReconnecting] = useState(false);
-  const hasNavigated = useRef(false);
-  const isSubmitting = useRef(false);
-  const autoTriggered = useRef(false);
-  const eventSourceRef = useRef<EventSource | null>(null);
-  const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-  const isUsingPolling = useRef(false);
-  const reconnectAttemptsRef = useRef(0);
-  const maxReconnectAttempts = 5;
-  const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  useEffect(() => {
-    // Check if user has completed onboarding
-    const profile = localStorage.getItem('zsn_user_profile');
-    const onboardingComplete = localStorage.getItem('zsn_onboarding_complete');
-    setHasProfile(!!profile && onboardingComplete === 'true');
-  }, []);
-
-  // Auto-start plan generation when redirected from onboarding with ?auto=true
-  useEffect(() => {
-    if (
-      searchParams.get('auto') === 'true' &&
-      hasProfile &&
-      status === 'idle' &&
-      !autoTriggered.current &&
-      !isSubmitting.current
-    ) {
-      autoTriggered.current = true;
-      const timer = setTimeout(() => {
-        handleGenerate();
-      }, 500);
-      return () => clearTimeout(timer);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [hasProfile, status]);
-
-  // Cleanup: Close EventSource, stop polling, and clear reconnect timeout when component unmounts
-  useEffect(() => {
-    return () => {
-      if (eventSourceRef.current) {
-        eventSourceRef.current.close();
-        eventSourceRef.current = null;
-      }
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-        pollingIntervalRef.current = null;
-      }
-      if (reconnectTimeoutRef.current) {
-        clearTimeout(reconnectTimeoutRef.current);
-        reconnectTimeoutRef.current = null;
-      }
-    };
-  }, []);
-
-  // Auto-navigate to /meal-plan when generation completes
-  useEffect(() => {
-    if (status === 'completed' && !hasNavigated.current) {
-      hasNavigated.current = true;
-      // Brief delay to show completion state before navigating
-      const timer = setTimeout(() => {
-        router.push('/meal-plan');
-      }, 1500);
-      return () => clearTimeout(timer);
-    }
-  }, [status, router]);
-
-  const connectToSSE = (streamJobId: string) => {
-    // Close any existing EventSource before creating a new one
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-    }
-
-    const eventSource = new EventSource(`/api/plan-stream/${streamJobId}`);
-    eventSourceRef.current = eventSource;
-
-    eventSource.onmessage = (event) => {
-      try {
-        const data = JSON.parse(event.data);
-
-        // Reset reconnect attempts on successful message
-        reconnectAttemptsRef.current = 0;
-        setIsReconnecting(false);
-
-        if (data.agent) {
-          setCurrentAgent(data.agent);
-        }
-
-        if (data.status === 'completed') {
-          setStatus('completed');
-          localStorage.setItem('zsn_plan_generated', 'true');
-          if (data.planId) {
-            localStorage.setItem('zsn_plan_id', data.planId);
-          }
-          eventSource.close();
-          eventSourceRef.current = null;
-        } else if (data.status === 'failed') {
-          setErrorMessage(data.message || 'Plan generation failed');
-          setStatus('failed');
-          eventSource.close();
-          eventSourceRef.current = null;
-        }
-      } catch {
-        // Ignore parse errors
-      }
-    };
-
-    eventSource.onerror = () => {
-      // Close the failed connection
-      eventSource.close();
-      eventSourceRef.current = null;
-
-      // Increment reconnect attempts
-      reconnectAttemptsRef.current += 1;
-
-      // Try to reconnect with exponential backoff
-      if (reconnectAttemptsRef.current <= maxReconnectAttempts) {
-        const backoffDelay = Math.min(1000 * Math.pow(2, reconnectAttemptsRef.current - 1), 10000);
-        logger.warn(
-          `SSE connection lost (attempt ${reconnectAttemptsRef.current}/${maxReconnectAttempts}).`,
-          `Reconnecting in ${backoffDelay}ms...`
-        );
-        setIsReconnecting(true);
-
-        reconnectTimeoutRef.current = setTimeout(() => {
-          // Only reconnect if we haven't completed/failed and still have the same job
-          if ((status === 'generating' || status === 'enqueued') && jobId === streamJobId) {
-            logger.debug('Attempting SSE reconnection...');
-            connectToSSE(streamJobId);
-          }
-        }, backoffDelay);
-      } else {
-        // Max reconnect attempts reached - fall back to polling
-        setIsReconnecting(false);
-        logger.warn(
-          `Max SSE reconnect attempts (${maxReconnectAttempts}) reached.`,
-          `Falling back to polling for job status`
-        );
-        isUsingPolling.current = true;
-        startPolling(streamJobId);
-      }
-    };
-
-    return eventSource;
-  };
-
-  const startPolling = (pollJobId: string) => {
-    // Poll every 2 seconds
-    pollingIntervalRef.current = setInterval(async () => {
-      try {
-        const response = await fetch('/api/trpc/plan.getJobStatus', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            json: { jobId: pollJobId },
-          }),
-        });
-
-        if (response.ok) {
-          const data = await response.json();
-
-          if (data.result && data.result.data) {
-            const jobStatus = data.result.data;
-
-            // Update currentAgent if provided
-            if (jobStatus.currentAgent !== undefined && jobStatus.currentAgent !== null) {
-              setCurrentAgent(jobStatus.currentAgent);
-            }
-
-            // Check if job completed
-            if (jobStatus.status === 'completed') {
-              clearInterval(pollingIntervalRef.current!);
-              pollingIntervalRef.current = null;
-              setStatus('completed');
-              localStorage.setItem('zsn_plan_generated', 'true');
-              if (jobStatus.planId) {
-                localStorage.setItem('zsn_plan_id', jobStatus.planId);
-              }
-            } else if (jobStatus.status === 'failed') {
-              clearInterval(pollingIntervalRef.current!);
-              pollingIntervalRef.current = null;
-              setErrorMessage(jobStatus.error || 'Plan generation failed');
-              setStatus('failed');
-            }
-          }
-        }
-      } catch (error) {
-        logger.error('Polling error:', error);
-        // Continue polling on error - don't give up immediately
-      }
-    }, 2000);
-  };
-
-  const _simulateAgentProgress = async () => {
-    // Fallback: Simulate agent pipeline progression for visual feedback
-    for (let i = 1; i <= 6; i++) {
-      setCurrentAgent(i);
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-    }
-    setStatus('completed');
-    localStorage.setItem('zsn_plan_generated', 'true');
-  };
-
-  const handleGenerate = async () => {
-    // Prevent duplicate submissions - ref check is synchronous (works within same tick)
-    if (isSubmitting.current) return;
-    isSubmitting.current = true;
-
-    setStatus('generating');
-    setCurrentAgent(1);
-    setErrorMessage(null);
-
-    // Get profile data from localStorage (saved during onboarding)
-    const profileStr = localStorage.getItem('zsn_user_profile');
-    if (!profileStr) {
-      setErrorMessage('Profile data not found. Please complete onboarding first.');
-      setStatus('failed');
-      return;
-    }
-
-    try {
-      // Create the plan generation job via API (server prevents duplicate jobs)
-      const res = await fetch('/api/plan/generate', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-      });
-
-      const data = await res.json().catch(() => ({}));
-
-      if (res.ok && data.jobId) {
-        setJobId(data.jobId);
-        localStorage.setItem('zsn_plan_job_id', data.jobId);
-        setStatus('enqueued');
-        // Connect to SSE stream for real-time progress
-        connectToSSE(data.jobId);
-        return;
-      }
-
-      // Non-ok response or missing jobId — show error
-      // Prefer message field (more detailed) over error field
-      setErrorMessage(
-        data.message || data.error || 'Failed to start plan generation. Please try again.'
-      );
-      setStatus('failed');
-      isSubmitting.current = false;
-    } catch (err) {
-      logger.error('Error starting plan generation:', err);
-      setErrorMessage(
-        'Network error while starting plan generation. Please check your connection and try again.'
-      );
-      setStatus('failed');
-      isSubmitting.current = false;
-    }
-  };
-
-  const handleRetry = () => {
-    // Close any existing SSE connection before retry
-    if (eventSourceRef.current) {
-      eventSourceRef.current.close();
-      eventSourceRef.current = null;
-    }
-    // Stop any active polling
-    if (pollingIntervalRef.current) {
-      clearInterval(pollingIntervalRef.current);
-      pollingIntervalRef.current = null;
-    }
-    // Clear any pending reconnect timeout
-    if (reconnectTimeoutRef.current) {
-      clearTimeout(reconnectTimeoutRef.current);
-      reconnectTimeoutRef.current = null;
-    }
-    isSubmitting.current = false;
-    isUsingPolling.current = false;
-    reconnectAttemptsRef.current = 0;
-    setIsReconnecting(false);
-    setStatus('idle');
-    setCurrentAgent(0);
-    setJobId(null);
-    setErrorMessage(null);
-  };
+  const {
+    status,
+    currentAgent,
+    hasProfile,
+    jobId,
+    errorMessage,
+    isReconnecting,
+    isUsingPolling,
+    handleGenerate,
+    handleRetry,
+  } = usePlanGeneration();
 
   // Not completed onboarding
   if (!hasProfile) {
@@ -332,74 +46,12 @@ export function GeneratePlanPage() {
   // Generating/enqueued state - full screen with agent progress
   if (status === 'generating' || status === 'enqueued') {
     return (
-      <div className="flex min-h-screen items-center justify-center bg-background px-4">
-        <div className="w-full max-w-lg">
-          <div className="text-center">
-            <h1 className="text-3xl font-heading uppercase tracking-wider text-foreground">
-              Generating Plan
-            </h1>
-            <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-              /// NUTRITION ENGINE ACTIVE
-            </p>
-            {jobId && (
-              <p className="mt-1 font-mono text-[10px] text-muted-foreground/50">Job: {jobId}</p>
-            )}
-            {isUsingPolling.current && (
-              <p className="mt-1 font-mono text-[10px] text-primary/80">/// POLLING MODE</p>
-            )}
-            {isReconnecting && (
-              <p className="mt-1 font-mono text-[10px] text-warning/80 animate-pulse">
-                /// RECONNECTING...
-              </p>
-            )}
-          </div>
-
-          <div className="mt-8 space-y-3" aria-live="polite" aria-label="Agent pipeline progress">
-            {agentStages.map((agent) => (
-              <div
-                key={agent.number}
-                aria-current={agent.number === currentAgent ? 'step' : undefined}
-                className={`rounded-lg border p-4 transition-all duration-500 ${
-                  agent.number < currentAgent
-                    ? 'border-success/30 bg-success/5'
-                    : agent.number === currentAgent
-                      ? 'border-primary/50 bg-primary/5'
-                      : 'border-border bg-card opacity-40'
-                }`}
-              >
-                <div className="flex items-center gap-3">
-                  <div
-                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-bold ${
-                      agent.number < currentAgent
-                        ? 'bg-success text-white'
-                        : agent.number === currentAgent
-                          ? 'bg-primary text-background'
-                          : 'bg-border text-muted-foreground'
-                    }`}
-                  >
-                    {agent.number < currentAgent ? '\u2713' : agent.number}
-                  </div>
-                  <div className="flex-1">
-                    <p
-                      className={`text-sm font-bold ${
-                        agent.number <= currentAgent ? 'text-foreground' : 'text-muted-foreground'
-                      }`}
-                    >
-                      Agent {agent.number}: {agent.name}
-                    </p>
-                    {agent.number === currentAgent && (
-                      <p className="text-xs text-muted-foreground">{agent.desc}</p>
-                    )}
-                  </div>
-                  {agent.number === currentAgent && (
-                    <div className="h-4 w-4 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-                  )}
-                </div>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
+      <AgentProgress
+        currentAgent={currentAgent}
+        jobId={jobId}
+        isUsingPolling={isUsingPolling}
+        isReconnecting={isReconnecting}
+      />
     );
   }
 
@@ -418,7 +70,7 @@ export function GeneratePlanPage() {
                 Plan Generated!
               </h2>
               <p className="mt-2 font-mono text-xs uppercase tracking-widest text-success">
-                /// ALL 6 AGENTS COMPLETE
+                {'/// ALL 6 AGENTS COMPLETE'}
               </p>
               <p className="mt-4 text-sm text-muted-foreground">
                 Your personalized 7-day meal plan is ready.
@@ -430,18 +82,18 @@ export function GeneratePlanPage() {
                 </span>
               </div>
               <div className="mt-6 flex flex-col gap-3">
-                <a
+                <Link
                   href="/meal-plan"
                   className="inline-block rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
                 >
                   View Meal Plan
-                </a>
-                <a
+                </Link>
+                <Link
                   href="/dashboard"
                   className="inline-block rounded-lg border border-border bg-card px-6 py-3 text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:bg-secondary"
                 >
                   View Dashboard
-                </a>
+                </Link>
               </div>
             </div>
           </div>
@@ -482,7 +134,7 @@ export function GeneratePlanPage() {
       <div className="w-full max-w-lg text-center">
         <div className="space-y-2">
           <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            /// ZERO SUM NUTRITION
+            {'/// ZERO SUM NUTRITION'}
           </p>
           <h1 className="text-4xl font-heading uppercase tracking-wider text-foreground">
             Generate Your

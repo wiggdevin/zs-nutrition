@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect } from 'react';
+import Link from 'next/link';
 import { logger } from '@/lib/safe-logger';
 
 /**
@@ -42,7 +43,7 @@ export default function GlobalError({
         {/* Message */}
         <div>
           <p className="text-xs font-mono tracking-[0.2em] uppercase text-muted-foreground mb-3">
-            /// ERROR
+            {'/// ERROR'}
           </p>
           <h1 className="text-2xl font-bold text-foreground mb-3">
             Something went wrong<span className="text-primary">.</span>
@@ -73,12 +74,12 @@ export default function GlobalError({
             </svg>
             Try Again
           </button>
-          <a
+          <Link
             href="/"
             className="inline-flex items-center gap-2 px-6 py-3 border border-border text-muted-foreground hover:text-foreground hover:bg-card text-sm font-bold uppercase tracking-wide rounded-xl transition-colors"
           >
             Go Home
-          </a>
+          </Link>
         </div>
       </div>
     </div>

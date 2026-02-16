@@ -186,7 +186,7 @@ export default function FitnessConnections() {
     return (
       <div className="bg-card border border-border rounded-lg p-6">
         <h2 className="text-xl font-heading uppercase tracking-wider mb-4">
-          <span className="text-primary">///</span> Fitness Tracker Integration
+          <span className="text-primary">{'///'}</span> Fitness Tracker Integration
         </h2>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -199,7 +199,7 @@ export default function FitnessConnections() {
     <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-heading uppercase tracking-wider">
-          <span className="text-primary">///</span> Fitness Tracker Integration
+          <span className="text-primary">{'///'}</span> Fitness Tracker Integration
         </h2>
         {connections.length > 0 && (
           <button

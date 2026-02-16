@@ -27,7 +27,7 @@ export default function SettingsPage() {
               {/* Page Header */}
               <div>
                 <h1 className="text-3xl font-heading uppercase tracking-wider">
-                  <span className="text-primary">///</span> Settings
+                  <span className="text-primary">{'///'}</span> Settings
                 </h1>
                 <p className="text-sm text-muted-foreground mt-1">
                   Manage your profile and preferences

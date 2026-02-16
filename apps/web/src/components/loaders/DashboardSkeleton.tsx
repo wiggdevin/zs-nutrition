@@ -104,7 +104,7 @@ export function DashboardSkeleton() {
       <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
         <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-2">
-            <span className="text-primary text-2xl font-heading">///</span>
+            <span className="text-primary text-2xl font-heading">{'///'}</span>
             <SkeletonBlock className="h-7 w-32" />
           </div>
           <SkeletonBlock className="h-10 w-10 rounded-full" />

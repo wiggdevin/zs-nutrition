@@ -25,7 +25,7 @@ export function MacroRingsSection({
     >
       <div className="flex items-center justify-between mb-6">
         <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          /// Macro Rings
+          {'/// Macro Rings'}
         </p>
         <div className="flex items-center gap-3">
           {isTrainingDay ? (

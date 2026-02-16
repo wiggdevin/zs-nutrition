@@ -126,7 +126,7 @@ export default function PlanHistoryPage() {
                 </div>
                 <h2 className="text-xl font-bold text-foreground">No Plans Yet</h2>
                 <p className="mt-2 text-sm text-muted-foreground">
-                  You haven't generated any meal plans yet.
+                  You haven&apos;t generated any meal plans yet.
                 </p>
                 <Link
                   href="/generate"
@@ -151,7 +151,7 @@ export default function PlanHistoryPage() {
           <div className="border-b border-border bg-background px-4 py-6">
             <div className="mx-auto max-w-4xl">
               <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                /// ZERO SUM NUTRITION
+                {'/// ZERO SUM NUTRITION'}
               </p>
               <h1 className="mt-1 text-2xl font-heading uppercase tracking-wider text-foreground">
                 Plan History

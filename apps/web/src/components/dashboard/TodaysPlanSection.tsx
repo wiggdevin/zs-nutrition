@@ -23,7 +23,7 @@ export function TodaysPlanSection({
     >
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          /// Today&apos;s Plan
+          {"/// Today's Plan"}
         </p>
         <Link
           href="/meal-plan"

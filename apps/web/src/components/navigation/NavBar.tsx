@@ -128,7 +128,7 @@ export default function NavBar() {
         {/* Brand */}
         <Link href="/dashboard" className="flex items-center gap-2 mr-8">
           <span className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            ///
+            {'///'}
           </span>
           <span className="font-black text-sm uppercase tracking-wider text-primary">Zero Sum</span>
         </Link>
