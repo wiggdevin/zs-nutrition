@@ -180,9 +180,12 @@ export default function middleware(request: NextRequest, event: NextFetchEvent) 
       pathname.startsWith('/api/dev-') ||
       pathname.startsWith('/api/test-') ||
       pathname.startsWith('/api/debug-') ||
-      pathname.startsWith('/api/seed-')
+      pathname.startsWith('/api/seed-') ||
+      pathname.startsWith('/test-') ||
+      pathname.startsWith('/dev-test') ||
+      pathname.startsWith('/dev-')
     ) {
-      return NextResponse.json({ error: 'Not Found' }, { status: 403 });
+      return new Response('Not Found', { status: 404 });
     }
   }
 
