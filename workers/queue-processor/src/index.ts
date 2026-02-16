@@ -116,6 +116,35 @@ async function saveToWebApp(
   throw lastError ?? new Error('Failed to save plan after all retries');
 }
 
+/**
+ * Report progress to the web app's database via HTTP.
+ * This ensures polling-based clients see real-time agent progress.
+ * Fire-and-forget: failures are logged but don't block the pipeline.
+ */
+async function reportProgressToWebApp(
+  webAppUrl: string,
+  jobId: string,
+  progress: Record<string, unknown>,
+  secret: string
+): Promise<void> {
+  try {
+    const response = await fetch(`${webAppUrl}/api/plan/progress`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${secret}`,
+      },
+      body: JSON.stringify({ jobId, ...progress }),
+    });
+
+    if (!response.ok) {
+      console.warn(`[Worker] Progress report failed (status: ${response.status})`);
+    }
+  } catch (err) {
+    console.warn('[Worker] Failed to report progress to web app:', safeError(err));
+  }
+}
+
 const config: PipelineConfig = {
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
@@ -151,16 +180,31 @@ async function startWorker() {
 
       const { intakeData, jobId } = job.data;
 
+      const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3456';
+      const secret = process.env.INTERNAL_API_SECRET;
+      if (!secret && process.env.NODE_ENV === 'production') {
+        throw new Error('INTERNAL_API_SECRET is required in production.');
+      }
+      const resolvedSecret = secret || 'dev-internal-secret';
+
       try {
         // Update job progress and publish to Redis for real-time SSE streaming
-        const initialProgress = { status: 'running', agent: 1 };
+        const initialProgress = {
+          status: 'running',
+          agent: 1,
+          agentName: 'Intake Analyst',
+          message: 'Starting pipeline...',
+        };
         await job.updateProgress(initialProgress);
         await publishProgress(jobId, initialProgress);
+        await reportProgressToWebApp(webAppUrl, jobId, initialProgress, resolvedSecret);
 
         const result = await orchestrator.run(intakeData as RawIntakeForm, async (progress) => {
           await job.updateProgress(progress);
           // Spread progress first, then override status to ensure 'running' is set
-          await publishProgress(jobId, { ...progress, status: 'running' });
+          const progressWithStatus = { ...progress, status: 'running' };
+          await publishProgress(jobId, progressWithStatus);
+          await reportProgressToWebApp(webAppUrl, jobId, progressWithStatus, resolvedSecret);
           console.log(`  Agent ${progress.agent} (${progress.agentName}): ${progress.message}`);
         });
 
@@ -175,12 +219,6 @@ async function startWorker() {
         await job.updateProgress(savingProgress);
         await publishProgress(jobId, savingProgress);
 
-        const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3456';
-        const secret = process.env.INTERNAL_API_SECRET;
-        if (!secret && process.env.NODE_ENV === 'production') {
-          throw new Error('INTERNAL_API_SECRET is required in production.');
-        }
-        const resolvedSecret = secret || 'dev-internal-secret';
         const saveData = await saveToWebApp(
           webAppUrl,
           jobId,
@@ -230,11 +268,17 @@ async function startWorker() {
 
       // Publish failure event for SSE subscribers (only on final failure)
       if (job.data?.jobId) {
-        await publishProgress(job.data.jobId, {
+        const failureProgress = {
           status: 'failed',
           error: safeError(err),
           message: 'Plan generation failed after all retries',
-        });
+        };
+        await publishProgress(job.data.jobId, failureProgress);
+
+        // Also report failure to DB so polling clients see it
+        const failWebAppUrl = process.env.WEB_APP_URL || 'http://localhost:3456';
+        const failSecret = process.env.INTERNAL_API_SECRET || 'dev-internal-secret';
+        await reportProgressToWebApp(failWebAppUrl, job.data.jobId, failureProgress, failSecret);
       }
 
       try {

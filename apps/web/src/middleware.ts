@@ -67,6 +67,8 @@ const productionPublicPaths = [
   '/api/webhooks',
   '/api/food-search',
   '/api/health',
+  '/api/plan/complete',
+  '/api/plan/progress',
   '/robots.txt',
   '/sitemap.xml',
 ];
@@ -104,6 +106,8 @@ const productionPublicRoutes = [
   '/api/webhooks(.*)',
   '/api/food-search(.*)',
   '/api/health',
+  '/api/plan/complete',
+  '/api/plan/progress',
   '/robots.txt',
   '/sitemap.xml',
 ];

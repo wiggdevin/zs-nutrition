@@ -34,7 +34,21 @@ export function usePlanGeneration() {
   }, []);
 
   const startPolling = useCallback((pollJobId: string) => {
+    let pollCount = 0;
+    const MAX_POLLS = 180; // 6 minutes at 2s intervals
+
     pollingIntervalRef.current = setInterval(async () => {
+      pollCount++;
+
+      if (pollCount > MAX_POLLS) {
+        clearInterval(pollingIntervalRef.current!);
+        pollingIntervalRef.current = null;
+        setErrorMessage('Plan generation timed out. Please try again.');
+        setStatus('failed');
+        isSubmitting.current = false;
+        return;
+      }
+
       try {
         const response = await fetch('/api/trpc/plan.getJobStatus', {
           method: 'POST',
@@ -62,6 +76,7 @@ export function usePlanGeneration() {
               pollingIntervalRef.current = null;
               setErrorMessage(jobStatus.error || 'Plan generation failed');
               setStatus('failed');
+              isSubmitting.current = false;
             }
           }
         }
@@ -194,7 +209,7 @@ export function usePlanGeneration() {
     isSubmitting.current = true;
 
     setStatus('generating');
-    setCurrentAgent(1);
+    setCurrentAgent(0);
     setErrorMessage(null);
 
     const profileStr = localStorage.getItem('zsn_user_profile');
@@ -216,7 +231,8 @@ export function usePlanGeneration() {
         setJobId(data.jobId);
         localStorage.setItem('zsn_plan_job_id', data.jobId);
         setStatus('enqueued');
-        connectToSSE(data.jobId);
+        // Use polling directly — SSE is unusable on Vercel Hobby (10s timeout)
+        startPolling(data.jobId);
         return;
       }
 
