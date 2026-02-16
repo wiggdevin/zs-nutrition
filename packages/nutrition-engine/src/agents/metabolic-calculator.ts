@@ -132,7 +132,6 @@ export function getTrainingDayBonus(activityLevel: string): number {
  * Uses Mifflin-St Jeor equation. No LLM required.
  */
 export class MetabolicCalculator {
-
   calculate(intake: ClientIntake): MetabolicProfile {
     // BMR (Mifflin-St Jeor) - use exported function
     const bmr = calculateBMR(intake);

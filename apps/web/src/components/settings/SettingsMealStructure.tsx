@@ -46,7 +46,7 @@ export default function SettingsMealStructure() {
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
-  const [validationError, setValidationError] = useState<string | null>(null);
+  const [_validationError, setValidationError] = useState<string | null>(null);
 
   const dirty =
     macroStyle !== originalData.macroStyle ||

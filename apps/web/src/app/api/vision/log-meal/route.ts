@@ -53,9 +53,9 @@ export async function POST(request: Request) {
   try {
     // Authenticate user
     let clerkUserId: string;
-    let dbUserId: string;
+    let _dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser());
+      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
@@ -207,9 +207,9 @@ export async function POST(request: Request) {
 export async function GET(request: Request) {
   try {
     let clerkUserId: string;
-    let dbUserId: string;
+    let _dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser());
+      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;

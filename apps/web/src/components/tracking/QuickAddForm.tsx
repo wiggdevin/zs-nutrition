@@ -45,7 +45,7 @@ export default function QuickAddForm() {
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [isNetworkError, setIsNetworkError] = useState(false);
-  const [hasSubmittedRecently, setHasSubmittedRecently] = useState(false);
+  const [_hasSubmittedRecently, setHasSubmittedRecently] = useState(false);
   const lastMutationPayloadRef = useRef<{
     calories: number;
     protein?: number;

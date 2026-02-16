@@ -31,10 +31,11 @@ export class RecipeCurator {
       !this.anthropicApiKey.includes('YOUR_KEY')
     ) {
       try {
-        return await withRetry(
-          () => this.generateWithClaude(metabolicProfile, intake),
-          { maxRetries: 3, baseDelay: 2000, maxDelay: 15000 }
-        );
+        return await withRetry(() => this.generateWithClaude(metabolicProfile, intake), {
+          maxRetries: 3,
+          baseDelay: 2000,
+          maxDelay: 15000,
+        });
       } catch (error) {
         engineLogger.warn(
           '[RecipeCurator] Claude generation failed after retries, falling back to deterministic:',
@@ -289,15 +290,19 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
               'soy',
             ];
             const candidateProteinLower = candidate.primaryProtein.toLowerCase();
-            const isExempt = exemptProteins.some((e) =>
-              candidateProteinLower === e || candidateProteinLower.includes(e) || e.includes(candidateProteinLower)
+            const isExempt = exemptProteins.some(
+              (e) =>
+                candidateProteinLower === e ||
+                candidateProteinLower.includes(e) ||
+                e.includes(candidateProteinLower)
             );
 
             // Check if this protein (or a related protein) was used yesterday
-            const wasUsedYesterday = previousDayProteins.some((prevProtein) =>
-              prevProtein === candidateProteinLower ||
-              prevProtein.includes(candidateProteinLower) ||
-              candidateProteinLower.includes(prevProtein)
+            const wasUsedYesterday = previousDayProteins.some(
+              (prevProtein) =>
+                prevProtein === candidateProteinLower ||
+                prevProtein.includes(candidateProteinLower) ||
+                candidateProteinLower.includes(prevProtein)
             );
 
             if (wasUsedYesterday && !isExempt) {
@@ -333,13 +338,17 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
               'soy',
             ];
             const candidateProteinLower = candidate.primaryProtein.toLowerCase();
-            const isExempt = exemptProteins.some((e) =>
-              candidateProteinLower === e || candidateProteinLower.includes(e) || e.includes(candidateProteinLower)
+            const isExempt = exemptProteins.some(
+              (e) =>
+                candidateProteinLower === e ||
+                candidateProteinLower.includes(e) ||
+                e.includes(candidateProteinLower)
             );
-            const wasUsedYesterday = previousDayProteins.some((prevProtein) =>
-              prevProtein === candidateProteinLower ||
-              prevProtein.includes(candidateProteinLower) ||
-              candidateProteinLower.includes(prevProtein)
+            const wasUsedYesterday = previousDayProteins.some(
+              (prevProtein) =>
+                prevProtein === candidateProteinLower ||
+                prevProtein.includes(candidateProteinLower) ||
+                candidateProteinLower.includes(prevProtein)
             );
 
             if (wasUsedYesterday && !isExempt) {
@@ -368,18 +377,19 @@ Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonu
           // Helper function to check if protein was used yesterday (with fuzzy matching)
           const wasProteinUsedYesterday = (protein: string): boolean => {
             const proteinLower = protein.toLowerCase();
-            return previousDayProteins.some((prevProtein) =>
-              prevProtein === proteinLower ||
-              prevProtein.includes(proteinLower) ||
-              proteinLower.includes(prevProtein)
+            return previousDayProteins.some(
+              (prevProtein) =>
+                prevProtein === proteinLower ||
+                prevProtein.includes(proteinLower) ||
+                proteinLower.includes(prevProtein)
             );
           };
 
           // Helper function to check if protein is exempt
           const isProteinExempt = (protein: string): boolean => {
             const proteinLower = protein.toLowerCase();
-            return exemptProteins.some((e) =>
-              proteinLower === e || proteinLower.includes(e) || e.includes(proteinLower)
+            return exemptProteins.some(
+              (e) => proteinLower === e || proteinLower.includes(e) || e.includes(proteinLower)
             );
           };
 

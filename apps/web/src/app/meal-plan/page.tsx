@@ -897,7 +897,7 @@ export default function MealPlanPage() {
 
   // Plan replacement state
   const [planReplaced, setPlanReplaced] = useState(false);
-  const [newerPlanId, setNewerPlanId] = useState<string | null>(null);
+  const [_newerPlanId, setNewerPlanId] = useState<string | null>(null);
   const planStatusCheckRef = useRef<AbortController | null>(null);
 
   // Track the current fetch request so we can abort stale ones
@@ -1084,7 +1084,7 @@ export default function MealPlanPage() {
           });
 
           if (res.ok) {
-            const data = await res.json();
+            await res.json();
 
             // Update the plan locally
             const updatedDays = [...(plan.validatedPlan?.days || [])];

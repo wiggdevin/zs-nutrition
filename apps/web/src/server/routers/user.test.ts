@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { TRPCError } from '@trpc/server'
-import { prisma } from '@/lib/prisma'
-import { createCaller, createAuthedTestContext } from '@/test/trpc-test-utils'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { prisma } from '@/lib/prisma';
+import { createCaller, createAuthedTestContext } from '@/test/trpc-test-utils';
 
 // Mock metabolic utilities
 vi.mock('@/lib/metabolic-utils', () => ({
@@ -13,31 +12,31 @@ vi.mock('@/lib/metabolic-utils', () => ({
     carbsG: 200,
     fatG: 65,
   })),
-}))
+}));
 
 describe('user router', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   describe('getOnboardingState', () => {
     it('returns null when no onboarding state exists', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-new' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-new' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(null);
 
-      const result = await caller.user.getOnboardingState()
+      const result = await caller.user.getOnboardingState();
 
-      expect(result).toBeNull()
+      expect(result).toBeNull();
       expect(prisma.onboardingState.findUnique).toHaveBeenCalledWith({
         where: { userId: 'user-new' },
-      })
-    })
+      });
+    });
 
     it('returns onboarding state when it exists', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockState = {
         id: 'state-123',
@@ -50,22 +49,22 @@ describe('user router', () => {
         },
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
-      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(mockState)
+      vi.mocked(prisma.onboardingState.findUnique).mockResolvedValue(mockState);
 
-      const result = await caller.user.getOnboardingState()
+      const result = await caller.user.getOnboardingState();
 
-      expect(result).toBeTruthy()
-      expect(result?.currentStep).toBe(3)
-      expect(result?.completed).toBe(false)
-    })
-  })
+      expect(result).toBeTruthy();
+      expect(result?.currentStep).toBe(3);
+      expect(result?.completed).toBe(false);
+    });
+  });
 
   describe('completeOnboarding', () => {
     it('creates a user profile and marks onboarding complete', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockProfile = {
         id: 'profile-123',
@@ -98,7 +97,7 @@ describe('user router', () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
       const mockOnboardingState = {
         id: 'state-123',
@@ -108,10 +107,10 @@ describe('user router', () => {
         stepData: {},
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
-      vi.mocked(prisma.userProfile.create).mockResolvedValue(mockProfile)
-      vi.mocked(prisma.onboardingState.upsert).mockResolvedValue(mockOnboardingState)
+      vi.mocked(prisma.userProfile.create).mockResolvedValue(mockProfile);
+      vi.mocked(prisma.onboardingState.upsert).mockResolvedValue(mockOnboardingState);
 
       const result = await caller.user.completeOnboarding({
         name: 'John Doe',
@@ -132,18 +131,18 @@ describe('user router', () => {
         cookingSkill: 5,
         prepTimeMax: 45,
         macroStyle: 'balanced',
-      })
+      });
 
-      expect(result.profile.name).toBe('John Doe')
-      expect(result.profile.isActive).toBe(true)
-      expect(result.redirectTo).toBe('/generate')
-      expect(prisma.userProfile.create).toHaveBeenCalled()
-      expect(prisma.onboardingState.upsert).toHaveBeenCalled()
-    })
+      expect(result.profile.name).toBe('John Doe');
+      expect(result.profile.isActive).toBe(true);
+      expect(result.redirectTo).toBe('/generate');
+      expect(prisma.userProfile.create).toHaveBeenCalled();
+      expect(prisma.onboardingState.upsert).toHaveBeenCalled();
+    });
 
     it('calculates metabolic values correctly', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-456' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-456' });
+      const caller = createCaller(ctx);
 
       const mockProfile = {
         id: 'profile-456',
@@ -176,9 +175,9 @@ describe('user router', () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
-      vi.mocked(prisma.userProfile.create).mockResolvedValue(mockProfile)
+      vi.mocked(prisma.userProfile.create).mockResolvedValue(mockProfile);
       vi.mocked(prisma.onboardingState.upsert).mockResolvedValue({
         id: 'state-456',
         userId: 'user-456',
@@ -187,10 +186,10 @@ describe('user router', () => {
         stepData: {},
         createdAt: new Date(),
         updatedAt: new Date(),
-      })
+      });
 
       const { calculateBMR, calculateTDEE, calculateGoalCalories, calculateMacroTargets } =
-        await import('@/lib/metabolic-utils')
+        await import('@/lib/metabolic-utils');
 
       await caller.user.completeOnboarding({
         name: 'Jane Smith',
@@ -212,38 +211,38 @@ describe('user router', () => {
         cookingSkill: 7,
         prepTimeMax: 60,
         macroStyle: 'high_protein',
-      })
+      });
 
       expect(calculateBMR).toHaveBeenCalledWith({
         sex: 'female',
         weightKg: 60,
         heightCm: 165,
         age: 25,
-      })
-      expect(calculateTDEE).toHaveBeenCalledWith(1800, 'lightly_active')
-      expect(calculateGoalCalories).toHaveBeenCalledWith(2500, 'cut', 0.5)
-      expect(calculateMacroTargets).toHaveBeenCalledWith(2000, 'high_protein')
-    })
-  })
+      });
+      expect(calculateTDEE).toHaveBeenCalledWith(1800, 'lightly_active');
+      expect(calculateGoalCalories).toHaveBeenCalledWith(2500, 'cut', 0.5);
+      expect(calculateMacroTargets).toHaveBeenCalledWith(2000, 'high_protein');
+    });
+  });
 
   describe('getProfile', () => {
     it('returns null when no active profile exists', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-no-profile' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-no-profile' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(null);
 
-      const result = await caller.user.getProfile()
+      const result = await caller.user.getProfile();
 
-      expect(result).toBeNull()
+      expect(result).toBeNull();
       expect(prisma.userProfile.findFirst).toHaveBeenCalledWith({
         where: { userId: 'user-no-profile', isActive: true },
-      })
-    })
+      });
+    });
 
     it('returns the active profile', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockProfile = {
         id: 'profile-123',
@@ -276,24 +275,24 @@ describe('user router', () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
-      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(mockProfile)
+      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(mockProfile);
 
-      const result = await caller.user.getProfile()
+      const result = await caller.user.getProfile();
 
-      expect(result).toBeTruthy()
-      expect(result?.name).toBe('Test User')
-      expect(result?.goalType).toBe('bulk')
-    })
-  })
+      expect(result).toBeTruthy();
+      expect(result?.name).toBe('Test User');
+      expect(result?.goalType).toBe('bulk');
+    });
+  });
 
   describe('updateProfile', () => {
     it('throws NOT_FOUND when no active profile exists', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-no-profile' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-no-profile' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(null);
 
       await expect(
         caller.user.updateProfile({
@@ -314,12 +313,12 @@ describe('user router', () => {
       ).rejects.toMatchObject({
         code: 'NOT_FOUND',
         message: 'No active profile found. Please complete onboarding first.',
-      })
-    })
+      });
+    });
 
     it('updates the profile and recalculates metabolic values', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const existingProfile = {
         id: 'profile-123',
@@ -352,7 +351,7 @@ describe('user router', () => {
         isActive: true,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
       const updatedProfile = {
         ...existingProfile,
@@ -366,10 +365,10 @@ describe('user router', () => {
         proteinTargetG: 160,
         carbsTargetG: 180,
         fatTargetG: 60,
-      }
+      };
 
-      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(existingProfile)
-      vi.mocked(prisma.userProfile.update).mockResolvedValue(updatedProfile)
+      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(existingProfile);
+      vi.mocked(prisma.userProfile.update).mockResolvedValue(updatedProfile);
 
       const result = await caller.user.updateProfile({
         name: 'New Name',
@@ -385,30 +384,30 @@ describe('user router', () => {
         cookingSkill: 5,
         prepTimeMax: 45,
         macroStyle: 'balanced',
-      })
+      });
 
-      expect(result.profile.name).toBe('New Name')
-      expect(result.profile.weightKg).toBe(75)
-      expect(prisma.userProfile.update).toHaveBeenCalled()
-    })
-  })
+      expect(result.profile.name).toBe('New Name');
+      expect(result.profile.weightKg).toBe(75);
+      expect(prisma.userProfile.update).toHaveBeenCalled();
+    });
+  });
 
   describe('deactivateAccount', () => {
     it('throws NOT_FOUND when user does not exist', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-not-found' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-not-found' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(null)
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
       await expect(caller.user.deactivateAccount()).rejects.toMatchObject({
         code: 'NOT_FOUND',
         message: 'User not found',
-      })
-    })
+      });
+    });
 
     it('throws BAD_REQUEST when account is already deactivated', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-deactivated' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-deactivated' });
+      const caller = createCaller(ctx);
 
       const deactivatedUser = {
         id: 'user-deactivated',
@@ -418,19 +417,19 @@ describe('user router', () => {
         deactivatedAt: new Date(),
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(deactivatedUser)
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(deactivatedUser);
 
       await expect(caller.user.deactivateAccount()).rejects.toMatchObject({
         code: 'BAD_REQUEST',
         message: 'Account is already deactivated',
-      })
-    })
+      });
+    });
 
     it('deactivates the user account and their meal plans', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const activeUser = {
         id: 'user-123',
@@ -440,28 +439,28 @@ describe('user router', () => {
         deactivatedAt: null,
         createdAt: new Date(),
         updatedAt: new Date(),
-      }
+      };
 
-      vi.mocked(prisma.user.findUnique).mockResolvedValue(activeUser)
+      vi.mocked(prisma.user.findUnique).mockResolvedValue(activeUser);
       vi.mocked(prisma.user.update).mockResolvedValue({
         ...activeUser,
         isActive: false,
         deactivatedAt: new Date(),
-      })
-      vi.mocked(prisma.mealPlan.updateMany).mockResolvedValue({ count: 2 })
+      });
+      vi.mocked(prisma.mealPlan.updateMany).mockResolvedValue({ count: 2 });
 
-      const result = await caller.user.deactivateAccount()
+      const result = await caller.user.deactivateAccount();
 
-      expect(result.success).toBe(true)
-      expect(result.message).toContain('Account deactivated successfully')
+      expect(result.success).toBe(true);
+      expect(result.message).toContain('Account deactivated successfully');
       expect(prisma.user.update).toHaveBeenCalledWith({
         where: { id: 'user-123' },
         data: {
           isActive: false,
           deactivatedAt: expect.any(Date),
         },
-      })
-      expect(prisma.mealPlan.updateMany).toHaveBeenCalled()
-    })
-  })
-})
+      });
+      expect(prisma.mealPlan.updateMany).toHaveBeenCalled();
+    });
+  });
+});

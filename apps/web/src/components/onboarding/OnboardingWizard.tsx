@@ -188,7 +188,8 @@ export function OnboardingWizard() {
       localStorage.setItem('zsn_user_profile', JSON.stringify(data));
       window.location.href = '/generate?auto=true';
     } catch (err) {
-      const message = err instanceof Error ? err.message : 'Something went wrong saving your profile';
+      const message =
+        err instanceof Error ? err.message : 'Something went wrong saving your profile';
       logger.error('Error saving profile:', message);
       toast.error(message);
       isSubmittingRef.current = false;

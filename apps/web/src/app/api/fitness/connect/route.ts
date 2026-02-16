@@ -116,7 +116,7 @@ function getOAuthConfig(platform: string) {
 
 function generateOAuthUrl(platform: string, config: any, stateId: string): string {
   switch (platform) {
-    case 'fitbit':
+    case 'fitbit': {
       const fitbitParams = new URLSearchParams({
         response_type: 'code',
         client_id: config.clientId,
@@ -126,8 +126,9 @@ function generateOAuthUrl(platform: string, config: any, stateId: string): strin
         state: stateId,
       });
       return `https://www.fitbit.com/oauth2/authorize?${fitbitParams.toString()}`;
+    }
 
-    case 'oura':
+    case 'oura': {
       const ouraParams = new URLSearchParams({
         response_type: 'code',
         client_id: config.clientId,
@@ -136,8 +137,9 @@ function generateOAuthUrl(platform: string, config: any, stateId: string): strin
         state: stateId,
       });
       return `https://cloud.ouraring.com/oauth/authorize?${ouraParams.toString()}`;
+    }
 
-    case 'google_fit':
+    case 'google_fit': {
       const googleParams = new URLSearchParams({
         response_type: 'code',
         client_id: config.clientId,
@@ -148,6 +150,7 @@ function generateOAuthUrl(platform: string, config: any, stateId: string): strin
         state: stateId,
       });
       return `https://accounts.google.com/o/oauth2/v2/auth?${googleParams.toString()}`;
+    }
 
     case 'apple_health':
       // Apple HealthKit requires native iOS app integration

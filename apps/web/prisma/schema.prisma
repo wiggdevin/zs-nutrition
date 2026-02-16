@@ -1,12 +1,12 @@
 // Zero Sum Nutrition - Prisma Schema
-// Database: SQLite (local dev)
+// Database: PostgreSQL (Neon)
 
 generator client {
   provider = "prisma-client-js"
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "postgresql"
   url      = env("DATABASE_URL")
 }
 
@@ -163,6 +163,7 @@ model PlanGenerationJob {
   createdAt    DateTime  @default(now())
 
   @@index([userId, status])
+  @@index([createdAt])
 }
 
 // ============================================================
@@ -221,6 +222,7 @@ model TrackedMeal {
   @@unique([userId, mealPlanId, loggedDate, mealSlot, source], name: "TrackedMeal_plan_dedup")
   @@index([userId, loggedDate])
   @@index([loggedDate])
+  @@index([source])
 }
 
 // ============================================================
@@ -239,6 +241,9 @@ model FoodScan {
   error          String?
   createdAt      DateTime  @default(now())
   completedAt    DateTime?
+
+  @@index([userId])
+  @@index([status])
 }
 
 // ============================================================
@@ -302,6 +307,7 @@ model FitnessConnection {
 
   @@unique([userId, platform])
   @@index([userId, platform, isActive])
+  @@index([lastSyncAt])
 }
 
 // ============================================================

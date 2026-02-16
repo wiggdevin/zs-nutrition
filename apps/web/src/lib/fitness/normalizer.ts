@@ -14,7 +14,6 @@ import {
   OuraActivityResponse,
   OuraSleepResponse,
   OuraWorkoutResponse,
-  FitnessPlatform,
 } from './types';
 
 /**

@@ -1,5 +1,4 @@
 import { prisma } from '@/lib/prisma';
-import { Prisma } from '@prisma/client';
 import { generatePlanPdf } from '@/lib/generate-plan-pdf';
 import { uploadPlanPdf } from '@/lib/upload-pdf';
 import { logger } from '@/lib/safe-logger';
@@ -123,10 +122,12 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
           heightCm:
             (intakeData.heightCm as number) ||
             (intakeData.heightFeet
-              ? (intakeData.heightFeet as number) * 30.48 + ((intakeData.heightInches as number) || 0) * 2.54
+              ? (intakeData.heightFeet as number) * 30.48 +
+                ((intakeData.heightInches as number) || 0) * 2.54
               : 175),
           weightKg:
-            (intakeData.weightKg as number) || (intakeData.weightLbs ? (intakeData.weightLbs as number) * 0.4536 : 80),
+            (intakeData.weightKg as number) ||
+            (intakeData.weightLbs ? (intakeData.weightLbs as number) * 0.4536 : 80),
           bodyFatPercent: (intakeData.bodyFatPercent as number) || null,
           goalType: (intakeData.goalType as string) || 'maintain',
           goalRate: (intakeData.goalRate as number) || 0,
@@ -217,7 +218,9 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
       // Handle unique constraint violation from partial unique index
       // This can occur in rare race conditions despite the transaction
       if (isUniqueConstraintError(error)) {
-        logger.warn(`[savePlanToDatabase] Unique constraint hit, retrying with forced deactivation`);
+        logger.warn(
+          `[savePlanToDatabase] Unique constraint hit, retrying with forced deactivation`
+        );
 
         // Force deactivate all active plans and retry
         await prisma.mealPlan.updateMany({

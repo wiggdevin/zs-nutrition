@@ -3,22 +3,16 @@ import { prisma } from '@/lib/prisma';
 import { calculateMetabolicProfile } from '@/lib/metabolic-utils';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
-import {
-  profileSchemas,
-  validateMealsPerDay,
-  validateSnacksPerDay,
-  validateCookingSkill,
-  validatePrepTimeMax,
-} from '@/lib/validation';
+import { profileSchemas } from '@/lib/validation';
 import { ZodError } from 'zod';
 
 // POST - Complete onboarding, create UserProfile
 export async function POST(request: NextRequest) {
   try {
     let clerkUserId: string;
-    let dbUserId: string;
+    let _dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser());
+      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;

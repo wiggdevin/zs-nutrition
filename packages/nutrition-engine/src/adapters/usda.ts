@@ -4,7 +4,7 @@
  * Uses Foundation and SR Legacy datasets for high-quality whole food nutrition data.
  *
  * Performance optimization: Uses LRU caches for search results and food details
- * to stay well within the 1,000 requests/hour rate limit.
+ * to avoid redundant API calls. Rate limit: 1,000 requests/hour per IP.
  */
 
 import { LRUCache } from 'lru-cache';
@@ -15,7 +15,7 @@ import { FoodSearchResult, FoodDetails, FoodServing } from './fatsecret';
 // USDA API Response Types
 // ============================================================================
 
-/** Nutrient entry in search result foodNutrients array */
+/** Nutrient entry in search result foods */
 interface USDASearchNutrient {
   nutrientName: string;
   value: number;
@@ -23,17 +23,12 @@ interface USDASearchNutrient {
 }
 
 /** Individual food item from USDA search results */
-interface USDASearchFood {
+interface USDASearchFoodItem {
   fdcId: number;
   description: string;
   foodNutrients: USDASearchNutrient[];
   brandName?: string;
   brandOwner?: string;
-}
-
-/** USDA search response shape */
-interface USDASearchResponse {
-  foods: USDASearchFood[];
 }
 
 /** Nutrient detail in food detail response */
@@ -49,26 +44,12 @@ interface USDAFoodNutrient {
 /** Portion entry in food detail response */
 interface USDAFoodPortion {
   gramWeight: number;
-  modifier: string;
-  amount: number;
+  modifier?: string;
+  amount?: number;
   measureUnit?: {
-    name: string;
+    name?: string;
   };
 }
-
-/** USDA food detail response shape */
-interface USDAFoodDetailResponse {
-  fdcId: number;
-  description: string;
-  brandName?: string;
-  brandOwner?: string;
-  foodNutrients: USDAFoodNutrient[];
-  foodPortions?: USDAFoodPortion[];
-}
-
-// ============================================================================
-// USDA Adapter
-// ============================================================================
 
 export class USDAAdapter {
   private apiKey: string;
@@ -86,23 +67,47 @@ export class USDAAdapter {
   constructor(apiKey: string) {
     this.apiKey = apiKey;
 
+    // Initialize search cache: 500 entries, 1-hour TTL
     this.searchCache = new LRUCache<string, FoodSearchResult[]>({
       max: 500,
       ttl: 1000 * 60 * 60, // 1 hour
     });
 
+    // Initialize food details cache: 1000 entries, 24-hour TTL
     this.foodCache = new LRUCache<string, FoodDetails>({
       max: 1000,
       ttl: 1000 * 60 * 60 * 24, // 24 hours
     });
   }
 
+  /**
+   * Get current cache statistics for monitoring/debugging
+   */
+  getCacheStats() {
+    return {
+      ...this.cacheStats,
+      searchCacheSize: this.searchCache.size,
+      foodCacheSize: this.foodCache.size,
+    };
+  }
+
+  /**
+   * Clear all caches (useful for testing or forced refresh)
+   */
+  clearCaches() {
+    this.searchCache.clear();
+    this.foodCache.clear();
+    this.cacheStats = {
+      searchHits: 0,
+      searchMisses: 0,
+      foodHits: 0,
+      foodMisses: 0,
+    };
+    engineLogger.info('[USDA] Caches cleared');
+  }
+
   private isConfigured(): boolean {
-    return !!(
-      this.apiKey &&
-      this.apiKey !== '...' &&
-      !this.apiKey.includes('placeholder')
-    );
+    return !!(this.apiKey && this.apiKey !== '...' && !this.apiKey.includes('placeholder'));
   }
 
   private async fetchWithRetry(
@@ -131,7 +136,7 @@ export class USDAAdapter {
               engineLogger.warn(
                 `[USDA] ${response.status} on attempt ${attempt + 1}, retrying in ${Math.round(delay)}ms`
               );
-              await new Promise(resolve => setTimeout(resolve, delay));
+              await new Promise((resolve) => setTimeout(resolve, delay));
               continue;
             }
           }
@@ -148,7 +153,7 @@ export class USDAAdapter {
           engineLogger.warn(
             `[USDA] Network error on attempt ${attempt + 1}, retrying in ${delay}ms: ${(error as Error).message}`
           );
-          await new Promise(resolve => setTimeout(resolve, delay));
+          await new Promise((resolve) => setTimeout(resolve, delay));
         }
       }
     }
@@ -156,7 +161,7 @@ export class USDAAdapter {
     throw lastError || new Error('USDA API request failed after retries');
   }
 
-  private async apiRequest(endpoint: string, params: Record<string, string>): Promise<any> {
+  private async apiRequest(endpoint: string, params: Record<string, string> = {}): Promise<any> {
     const url = new URL(`https://api.nal.usda.gov/fdc/v1/${endpoint}`);
     url.searchParams.set('api_key', this.apiKey);
     for (const [k, v] of Object.entries(params)) {
@@ -172,45 +177,53 @@ export class USDAAdapter {
     return response.json();
   }
 
-  async searchFoods(query: string, maxResults = 20): Promise<FoodSearchResult[]> {
+  async searchFoods(query: string, maxResults: number = 20): Promise<FoodSearchResult[]> {
     if (!this.isConfigured()) {
       return [];
     }
 
+    // Check cache first
     const cacheKey = `${query.toLowerCase().trim()}:${maxResults}`;
     const cached = this.searchCache.get(cacheKey);
     if (cached) {
       this.cacheStats.searchHits++;
-      engineLogger.debug(`[USDA] Search cache HIT for "${query}" (total hits: ${this.cacheStats.searchHits})`);
+      engineLogger.debug(
+        `[USDA] Search cache HIT for "${query}" (total hits: ${this.cacheStats.searchHits})`
+      );
       return cached;
     }
 
     this.cacheStats.searchMisses++;
-    engineLogger.debug(`[USDA] Search cache MISS for "${query}" (total misses: ${this.cacheStats.searchMisses})`);
+    engineLogger.debug(
+      `[USDA] Search cache MISS for "${query}" (total misses: ${this.cacheStats.searchMisses})`
+    );
 
     const data = await this.apiRequest('foods/search', {
       query,
       pageSize: String(maxResults),
       dataType: 'Foundation,SR Legacy',
-    }) as USDASearchResponse;
+    });
 
-    const foods = data?.foods;
-    if (!foods || foods.length === 0) {
+    const foods: USDASearchFoodItem[] = data?.foods;
+    if (!foods || !Array.isArray(foods) || foods.length === 0) {
+      // Cache empty results too to avoid repeated failed lookups
       this.searchCache.set(cacheKey, []);
       return [];
     }
 
-    const results: FoodSearchResult[] = foods.map((food: USDASearchFood) => {
+    const results: FoodSearchResult[] = foods.map((food) => {
+      // Extract macros from foodNutrients for the description
       const nutrients = food.foodNutrients || [];
-
       const calories = nutrients.find(
-        n => n.nutrientName.includes('Energy') && n.unitName === 'KCAL'
+        (n) =>
+          (n.nutrientName === 'Energy' || n.nutrientName.includes('Energy')) &&
+          n.unitName === 'KCAL'
       )?.value;
-      const protein = nutrients.find(n => n.nutrientName === 'Protein')?.value;
-      const carbs = nutrients.find(n => n.nutrientName === 'Carbohydrate, by difference')?.value;
-      const fat = nutrients.find(n => n.nutrientName === 'Total lipid (fat)')?.value;
+      const protein = nutrients.find((n) => n.nutrientName === 'Protein')?.value;
+      const carbs = nutrients.find((n) => n.nutrientName === 'Carbohydrate, by difference')?.value;
+      const fat = nutrients.find((n) => n.nutrientName === 'Total lipid (fat)')?.value;
 
-      const description = `Per 100g - Calories: ${calories ?? '?'}kcal | Fat: ${fat ?? '?'}g | Carbs: ${carbs ?? '?'}g | Protein: ${protein ?? '?'}g`;
+      const description = `Per 100g - Calories: ${calories ?? 0}kcal | Fat: ${fat ?? 0}g | Carbs: ${carbs ?? 0}g | Protein: ${protein ?? 0}g`;
 
       return {
         foodId: String(food.fdcId),
@@ -220,6 +233,7 @@ export class USDAAdapter {
       };
     });
 
+    // Store in cache
     this.searchCache.set(cacheKey, results);
     return results;
   }
@@ -229,28 +243,33 @@ export class USDAAdapter {
       throw new Error('USDA food lookup requires a valid API key');
     }
 
+    // Check cache first
     const cached = this.foodCache.get(fdcId);
     if (cached) {
       this.cacheStats.foodHits++;
-      engineLogger.debug(`[USDA] Food cache HIT for ID "${fdcId}" (total hits: ${this.cacheStats.foodHits})`);
+      engineLogger.debug(
+        `[USDA] Food cache HIT for ID "${fdcId}" (total hits: ${this.cacheStats.foodHits})`
+      );
       return cached;
     }
 
     this.cacheStats.foodMisses++;
-    engineLogger.debug(`[USDA] Food cache MISS for ID "${fdcId}" (total misses: ${this.cacheStats.foodMisses})`);
+    engineLogger.debug(
+      `[USDA] Food cache MISS for ID "${fdcId}" (total misses: ${this.cacheStats.foodMisses})`
+    );
 
-    const data = await this.apiRequest(`food/${fdcId}`, {}) as USDAFoodDetailResponse;
+    const data = await this.apiRequest(`food/${fdcId}`);
 
     if (!data) {
       throw new Error(`Food ${fdcId} not found`);
     }
 
-    // Build nutrient map by USDA nutrient number
+    // Build nutrient map from detailed response
+    const foodNutrients: USDAFoodNutrient[] = data.foodNutrients || [];
     const nutrientMap: Record<string, number> = {};
-    for (const fn of data.foodNutrients || []) {
-      const num = fn.nutrient?.number;
-      if (num && fn.amount !== undefined) {
-        nutrientMap[num] = fn.amount;
+    for (const fn of foodNutrients) {
+      if (fn.nutrient?.number && fn.amount !== undefined) {
+        nutrientMap[fn.nutrient.number] = fn.amount;
       }
     }
 
@@ -270,56 +289,38 @@ export class USDAAdapter {
     const servings: FoodServing[] = [primaryServing];
 
     // Build additional servings from foodPortions
-    const portions = data.foodPortions || [];
-    portions.forEach((portion: USDAFoodPortion, index: number) => {
+    const portions: USDAFoodPortion[] = data.foodPortions || [];
+    portions.forEach((portion, index) => {
       if (portion.gramWeight > 0) {
         const gw = portion.gramWeight;
-        const desc = `${portion.amount} ${portion.measureUnit?.name || portion.modifier || 'serving'} (${gw}g)`;
+        const desc = `${portion.amount || 1} ${portion.measureUnit?.name || portion.modifier || 'serving'} (${gw}g)`;
 
         servings.push({
           servingId: `usda-${fdcId}-portion-${index}`,
           servingDescription: desc,
           metricServingAmount: gw,
           metricServingUnit: 'g',
-          calories: Math.round((nutrientMap['208'] || 0) * gw / 100),
-          protein: Math.round(((nutrientMap['203'] || 0) * gw / 100) * 10) / 10,
-          carbohydrate: Math.round(((nutrientMap['205'] || 0) * gw / 100) * 10) / 10,
-          fat: Math.round(((nutrientMap['204'] || 0) * gw / 100) * 10) / 10,
-          fiber: nutrientMap['291'] !== undefined
-            ? Math.round((nutrientMap['291'] * gw / 100) * 10) / 10
-            : undefined,
+          calories: Math.round(((nutrientMap['208'] || 0) * gw) / 100),
+          protein: Math.round((((nutrientMap['203'] || 0) * gw) / 100) * 10) / 10,
+          carbohydrate: Math.round((((nutrientMap['205'] || 0) * gw) / 100) * 10) / 10,
+          fat: Math.round((((nutrientMap['204'] || 0) * gw) / 100) * 10) / 10,
+          fiber:
+            nutrientMap['291'] !== undefined
+              ? Math.round(((nutrientMap['291'] * gw) / 100) * 10) / 10
+              : undefined,
         });
       }
     });
 
     const result: FoodDetails = {
-      foodId: String(data.fdcId),
-      name: data.description,
+      foodId: String(data.fdcId || fdcId),
+      name: data.description || `USDA Food ${fdcId}`,
       brandName: data.brandName || data.brandOwner || undefined,
       servings,
     };
 
+    // Store in cache
     this.foodCache.set(fdcId, result);
     return result;
-  }
-
-  getCacheStats() {
-    return {
-      ...this.cacheStats,
-      searchCacheSize: this.searchCache.size,
-      foodCacheSize: this.foodCache.size,
-    };
-  }
-
-  clearCaches() {
-    this.searchCache.clear();
-    this.foodCache.clear();
-    this.cacheStats = {
-      searchHits: 0,
-      searchMisses: 0,
-      foodHits: 0,
-      foodMisses: 0,
-    };
-    engineLogger.info('[USDA] Caches cleared');
   }
 }

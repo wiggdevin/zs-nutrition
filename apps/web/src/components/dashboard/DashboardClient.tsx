@@ -5,7 +5,6 @@ import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast-store';
 import { useTrackingStore, MacroTargets, MacroCurrent } from '@/lib/stores/useTrackingStore';
-import { shallow } from 'zustand/shallow';
 import { AdaptiveNutritionBanner } from './AdaptiveNutritionBanner';
 import { ActivitySyncStatus } from './ActivitySyncStatus';
 
@@ -34,38 +33,6 @@ interface PlanMeal {
   prepTime: string;
   dayNumber: number;
   confidenceLevel: string;
-}
-
-interface TrackedMealEntry {
-  id: string;
-  name: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  portion: number;
-  source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual';
-  mealSlot: string | null;
-  confidenceScore?: number | null;
-  createdAt: string;
-}
-
-interface DashboardData {
-  planId: string | null;
-  todayPlanMeals: PlanMeal[];
-  trackedMeals: TrackedMealEntry[];
-  macros: {
-    calories: { current: number; target: number };
-    protein: { current: number; target: number };
-    carbs: { current: number; target: number };
-    fat: { current: number; target: number };
-  };
-  adherenceScore: number;
-  weeklyAverageAdherence: number | null;
-  isTrainingDay: boolean;
-  trainingDays: string[];
-  trainingBonusKcal: number;
-  baseGoalKcal: number;
 }
 
 /* ── Macro Ring SVG Component ── */
@@ -577,7 +544,7 @@ function LogEntry({
     }
     if (source === 'plan_meal') {
       // confidenceScore >= 1.0 means verified, < 1.0 means ai_estimated
-      if (confidenceScore != null && confidenceScore >= 1.0) {
+      if (confidenceScore !== null && confidenceScore !== undefined && confidenceScore >= 1.0) {
         return { label: 'Verified', color: 'bg-success/10 text-success' };
       }
       return { label: 'AI-Estimated', color: 'bg-warning/10 text-warning' };
@@ -885,7 +852,7 @@ export default function DashboardClient() {
   const setWeeklyAverageAdherence = useTrackingStore((state) => state.setWeeklyAverageAdherence);
   const setPlanId = useTrackingStore((state) => state.setPlanId);
   const addTrackedMeal = useTrackingStore((state) => state.addTrackedMeal);
-  const updateTrackedMealPortion = useTrackingStore((state) => state.updateTrackedMealPortion);
+  const _updateTrackedMealPortion = useTrackingStore((state) => state.updateTrackedMealPortion);
   const setLastFetch = useTrackingStore((state) => state.setLastFetch);
 
   const [todayPlanMeals, setTodayPlanMeals] = useState<PlanMeal[]>([]);
@@ -897,7 +864,7 @@ export default function DashboardClient() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [isTrainingDay, setIsTrainingDay] = useState(false);
   const [trainingBonusKcal, setTrainingBonusKcal] = useState(0);
-  const [baseGoalKcal, setBaseGoalKcal] = useState(0);
+  const [_baseGoalKcal, setBaseGoalKcal] = useState(0);
   const router = useRouter();
 
   // Track the current fetch request so we can abort stale ones
@@ -907,11 +874,14 @@ export default function DashboardClient() {
 
   const fetchData = useCallback(
     async (forceRefetch = false) => {
-      // Check if we have fresh data in Zustand store (less than 1 minute old)
+      // Read lastFetch directly from Zustand store (not from closure) to avoid
+      // the useCallback being recreated during Zustand rehydration, which would
+      // abort in-flight fetches and leave the dashboard stuck on the skeleton.
+      const storeLastFetch = useTrackingStore.getState().lastFetch;
       const now = Date.now();
       const STORE_FRESHNESS_MS = 60 * 1000; // 1 minute
 
-      if (!forceRefetch && lastFetch && now - lastFetch < STORE_FRESHNESS_MS) {
+      if (!forceRefetch && storeLastFetch && now - storeLastFetch < STORE_FRESHNESS_MS) {
         // Use Zustand store data - no need to refetch
         setLoading(false);
         return;
@@ -925,12 +895,16 @@ export default function DashboardClient() {
       abortControllerRef.current = controller;
       const generation = ++fetchGenerationRef.current;
 
+      // Add a timeout so the fetch doesn't hang forever (e.g. server not responding)
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+
       try {
         // Get client-side day of week (respects user's timezone)
         const clientDayOfWeek = new Date().getDay();
         const res = await fetch(`/api/dashboard/data?dayOfWeek=${clientDayOfWeek}`, {
           signal: controller.signal,
         });
+        clearTimeout(timeoutId);
         // If a newer fetch was started, discard this stale response
         if (generation !== fetchGenerationRef.current) return;
         if (!res.ok) {
@@ -989,8 +963,15 @@ export default function DashboardClient() {
 
         setError(null);
       } catch (err) {
+        clearTimeout(timeoutId);
         // Ignore aborted requests (user navigated away or new fetch started)
-        if (err instanceof DOMException && err.name === 'AbortError') return;
+        if (err instanceof DOMException && err.name === 'AbortError') {
+          // If this was aborted by our timeout (not by a newer fetch), show error
+          if (generation === fetchGenerationRef.current) {
+            setError('Dashboard took too long to load. Please try again.');
+          }
+          return;
+        }
         // If this is a stale generation, ignore
         if (generation !== fetchGenerationRef.current) return;
         // For network errors, show a connection-friendly message
@@ -998,10 +979,12 @@ export default function DashboardClient() {
         const isFriendly =
           message.includes('Something went wrong') ||
           message.includes('Unable to') ||
-          message.includes('Please try');
+          message.includes('Please try') ||
+          message.includes('too long');
         setError(isFriendly ? message : 'Something went wrong. Please try again later.');
       } finally {
-        // Only update loading state if this is still the current generation
+        clearTimeout(timeoutId);
+        // Always clear loading for the current generation
         if (generation === fetchGenerationRef.current) {
           setLoading(false);
         }
@@ -1009,7 +992,6 @@ export default function DashboardClient() {
     },
     [
       router,
-      lastFetch,
       setTargets,
       setCurrent,
       setTrackedMeals,
@@ -1197,7 +1179,7 @@ export default function DashboardClient() {
 
   if (loading) return <DashboardSkeleton />;
 
-  if (error && trackedMeals.length === 0 && targets.calories === 0) {
+  if (error && trackedMeals.length === 0 && !lastFetch) {
     return (
       <div
         className="min-h-screen bg-background flex items-center justify-center"

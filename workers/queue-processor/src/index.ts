@@ -60,8 +60,10 @@ async function publishProgress(jobId: string, progress: Record<string, unknown>)
 
 /** Extract safe error message without PII or stack traces */
 function safeError(err: unknown): string {
-  if (err instanceof Error) return `${err.name}: ${err.message.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED]')}`;
-  if (typeof err === 'string') return err.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED]');
+  if (err instanceof Error)
+    return `${err.name}: ${err.message.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED]')}`;
+  if (typeof err === 'string')
+    return err.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED]');
   return 'Unknown error';
 }
 
@@ -77,7 +79,7 @@ async function saveToWebApp(
   planData: unknown,
   metabolicProfile: unknown,
   secret: string,
-  maxRetries = 3,
+  maxRetries = 3
 ): Promise<{ planId: string }> {
   let lastError: Error | undefined;
 
@@ -87,7 +89,7 @@ async function saveToWebApp(
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${secret}`,
+          Authorization: `Bearer ${secret}`,
         },
         body: JSON.stringify({ jobId, planData, metabolicProfile }),
       });
@@ -97,12 +99,14 @@ async function saveToWebApp(
         throw new Error(`Save failed (status: ${response.status}): ${errorText}`);
       }
 
-      return await response.json() as { planId: string };
+      return (await response.json()) as { planId: string };
     } catch (err) {
       lastError = err instanceof Error ? err : new Error(safeError(err));
       if (attempt < maxRetries - 1) {
         const delay = Math.pow(2, attempt + 1) * 1000;
-        console.warn(`⚠️ Save attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay / 1000}s: ${safeError(err)}`);
+        console.warn(
+          `⚠️ Save attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay / 1000}s: ${safeError(err)}`
+        );
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -115,6 +119,7 @@ const config: PipelineConfig = {
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
   fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || '',
+  usdaApiKey: process.env.USDA_API_KEY || undefined,
 };
 
 async function startWorker() {
@@ -180,7 +185,7 @@ async function startWorker() {
           jobId,
           result.plan,
           (result.deliverables as Record<string, unknown>)?.metabolicProfile || {},
-          resolvedSecret,
+          resolvedSecret
         );
         console.log(`💾 Plan saved to database: ${saveData.planId}`);
 
@@ -242,7 +247,7 @@ async function startWorker() {
             attemptsMade,
             failedAt: new Date().toISOString(),
           },
-          { jobId: `dlq-${job.id}` },
+          { jobId: `dlq-${job.id}` }
         );
         console.log(`🪦 Job ${job.id} moved to dead letter queue`);
       } catch (dlqErr) {

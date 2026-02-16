@@ -8,7 +8,11 @@ import { MealPlanValidated, CompiledDay, GroceryCategory } from '../types/schema
  * Chrome for development.
  */
 async function getBrowser(): Promise<Browser> {
-  if (process.env.AWS_LAMBDA_FUNCTION_NAME || process.env.VERCEL || process.env.RAILWAY_ENVIRONMENT) {
+  if (
+    process.env.AWS_LAMBDA_FUNCTION_NAME ||
+    process.env.VERCEL ||
+    process.env.RAILWAY_ENVIRONMENT
+  ) {
     const chromium = await import('@sparticuz/chromium');
     return puppeteer.launch({
       args: chromium.default.args,
@@ -28,8 +32,8 @@ async function getBrowser(): Promise<Browser> {
  * These limits are generous for normal use but prevent abuse or edge cases.
  */
 const RENDER_LIMITS = {
-  MAX_DAYS: 14,           // Maximum plan duration (2 weeks)
-  MAX_MEALS_PER_DAY: 10,  // Maximum meals per day (breakfast, lunch, dinner, + snacks)
+  MAX_DAYS: 14, // Maximum plan duration (2 weeks)
+  MAX_MEALS_PER_DAY: 10, // Maximum meals per day (breakfast, lunch, dinner, + snacks)
   MAX_INGREDIENTS_PER_MEAL: 30, // Maximum ingredients in a single meal
 } as const;
 
@@ -85,7 +89,7 @@ export class BrandRenderer {
       if (day.meals.length > RENDER_LIMITS.MAX_MEALS_PER_DAY) {
         throw new Error(
           `Too many meals on ${day.dayName} (Day ${day.dayNumber}): ` +
-          `${day.meals.length} meals exceeds maximum of ${RENDER_LIMITS.MAX_MEALS_PER_DAY}`
+            `${day.meals.length} meals exceeds maximum of ${RENDER_LIMITS.MAX_MEALS_PER_DAY}`
         );
       }
 
@@ -93,7 +97,7 @@ export class BrandRenderer {
         if (meal.ingredients && meal.ingredients.length > RENDER_LIMITS.MAX_INGREDIENTS_PER_MEAL) {
           throw new Error(
             `Too many ingredients in "${meal.name}" on ${day.dayName}: ` +
-            `${meal.ingredients.length} ingredients exceeds maximum of ${RENDER_LIMITS.MAX_INGREDIENTS_PER_MEAL}`
+              `${meal.ingredients.length} ingredients exceeds maximum of ${RENDER_LIMITS.MAX_INGREDIENTS_PER_MEAL}`
           );
         }
       }
@@ -116,7 +120,12 @@ export class BrandRenderer {
       const page = await browser.newPage();
 
       // Create a combined HTML document with all sections
-      const combinedHtml = this.generateCombinedPdfHtml(validated, summaryHtml, gridHtml, groceryHtml);
+      const combinedHtml = this.generateCombinedPdfHtml(
+        validated,
+        summaryHtml,
+        gridHtml,
+        groceryHtml
+      );
 
       await page.setContent(combinedHtml, { waitUntil: 'networkidle0' });
 
@@ -206,7 +215,7 @@ export class BrandRenderer {
    */
   private generateSummaryHtml(plan: MealPlanValidated): string {
     const { qa, weeklyTotals, generatedAt, engineVersion } = plan;
-    const firstDay = plan.days[0];
+    const _firstDay = plan.days[0];
 
     const qaBadgeColor = qa.status === 'PASS' ? 'green' : qa.status === 'WARN' ? 'orange' : 'red';
     const generatedDate = new Date(generatedAt).toLocaleDateString('en-US', {

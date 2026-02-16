@@ -7,9 +7,9 @@ import { toLocalDay } from '@/lib/date-utils';
 export async function GET(request: Request) {
   try {
     let clerkUserId: string;
-    let dbUserId: string;
+    let _dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId } = await requireActiveUser());
+      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
@@ -110,7 +110,9 @@ export async function GET(request: Request) {
       };
 
       // validatedPlan is now a Prisma Json type - no parsing needed
-      const validatedPlan = activePlan.validatedPlan as { days?: Array<{ dayNumber: number; meals?: Array<any> }> } | null;
+      const validatedPlan = activePlan.validatedPlan as {
+        days?: Array<{ dayNumber: number; meals?: Array<any> }>;
+      } | null;
 
       // If validatedPlan is null or has no valid days, treat as no plan
       if (!validatedPlan?.days || validatedPlan.days.length === 0) {

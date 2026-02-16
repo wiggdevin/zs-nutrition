@@ -1,6 +1,6 @@
-import { NextResponse } from 'next/server'
-import { prisma } from '@/lib/prisma'
-import { getClerkUserId } from '@/lib/auth'
+import { NextResponse } from 'next/server';
+import { prisma } from '@/lib/prisma';
+import { getClerkUserId } from '@/lib/auth';
 
 /**
  * POST /api/log-meal
@@ -19,7 +19,18 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json();
-    const { planId, dayNumber, slot, mealName, calories, protein, carbs, fat, fiber, portion = 1.0 } = body;
+    const {
+      planId,
+      dayNumber: _dayNumber,
+      slot,
+      mealName,
+      calories,
+      protein,
+      carbs,
+      fat,
+      fiber,
+      portion = 1.0,
+    } = body;
 
     if (!planId || !mealName || calories === undefined) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
@@ -99,9 +110,8 @@ export async function POST(request: Request) {
 
     // Calculate adherence score
     const targetKcal = dailyLog.targetKcal || 2290;
-    const adherenceScore = targetKcal > 0
-      ? Math.min(100, Math.round((dailyLog.actualKcal / targetKcal) * 100))
-      : 0;
+    const adherenceScore =
+      targetKcal > 0 ? Math.min(100, Math.round((dailyLog.actualKcal / targetKcal) * 100)) : 0;
 
     await prisma.dailyLog.update({
       where: { id: dailyLog.id },
@@ -134,9 +144,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Log meal error:', error);
-    return NextResponse.json(
-      { success: false, error: (error as Error).message },
-      { status: 500 }
-    );
+    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
   }
 }

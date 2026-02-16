@@ -2,8 +2,6 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { Prisma } from '@prisma/client';
 import { router, protectedProcedure } from '../trpc';
-import { safeJsonParse } from '@/lib/utils/safe-json';
-import { StepDataSchema } from '@/lib/schemas/plan';
 import {
   calculateBMR,
   calculateTDEE,

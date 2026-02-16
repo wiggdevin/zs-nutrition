@@ -1,7 +1,6 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest'
-import { TRPCError } from '@trpc/server'
-import { prisma } from '@/lib/prisma'
-import { createCaller, createAuthedTestContext } from '@/test/trpc-test-utils'
+import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { prisma } from '@/lib/prisma';
+import { createCaller, createAuthedTestContext } from '@/test/trpc-test-utils';
 
 // Mock the daily-log utility
 vi.mock('@/server/utils/daily-log', () => ({
@@ -13,19 +12,19 @@ vi.mock('@/server/utils/daily-log', () => ({
     actualFatG: 15,
     mealCount: 1,
   })),
-}))
+}));
 
 describe('meal router', () => {
   beforeEach(() => {
-    vi.clearAllMocks()
-  })
+    vi.clearAllMocks();
+  });
 
   describe('logMealFromPlan', () => {
     it('throws NOT_FOUND when plan does not exist', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(null);
 
       await expect(
         caller.meal.logMealFromPlan({
@@ -42,12 +41,12 @@ describe('meal router', () => {
       ).rejects.toMatchObject({
         code: 'NOT_FOUND',
         message: 'Meal plan not found.',
-      })
-    })
+      });
+    });
 
     it('returns duplicate when meal already logged today', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockPlan = {
         id: 'plan-123',
@@ -57,7 +56,7 @@ describe('meal router', () => {
         dailyCarbsG: 200,
         dailyFatG: 65,
         deletedAt: null,
-      }
+      };
 
       const existingMeal = {
         id: 'meal-existing',
@@ -75,7 +74,7 @@ describe('meal router', () => {
         source: 'plan_meal',
         confidenceScore: 0.95,
         createdAt: new Date(),
-      }
+      };
 
       const existingDailyLog = {
         id: 'log-123',
@@ -90,9 +89,9 @@ describe('meal router', () => {
         actualCarbsG: 60,
         actualFatG: 8,
         adherenceScore: 85,
-      }
+      };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any)
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         // @ts-expect-error - Mock transaction client
         return callback({
@@ -102,8 +101,8 @@ describe('meal router', () => {
           dailyLog: {
             findUnique: vi.fn().mockResolvedValue(existingDailyLog),
           },
-        })
-      })
+        });
+      });
 
       const result = await caller.meal.logMealFromPlan({
         planId: 'plan-123',
@@ -115,15 +114,15 @@ describe('meal router', () => {
         carbs: 60,
         fat: 8,
         portion: 1.0,
-      })
+      });
 
-      expect(result.duplicate).toBe(true)
-      expect(result.trackedMeal.id).toBe('meal-existing')
-    })
+      expect(result.duplicate).toBe(true);
+      expect(result.trackedMeal.id).toBe('meal-existing');
+    });
 
     it('creates new tracked meal and updates daily log', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockPlan = {
         id: 'plan-123',
@@ -133,7 +132,7 @@ describe('meal router', () => {
         dailyCarbsG: 200,
         dailyFatG: 65,
         deletedAt: null,
-      }
+      };
 
       const newMeal = {
         id: 'meal-new',
@@ -151,7 +150,7 @@ describe('meal router', () => {
         source: 'plan_meal',
         confidenceScore: 0.95,
         createdAt: new Date(),
-      }
+      };
 
       const newDailyLog = {
         id: 'log-new',
@@ -166,9 +165,9 @@ describe('meal router', () => {
         actualCarbsG: 40,
         actualFatG: 20,
         adherenceScore: 85,
-      }
+      };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any)
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         // @ts-expect-error - Mock transaction client
         return callback({
@@ -181,8 +180,8 @@ describe('meal router', () => {
             create: vi.fn().mockResolvedValue(newDailyLog),
             update: vi.fn().mockResolvedValue(newDailyLog),
           },
-        })
-      })
+        });
+      });
 
       const result = await caller.meal.logMealFromPlan({
         planId: 'plan-123',
@@ -195,17 +194,17 @@ describe('meal router', () => {
         fat: 20,
         fiber: 8,
         portion: 1.0,
-      })
+      });
 
-      expect(result.duplicate).toBeUndefined()
-      expect(result.trackedMeal.mealName).toBe('Chicken Salad')
-      expect(result.trackedMeal.kcal).toBe(600)
-      expect(result.dailyLog.actualKcal).toBe(600)
-    })
+      expect(result.duplicate).toBeUndefined();
+      expect(result.trackedMeal.mealName).toBe('Chicken Salad');
+      expect(result.trackedMeal.kcal).toBe(600);
+      expect(result.dailyLog.actualKcal).toBe(600);
+    });
 
     it('applies portion multiplier correctly', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mockPlan = {
         id: 'plan-123',
@@ -215,7 +214,7 @@ describe('meal router', () => {
         dailyCarbsG: 200,
         dailyFatG: 65,
         deletedAt: null,
-      }
+      };
 
       // With portion 1.5, values should be multiplied
       const newMeal = {
@@ -234,7 +233,7 @@ describe('meal router', () => {
         source: 'plan_meal',
         confidenceScore: 0.95,
         createdAt: new Date(),
-      }
+      };
 
       const newDailyLog = {
         id: 'log-portion',
@@ -249,9 +248,9 @@ describe('meal router', () => {
         actualCarbsG: 15,
         actualFatG: 30,
         adherenceScore: 85,
-      }
+      };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any)
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         // @ts-expect-error - Mock transaction client
         return callback({
@@ -264,8 +263,8 @@ describe('meal router', () => {
             create: vi.fn().mockResolvedValue(newDailyLog),
             update: vi.fn().mockResolvedValue(newDailyLog),
           },
-        })
-      })
+        });
+      });
 
       const result = await caller.meal.logMealFromPlan({
         planId: 'plan-123',
@@ -277,17 +276,17 @@ describe('meal router', () => {
         carbs: 10,
         fat: 20,
         portion: 1.5,
-      })
+      });
 
-      expect(result.trackedMeal.kcal).toBe(750)
-      expect(result.trackedMeal.proteinG).toBe(60.0)
-    })
-  })
+      expect(result.trackedMeal.kcal).toBe(750);
+      expect(result.trackedMeal.proteinG).toBe(60.0);
+    });
+  });
 
   describe('quickAdd', () => {
     it('creates a quick add entry with minimal data', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const quickAddMeal = {
         id: 'meal-quick',
@@ -305,7 +304,7 @@ describe('meal router', () => {
         source: 'quick_add',
         confidenceScore: 1.0,
         createdAt: new Date(),
-      }
+      };
 
       const mockProfile = {
         id: 'profile-123',
@@ -316,7 +315,7 @@ describe('meal router', () => {
         carbsTargetG: 200,
         fatTargetG: 65,
         createdAt: new Date(),
-      }
+      };
 
       const dailyLog = {
         id: 'log-quick',
@@ -331,7 +330,7 @@ describe('meal router', () => {
         actualCarbsG: 0,
         actualFatG: 0,
         adherenceScore: 85,
-      }
+      };
 
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         // @ts-expect-error - Mock transaction client
@@ -348,21 +347,21 @@ describe('meal router', () => {
             create: vi.fn().mockResolvedValue(dailyLog),
             update: vi.fn().mockResolvedValue(dailyLog),
           },
-        })
-      })
+        });
+      });
 
       const result = await caller.meal.quickAdd({
         calories: 500,
-      })
+      });
 
-      expect(result.trackedMeal.mealName).toBe('Quick Add (500 kcal)')
-      expect(result.trackedMeal.kcal).toBe(500)
-      expect(result.trackedMeal.source).toBe('quick_add')
-    })
+      expect(result.trackedMeal.mealName).toBe('Quick Add (500 kcal)');
+      expect(result.trackedMeal.kcal).toBe(500);
+      expect(result.trackedMeal.source).toBe('quick_add');
+    });
 
     it('detects and returns duplicate within 3 seconds', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const existingQuickAdd = {
         id: 'meal-existing-quick',
@@ -380,7 +379,7 @@ describe('meal router', () => {
         source: 'quick_add',
         confidenceScore: 1.0,
         createdAt: new Date(), // Just created
-      }
+      };
 
       const existingDailyLog = {
         id: 'log-existing',
@@ -395,7 +394,7 @@ describe('meal router', () => {
         actualCarbsG: 15,
         actualFatG: 8,
         adherenceScore: 85,
-      }
+      };
 
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         // @ts-expect-error - Mock transaction client
@@ -406,8 +405,8 @@ describe('meal router', () => {
           dailyLog: {
             findUnique: vi.fn().mockResolvedValue(existingDailyLog),
           },
-        })
-      })
+        });
+      });
 
       const result = await caller.meal.quickAdd({
         calories: 200,
@@ -416,15 +415,15 @@ describe('meal router', () => {
         fat: 8,
         mealName: 'Protein Bar',
         mealSlot: 'snack',
-      })
+      });
 
-      expect(result.duplicate).toBe(true)
-      expect(result.trackedMeal.id).toBe('meal-existing-quick')
-    })
+      expect(result.duplicate).toBe(true);
+      expect(result.trackedMeal.id).toBe('meal-existing-quick');
+    });
 
     it('includes macros when provided', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const quickAddWithMacros = {
         id: 'meal-macros',
@@ -442,7 +441,7 @@ describe('meal router', () => {
         source: 'quick_add',
         confidenceScore: 1.0,
         createdAt: new Date(),
-      }
+      };
 
       const mockProfile = {
         id: 'profile-123',
@@ -453,7 +452,7 @@ describe('meal router', () => {
         carbsTargetG: 200,
         fatTargetG: 65,
         createdAt: new Date(),
-      }
+      };
 
       const dailyLog = {
         id: 'log-macros',
@@ -468,7 +467,7 @@ describe('meal router', () => {
         actualCarbsG: 15,
         actualFatG: 5,
         adherenceScore: 85,
-      }
+      };
 
       vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         // @ts-expect-error - Mock transaction client
@@ -485,8 +484,8 @@ describe('meal router', () => {
             create: vi.fn().mockResolvedValue(dailyLog),
             update: vi.fn().mockResolvedValue(dailyLog),
           },
-        })
-      })
+        });
+      });
 
       const result = await caller.meal.quickAdd({
         calories: 250,
@@ -495,45 +494,41 @@ describe('meal router', () => {
         fat: 5,
         mealName: 'Protein Shake',
         mealSlot: 'snack',
-      })
+      });
 
-      expect(result.trackedMeal.proteinG).toBe(30)
-      expect(result.trackedMeal.carbsG).toBe(15)
-      expect(result.trackedMeal.fatG).toBe(5)
-    })
+      expect(result.trackedMeal.proteinG).toBe(30);
+      expect(result.trackedMeal.carbsG).toBe(15);
+      expect(result.trackedMeal.fatG).toBe(5);
+    });
 
     it('validates calories are within range', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
-      await expect(
-        caller.meal.quickAdd({ calories: 0 })
-      ).rejects.toThrow()
+      await expect(caller.meal.quickAdd({ calories: 0 })).rejects.toThrow();
 
-      await expect(
-        caller.meal.quickAdd({ calories: 15000 })
-      ).rejects.toThrow()
-    })
-  })
+      await expect(caller.meal.quickAdd({ calories: 15000 })).rejects.toThrow();
+    });
+  });
 
   describe('deleteTrackedMeal', () => {
     it('throws NOT_FOUND when meal does not exist', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.trackedMeal.findFirst).mockResolvedValue(null)
+      vi.mocked(prisma.trackedMeal.findFirst).mockResolvedValue(null);
 
       await expect(
         caller.meal.deleteTrackedMeal({ trackedMealId: 'non-existent' })
       ).rejects.toMatchObject({
         code: 'NOT_FOUND',
         message: 'Tracked meal not found.',
-      })
-    })
+      });
+    });
 
     it('deletes meal and recalculates daily log', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const mealToDelete = {
         id: 'meal-delete',
@@ -551,7 +546,7 @@ describe('meal router', () => {
         source: 'manual',
         confidenceScore: 1.0,
         createdAt: new Date(),
-      }
+      };
 
       const updatedDailyLog = {
         id: 'log-123',
@@ -566,43 +561,43 @@ describe('meal router', () => {
         actualCarbsG: 50,
         actualFatG: 15,
         adherenceScore: 85,
-      }
+      };
 
-      vi.mocked(prisma.trackedMeal.findFirst).mockResolvedValue(mealToDelete)
-      vi.mocked(prisma.trackedMeal.delete).mockResolvedValue(mealToDelete)
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(updatedDailyLog)
-      vi.mocked(prisma.dailyLog.update).mockResolvedValue(updatedDailyLog)
+      vi.mocked(prisma.trackedMeal.findFirst).mockResolvedValue(mealToDelete);
+      vi.mocked(prisma.trackedMeal.delete).mockResolvedValue(mealToDelete);
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(updatedDailyLog);
+      vi.mocked(prisma.dailyLog.update).mockResolvedValue(updatedDailyLog);
 
-      const { recalculateDailyLog } = await import('@/server/utils/daily-log')
+      const { recalculateDailyLog } = await import('@/server/utils/daily-log');
 
       const result = await caller.meal.deleteTrackedMeal({
         trackedMealId: 'meal-delete',
-      })
+      });
 
-      expect(result.deleted).toBe(true)
-      expect(result.deletedMealName).toBe('Toast')
-      expect(result.dailyLog?.actualKcal).toBe(500)
-      expect(recalculateDailyLog).toHaveBeenCalled()
-    })
-  })
+      expect(result.deleted).toBe(true);
+      expect(result.deletedMealName).toBe('Toast');
+      expect(result.dailyLog?.actualKcal).toBe(500);
+      expect(recalculateDailyLog).toHaveBeenCalled();
+    });
+  });
 
   describe('getTodaysLog', () => {
     it('returns null dailyLog when no data exists', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-no-log' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-no-log' });
+      const caller = createCaller(ctx);
 
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(null)
-      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([])
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(null);
+      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([]);
 
-      const result = await caller.meal.getTodaysLog()
+      const result = await caller.meal.getTodaysLog();
 
-      expect(result.dailyLog).toBeNull()
-      expect(result.entries).toEqual([])
-    })
+      expect(result.dailyLog).toBeNull();
+      expect(result.entries).toEqual([]);
+    });
 
     it('returns todays log with all entries', async () => {
-      const ctx = createAuthedTestContext({ dbUserId: 'user-123' })
-      const caller = createCaller(ctx)
+      const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
+      const caller = createCaller(ctx);
 
       const todayLog = {
         id: 'log-today',
@@ -617,7 +612,7 @@ describe('meal router', () => {
         actualCarbsG: 150,
         actualFatG: 50,
         adherenceScore: 90,
-      }
+      };
 
       const todayMeals = [
         {
@@ -654,18 +649,18 @@ describe('meal router', () => {
           confidenceScore: 0.95,
           createdAt: new Date(),
         },
-      ]
+      ];
 
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(todayLog)
-      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue(todayMeals)
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(todayLog);
+      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue(todayMeals);
 
-      const result = await caller.meal.getTodaysLog()
+      const result = await caller.meal.getTodaysLog();
 
-      expect(result.dailyLog).toBeTruthy()
-      expect(result.dailyLog?.actualKcal).toBe(1500)
-      expect(result.entries).toHaveLength(2)
-      expect(result.entries[0].mealName).toBe('Eggs')
-      expect(result.entries[1].source).toBe('plan_meal')
-    })
-  })
-})
+      expect(result.dailyLog).toBeTruthy();
+      expect(result.dailyLog?.actualKcal).toBe(1500);
+      expect(result.entries).toHaveLength(2);
+      expect(result.entries[0].mealName).toBe('Eggs');
+      expect(result.entries[1].source).toBe('plan_meal');
+    });
+  });
+});

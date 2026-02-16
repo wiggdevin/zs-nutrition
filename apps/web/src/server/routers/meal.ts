@@ -2,7 +2,6 @@ import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
 import { TRPCError } from '@trpc/server';
 import { recalculateDailyLog, calculateAdherenceScore } from '../utils/daily-log';
-import { safeJsonParse } from '@/lib/utils/safe-json';
 import { ValidatedPlanSchema } from '@/lib/schemas/plan';
 import { isUniqueConstraintError } from '@/lib/prisma-utils';
 

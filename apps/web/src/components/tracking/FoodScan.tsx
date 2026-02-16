@@ -1,9 +1,8 @@
 'use client';
 
 import { useState, useRef } from 'react';
-import { Camera, Upload, X, Check, AlertCircle, Loader2 } from 'lucide-react';
+import { Camera, X, Check, AlertCircle, Loader2 } from 'lucide-react';
 import { ClaudeVisionClient, FoodAnalysisResult } from '@/lib/vision/claude-vision';
-import Image from 'next/image';
 
 interface FoodScanProps {
   onMealLogged?: () => void;
@@ -14,7 +13,7 @@ type ScanState = 'idle' | 'capturing' | 'analyzing' | 'reviewing' | 'error' | 's
 export default function FoodScan({ onMealLogged }: FoodScanProps) {
   const [state, setState] = useState<ScanState>('idle');
   const [imageData, setImageData] = useState<string | null>(null);
-  const [analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null);
+  const [_analysisResult, setAnalysisResult] = useState<FoodAnalysisResult | null>(null);
   const [scanId, setScanId] = useState<string | null>(null);
   const [adjustedResult, setAdjustedResult] = useState<FoodAnalysisResult | null>(null);
   const [error, setError] = useState<string>('');

@@ -216,7 +216,7 @@ export function GeneratePlanPage() {
     }, 2000);
   };
 
-  const simulateAgentProgress = async () => {
+  const _simulateAgentProgress = async () => {
     // Fallback: Simulate agent pipeline progression for visual feedback
     for (let i = 1; i <= 6; i++) {
       setCurrentAgent(i);

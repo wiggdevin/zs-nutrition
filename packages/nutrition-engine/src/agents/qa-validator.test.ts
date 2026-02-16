@@ -11,18 +11,10 @@
  * - Output matches MealPlanValidatedSchema
  */
 
-import { describe, it, expect } from 'vitest';
+import { describe, it } from 'vitest';
 import assert from 'node:assert';
 import { QAValidator } from './qa-validator';
-import {
-  MealPlanCompiledSchema,
-  MealPlanValidatedSchema,
-  CompiledDaySchema,
-  CompiledMealSchema,
-  VerifiedNutritionSchema,
-  IngredientSchema,
-  QAStatusEnum,
-} from '../types/schemas';
+import { MealPlanCompiledSchema, MealPlanValidatedSchema } from '../types/schemas';
 
 // Helper to create a test meal
 function createTestMeal(overrides: Partial<any> = {}): any {
@@ -502,5 +494,4 @@ describe('QAValidator - Feature #95', async () => {
   console.log(`❌ Failed: ${failed}`);
   console.log(`Success rate: ${((passed / (passed + failed)) * 100).toFixed(1)}%`);
   console.log('='.repeat(60));
-
 });

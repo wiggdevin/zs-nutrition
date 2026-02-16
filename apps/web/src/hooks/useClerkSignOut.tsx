@@ -46,7 +46,7 @@ export function useClerkSignOut(): (() => Promise<void>) | undefined {
  * This component should only be rendered when Clerk is available.
  */
 export function ClerkSignOutHandler({
-  onSignOut,
+  onSignOut: _onSignOut,
   children,
 }: {
   onSignOut?: () => void;
@@ -56,11 +56,12 @@ export function ClerkSignOutHandler({
 
   try {
     // Only import and use Clerk hooks if the module is available
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { useAuth } = require('@clerk/nextjs');
     // eslint-disable-next-line react-hooks/rules-of-hooks
     const auth = useAuth();
     clerkSignOut = auth.signOut;
-  } catch (e) {
+  } catch (_e) {
     // Clerk not available, will use dev mode
     logger.debug('Clerk hooks not available in ClerkSignOutHandler');
   }

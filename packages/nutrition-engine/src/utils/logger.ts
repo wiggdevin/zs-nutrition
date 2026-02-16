@@ -1,4 +1,4 @@
-const isDev = process.env.NODE_ENV !== 'production'
+const isDev = process.env.NODE_ENV !== 'production';
 
 /**
  * Structured logger for the nutrition-engine package.
@@ -20,16 +20,16 @@ const isDev = process.env.NODE_ENV !== 'production'
 export const engineLogger = {
   debug: (...args: unknown[]) => {
     // eslint-disable-next-line no-console
-    if (isDev) console.log('[NutritionEngine]', ...args)
+    if (isDev) console.log('[NutritionEngine]', ...args);
   },
   info: (...args: unknown[]) => {
     // eslint-disable-next-line no-console
-    if (isDev) console.log('[NutritionEngine]', ...args)
+    if (isDev) console.log('[NutritionEngine]', ...args);
   },
   warn: (...args: unknown[]) => {
-    console.warn('[NutritionEngine:WARN]', ...args)
+    console.warn('[NutritionEngine:WARN]', ...args);
   },
   error: (...args: unknown[]) => {
-    console.error('[NutritionEngine:ERROR]', ...args)
+    console.error('[NutritionEngine:ERROR]', ...args);
   },
-}
+};

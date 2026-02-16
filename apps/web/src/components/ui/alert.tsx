@@ -19,7 +19,7 @@ const alertVariants = cva('relative w-full rounded-lg border p-4', {
 const Alert = React.forwardRef<
   HTMLDivElement,
   React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof alertVariants>
->(({ className, variant, ...props }, ref) => (
+>(({ className: _className, variant, ...props }, ref) => (
   <div ref={ref} className={alertVariants({ variant })} {...props} />
 ));
 Alert.displayName = 'Alert';

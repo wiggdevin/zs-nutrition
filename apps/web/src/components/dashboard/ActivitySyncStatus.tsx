@@ -45,18 +45,14 @@ export function ActivitySyncStatus() {
 
   const hasBonusApplied = data.bonusApplied > 0;
   const hasUnprocessed = data.hasUnprocessed;
-  const platformNames = data.platforms
-    .map((p) => PLATFORM_CONFIG[p]?.label ?? p)
-    .filter(Boolean);
+  const platformNames = data.platforms.map((p) => PLATFORM_CONFIG[p]?.label ?? p).filter(Boolean);
 
   return (
     <div
       data-testid="activity-sync-status"
       className={cn(
         'flex items-center gap-3 p-4 rounded-xl border',
-        hasBonusApplied
-          ? 'bg-success/10 border-success/30'
-          : 'bg-card border-border'
+        hasBonusApplied ? 'bg-success/10 border-success/30' : 'bg-card border-border'
       )}
     >
       {/* Activity icon */}
@@ -67,10 +63,7 @@ export function ActivitySyncStatus() {
         )}
       >
         <svg
-          className={cn(
-            'w-4 h-4',
-            hasBonusApplied ? 'text-success' : 'text-muted-foreground'
-          )}
+          className={cn('w-4 h-4', hasBonusApplied ? 'text-success' : 'text-muted-foreground')}
           fill="none"
           stroke="currentColor"
           viewBox="0 0 24 24"
@@ -103,13 +96,12 @@ export function ActivitySyncStatus() {
 
         {hasBonusApplied ? (
           <p className="text-sm">
-            <span className="font-semibold text-success">
-              +{data.bonusApplied} kcal
-            </span>
+            <span className="font-semibold text-success">+{data.bonusApplied} kcal</span>
             <span className="text-muted-foreground"> bonus applied</span>
             {data.totalActiveCalories > 0 && (
               <span className="text-xs text-muted-foreground">
-                {' '}({data.totalActiveCalories} active kcal burned)
+                {' '}
+                ({data.totalActiveCalories} active kcal burned)
               </span>
             )}
           </p>
@@ -144,18 +136,8 @@ export function ActivitySyncStatus() {
             : 'text-muted-foreground hover:bg-muted hover:text-foreground'
         )}
       >
-        <svg
-          className="w-4 h-4"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M9 5l7 7-7 7"
-          />
+        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
         </svg>
       </Link>
     </div>

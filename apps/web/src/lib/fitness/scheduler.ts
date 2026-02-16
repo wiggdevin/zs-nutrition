@@ -370,7 +370,7 @@ function normalizeSyncData(syncData: any): any {
   };
 
   switch (syncData.platform) {
-    case 'fitbit':
+    case 'fitbit': {
       const activity = syncData.activity;
       const sleep = syncData.sleep;
       return {
@@ -393,8 +393,9 @@ function normalizeSyncData(syncData: any): any {
         sleepMinutes: sleep?.totalSleepTime ? Math.round(sleep.totalSleepTime / 60000) : null,
         sleepScore: sleep?.efficiency || null,
       };
+    }
 
-    case 'oura':
+    case 'oura': {
       const ouraActivity = syncData.activity;
       const ouraSleep = syncData.sleep;
       return {
@@ -413,13 +414,15 @@ function normalizeSyncData(syncData: any): any {
         sleepMinutes: ouraSleep?.duration,
         sleepScore: ouraSleep?.score,
       };
+    }
 
-    case 'google_fit':
+    case 'google_fit': {
       const steps = syncData.steps?.dataset?.[0]?.point?.[0]?.value?.[0]?.intVal;
       return {
         ...base,
         steps: steps || null,
       };
+    }
 
     default:
       return base;
