@@ -60,7 +60,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
 
   return (
     <ThemeProvider attribute="class" defaultTheme="dark" enableSystem>
-      <ClerkProvider publishableKey={clerkPublishableKey} appearance={clerkAppearance}>
+      <ClerkProvider
+        publishableKey={clerkPublishableKey}
+        appearance={clerkAppearance}
+        afterSignOutUrl="/sign-in"
+      >
         <TRPCProvider>
           <SignOutListener />
           {children}

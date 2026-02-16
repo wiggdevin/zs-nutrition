@@ -58,9 +58,8 @@ export function ClerkSignOutHandler({
     // Only import and use Clerk hooks if the module is available
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const { useAuth } = require('@clerk/nextjs');
-    // eslint-disable-next-line react-hooks/rules-of-hooks
     const auth = useAuth();
-    clerkSignOut = auth.signOut;
+    clerkSignOut = () => auth.signOut({ redirectUrl: '/sign-in' });
   } catch (_e) {
     // Clerk not available, will use dev mode
     logger.debug('Clerk hooks not available in ClerkSignOutHandler');
