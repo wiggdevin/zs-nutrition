@@ -1,252 +1,323 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Feature #133 - Macro Pills Verification</title>
-  <script src="https://cdn.tailwindcss.com"></script>
-  <style>
-    /* Custom dark theme matching ZS-MAC design system */
-    body {
-      background-color: #0a0a0a;
-      color: #fafafa;
-    }
-    .card-elevation {
-      box-shadow: 0 1px 3px 0 rgb(0 0 0 / 0.1), 0 1px 2px -1px rgb(0 0 0 / 0.1);
-    }
-  </style>
-</head>
-<body class="min-h-screen p-8">
-  <div class="max-w-4xl mx-auto">
-    <h1 class="text-2xl font-bold uppercase tracking-wider mb-2">Feature #133 Verification</h1>
-    <p class="text-sm text-[#a1a1aa] mb-8">Macro pills on meal cards styled correctly</p>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Feature #133 - Macro Pills Verification</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+      /* Custom dark theme matching ZS-MAC design system */
+      body {
+        background-color: #0a0a0a;
+        color: #fafafa;
+      }
+      .card-elevation {
+        box-shadow:
+          0 1px 3px 0 rgb(0 0 0 / 0.1),
+          0 1px 2px -1px rgb(0 0 0 / 0.1);
+      }
+    </style>
+  </head>
+  <body class="min-h-screen p-8">
+    <div class="max-w-4xl mx-auto">
+      <h1 class="text-2xl font-bold uppercase tracking-wider mb-2">Feature #133 Verification</h1>
+      <p class="text-sm text-[#a1a1aa] mb-8">Macro pills on meal cards styled correctly</p>
 
-    <!-- Test Case 1: Standard Meal Card -->
-    <div class="mb-8">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-4">
-        /// TEST CASE 1: Standard Meal Card
-      </h2>
+      <!-- Test Case 1: Standard Meal Card -->
+      <div class="mb-8">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-4">
+          /// TEST CASE 1: Standard Meal Card
+        </h2>
 
-      <div class="rounded-lg border border-[#2a2a2a] card-elevation p-3 bg-[#1a1a1a]">
-        <!-- Slot label + Confidence badge -->
-        <div class="flex items-center gap-2 mb-2">
-          <span class="rounded-md bg-[#f97316]/20 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[#f97316] border border-[#f97316]/30">
-            BREAKFAST
-          </span>
-          <span class="rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider border bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/30">
-            ✓ Verified
-          </span>
-        </div>
-
-        <!-- Meal name -->
-        <h4 class="text-sm font-bold text-[#fafafa] leading-snug pr-7">
-          Greek Yogurt Parfait with Mixed Berries
-        </h4>
-
-        <p class="mt-1 text-[11px] font-medium text-[#a1a1aa]">Mediterranean</p>
-
-        <!-- Prep time indicator -->
-        <div class="mt-2 flex items-center gap-1.5 text-[11px] text-[#a1a1aa]">
-          <span class="text-[12px]">🕒</span>
-          <span class="font-medium">10m prep</span>
-        </div>
-
-        <!-- Macro pills (THE FEATURE WE'RE VERIFYING) -->
-        <div class="mt-2.5 flex flex-wrap gap-1.5" data-testid="macro-pills-test-1">
-          <span class="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-1 text-[11px] font-bold text-[#f97316] border border-[#f97316]/20">
-            420 kcal
-          </span>
-          <span class="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-1 text-[11px] font-bold text-[#3b82f6] border border-[#3b82f6]/20">
-            P 28g
-          </span>
-          <span class="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-1 text-[11px] font-bold text-[#f59e0b] border border-[#f59e0b]/20">
-            C 45g
-          </span>
-          <span class="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-1 text-[11px] font-bold text-[#ef4444] border border-[#ef4444]/20">
-            F 12g
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Test Case 2: AI Estimated Meal -->
-    <div class="mb-8">
-      <h2 class="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-4">
-        /// TEST CASE 2: AI Estimated Meal
-      </h2>
-
-      <div class="rounded-lg border border-[#2a2a2a] card-elevation p-3 bg-[#1a1a1a]">
-        <!-- Slot label + Confidence badge -->
-        <div class="flex items-center gap-2 mb-2">
-          <span class="rounded-md bg-[#f97316]/20 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[#f97316] border border-[#f97316]/30">
-            DINNER
-          </span>
-          <span class="rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider border bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30">
-            ⚡ AI-Estimated
-          </span>
-        </div>
-
-        <!-- Meal name -->
-        <h4 class="text-sm font-bold text-[#fafafa] leading-snug pr-7">
-          Grilled Salmon with Quinoa and Asparagus
-        </h4>
-
-        <p class="mt-1 text-[11px] font-medium text-[#a1a1aa]">Clean Eating</p>
-
-        <!-- Prep time indicator -->
-        <div class="mt-2 flex items-center gap-1.5 text-[11px] text-[#a1a1aa]">
-          <span class="text-[12px]">🕒</span>
-          <span class="font-medium">25m prep + 15m cook</span>
-        </div>
-
-        <!-- Macro pills -->
-        <div class="mt-2.5 flex flex-wrap gap-1.5" data-testid="macro-pills-test-2">
-          <span class="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-1 text-[11px] font-bold text-[#f97316] border border-[#f97316]/20">
-            580 kcal
-          </span>
-          <span class="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-1 text-[11px] font-bold text-[#3b82f6] border border-[#3b82f6]/20">
-            P 42g
-          </span>
-          <span class="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-1 text-[11px] font-bold text-[#f59e0b] border border-[#f59e0b]/20">
-            C 38g
-          </span>
-          <span class="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-1 text-[11px] font-bold text-[#ef4444] border border-[#ef4444]/20">
-            F 24g
-          </span>
-        </div>
-      </div>
-    </div>
-
-    <!-- Verification Checklist -->
-    <div class="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-      <h2 class="text-lg font-bold uppercase tracking-wider mb-4">✅ Verification Checklist</h2>
-
-      <div class="space-y-3">
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
+        <div class="rounded-lg border border-[#2a2a2a] card-elevation p-3 bg-[#1a1a1a]">
+          <!-- Slot label + Confidence badge -->
+          <div class="flex items-center gap-2 mb-2">
+            <span
+              class="rounded-md bg-[#f97316]/20 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[#f97316] border border-[#f97316]/30"
+            >
+              BREAKFAST
+            </span>
+            <span
+              class="rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider border bg-[#22c55e]/20 text-[#22c55e] border-[#22c55e]/30"
+            >
+              ✓ Verified
+            </span>
           </div>
-          <div>
-            <p class="text-sm font-semibold text-[#fafafa]">Protein pill shows value in grams</p>
-            <p class="text-xs text-[#a1a1aa]">Format: "P {value}g" with blue color (#3b82f6)</p>
-          </div>
-        </div>
 
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-[#fafafa]">Carbs pill shows value in grams</p>
-            <p class="text-xs text-[#a1a1aa]">Format: "C {value}g" with amber color (#f59e0b)</p>
-          </div>
-        </div>
+          <!-- Meal name -->
+          <h4 class="text-sm font-bold text-[#fafafa] leading-snug pr-7">
+            Greek Yogurt Parfait with Mixed Berries
+          </h4>
 
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-[#fafafa]">Fat pill shows value in grams</p>
-            <p class="text-xs text-[#a1a1aa]">Format: "F {value}g" with red color (#ef4444)</p>
-          </div>
-        </div>
+          <p class="mt-1 text-[11px] font-medium text-[#a1a1aa]">Mediterranean</p>
 
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
+          <!-- Prep time indicator -->
+          <div class="mt-2 flex items-center gap-1.5 text-[11px] text-[#a1a1aa]">
+            <span class="text-[12px]">🕒</span>
+            <span class="font-medium">10m prep</span>
           </div>
-          <div>
-            <p class="text-sm font-semibold text-[#fafafa]">Calorie pill shows kcal value</p>
-            <p class="text-xs text-[#a1a1aa]">Format: "{value} kcal" with orange color (#f97316)</p>
-          </div>
-        </div>
 
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-[#fafafa]">Pills use appropriate size</p>
-            <p class="text-xs text-[#a1a1aa]">text-[11px] font-bold with px-2 py-1 padding</p>
-          </div>
-        </div>
-
-        <div class="flex items-start gap-3">
-          <div class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5">
-            <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
-              <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd"/>
-            </svg>
-          </div>
-          <div>
-            <p class="text-sm font-semibold text-[#fafafa]">Pills use appropriate contrast</p>
-            <p class="text-xs text-[#a1a1aa]">15% opacity background with matching border</p>
+          <!-- Macro pills (THE FEATURE WE'RE VERIFYING) -->
+          <div class="mt-2.5 flex flex-wrap gap-1.5" data-testid="macro-pills-test-1">
+            <span
+              class="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-1 text-[11px] font-bold text-[#f97316] border border-[#f97316]/20"
+            >
+              420 kcal
+            </span>
+            <span
+              class="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-1 text-[11px] font-bold text-[#3b82f6] border border-[#3b82f6]/20"
+            >
+              P 28g
+            </span>
+            <span
+              class="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-1 text-[11px] font-bold text-[#f59e0b] border border-[#f59e0b]/20"
+            >
+              C 45g
+            </span>
+            <span
+              class="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-1 text-[11px] font-bold text-[#ef4444] border border-[#ef4444]/20"
+            >
+              F 12g
+            </span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Color Legend -->
-    <div class="mt-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-      <h2 class="text-lg font-bold uppercase tracking-wider mb-4">🎨 Design System Color Legend</h2>
+      <!-- Test Case 2: AI Estimated Meal -->
+      <div class="mb-8">
+        <h2 class="text-sm font-bold uppercase tracking-wider text-[#a1a1aa] mb-4">
+          /// TEST CASE 2: AI Estimated Meal
+        </h2>
 
-      <div class="grid grid-cols-2 gap-4">
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-[#f97316]/15 border border-[#f97316]/20"></div>
-          <div>
-            <p class="text-sm font-semibold text-[#f97316]">Calories</p>
-            <p class="text-xs text-[#a1a1aa]">#f97316 (orange)</p>
+        <div class="rounded-lg border border-[#2a2a2a] card-elevation p-3 bg-[#1a1a1a]">
+          <!-- Slot label + Confidence badge -->
+          <div class="flex items-center gap-2 mb-2">
+            <span
+              class="rounded-md bg-[#f97316]/20 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-[#f97316] border border-[#f97316]/30"
+            >
+              DINNER
+            </span>
+            <span
+              class="rounded-md px-2 py-1 text-[9px] font-bold uppercase tracking-wider border bg-[#f59e0b]/20 text-[#f59e0b] border-[#f59e0b]/30"
+            >
+              ⚡ AI-Estimated
+            </span>
           </div>
-        </div>
 
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/20"></div>
-          <div>
-            <p class="text-sm font-semibold text-[#3b82f6]">Protein</p>
-            <p class="text-xs text-[#a1a1aa]">#3b82f6 (blue)</p>
+          <!-- Meal name -->
+          <h4 class="text-sm font-bold text-[#fafafa] leading-snug pr-7">
+            Grilled Salmon with Quinoa and Asparagus
+          </h4>
+
+          <p class="mt-1 text-[11px] font-medium text-[#a1a1aa]">Clean Eating</p>
+
+          <!-- Prep time indicator -->
+          <div class="mt-2 flex items-center gap-1.5 text-[11px] text-[#a1a1aa]">
+            <span class="text-[12px]">🕒</span>
+            <span class="font-medium">25m prep + 15m cook</span>
           </div>
-        </div>
 
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-[#f59e0b]/15 border border-[#f59e0b]/20"></div>
-          <div>
-            <p class="text-sm font-semibold text-[#f59e0b]">Carbs</p>
-            <p class="text-xs text-[#a1a1aa]">#f59e0b (amber)</p>
-          </div>
-        </div>
-
-        <div class="flex items-center gap-3">
-          <div class="w-8 h-8 rounded-full bg-[#ef4444]/15 border border-[#ef4444]/20"></div>
-          <div>
-            <p class="text-sm font-semibold text-[#ef4444]">Fat</p>
-            <p class="text-xs text-[#a1a1aa]">#ef4444 (red)</p>
+          <!-- Macro pills -->
+          <div class="mt-2.5 flex flex-wrap gap-1.5" data-testid="macro-pills-test-2">
+            <span
+              class="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-1 text-[11px] font-bold text-[#f97316] border border-[#f97316]/20"
+            >
+              580 kcal
+            </span>
+            <span
+              class="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-1 text-[11px] font-bold text-[#3b82f6] border border-[#3b82f6]/20"
+            >
+              P 42g
+            </span>
+            <span
+              class="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-1 text-[11px] font-bold text-[#f59e0b] border border-[#f59e0b]/20"
+            >
+              C 38g
+            </span>
+            <span
+              class="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-1 text-[11px] font-bold text-[#ef4444] border border-[#ef4444]/20"
+            >
+              F 24g
+            </span>
           </div>
         </div>
       </div>
-    </div>
 
-    <!-- Implementation Details -->
-    <div class="mt-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
-      <h2 class="text-lg font-bold uppercase tracking-wider mb-4">📝 Implementation Details</h2>
+      <!-- Verification Checklist -->
+      <div class="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+        <h2 class="text-lg font-bold uppercase tracking-wider mb-4">✅ Verification Checklist</h2>
 
-      <div class="space-y-2 text-sm">
-        <p class="text-[#a1a1aa]"><span class="text-[#fafafa] font-mono">File:</span> zero-sum-nutrition/apps/web/src/app/meal-plan/page.tsx</p>
-        <p class="text-[#a1a1aa]"><span class="text-[#fafafa] font-mono">Lines:</span> 494-508</p>
-        <p class="text-[#a1a1aa]"><span class="text-[#fafafa] font-mono">Component:</span> DayColumn → Meal Card</p>
+        <div class="space-y-3">
+          <div class="flex items-start gap-3">
+            <div
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5"
+            >
+              <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-[#fafafa]">Protein pill shows value in grams</p>
+              <p class="text-xs text-[#a1a1aa]">Format: "P {value}g" with blue color (#3b82f6)</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5"
+            >
+              <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-[#fafafa]">Carbs pill shows value in grams</p>
+              <p class="text-xs text-[#a1a1aa]">Format: "C {value}g" with amber color (#f59e0b)</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5"
+            >
+              <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-[#fafafa]">Fat pill shows value in grams</p>
+              <p class="text-xs text-[#a1a1aa]">Format: "F {value}g" with red color (#ef4444)</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5"
+            >
+              <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-[#fafafa]">Calorie pill shows kcal value</p>
+              <p class="text-xs text-[#a1a1aa]">
+                Format: "{value} kcal" with orange color (#f97316)
+              </p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5"
+            >
+              <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-[#fafafa]">Pills use appropriate size</p>
+              <p class="text-xs text-[#a1a1aa]">text-[11px] font-bold with px-2 py-1 padding</p>
+            </div>
+          </div>
+
+          <div class="flex items-start gap-3">
+            <div
+              class="flex-shrink-0 w-6 h-6 rounded-full bg-green-500/20 flex items-center justify-center mt-0.5"
+            >
+              <svg class="w-4 h-4 text-green-500" fill="currentColor" viewBox="0 0 20 20">
+                <path
+                  fill-rule="evenodd"
+                  d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                  clip-rule="evenodd"
+                />
+              </svg>
+            </div>
+            <div>
+              <p class="text-sm font-semibold text-[#fafafa]">Pills use appropriate contrast</p>
+              <p class="text-xs text-[#a1a1aa]">15% opacity background with matching border</p>
+            </div>
+          </div>
+        </div>
       </div>
 
-      <div class="mt-4 rounded-lg bg-[#0a0a0a] p-4 overflow-x-auto">
-        <pre class="text-xs text-[#a1a1aa]"><code>{`{/* Macro pills */}
+      <!-- Color Legend -->
+      <div class="mt-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+        <h2 class="text-lg font-bold uppercase tracking-wider mb-4">
+          🎨 Design System Color Legend
+        </h2>
+
+        <div class="grid grid-cols-2 gap-4">
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-[#f97316]/15 border border-[#f97316]/20"></div>
+            <div>
+              <p class="text-sm font-semibold text-[#f97316]">Calories</p>
+              <p class="text-xs text-[#a1a1aa]">#f97316 (orange)</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-[#3b82f6]/15 border border-[#3b82f6]/20"></div>
+            <div>
+              <p class="text-sm font-semibold text-[#3b82f6]">Protein</p>
+              <p class="text-xs text-[#a1a1aa]">#3b82f6 (blue)</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-[#f59e0b]/15 border border-[#f59e0b]/20"></div>
+            <div>
+              <p class="text-sm font-semibold text-[#f59e0b]">Carbs</p>
+              <p class="text-xs text-[#a1a1aa]">#f59e0b (amber)</p>
+            </div>
+          </div>
+
+          <div class="flex items-center gap-3">
+            <div class="w-8 h-8 rounded-full bg-[#ef4444]/15 border border-[#ef4444]/20"></div>
+            <div>
+              <p class="text-sm font-semibold text-[#ef4444]">Fat</p>
+              <p class="text-xs text-[#a1a1aa]">#ef4444 (red)</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Implementation Details -->
+      <div class="mt-8 rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-6">
+        <h2 class="text-lg font-bold uppercase tracking-wider mb-4">📝 Implementation Details</h2>
+
+        <div class="space-y-2 text-sm">
+          <p class="text-[#a1a1aa]">
+            <span class="text-[#fafafa] font-mono">File:</span>
+            zero-sum-nutrition/apps/web/src/app/meal-plan/page.tsx
+          </p>
+          <p class="text-[#a1a1aa]"><span class="text-[#fafafa] font-mono">Lines:</span> 494-508</p>
+          <p class="text-[#a1a1aa]">
+            <span class="text-[#fafafa] font-mono">Component:</span> DayColumn → Meal Card
+          </p>
+        </div>
+
+        <div class="mt-4 rounded-lg bg-[#0a0a0a] p-4 overflow-x-auto">
+          <pre class="text-xs text-[#a1a1aa]"><code>{`{/* Macro pills */}
 <div className="mt-2.5 flex flex-wrap gap-1.5" data-testid={\`macro-pills-\${day.dayNumber}-\${mealIdx}\`}>
   <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-1 text-[11px] font-bold text-[#f97316] border border-[#f97316]/20">
     {meal.nutrition.kcal} kcal
@@ -261,8 +332,8 @@
     F {meal.nutrition.fatG}g
   </span>
 </div>`}</code></pre>
+        </div>
       </div>
     </div>
-  </div>
-</body>
+  </body>
 </html>

@@ -3,6 +3,7 @@ import type { FoodDetails } from '../../adapters/fatsecret';
 
 /**
  * Build ingredient list from FatSecret food details.
+ * Uses the serving with the highest calories for the most realistic portion size.
  */
 export function buildIngredientsFromFood(
   foodDetails: FoodDetails,
@@ -11,8 +12,12 @@ export function buildIngredientsFromFood(
 ): Ingredient[] {
   const ingredients: Ingredient[] = [];
 
-  // Primary ingredient from FatSecret
-  const primaryServing = foodDetails.servings[0];
+  // Pick the serving with the highest calories (most complete portion)
+  const primaryServing =
+    foodDetails.servings.length > 1
+      ? foodDetails.servings.reduce((best, s) => (s.calories > best.calories ? s : best))
+      : foodDetails.servings[0];
+
   if (primaryServing) {
     ingredients.push({
       name: foodDetails.name,

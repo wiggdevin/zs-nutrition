@@ -8,11 +8,11 @@ services:
       POSTGRES_PASSWORD: zsn_dev
       POSTGRES_DB: zero_sum_nutrition
     ports:
-      - "5432:5432"
+      - '5432:5432'
     volumes:
       - pgdata:/var/lib/postgresql/data
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U zsn"]
+      test: ['CMD-SHELL', 'pg_isready -U zsn']
       interval: 5s
       timeout: 5s
       retries: 5
@@ -24,11 +24,11 @@ services:
     container_name: zsn-redis
     restart: unless-stopped
     ports:
-      - "6379:6379"
+      - '6379:6379'
     volumes:
       - redisdata:/data
     healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
+      test: ['CMD', 'redis-cli', 'ping']
       interval: 5s
       timeout: 5s
       retries: 5

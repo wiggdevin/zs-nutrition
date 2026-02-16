@@ -150,7 +150,8 @@ async function testRegeneratePlan() {
 
     // Run verification checks
     const checks = {
-      oldPlanMarkedReplaced: oldPlanAfter?.status === 'replaced' && oldPlanAfter?.isActive === false,
+      oldPlanMarkedReplaced:
+        oldPlanAfter?.status === 'replaced' && oldPlanAfter?.isActive === false,
       newPlanIsActive: newPlanAfter?.status === 'active' && newPlanAfter?.isActive === true,
       onlyOneActivePlan: activePlans.length === 1,
       newPlanIsTheActiveOne: activePlans[0]?.id === newPlan.id,
@@ -160,16 +161,30 @@ async function testRegeneratePlan() {
     console.log('\n📊 Verification Results:');
     console.log('─────────────────────────────────────────────');
     console.log(`Old Plan (${oldPlanId.substring(0, 8)}...):`);
-    console.log(`  - Status: ${oldPlanAfter?.status} (expected: replaced) ${checks.oldPlanMarkedReplaced ? '✅' : '❌'}`);
-    console.log(`  - isActive: ${oldPlanAfter?.isActive} (expected: false) ${checks.oldPlanMarkedReplaced ? '✅' : '❌'}`);
+    console.log(
+      `  - Status: ${oldPlanAfter?.status} (expected: replaced) ${checks.oldPlanMarkedReplaced ? '✅' : '❌'}`
+    );
+    console.log(
+      `  - isActive: ${oldPlanAfter?.isActive} (expected: false) ${checks.oldPlanMarkedReplaced ? '✅' : '❌'}`
+    );
 
     console.log(`\nNew Plan (${newPlan.id.substring(0, 8)}...):`);
-    console.log(`  - Status: ${newPlanAfter?.status} (expected: active) ${checks.newPlanIsActive ? '✅' : '❌'}`);
-    console.log(`  - isActive: ${newPlanAfter?.isActive} (expected: true) ${checks.newPlanIsActive ? '✅' : '❌'}`);
+    console.log(
+      `  - Status: ${newPlanAfter?.status} (expected: active) ${checks.newPlanIsActive ? '✅' : '❌'}`
+    );
+    console.log(
+      `  - isActive: ${newPlanAfter?.isActive} (expected: true) ${checks.newPlanIsActive ? '✅' : '❌'}`
+    );
 
-    console.log(`\nActive Plans Count: ${activePlans.length} (expected: 1) ${checks.onlyOneActivePlan ? '✅' : '❌'}`);
-    console.log(`Active Plan ID: ${activePlans[0]?.id.substring(0, 8)}... (should match new plan) ${checks.newPlanIsTheActiveOne ? '✅' : '❌'}`);
-    console.log(`Replaced Plans Count: ${replacedPlans.length} (should be ≥ 1) ${replacedPlans.length >= 1 ? '✅' : '❌'}`);
+    console.log(
+      `\nActive Plans Count: ${activePlans.length} (expected: 1) ${checks.onlyOneActivePlan ? '✅' : '❌'}`
+    );
+    console.log(
+      `Active Plan ID: ${activePlans[0]?.id.substring(0, 8)}... (should match new plan) ${checks.newPlanIsTheActiveOne ? '✅' : '❌'}`
+    );
+    console.log(
+      `Replaced Plans Count: ${replacedPlans.length} (should be ≥ 1) ${replacedPlans.length >= 1 ? '✅' : '❌'}`
+    );
 
     console.log('\n─────────────────────────────────────────────');
     const allChecksPassed = Object.values(checks).every((check) => check === true);

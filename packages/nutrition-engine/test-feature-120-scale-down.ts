@@ -17,13 +17,13 @@ const testMeal = {
   prepTimeMin: 10,
   cookTimeMin: 20,
   estimatedNutrition: {
-    kcal: 300,  // AI estimate
+    kcal: 300, // AI estimate
     proteinG: 40,
     carbsG: 0,
     fatG: 5,
   },
   targetNutrition: {
-    kcal: 200,  // Target is ONLY 200 kcal (much less than a full chicken breast)
+    kcal: 200, // Target is ONLY 200 kcal (much less than a full chicken breast)
     proteinG: 35,
     carbsG: 0,
     fatG: 3,
@@ -70,14 +70,14 @@ async function testScaleDown() {
     console.log(`- Actual calories: ${meal.nutrition.kcal} kcal`);
     console.log(`- Confidence: ${meal.confidenceLevel}`);
 
-    const chicken = meal.ingredients.find(i => i.name.includes('Chicken'));
+    const chicken = meal.ingredients.find((i) => i.name.includes('Chicken'));
     if (chicken) {
       console.log(`- Chicken amount: ${chicken.amount} ${chicken.unit}`);
     }
 
     // Expected scale: 200/284 = 0.704
     // Expected amount: 172g * 0.704 = 121g
-    const variance = Math.abs(meal.nutrition.kcal - 200) / 200 * 100;
+    const variance = (Math.abs(meal.nutrition.kcal - 200) / 200) * 100;
     console.log(`\n- Variance from target: ${variance.toFixed(1)}%`);
 
     // Check if scaled correctly

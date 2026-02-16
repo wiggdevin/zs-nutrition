@@ -1,4 +1,3 @@
-import 'dotenv/config';
 import { Worker, Job } from 'bullmq';
 import { NutritionPipelineOrchestrator, PipelineConfig } from '@zero-sum/nutrition-engine';
 import { createRedisConnection, QUEUE_NAMES, createDeadLetterQueue } from './queues.js';

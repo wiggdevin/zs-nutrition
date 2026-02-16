@@ -17,9 +17,32 @@ import {
   generateEstimatedIngredients,
   generateInstructions,
 } from './ingredient-builder';
+import type { FoodServing, FoodDetails } from '../../adapters/fatsecret';
+
+/** Nutrition data after scaling to target kcal */
+interface ScaledNutrition {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number | undefined;
+}
 
 /** Maximum concurrent FatSecret API calls to respect rate limits */
 const FATSECRET_CONCURRENCY_LIMIT = 5;
+
+/**
+ * Maximum scale factor before falling back to AI estimates.
+ * If a FatSecret serving needs >8x scaling to reach target kcal,
+ * the match is likely a single ingredient (not a full meal) and
+ * the scaled macro ratios become unreliable.
+ */
+const MAX_SCALE_FACTOR = 8.0;
+
+/**
+ * Minimum scale factor floor. Prevents absurd downscaling.
+ */
+const MIN_SCALE_FACTOR = 0.25;
 
 /**
  * Agent 4: Nutrition Compiler
@@ -89,9 +112,139 @@ export class NutritionCompiler {
   }
 
   /**
+   * Select the best serving from a food's serving list.
+   * Picks the serving with the highest calories to minimize scaling needed,
+   * which produces more realistic macro ratios.
+   */
+  private selectBestServing(servings: FoodServing[], targetKcal: number): FoodServing {
+    if (servings.length === 1) return servings[0];
+
+    // Pick the serving whose calorie count is closest to the target without
+    // exceeding it too much. If none are close, pick the highest-calorie serving
+    // to minimize the scale factor.
+    let best = servings[0];
+    let bestScore = -Infinity;
+
+    for (const s of servings) {
+      if (s.calories <= 0) continue;
+
+      // Prefer servings that minimize the required scale factor
+      // Ideal: scale factor of 1.0 (serving matches target exactly)
+      const ratio = targetKcal / s.calories;
+      // Score: closer to 1.0 is better; penalize both over and under
+      const score = -Math.abs(Math.log(ratio));
+
+      if (score > bestScore) {
+        bestScore = score;
+        best = s;
+      }
+    }
+
+    return best;
+  }
+
+  /**
+   * Scale nutrition from a serving to match target kcal.
+   * Returns null if scaling would be too extreme (>MAX_SCALE_FACTOR),
+   * signaling the caller to fall back to AI estimates.
+   */
+  private scaleNutrition(
+    serving: FoodServing,
+    targetKcal: number,
+    servingScale: number
+  ): { nutrition: ScaledNutrition; scaleFactor: number } | null {
+    const baseKcal = serving.calories * servingScale;
+    if (baseKcal <= 0) return null;
+
+    const scaleFactor = targetKcal / baseKcal;
+
+    // If scaling is too extreme, the FatSecret match is likely a single
+    // ingredient rather than a full meal — fall back to AI estimates
+    if (scaleFactor > MAX_SCALE_FACTOR || scaleFactor < MIN_SCALE_FACTOR) {
+      return null;
+    }
+
+    const scaled = {
+      nutrition: {
+        kcal: Math.round(serving.calories * servingScale * scaleFactor),
+        proteinG: Math.round(serving.protein * servingScale * scaleFactor * 10) / 10,
+        carbsG: Math.round(serving.carbohydrate * servingScale * scaleFactor * 10) / 10,
+        fatG: Math.round(serving.fat * servingScale * scaleFactor * 10) / 10,
+        fiberG:
+          serving.fiber !== undefined
+            ? Math.round(serving.fiber * servingScale * scaleFactor * 10) / 10
+            : undefined,
+      },
+      scaleFactor,
+    };
+
+    engineLogger.warn(
+      `[NutritionCompiler] Scale: base=${baseKcal} target=${targetKcal} factor=${scaleFactor.toFixed(2)} → ${scaled.nutrition.kcal} kcal (serving: "${serving.servingDescription}")`
+    );
+
+    return scaled;
+  }
+
+  /**
+   * Try to verify a meal's nutrition using a food database (FatSecret or USDA).
+   * Searches for the meal, picks the best serving, and scales to target kcal.
+   * Returns null if no usable match is found.
+   */
+  private async tryVerifyFromFoodDB(
+    searchFn: (query: string, max: number) => Promise<{ foodId: string }[]>,
+    getFoodFn: (id: string) => Promise<FoodDetails>,
+    meal: DraftMeal,
+    source: string
+  ): Promise<{
+    nutrition: ScaledNutrition;
+    ingredients: Ingredient[];
+    foodId: string;
+    scaleFactor: number;
+  } | null> {
+    const results = await searchFn(meal.fatsecretSearchQuery, 5);
+    if (results.length === 0) return null;
+
+    // Try each search result until one produces a reasonable scale factor
+    for (const match of results) {
+      const foodDetails = await getFoodFn(match.foodId);
+      if (foodDetails.servings.length === 0) continue;
+
+      const targetKcal = meal.targetNutrition.kcal;
+      const servingScale = meal.suggestedServings || 1;
+      const bestServing = this.selectBestServing(foodDetails.servings, targetKcal);
+
+      const scaled = this.scaleNutrition(bestServing, targetKcal, servingScale);
+      if (scaled) {
+        const ingredients = buildIngredientsFromFood(foodDetails, meal, scaled.scaleFactor);
+        engineLogger.info(
+          `[NutritionCompiler] ${source} verified "${meal.name}" via "${foodDetails.name}" ` +
+            `(${bestServing.servingDescription}, ${bestServing.calories} kcal/serving, ` +
+            `scale: ${scaled.scaleFactor.toFixed(2)}x → ${scaled.nutrition.kcal} kcal)`
+        );
+        return {
+          nutrition: scaled.nutrition,
+          ingredients,
+          foodId: match.foodId,
+          scaleFactor: scaled.scaleFactor,
+        };
+      }
+    }
+
+    // All matches required extreme scaling — not usable
+    engineLogger.warn(
+      `[NutritionCompiler] ${source} matches for "${meal.fatsecretSearchQuery}" all require ` +
+        `extreme scaling (>${MAX_SCALE_FACTOR}x), falling back to AI estimates`
+    );
+    return null;
+  }
+
+  /**
    * Compile a single meal by searching FatSecret for verification.
-   * If found: use FatSecret nutrition data, tag as "verified".
-   * If not found: use AI estimates, tag as "ai_estimated".
+   * Strategy:
+   *   1. Search FatSecret recipes (full meals with realistic nutrition)
+   *   2. Search FatSecret foods, pick best serving, scale to target
+   *   3. USDA fallback with same logic
+   *   4. Fall back to AI estimates if nothing works
    */
   private async compileMeal(meal: DraftMeal): Promise<CompiledMeal> {
     let confidenceLevel: 'verified' | 'ai_estimated' = 'ai_estimated';
@@ -106,78 +259,97 @@ export class NutritionCompiler {
     let fatsecretRecipeId: string | undefined;
 
     try {
-      // Search FatSecret for the meal
-      const searchResults = await this.fatSecretAdapter.searchFoods(meal.fatsecretSearchQuery, 5);
+      // Strategy 1: Try FatSecret recipe search (returns full meals)
+      let verified = false;
+      try {
+        const recipeResults = await this.fatSecretAdapter.searchRecipes(
+          meal.fatsecretSearchQuery,
+          3
+        );
+        if (recipeResults.length > 0) {
+          const recipe = await this.fatSecretAdapter.getRecipe(recipeResults[0].recipeId);
+          engineLogger.warn(
+            `[NutritionCompiler] Recipe found for "${meal.name}": "${recipe.name}" ` +
+              `(calories=${recipe.nutrition.calories}, protein=${recipe.nutrition.protein})`
+          );
+          if (recipe.nutrition.calories > 0) {
+            const targetKcal = meal.targetNutrition.kcal;
+            const baseKcal = recipe.nutrition.calories;
+            const scaleFactor = targetKcal / baseKcal;
 
-      if (searchResults.length > 0) {
-        // Found a match -- get detailed food info
-        const bestMatch = searchResults[0];
-        const foodDetails = await this.fatSecretAdapter.getFood(bestMatch.foodId);
+            if (scaleFactor >= MIN_SCALE_FACTOR && scaleFactor <= MAX_SCALE_FACTOR) {
+              nutrition = {
+                kcal: Math.round(baseKcal * scaleFactor),
+                proteinG: Math.round(recipe.nutrition.protein * scaleFactor * 10) / 10,
+                carbsG: Math.round(recipe.nutrition.carbohydrate * scaleFactor * 10) / 10,
+                fatG: Math.round(recipe.nutrition.fat * scaleFactor * 10) / 10,
+                fiberG:
+                  recipe.nutrition.fiber !== undefined
+                    ? Math.round(recipe.nutrition.fiber * scaleFactor * 10) / 10
+                    : undefined,
+              };
+              confidenceLevel = 'verified';
+              fatsecretRecipeId = recipeResults[0].recipeId;
+              verified = true;
 
-        if (foodDetails.servings.length > 0) {
-          // Use the first serving's nutrition data, scaled to suggested servings
-          const serving = foodDetails.servings[0];
-          const servingScale = meal.suggestedServings || 1;
+              engineLogger.warn(
+                `[NutritionCompiler] Recipe SCALED: target=${targetKcal} base=${baseKcal} factor=${scaleFactor.toFixed(2)} → ${nutrition.kcal} kcal`
+              );
 
-          // Scale nutrition to match TARGET kcal (not estimated)
-          const baseKcal = serving.calories * servingScale;
-          const targetKcal = meal.targetNutrition.kcal;
-          const scaleFactor =
-            baseKcal > 0 ? Math.min(Math.max(targetKcal / baseKcal, 0.5), 3.0) : 1;
+              // Build ingredients from recipe
+              if (recipe.ingredients.length > 0) {
+                ingredients = recipe.ingredients.map((ing) => ({
+                  name: ing.name,
+                  amount: parseFloat(ing.amount) || 1,
+                  unit: ing.amount.replace(/[\d.]+\s*/, '').trim() || 'serving',
+                  fatsecretFoodId: ing.foodId,
+                }));
+              }
+            }
+          }
+        }
+      } catch (recipeError) {
+        // Recipe search failed, continue to food search
+        engineLogger.warn(
+          `[NutritionCompiler] Recipe search failed for "${meal.fatsecretSearchQuery}":`,
+          recipeError instanceof Error ? recipeError.message : recipeError
+        );
+      }
 
-          nutrition = {
-            kcal: Math.round(serving.calories * servingScale * scaleFactor),
-            proteinG: Math.round(serving.protein * servingScale * scaleFactor * 10) / 10,
-            carbsG: Math.round(serving.carbohydrate * servingScale * scaleFactor * 10) / 10,
-            fatG: Math.round(serving.fat * servingScale * scaleFactor * 10) / 10,
-            fiberG:
-              serving.fiber !== undefined
-                ? Math.round(serving.fiber * servingScale * scaleFactor * 10) / 10
-                : undefined,
-          };
+      // Strategy 2: Try FatSecret food search with best-serving selection
+      if (!verified) {
+        const result = await this.tryVerifyFromFoodDB(
+          (q, max) => this.fatSecretAdapter.searchFoods(q, max),
+          (id) => this.fatSecretAdapter.getFood(id),
+          meal,
+          'FatSecret'
+        );
 
+        if (result) {
+          nutrition = result.nutrition;
+          ingredients = result.ingredients;
+          fatsecretRecipeId = result.foodId;
           confidenceLevel = 'verified';
-          fatsecretRecipeId = bestMatch.foodId;
-
-          // Build ingredient list from food details
-          ingredients = buildIngredientsFromFood(foodDetails, meal, scaleFactor);
+          verified = true;
         }
       }
 
-      // USDA fallback: when FatSecret returns no results, try USDA FoodData Central
-      if (searchResults.length === 0 && this.usdaAdapter) {
+      // Strategy 3: USDA fallback
+      if (!verified && this.usdaAdapter) {
         try {
-          const usdaResults = await this.usdaAdapter.searchFoods(meal.fatsecretSearchQuery, 5);
+          const usdaRef = this.usdaAdapter;
+          const result = await this.tryVerifyFromFoodDB(
+            (q, max) => usdaRef.searchFoods(q, max),
+            (id) => usdaRef.getFood(id),
+            meal,
+            'USDA'
+          );
 
-          if (usdaResults.length > 0) {
-            const bestMatch = usdaResults[0];
-            const foodDetails = await this.usdaAdapter.getFood(bestMatch.foodId);
-
-            if (foodDetails.servings.length > 0) {
-              const serving = foodDetails.servings[0];
-              const servingScale = meal.suggestedServings || 1;
-
-              const baseKcal = serving.calories * servingScale;
-              const targetKcal = meal.targetNutrition.kcal;
-              const scaleFactor =
-                baseKcal > 0 ? Math.min(Math.max(targetKcal / baseKcal, 0.5), 3.0) : 1;
-
-              nutrition = {
-                kcal: Math.round(serving.calories * servingScale * scaleFactor),
-                proteinG: Math.round(serving.protein * servingScale * scaleFactor * 10) / 10,
-                carbsG: Math.round(serving.carbohydrate * servingScale * scaleFactor * 10) / 10,
-                fatG: Math.round(serving.fat * servingScale * scaleFactor * 10) / 10,
-                fiberG:
-                  serving.fiber !== undefined
-                    ? Math.round(serving.fiber * servingScale * scaleFactor * 10) / 10
-                    : undefined,
-              };
-
-              confidenceLevel = 'verified';
-              fatsecretRecipeId = `usda-${bestMatch.foodId}`;
-
-              ingredients = buildIngredientsFromFood(foodDetails, meal, scaleFactor);
-            }
+          if (result) {
+            nutrition = result.nutrition;
+            ingredients = result.ingredients;
+            fatsecretRecipeId = `usda-${result.foodId}`;
+            confidenceLevel = 'verified';
           }
         } catch (usdaError) {
           engineLogger.warn(
@@ -194,7 +366,7 @@ export class NutritionCompiler {
       );
     }
 
-    // If no ingredients from FatSecret, generate from meal name/tags
+    // If no ingredients from API, generate from meal name/tags
     if (ingredients.length === 0) {
       ingredients = generateEstimatedIngredients(meal);
     }

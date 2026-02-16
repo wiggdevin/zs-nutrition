@@ -5,7 +5,10 @@
 
 import { chromium } from 'playwright';
 import { PrismaClient } from '@prisma/client';
-import { NutritionPipelineOrchestrator, PipelineConfig } from './packages/nutrition-engine/src/orchestrator';
+import {
+  NutritionPipelineOrchestrator,
+  PipelineConfig,
+} from './packages/nutrition-engine/src/orchestrator';
 import { RawIntakeForm } from './packages/nutrition-engine/src/types/schemas';
 import * as path from 'path';
 
@@ -131,14 +134,17 @@ async function main() {
     anthropicApiKey: ANTHROPIC_API_KEY,
     fatsecretClientId: FATSECRET_CLIENT_ID,
     fatsecretClientSecret: FATSECRET_CLIENT_SECRET,
+    usdaApiKey: process.env.USDA_API_KEY || undefined,
   };
 
   const orchestrator = new NutritionPipelineOrchestrator(config);
 
   const pipelineResult = await orchestrator.run(testIntake, (progress) => {
-    const statusIcon = progress.status === 'completed' ? '✅' :
-                       progress.status === 'failed' ? '❌' : '⏳';
-    console.log(`   ${statusIcon} [Agent ${progress.agent}] ${progress.agentName}: ${progress.message}`);
+    const statusIcon =
+      progress.status === 'completed' ? '✅' : progress.status === 'failed' ? '❌' : '⏳';
+    console.log(
+      `   ${statusIcon} [Agent ${progress.agent}] ${progress.agentName}: ${progress.message}`
+    );
   });
 
   if (!pipelineResult.success || !pipelineResult.plan) {

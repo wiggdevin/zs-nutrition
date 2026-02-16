@@ -48,12 +48,21 @@ async function test2a() {
   assert(results.length <= 3, `results.length <= 3 (got ${results.length})`);
 
   for (const r of results) {
-    assert(typeof r.foodId === 'string' && r.foodId.length > 0, `foodId is non-empty string: "${r.foodId}"`);
-    assert(typeof r.name === 'string' && r.name.length > 0, `name is non-empty string: "${r.name}"`);
-    assert(typeof r.description === 'string' && r.description.length > 0, `description is non-empty string`);
+    assert(
+      typeof r.foodId === 'string' && r.foodId.length > 0,
+      `foodId is non-empty string: "${r.foodId}"`
+    );
+    assert(
+      typeof r.name === 'string' && r.name.length > 0,
+      `name is non-empty string: "${r.name}"`
+    );
+    assert(
+      typeof r.description === 'string' && r.description.length > 0,
+      `description is non-empty string`
+    );
   }
 
-  const hasChicken = results.some(r => r.name.toLowerCase().includes('chicken'));
+  const hasChicken = results.some((r) => r.name.toLowerCase().includes('chicken'));
   assert(hasChicken, 'at least one result name contains "chicken"');
 
   // Save first result for subsequent tests
@@ -77,8 +86,14 @@ async function test2b() {
   assert(details.servings.length > 0, `servings non-empty (got ${details.servings.length})`);
 
   const base = details.servings[0];
-  assert(base.servingDescription === '100g', `base serving is "100g" (got "${base.servingDescription}")`);
-  assert(base.metricServingAmount === 100, `metricServingAmount === 100 (got ${base.metricServingAmount})`);
+  assert(
+    base.servingDescription === '100g',
+    `base serving is "100g" (got "${base.servingDescription}")`
+  );
+  assert(
+    base.metricServingAmount === 100,
+    `metricServingAmount === 100 (got ${base.metricServingAmount})`
+  );
   assert(base.calories > 0, `calories > 0 (got ${base.calories})`);
   assert(base.protein > 0, `protein > 0 (got ${base.protein})`);
   assert(base.fat > 0, `fat > 0 (got ${base.fat})`);
@@ -110,9 +125,10 @@ async function test2c() {
   for (let i = 1; i < foodDetails.servings.length; i++) {
     const portion = foodDetails.servings[i];
     const gw = portion.metricServingAmount || 0;
-    if (gw <= 0 || base.metricServingAmount === undefined || base.metricServingAmount === 0) continue;
+    if (gw <= 0 || base.metricServingAmount === undefined || base.metricServingAmount === 0)
+      continue;
 
-    const expectedCal = Math.round(base.calories * gw / 100);
+    const expectedCal = Math.round((base.calories * gw) / 100);
     const diff = Math.abs(portion.calories - expectedCal);
     assert(
       diff <= 2,
@@ -236,7 +252,10 @@ async function test2g() {
   const compiled = await compiler.compile(draft);
   const meal = compiled.days[0].meals[0];
 
-  assert(meal.confidenceLevel === 'verified', `confidenceLevel === "verified" (got "${meal.confidenceLevel}")`);
+  assert(
+    meal.confidenceLevel === 'verified',
+    `confidenceLevel === "verified" (got "${meal.confidenceLevel}")`
+  );
   assert(
     meal.fatsecretRecipeId !== undefined && meal.fatsecretRecipeId.startsWith('usda-'),
     `fatsecretRecipeId starts with "usda-" (got "${meal.fatsecretRecipeId}")`

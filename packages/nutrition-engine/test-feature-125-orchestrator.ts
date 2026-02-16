@@ -17,6 +17,7 @@ const config: PipelineConfig = {
   anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
   fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
   fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || '',
+  usdaApiKey: process.env.USDA_API_KEY || undefined,
 };
 
 // Valid test input matching RawIntakeForm schema
@@ -109,13 +110,15 @@ async function runTests() {
       console.log('-'.repeat(60));
 
       const expectedAgents = [1, 2, 3, 4, 5, 6];
-      const allAgentsFired = expectedAgents.every(agent => progressEvents.includes(agent));
+      const allAgentsFired = expectedAgents.every((agent) => progressEvents.includes(agent));
 
       // Note: We expect 7 events total (6 running + 1 completed for agent 6)
       if (allAgentsFired && agentNames.length >= 6) {
         console.log('  ✅ Progress callbacks fired for all 6 agents');
         console.log(`     Agent stages executed: ${[...new Set(progressEvents)].join(', ')}`);
-        console.log(`     Total progress events: ${progressEvents.length} (includes completion event)`);
+        console.log(
+          `     Total progress events: ${progressEvents.length} (includes completion event)`
+        );
         results.step3_progressCallbacksFire = true;
       } else {
         console.log('  ❌ Not all progress callbacks fired');
@@ -257,10 +260,22 @@ async function runTests() {
 
   const testResults = [
     { name: 'Run full pipeline with valid input', pass: results.step1_runFullPipeline },
-    { name: 'Verify agents execute in order 1 through 6', pass: results.step2_agentsExecuteInOrder },
-    { name: 'Verify progress callback fires for each agent stage', pass: results.step3_progressCallbacksFire },
-    { name: 'Verify final output contains all expected data', pass: results.step4_finalOutputComplete },
-    { name: 'Verify on failure, error is returned with details', pass: results.step5_failureHandling },
+    {
+      name: 'Verify agents execute in order 1 through 6',
+      pass: results.step2_agentsExecuteInOrder,
+    },
+    {
+      name: 'Verify progress callback fires for each agent stage',
+      pass: results.step3_progressCallbacksFire,
+    },
+    {
+      name: 'Verify final output contains all expected data',
+      pass: results.step4_finalOutputComplete,
+    },
+    {
+      name: 'Verify on failure, error is returned with details',
+      pass: results.step5_failureHandling,
+    },
   ];
 
   testResults.forEach((test, idx) => {
@@ -268,7 +283,7 @@ async function runTests() {
     console.log(`${idx + 1}. ${status}: ${test.name}`);
   });
 
-  const passCount = testResults.filter(t => t.pass).length;
+  const passCount = testResults.filter((t) => t.pass).length;
   console.log(`\nTotal: ${passCount}/${testResults.length} tests passing`);
 
   if (passCount === testResults.length) {
@@ -282,10 +297,10 @@ async function runTests() {
 
 // Run tests
 runTests()
-  .then(success => {
+  .then((success) => {
     process.exit(success ? 0 : 1);
   })
-  .catch(error => {
+  .catch((error) => {
     console.error('Test suite failed:', error);
     process.exit(1);
   });

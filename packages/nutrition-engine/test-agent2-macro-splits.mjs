@@ -72,13 +72,16 @@ console.log(`  Goal Calories: ${result1.goalKcal} (expected 2000)`);
 console.log(`  Protein: ${result1.proteinTargetG}g (expected ${expectedProtein1}g)`);
 console.log(`  Carbs: ${result1.carbsTargetG}g (expected ${expectedCarbs1}g)`);
 console.log(`  Fat: ${result1.fatTargetG}g (expected ${expectedFat1}g)`);
-console.log(`  Macro Split: ${result1.macroSplit.proteinPercent}% / ${result1.macroSplit.carbsPercent}% / ${result1.macroSplit.fatPercent}%`);
-const pass1 = result1.proteinTargetG === expectedProtein1 &&
-              result1.carbsTargetG === expectedCarbs1 &&
-              result1.fatTargetG === expectedFat1 &&
-              result1.macroSplit.proteinPercent === 30 &&
-              result1.macroSplit.carbsPercent === 40 &&
-              result1.macroSplit.fatPercent === 30;
+console.log(
+  `  Macro Split: ${result1.macroSplit.proteinPercent}% / ${result1.macroSplit.carbsPercent}% / ${result1.macroSplit.fatPercent}%`
+);
+const pass1 =
+  result1.proteinTargetG === expectedProtein1 &&
+  result1.carbsTargetG === expectedCarbs1 &&
+  result1.fatTargetG === expectedFat1 &&
+  result1.macroSplit.proteinPercent === 30 &&
+  result1.macroSplit.carbsPercent === 40 &&
+  result1.macroSplit.fatPercent === 30;
 console.log(`  ${pass1 ? '✅ PASS' : '❌ FAIL'}\n`);
 if (!pass1) allPass = false;
 
@@ -95,13 +98,16 @@ console.log(`  Goal Calories: ${result2.goalKcal} (expected 2000)`);
 console.log(`  Protein: ${result2.proteinTargetG}g (expected ${expectedProtein2}g)`);
 console.log(`  Carbs: ${result2.carbsTargetG}g (expected ${expectedCarbs2}g)`);
 console.log(`  Fat: ${result2.fatTargetG}g (expected ${expectedFat2}g)`);
-console.log(`  Macro Split: ${result2.macroSplit.proteinPercent}% / ${result2.macroSplit.carbsPercent}% / ${result2.macroSplit.fatPercent}%`);
-const pass2 = result2.proteinTargetG === expectedProtein2 &&
-              result2.carbsTargetG === expectedCarbs2 &&
-              result2.fatTargetG === expectedFat2 &&
-              result2.macroSplit.proteinPercent === 40 &&
-              result2.macroSplit.carbsPercent === 35 &&
-              result2.macroSplit.fatPercent === 25;
+console.log(
+  `  Macro Split: ${result2.macroSplit.proteinPercent}% / ${result2.macroSplit.carbsPercent}% / ${result2.macroSplit.fatPercent}%`
+);
+const pass2 =
+  result2.proteinTargetG === expectedProtein2 &&
+  result2.carbsTargetG === expectedCarbs2 &&
+  result2.fatTargetG === expectedFat2 &&
+  result2.macroSplit.proteinPercent === 40 &&
+  result2.macroSplit.carbsPercent === 35 &&
+  result2.macroSplit.fatPercent === 25;
 console.log(`  ${pass2 ? '✅ PASS' : '❌ FAIL'}\n`);
 if (!pass2) allPass = false;
 
@@ -118,13 +124,16 @@ console.log(`  Goal Calories: ${result3.goalKcal} (expected 2000)`);
 console.log(`  Protein: ${result3.proteinTargetG}g (expected ${expectedProtein3}g)`);
 console.log(`  Carbs: ${result3.carbsTargetG}g (expected ${expectedCarbs3}g)`);
 console.log(`  Fat: ${result3.fatTargetG}g (expected ${expectedFat3}g)`);
-console.log(`  Macro Split: ${result3.macroSplit.proteinPercent}% / ${result3.macroSplit.carbsPercent}% / ${result3.macroSplit.fatPercent}%`);
-const pass3 = result3.proteinTargetG === expectedProtein3 &&
-              result3.carbsTargetG === expectedCarbs3 &&
-              result3.fatTargetG === expectedFat3 &&
-              result3.macroSplit.proteinPercent === 35 &&
-              result3.macroSplit.carbsPercent === 25 &&
-              result3.macroSplit.fatPercent === 40;
+console.log(
+  `  Macro Split: ${result3.macroSplit.proteinPercent}% / ${result3.macroSplit.carbsPercent}% / ${result3.macroSplit.fatPercent}%`
+);
+const pass3 =
+  result3.proteinTargetG === expectedProtein3 &&
+  result3.carbsTargetG === expectedCarbs3 &&
+  result3.fatTargetG === expectedFat3 &&
+  result3.macroSplit.proteinPercent === 35 &&
+  result3.macroSplit.carbsPercent === 25 &&
+  result3.macroSplit.fatPercent === 40;
 console.log(`  ${pass3 ? '✅ PASS' : '❌ FAIL'}\n`);
 if (!pass3) allPass = false;
 
@@ -141,13 +150,16 @@ console.log(`  Goal Calories: ${result4.goalKcal} (expected 2000)`);
 console.log(`  Protein: ${result4.proteinTargetG}g (expected ${expectedProtein4}g)`);
 console.log(`  Carbs: ${result4.carbsTargetG}g (expected ${expectedCarbs4}g)`);
 console.log(`  Fat: ${result4.fatTargetG}g (expected ${expectedFat4}g)`);
-console.log(`  Macro Split: ${result4.macroSplit.proteinPercent}% / ${result4.macroSplit.carbsPercent}% / ${result4.macroSplit.fatPercent}%`);
-const pass4 = result4.proteinTargetG === expectedProtein4 &&
-              result4.carbsTargetG === expectedCarbs4 &&
-              result4.fatTargetG === expectedFat4 &&
-              result4.macroSplit.proteinPercent === 30 &&
-              result4.macroSplit.carbsPercent === 5 &&
-              result4.macroSplit.fatPercent === 65;
+console.log(
+  `  Macro Split: ${result4.macroSplit.proteinPercent}% / ${result4.macroSplit.carbsPercent}% / ${result4.macroSplit.fatPercent}%`
+);
+const pass4 =
+  result4.proteinTargetG === expectedProtein4 &&
+  result4.carbsTargetG === expectedCarbs4 &&
+  result4.fatTargetG === expectedFat4 &&
+  result4.macroSplit.proteinPercent === 30 &&
+  result4.macroSplit.carbsPercent === 5 &&
+  result4.macroSplit.fatPercent === 65;
 console.log(`  ${pass4 ? '✅ PASS' : '❌ FAIL'}\n`);
 if (!pass4) allPass = false;
 
@@ -162,16 +174,19 @@ for (const [style, splits] of Object.entries(MACRO_SPLITS)) {
   const expectedCarbs = Math.round((2000 * splits.carbs) / 4);
   const expectedFat = Math.round((2000 * splits.fat) / 9);
 
-  const ok = result.proteinTargetG === expectedProtein &&
-             result.carbsTargetG === expectedCarbs &&
-             result.fatTargetG === expectedFat &&
-             result.macroSplit.proteinPercent === splits.protein * 100 &&
-             result.macroSplit.carbsPercent === splits.carbs * 100 &&
-             result.macroSplit.fatPercent === splits.fat * 100;
+  const ok =
+    result.proteinTargetG === expectedProtein &&
+    result.carbsTargetG === expectedCarbs &&
+    result.fatTargetG === expectedFat &&
+    result.macroSplit.proteinPercent === splits.protein * 100 &&
+    result.macroSplit.carbsPercent === splits.carbs * 100 &&
+    result.macroSplit.fatPercent === splits.fat * 100;
 
-  console.log(`  ${style}: P/C/F = ${result.proteinTargetG}/${result.carbsTargetG}/${result.fatTargetG}g ` +
-              `(${result.macroSplit.proteinPercent}/${result.macroSplit.carbsPercent}/${result.macroSplit.fatPercent}%) ` +
-              `${ok ? '✅' : '❌'}`);
+  console.log(
+    `  ${style}: P/C/F = ${result.proteinTargetG}/${result.carbsTargetG}/${result.fatTargetG}g ` +
+      `(${result.macroSplit.proteinPercent}/${result.macroSplit.carbsPercent}/${result.macroSplit.fatPercent}%) ` +
+      `${ok ? '✅' : '❌'}`
+  );
   if (!ok) pass5 = false;
 }
 console.log(`  ${pass5 ? '✅ PASS' : '❌ FAIL'}\n`);
@@ -190,13 +205,16 @@ for (const kcal of testCalories) {
   const expectedCarbs = Math.round((kcal * MACRO_SPLITS.balanced.carbs) / 4);
   const expectedFat = Math.round((kcal * MACRO_SPLITS.balanced.fat) / 9);
 
-  const ok = result.goalKcal === kcal &&
-             result.proteinTargetG === expectedProtein &&
-             result.carbsTargetG === expectedCarbs &&
-             result.fatTargetG === expectedFat;
+  const ok =
+    result.goalKcal === kcal &&
+    result.proteinTargetG === expectedProtein &&
+    result.carbsTargetG === expectedCarbs &&
+    result.fatTargetG === expectedFat;
 
-  console.log(`  ${kcal} kcal: P/C/F = ${result.proteinTargetG}/${result.carbsTargetG}/${result.fatTargetG}g ` +
-              `(expected ${expectedProtein}/${expectedCarbs}/${expectedFat}) ${ok ? '✅' : '❌'}`);
+  console.log(
+    `  ${kcal} kcal: P/C/F = ${result.proteinTargetG}/${result.carbsTargetG}/${result.fatTargetG}g ` +
+      `(expected ${expectedProtein}/${expectedCarbs}/${expectedFat}) ${ok ? '✅' : '❌'}`
+  );
   if (!ok) pass6 = false;
 }
 console.log(`  ${pass6 ? '✅ PASS' : '❌ FAIL'}\n`);

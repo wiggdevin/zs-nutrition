@@ -43,13 +43,20 @@ try {
 
 // Test 2: Different imperial values - 6'0" = 182.88 cm
 try {
-  const result = normalizer.normalize({ ...baseInput, heightFeet: 6, heightInches: 0, weightLbs: 200 });
+  const result = normalizer.normalize({
+    ...baseInput,
+    heightFeet: 6,
+    heightInches: 0,
+    weightLbs: 200,
+  });
   const expectedH = 182.9; // 72 * 2.54 = 182.88 -> 182.9
-  const expectedW = 90.7;  // 200 * 0.453592 = 90.7184 -> 90.7
+  const expectedW = 90.7; // 200 * 0.453592 = 90.7184 -> 90.7
   if (Math.abs(result.heightCm - expectedH) < 0.1 && Math.abs(result.weightKg - expectedW) < 0.1) {
     console.log(`✅ 6'0" 200lbs: heightCm=${result.heightCm}, weightKg=${result.weightKg}`);
   } else {
-    console.log(`❌ 6'0" 200lbs: got heightCm=${result.heightCm} (exp ~${expectedH}), weightKg=${result.weightKg} (exp ~${expectedW})`);
+    console.log(
+      `❌ 6'0" 200lbs: got heightCm=${result.heightCm} (exp ~${expectedH}), weightKg=${result.weightKg} (exp ~${expectedW})`
+    );
     allPassed = false;
   }
 } catch (e) {
@@ -59,9 +66,16 @@ try {
 
 // Test 3: No imperial fields in output for imperial input
 try {
-  const result = normalizer.normalize({ ...baseInput, heightFeet: 5, heightInches: 5, weightLbs: 130 });
+  const result = normalizer.normalize({
+    ...baseInput,
+    heightFeet: 5,
+    heightInches: 5,
+    weightLbs: 130,
+  });
   const keys = Object.keys(result);
-  const imperialKeys = keys.filter(k => ['heightFeet', 'heightInches', 'weightLbs', 'heightCm_orig', 'weightKg_orig'].includes(k));
+  const imperialKeys = keys.filter((k) =>
+    ['heightFeet', 'heightInches', 'weightLbs', 'heightCm_orig', 'weightKg_orig'].includes(k)
+  );
   if (imperialKeys.length === 0 && keys.includes('heightCm') && keys.includes('weightKg')) {
     console.log('✅ Output contains only metric fields, no imperial fields');
   } else {

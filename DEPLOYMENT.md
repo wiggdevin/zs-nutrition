@@ -81,6 +81,7 @@ This guide covers deploying the Zero Sum Nutrition application to production usi
 **Root Directory:** `apps/web`
 
 **Build Settings:**
+
 - Build Command: `cd ../.. && pnpm turbo run build --filter=@zsn/web`
 - Output Directory: `.next`
 - Install Command: `pnpm install`
@@ -131,6 +132,7 @@ WEB_APP_URL=https://your-app.vercel.app
 ### 1.5 Function Timeouts
 
 The `vercel.json` configuration automatically sets:
+
 - `/api/plan/generate`: 60s (job creation)
 - `/api/plan-stream/[jobId]`: 300s (SSE streaming)
 - `/api/vision/analyze`: 30s (Claude Vision analysis)
@@ -188,6 +190,7 @@ NODE_ENV=production
 ### 2.5 Health Monitoring
 
 Railway monitors the worker process health automatically. The worker includes:
+
 - Graceful shutdown handlers (SIGINT, SIGTERM)
 - Error recovery and retry logic
 - Dead letter queue for permanently failed jobs
@@ -223,6 +226,7 @@ pnpm db:studio
 ```
 
 Expected tables:
+
 - User
 - Profile
 - Onboarding
@@ -310,16 +314,19 @@ pnpm turbo run build
 ### 5.4 Monitor Performance
 
 **Vercel Analytics:**
+
 - Enable in Vercel dashboard
 - Monitor Core Web Vitals
 - Check function execution times
 
 **Railway Metrics:**
+
 - Monitor CPU usage (should be low when idle)
 - Memory usage (spikes during plan generation)
 - Network I/O (Redis + API calls)
 
 **Upstash Redis:**
+
 - Monitor connection count
 - Check memory usage
 - Verify pub/sub channels working
@@ -331,6 +338,7 @@ pnpm turbo run build
 **Symptoms:** Jobs stuck in queue, no worker logs
 
 **Solutions:**
+
 1. Verify `REDIS_URL` matches between Vercel and Railway
 2. Check Railway service is running (not crashed)
 3. Verify network connectivity to Redis
@@ -341,6 +349,7 @@ pnpm turbo run build
 **Symptoms:** Progress stuck, polling fallback only
 
 **Solutions:**
+
 1. Verify Redis pub/sub working (test with Redis CLI)
 2. Check function timeout (300s) is sufficient
 3. Verify `Cache-Control: no-cache` headers set
@@ -351,6 +360,7 @@ pnpm turbo run build
 **Symptoms:** 504 Gateway Timeout errors
 
 **Solutions:**
+
 1. Verify `vercel.json` function timeouts are set
 2. Check Vercel plan supports required timeouts
 3. Move long-running tasks to BullMQ worker
@@ -361,6 +371,7 @@ pnpm turbo run build
 **Symptoms:** `P2024: Timed out fetching a new connection`
 
 **Solutions:**
+
 1. Verify `DATABASE_URL` is correct
 2. Check Neon database is active
 3. Increase connection pool size in Prisma
@@ -371,6 +382,7 @@ pnpm turbo run build
 **Symptoms:** 429 Too Many Requests
 
 **Solutions:**
+
 1. Check Upstash Redis rate limit configuration
 2. Adjust rate limits in `lib/rate-limit.ts`
 3. Implement exponential backoff on client
@@ -383,6 +395,7 @@ pnpm turbo run build
 **Vercel:** Auto-scales based on traffic (serverless)
 
 **Railway Worker:**
+
 - Current config: 1 instance
 - To scale: Update `railway.toml` `maxInstances`
 - Worker uses BullMQ concurrency: 2 jobs/instance
@@ -390,6 +403,7 @@ pnpm turbo run build
 ### 7.2 Database Scaling
 
 **Neon:**
+
 - Start with shared compute
 - Upgrade to dedicated compute for production
 - Enable autoscaling for variable load
@@ -398,6 +412,7 @@ pnpm turbo run build
 ### 7.3 Redis Scaling
 
 **Upstash:**
+
 - Free tier: 10K commands/day
 - Pay-as-you-go: Unlimited
 - Enable eviction policies for memory management
@@ -406,18 +421,21 @@ pnpm turbo run build
 ### 7.4 Cost Optimization
 
 **Vercel:**
+
 - Use static generation where possible
 - Implement route caching
 - Optimize images with Next.js Image
 - Monitor bandwidth usage
 
 **Railway:**
+
 - Use sleep mode for dev environments
 - Monitor concurrency settings
 - Optimize worker memory usage
 - Use reserved instances for production
 
 **External APIs:**
+
 - Cache FatSecret API responses
 - Implement request deduplication
 - Use Claude prompt caching
@@ -428,6 +446,7 @@ pnpm turbo run build
 ### 8.1 Application Monitoring
 
 **Recommended Tools:**
+
 - Sentry (error tracking) - already integrated
 - Vercel Analytics (web vitals)
 - Railway Logs (worker monitoring)
@@ -436,6 +455,7 @@ pnpm turbo run build
 ### 8.2 Alerts
 
 **Set up alerts for:**
+
 - Worker crashes (Railway)
 - High error rates (Sentry)
 - Database connection issues (Neon)
@@ -445,16 +465,19 @@ pnpm turbo run build
 ### 8.3 Logs
 
 **Vercel Logs:**
+
 ```bash
 vercel logs <deployment-url>
 ```
 
 **Railway Logs:**
+
 ```bash
 railway logs --service queue-processor
 ```
 
 **Database Logs:**
+
 - Access via Neon dashboard
 - Monitor slow queries
 - Check connection pool usage
@@ -538,6 +561,7 @@ jobs:
 ## Support
 
 For issues or questions:
+
 1. Check Railway/Vercel logs
 2. Review Sentry error reports
 3. Consult API provider documentation

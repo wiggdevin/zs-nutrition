@@ -18,7 +18,7 @@ if (!fs.existsSync(SCREENSHOT_DIR)) {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms));
+  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
 async function screenshot(page: Page, name: string): Promise<void> {
@@ -46,7 +46,7 @@ async function main() {
   const page = await context.newPage();
 
   // Log console errors
-  page.on('console', msg => {
+  page.on('console', (msg) => {
     if (msg.type() === 'error') {
       console.log('🔴 Console:', msg.text().slice(0, 100));
     }
@@ -83,7 +83,9 @@ async function main() {
 
     // Wait for and click Verify & Continue (dev mode verification screen)
     console.log('   🔍 Looking for Verify & Continue button...');
-    const verifyBtn = page.locator('button:has-text("Verify & Continue"), button:has-text("Verify")');
+    const verifyBtn = page.locator(
+      'button:has-text("Verify & Continue"), button:has-text("Verify")'
+    );
     try {
       await verifyBtn.waitFor({ state: 'visible', timeout: 5000 });
       console.log('   ✅ Found Verify button, clicking...');
@@ -219,7 +221,9 @@ async function main() {
 
     // Complete Setup
     console.log('   ✅ Completing onboarding...');
-    const completeBtn = page.locator('button[data-testid="onboarding-complete-btn"], button:has-text("Complete Setup"), button:has-text("Complete")');
+    const completeBtn = page.locator(
+      'button[data-testid="onboarding-complete-btn"], button:has-text("Complete Setup"), button:has-text("Complete")'
+    );
     await completeBtn.click();
     await sleep(3000);
 
@@ -338,7 +342,7 @@ async function main() {
           keysToRemove.push(key);
         }
       }
-      keysToRemove.forEach(key => localStorage.removeItem(key));
+      keysToRemove.forEach((key) => localStorage.removeItem(key));
     });
     console.log('   🗑️ localStorage cleared');
 
@@ -372,7 +376,9 @@ async function main() {
     } catch {
       // Try alternative selectors
       console.log('   ⚠️ Sign In & Continue not found, trying alternatives...');
-      const altBtn = page.locator('button:has-text("Continue"), button:has-text("Sign In")').first();
+      const altBtn = page
+        .locator('button:has-text("Continue"), button:has-text("Sign In")')
+        .first();
       if (await altBtn.isVisible({ timeout: 2000 })) {
         await altBtn.click();
         await sleep(3000);
@@ -450,7 +456,6 @@ async function main() {
         resolve();
       });
     });
-
   } catch (error) {
     console.error('\n❌ Test failed:', error);
     await screenshot(page, 'error-state');

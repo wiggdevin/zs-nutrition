@@ -2,15 +2,15 @@ const { PrismaClient } = require('@prisma/client');
 const prisma = new PrismaClient({
   datasources: {
     db: {
-      url: 'file:/Users/zero-suminc./Desktop/ZS-MAC/zero-sum-nutrition/apps/web/prisma/dev.db'
-    }
-  }
+      url: 'file:/Users/zero-suminc./Desktop/ZS-MAC/zero-sum-nutrition/apps/web/prisma/dev.db',
+    },
+  },
 });
 
 async function main() {
   // Get the active meal plan
   const activePlan = await prisma.mealPlan.findFirst({
-    where: { status: 'active' }
+    where: { status: 'active' },
   });
 
   if (!activePlan) {
@@ -39,7 +39,7 @@ async function main() {
                 prepTimeMin: 10,
                 cookTimeMin: 0,
                 nutrition: { kcal: 450, proteinG: 30, carbsG: 45, fatG: 15 },
-                confidenceLevel: 'verified'
+                confidenceLevel: 'verified',
               },
               {
                 slot: 'lunch',
@@ -48,7 +48,7 @@ async function main() {
                 prepTimeMin: 15,
                 cookTimeMin: 20,
                 nutrition: { kcal: 650, proteinG: 45, carbsG: 30, fatG: 35 },
-                confidenceLevel: 'verified'
+                confidenceLevel: 'verified',
               },
               {
                 slot: 'dinner',
@@ -57,7 +57,7 @@ async function main() {
                 prepTimeMin: 15,
                 cookTimeMin: 25,
                 nutrition: { kcal: 850, proteinG: 55, carbsG: 45, fatG: 40 },
-                confidenceLevel: 'verified'
+                confidenceLevel: 'verified',
               },
               {
                 slot: 'snack',
@@ -66,9 +66,9 @@ async function main() {
                 prepTimeMin: 5,
                 cookTimeMin: 0,
                 nutrition: { kcal: 250, proteinG: 5, carbsG: 30, fatG: 12 },
-                confidenceLevel: 'ai_estimated'
-              }
-            ]
+                confidenceLevel: 'ai_estimated',
+              },
+            ],
           },
           {
             dayNumber: 2,
@@ -83,7 +83,7 @@ async function main() {
                 prepTimeMin: 5,
                 cookTimeMin: 0,
                 nutrition: { kcal: 400, proteinG: 15, carbsG: 65, fatG: 12 },
-                confidenceLevel: 'verified'
+                confidenceLevel: 'verified',
               },
               {
                 slot: 'lunch',
@@ -92,7 +92,7 @@ async function main() {
                 prepTimeMin: 10,
                 cookTimeMin: 0,
                 nutrition: { kcal: 550, proteinG: 35, carbsG: 50, fatG: 20 },
-                confidenceLevel: 'verified'
+                confidenceLevel: 'verified',
               },
               {
                 slot: 'dinner',
@@ -101,7 +101,7 @@ async function main() {
                 prepTimeMin: 20,
                 cookTimeMin: 15,
                 nutrition: { kcal: 800, proteinG: 45, carbsG: 70, fatG: 30 },
-                confidenceLevel: 'verified'
+                confidenceLevel: 'verified',
               },
               {
                 slot: 'snack',
@@ -110,9 +110,9 @@ async function main() {
                 prepTimeMin: 0,
                 cookTimeMin: 0,
                 nutrition: { kcal: 250, proteinG: 8, carbsG: 10, fatG: 20 },
-                confidenceLevel: 'verified'
-              }
-            ]
+                confidenceLevel: 'verified',
+              },
+            ],
           },
           {
             dayNumber: 3,
@@ -127,7 +127,7 @@ async function main() {
                 prepTimeMin: 10,
                 cookTimeMin: 10,
                 nutrition: { kcal: 500, proteinG: 22, carbsG: 35, fatG: 28 },
-                confidenceLevel: 'verified'
+                confidenceLevel: 'verified',
               },
               {
                 slot: 'lunch',
@@ -136,7 +136,7 @@ async function main() {
                 prepTimeMin: 20,
                 cookTimeMin: 15,
                 nutrition: { kcal: 700, proteinG: 30, carbsG: 75, fatG: 28 },
-                confidenceLevel: 'ai_estimated'
+                confidenceLevel: 'ai_estimated',
               },
               {
                 slot: 'dinner',
@@ -145,7 +145,7 @@ async function main() {
                 prepTimeMin: 15,
                 cookTimeMin: 20,
                 nutrition: { kcal: 900, proteinG: 60, carbsG: 40, fatG: 45 },
-                confidenceLevel: 'verified'
+                confidenceLevel: 'verified',
               },
               {
                 slot: 'snack',
@@ -154,10 +154,10 @@ async function main() {
                 prepTimeMin: 5,
                 cookTimeMin: 0,
                 nutrition: { kcal: 300, proteinG: 25, carbsG: 35, fatG: 8 },
-                confidenceLevel: 'verified'
-              }
-            ]
-          }
+                confidenceLevel: 'verified',
+              },
+            ],
+          },
         ],
         groceryList: [
           {
@@ -167,25 +167,25 @@ async function main() {
               { name: 'Berries', amount: 2, unit: 'cups' },
               { name: 'Banana', amount: 3, unit: '' },
               { name: 'Avocado', amount: 2, unit: '' },
-              { name: 'Asparagus', amount: 1, unit: 'bunch' }
-            ]
+              { name: 'Asparagus', amount: 1, unit: 'bunch' },
+            ],
           },
           {
             category: 'Meat and Seafood',
             items: [
               { name: 'Chicken Breast', amount: 1, unit: 'lb' },
               { name: 'Salmon Fillet', amount: 1, unit: 'lb' },
-              { name: 'Steak', amount: 1.5, unit: 'lb' }
-            ]
-          }
+              { name: 'Steak', amount: 1.5, unit: 'lb' },
+            ],
+          },
         ],
         qa: {
           status: 'PASS',
           score: 92,
-          iterations: 1
-        }
-      }
-    }
+          iterations: 1,
+        },
+      },
+    },
   });
 
   console.log('Updated meal plan with test data');

@@ -90,7 +90,6 @@ try {
 
   // Verify schema validation passed (it's Zod parsed)
   console.log('✅ Additional: Zod schema validation passed');
-
 } catch (error) {
   console.log(`❌ ERROR: ${error.message}`);
   allPassed = false;
