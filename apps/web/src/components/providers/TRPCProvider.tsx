@@ -1,5 +1,6 @@
 'use client';
 
+import React from 'react';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { httpBatchLink, TRPCClientError } from '@trpc/client';
 import superjson from 'superjson';
@@ -22,54 +23,37 @@ const shouldRetry = (failureCount: number, error: unknown): boolean => {
   return failureCount < 3;
 };
 
-/**
- * Global React Query client configuration.
- *
- * Default staleTime of 5 minutes applies to all queries unless overridden.
- * For specific cache durations, use the CACHE_TIMES constants from query-cache-config.ts:
- *
- * - FOOD_SEARCH: 1 hour (nutritional data rarely changes)
- * - ACTIVE_PLAN: 5 minutes (only changes on generate/swap)
- * - TODAYS_MEALS: 30 seconds (updates as user logs meals)
- * - USER_PROFILE: 10 minutes (rarely changes)
- * - WEIGHT_HISTORY: 5 minutes (logged weekly)
- * - DAILY_SUMMARY: 30 seconds (updates frequently)
- *
- * Mutations should invalidate relevant queries in their onSuccess callbacks.
- */
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      // Default stale time for most queries - 5 minutes is a good balance
-      staleTime: CACHE_TIMES.ACTIVE_PLAN,
-      // Disable auto-refetch on window focus to reduce unnecessary requests
-      refetchOnWindowFocus: false,
-      retry: shouldRetry,
-      retryDelay: (attemptIndex: number) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
-    },
-    mutations: {
-      retry: (failureCount: number, error: unknown) => {
-        if (failureCount >= 1) return false;
-        return shouldRetry(failureCount, error);
-      },
-      retryDelay: 1000,
-    },
-  },
-});
-
-const trpcClient = trpc.createClient({
-  links: [
-    httpBatchLink({
-      url: `${getBaseUrl()}/api/trpc`,
-      transformer: superjson,
-      headers() {
-        return { 'x-trpc-source': 'nextjs-react' };
-      },
-    }),
-  ],
-});
-
 export function TRPCProvider({ children }: { children: React.ReactNode }) {
+  const [queryClient] = React.useState(() => new QueryClient({
+    defaultOptions: {
+      queries: {
+        staleTime: CACHE_TIMES.ACTIVE_PLAN,
+        refetchOnWindowFocus: false,
+        retry: shouldRetry,
+        retryDelay: (attemptIndex: number) => Math.min(1000 * Math.pow(2, attemptIndex), 30000),
+      },
+      mutations: {
+        retry: (failureCount: number, error: unknown) => {
+          if (failureCount >= 1) return false;
+          return shouldRetry(failureCount, error);
+        },
+        retryDelay: 1000,
+      },
+    },
+  }));
+
+  const [trpcClient] = React.useState(() => trpc.createClient({
+    links: [
+      httpBatchLink({
+        url: `${getBaseUrl()}/api/trpc`,
+        transformer: superjson,
+        headers() {
+          return { 'x-trpc-source': 'nextjs-react' };
+        },
+      }),
+    ],
+  }));
+
   return (
     <trpc.Provider client={trpcClient} queryClient={queryClient}>
       <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>

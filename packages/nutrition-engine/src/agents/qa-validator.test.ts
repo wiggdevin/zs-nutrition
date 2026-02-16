@@ -12,6 +12,7 @@
  */
 
 import { describe, it, expect } from 'vitest';
+import assert from 'node:assert';
 import { QAValidator } from './qa-validator';
 import {
   MealPlanCompiledSchema,
@@ -131,8 +132,10 @@ function createCompiledPlan(days: any[]): any {
   };
 }
 
-describe('QAValidator - Feature #95', () => {
+describe('QAValidator - Feature #95', async () => {
   const validator = new QAValidator();
+  let passed = 0;
+  let failed = 0;
 
   // ============================================================
   // TEST 1: Input compiled meal plan within tolerance → PASS status and score near 100
@@ -163,10 +166,7 @@ describe('QAValidator - Feature #95', () => {
 
     console.log('  ✅ TEST 1 PASSED: Within tolerance → PASS status with score near 100');
     passed++;
-  } catch (error) {
-    console.log(`  ❌ TEST 1 FAILED: ${error}`);
-    failed++;
-  }
+  });
 
   // ============================================================
   // TEST 2: Input compiled plan with 5% calorie variance → optimization triggered
@@ -503,19 +503,4 @@ describe('QAValidator - Feature #95', () => {
   console.log(`Success rate: ${((passed / (passed + failed)) * 100).toFixed(1)}%`);
   console.log('='.repeat(60));
 
-  return { passed, failed, total: passed + failed };
-}
-
-// Run tests if this file is executed directly
-if (require.main === module) {
-  runTests()
-    .then(({ passed, failed, total }) => {
-      process.exit(failed > 0 ? 1 : 0);
-    })
-    .catch((error) => {
-      console.error('Test runner error:', error);
-      process.exit(1);
-    });
-}
-
-export { runTests };
+});
