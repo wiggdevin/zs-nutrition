@@ -3,6 +3,8 @@ import { Worker, Job } from 'bullmq';
 import { NutritionPipelineOrchestrator, PipelineConfig } from '@zero-sum/nutrition-engine';
 import { createRedisConnection, QUEUE_NAMES, createDeadLetterQueue } from './queues.js';
 import IORedis from 'ioredis';
+import type { PlanGenerationJobData } from '@zsn/shared-types';
+import type { RawIntakeForm } from '@zero-sum/nutrition-engine';
 
 /**
  * Redis publisher for SSE progress streaming.
@@ -145,7 +147,7 @@ async function startWorker() {
 
   const worker = new Worker(
     QUEUE_NAMES.PLAN_GENERATION,
-    async (job: Job) => {
+    async (job: Job<PlanGenerationJobData>) => {
       console.log(`📦 Processing job ${job.id}: ${job.name}`);
 
       const { intakeData, jobId } = job.data;
@@ -156,7 +158,7 @@ async function startWorker() {
         await job.updateProgress(initialProgress);
         await publishProgress(jobId, initialProgress);
 
-        const result = await orchestrator.run(intakeData, async (progress) => {
+        const result = await orchestrator.run(intakeData as RawIntakeForm, async (progress) => {
           await job.updateProgress(progress);
           // Spread progress first, then override status to ensure 'running' is set
           await publishProgress(jobId, { ...progress, status: 'running' });

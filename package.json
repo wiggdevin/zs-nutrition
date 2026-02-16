@@ -12,17 +12,29 @@
     "format:check": "prettier --check \"**/*.{js,jsx,ts,tsx,json,css,scss,md}\"",
     "services:up": "docker compose -f docker-compose.dev.yml up -d",
     "services:down": "docker compose -f docker-compose.dev.yml down",
-    "services:reset": "docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d"
+    "services:reset": "docker compose -f docker-compose.dev.yml down -v && docker compose -f docker-compose.dev.yml up -d",
+    "prepare": "husky"
   },
   "devDependencies": {
     "@eslint/compat": "^1.2.4",
     "@eslint/js": "^9.18.0",
     "eslint": "^9.18.0",
     "eslint-plugin-prettier": "^5.2.1",
+    "husky": "^9.1.7",
+    "lint-staged": "^16.2.7",
     "playwright": "^1.58.1",
     "prettier": "^3.4.2",
     "turbo": "^2.8.1",
     "typescript-eslint": "^8.19.1"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": [
+      "eslint --fix",
+      "prettier --write"
+    ],
+    "*.{json,css,scss,md}": [
+      "prettier --write"
+    ]
   },
   "packageManager": "pnpm@10.28.2",
   "pnpm": {

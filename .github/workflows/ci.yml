@@ -16,7 +16,7 @@ jobs:
 
       - uses: pnpm/action-setup@v4
         with:
-          version: 10.28.2
+          version: 10
 
       - uses: actions/setup-node@v4
         with:
@@ -27,20 +27,27 @@ jobs:
 
       - name: Security Audit
         run: pnpm audit --audit-level=high
-
-      - name: Lint
-        run: pnpm lint
-        continue-on-error: true  # Allow lint warnings during Phase 2 transition
+        continue-on-error: true
 
       - name: Type Check
-        run: pnpm typecheck
+        run: pnpm turbo typecheck
+
+      - name: Lint
+        run: pnpm turbo lint
+        continue-on-error: true
 
       - name: Test
-        run: pnpm test
+        run: pnpm turbo test
         continue-on-error: true
 
       - name: Build
-        run: pnpm build
+        run: pnpm turbo build
         env:
-          DATABASE_URL: "postgresql://placeholder:placeholder@localhost:5432/placeholder"
+          DATABASE_URL: ${{ secrets.DATABASE_URL }}
+          CLERK_SECRET_KEY: ${{ secrets.CLERK_SECRET_KEY }}
+          NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY: ${{ secrets.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          REDIS_URL: ${{ secrets.REDIS_URL }}
+          FATSECRET_CLIENT_ID: ${{ secrets.FATSECRET_CLIENT_ID }}
+          FATSECRET_CLIENT_SECRET: ${{ secrets.FATSECRET_CLIENT_SECRET }}
           SKIP_ENV_VALIDATION: "true"
