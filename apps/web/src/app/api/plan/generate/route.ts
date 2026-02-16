@@ -3,6 +3,7 @@ import { savePlanToDatabase } from '@/lib/save-plan';
 import { isDevMode } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
 import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue';
+import { prisma } from '@/lib/prisma';
 import {
   authenticateAndRateLimit,
   findOrCreateUserWithProfile,
@@ -84,7 +85,18 @@ export async function POST() {
           jobId: job.id,
         });
       } catch (queueError) {
-        logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError);
+        logger.error('BullMQ enqueue failed (Redis may be unavailable):', queueError);
+        await prisma.planGenerationJob.update({
+          where: { id: job.id },
+          data: { status: 'failed', error: 'Failed to enqueue job — queue unavailable' },
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Plan generation service is temporarily unavailable. Please try again later.',
+          },
+          { status: 503 }
+        );
       }
     }
 

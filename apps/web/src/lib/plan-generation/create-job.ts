@@ -82,6 +82,21 @@ export async function checkExistingJob(userId: string): Promise<NextResponse | n
   });
 
   if (existingJob) {
+    // Expire jobs older than 10 minutes to unblock retries
+    const ageMs = Date.now() - existingJob.createdAt.getTime();
+    const TEN_MINUTES = 10 * 60 * 1000;
+    if (ageMs > TEN_MINUTES) {
+      await prisma.planGenerationJob.update({
+        where: { id: existingJob.id },
+        data: {
+          status: 'failed',
+          error: 'Job timed out',
+          completedAt: new Date(),
+        },
+      });
+      return null;
+    }
+
     return NextResponse.json({
       success: true,
       jobId: existingJob.id,
