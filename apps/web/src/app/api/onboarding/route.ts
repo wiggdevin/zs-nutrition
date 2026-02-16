@@ -56,6 +56,26 @@ export async function GET() {
     });
   }
 
+  // Recovery check: if onboarding is marked completed but no UserProfile exists,
+  // reset completed to false so user can re-complete from their saved step data
+  if (onboarding.completed) {
+    const profile = await prisma.userProfile.findFirst({
+      where: { userId: user.id, isActive: true },
+    });
+
+    if (!profile) {
+      await prisma.onboardingState.update({
+        where: { userId: user.id },
+        data: { completed: false },
+      });
+      return NextResponse.json({
+        currentStep: onboarding.currentStep,
+        completed: false,
+        stepData: onboarding.stepData,
+      });
+    }
+  }
+
   return NextResponse.json({
     currentStep: onboarding.currentStep,
     completed: onboarding.completed,
@@ -100,7 +120,7 @@ export async function POST(request: NextRequest) {
   const mergedData = { ...existingData, ...data };
 
   if (complete) {
-    // Mark onboarding as completed and create UserProfile
+    // Save step data as backup — profile creation is handled by /api/onboarding/complete
     await prisma.onboardingState.update({
       where: { userId: user.id },
       data: {
@@ -110,44 +130,8 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    // Convert heights/weights for profile creation
-    const heightCm =
-      mergedData.heightCm ||
-      (mergedData.heightFeet || 0) * 30.48 + (mergedData.heightInches || 0) * 2.54;
-    const weightKg = mergedData.weightKg || (mergedData.weightLbs || 0) * 0.453592;
-
-    // Create user profile from onboarding data
-    // Json fields (allergies, exclusions, cuisinePrefs, trainingDays) accept arrays directly
-    const profile = await prisma.userProfile.create({
-      data: {
-        userId: user.id,
-        name: mergedData.name || 'User',
-        sex: mergedData.sex || 'male',
-        age: mergedData.age || 25,
-        heightCm,
-        weightKg,
-        bodyFatPercent: mergedData.bodyFatPercent || null,
-        goalType: mergedData.goalType || 'maintain',
-        goalRate: mergedData.goalRate || 0,
-        activityLevel: mergedData.activityLevel || 'moderately_active',
-        dietaryStyle: mergedData.dietaryStyle || 'omnivore',
-        allergies: mergedData.allergies || [],
-        exclusions: mergedData.exclusions || [],
-        cuisinePrefs: mergedData.cuisinePreferences || [],
-        trainingDays: mergedData.trainingDays || [],
-        trainingTime: mergedData.trainingTime || null,
-        mealsPerDay: mergedData.mealsPerDay || 3,
-        snacksPerDay: mergedData.snacksPerDay || 1,
-        cookingSkill: mergedData.cookingSkill || 5,
-        prepTimeMax: mergedData.prepTimeMax || 30,
-        macroStyle: mergedData.macroStyle || 'balanced',
-        isActive: true,
-      },
-    });
-
     return NextResponse.json({
       completed: true,
-      profileId: profile.id,
       redirect: '/generate',
     });
   }

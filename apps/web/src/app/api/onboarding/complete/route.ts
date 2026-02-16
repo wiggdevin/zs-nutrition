@@ -164,48 +164,51 @@ export async function POST(request: NextRequest) {
       });
     }
 
-    // Create UserProfile
-    // Json fields (allergies, exclusions, cuisinePrefs, trainingDays) accept arrays directly
-    const profile = await prisma.userProfile.create({
-      data: {
-        userId: user.id,
-        name: (stepData.name as string) || 'User',
-        sex: (stepData.sex as string) || 'male',
-        age: Number(stepData.age) || 25,
-        heightCm,
-        weightKg,
-        bodyFatPercent: stepData.bodyFatPercent ? Number(stepData.bodyFatPercent) : null,
-        goalType: (stepData.goalType as string) || 'maintain',
-        goalRate: Number(stepData.goalRate) || 1,
-        activityLevel: (stepData.activityLevel as string) || 'moderately_active',
-        dietaryStyle: (stepData.dietaryStyle as string) || 'omnivore',
-        allergies: stepData.allergies || [],
-        exclusions: stepData.exclusions || [],
-        cuisinePrefs: stepData.cuisinePreferences || [],
-        trainingDays: stepData.trainingDays || [],
-        trainingTime: (stepData.trainingTime as string) || null,
-        mealsPerDay: Number(stepData.mealsPerDay) || 3,
-        snacksPerDay: Number(stepData.snacksPerDay) || 1,
-        cookingSkill: Number(stepData.cookingSkill) || 5,
-        prepTimeMax: Number(stepData.prepTimeMax) || 30,
-        macroStyle: (stepData.macroStyle as string) || 'balanced',
-        bmrKcal: metabolic.bmrKcal,
-        tdeeKcal: metabolic.tdeeKcal,
-        goalKcal: metabolic.goalKcal,
-        proteinTargetG: metabolic.proteinTargetG,
-        carbsTargetG: metabolic.carbsTargetG,
-        fatTargetG: metabolic.fatTargetG,
-        isActive: true,
-      },
-    });
-
-    // Clean up onboarding state by deleting it (profile creation is the permanent record)
-    if (user.onboarding) {
-      await prisma.onboardingState.delete({
-        where: { id: user.onboarding.id },
+    // Create UserProfile and clean up onboarding state in a single transaction
+    // to prevent inconsistent state if either operation fails
+    const profile = await prisma.$transaction(async (tx) => {
+      const newProfile = await tx.userProfile.create({
+        data: {
+          userId: user.id,
+          name: (stepData.name as string) || 'User',
+          sex: (stepData.sex as string) || 'male',
+          age: Number(stepData.age) || 25,
+          heightCm,
+          weightKg,
+          bodyFatPercent: stepData.bodyFatPercent ? Number(stepData.bodyFatPercent) : null,
+          goalType: (stepData.goalType as string) || 'maintain',
+          goalRate: Number(stepData.goalRate) || 1,
+          activityLevel: (stepData.activityLevel as string) || 'moderately_active',
+          dietaryStyle: (stepData.dietaryStyle as string) || 'omnivore',
+          allergies: stepData.allergies || [],
+          exclusions: stepData.exclusions || [],
+          cuisinePrefs: stepData.cuisinePreferences || [],
+          trainingDays: stepData.trainingDays || [],
+          trainingTime: (stepData.trainingTime as string) || null,
+          mealsPerDay: Number(stepData.mealsPerDay) || 3,
+          snacksPerDay: Number(stepData.snacksPerDay) || 1,
+          cookingSkill: Number(stepData.cookingSkill) || 5,
+          prepTimeMax: Number(stepData.prepTimeMax) || 30,
+          macroStyle: (stepData.macroStyle as string) || 'balanced',
+          bmrKcal: metabolic.bmrKcal,
+          tdeeKcal: metabolic.tdeeKcal,
+          goalKcal: metabolic.goalKcal,
+          proteinTargetG: metabolic.proteinTargetG,
+          carbsTargetG: metabolic.carbsTargetG,
+          fatTargetG: metabolic.fatTargetG,
+          isActive: true,
+        },
       });
-    }
-    // If onboarding state doesn't exist for some reason, no action needed
+
+      // Clean up onboarding state (profile creation is the permanent record)
+      if (user.onboarding) {
+        await tx.onboardingState.delete({
+          where: { id: user.onboarding.id },
+        });
+      }
+
+      return newProfile;
+    });
 
     return NextResponse.json({
       success: true,

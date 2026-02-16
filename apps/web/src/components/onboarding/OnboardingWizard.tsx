@@ -3,6 +3,7 @@
 import { useState, useEffect, useRef } from 'react';
 import { OnboardingData, defaultOnboardingData, TOTAL_STEPS } from '@/lib/onboarding-types';
 import { logger } from '@/lib/safe-logger';
+import { toast } from '@/lib/toast-store';
 import { Step1Demographics, isStep1Valid } from './Step1Demographics';
 import { Step2BodyMetrics, isStep2Valid } from './Step2BodyMetrics';
 import { Step3Goals, isStep3Valid } from './Step3Goals';
@@ -169,38 +170,30 @@ export function OnboardingWizard() {
     isSubmittingRef.current = true;
     setIsCompleting(true);
     try {
-      // First, update the onboarding state to mark completion
-      await fetch('/api/onboarding', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          step: currentStep,
-          data: data,
-          complete: true,
-        }),
-      });
-
-      // Call API to persist profile to database
+      // Single API call to create profile with full metabolic calculations
       const res = await fetch('/api/onboarding/complete', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ profileData: data }),
       });
       if (!res.ok) {
-        logger.error('Failed to save profile: status', res.status);
+        const errData = await res.json().catch(() => ({}));
+        throw new Error(errData.error || 'Failed to save profile');
       }
+
+      // Success: clear onboarding state and redirect to plan generation
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(STEP_KEY);
+      localStorage.setItem('zsn_onboarding_complete', 'true');
+      localStorage.setItem('zsn_user_profile', JSON.stringify(data));
+      window.location.href = '/generate?auto=true';
     } catch (err) {
-      logger.error('Error saving profile:', err instanceof Error ? err.message : 'Unknown error');
+      const message = err instanceof Error ? err.message : 'Something went wrong saving your profile';
+      logger.error('Error saving profile:', message);
+      toast.error(message);
+      isSubmittingRef.current = false;
+      setIsCompleting(false);
     }
-    // Clear onboarding state from localStorage
-    localStorage.removeItem(STORAGE_KEY);
-    localStorage.removeItem(STEP_KEY);
-    // Mark onboarding as complete
-    localStorage.setItem('zsn_onboarding_complete', 'true');
-    // Save the profile data for plan generation
-    localStorage.setItem('zsn_user_profile', JSON.stringify(data));
-    // Redirect to dashboard
-    window.location.href = '/dashboard';
   };
 
   const stepComponents: Record<number, React.ReactNode> = {

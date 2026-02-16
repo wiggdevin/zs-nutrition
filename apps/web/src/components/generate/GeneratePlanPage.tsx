@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { Confetti } from '../ui/Confetti';
 import { logger } from '@/lib/safe-logger';
 
@@ -18,6 +18,7 @@ const agentStages = [
 
 export function GeneratePlanPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [currentAgent, setCurrentAgent] = useState(0);
   const [hasProfile, setHasProfile] = useState(false);
@@ -26,6 +27,7 @@ export function GeneratePlanPage() {
   const [isReconnecting, setIsReconnecting] = useState(false);
   const hasNavigated = useRef(false);
   const isSubmitting = useRef(false);
+  const autoTriggered = useRef(false);
   const eventSourceRef = useRef<EventSource | null>(null);
   const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
   const isUsingPolling = useRef(false);
@@ -39,6 +41,24 @@ export function GeneratePlanPage() {
     const onboardingComplete = localStorage.getItem('zsn_onboarding_complete');
     setHasProfile(!!profile && onboardingComplete === 'true');
   }, []);
+
+  // Auto-start plan generation when redirected from onboarding with ?auto=true
+  useEffect(() => {
+    if (
+      searchParams.get('auto') === 'true' &&
+      hasProfile &&
+      status === 'idle' &&
+      !autoTriggered.current &&
+      !isSubmitting.current
+    ) {
+      autoTriggered.current = true;
+      const timer = setTimeout(() => {
+        handleGenerate();
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [hasProfile, status]);
 
   // Cleanup: Close EventSource, stop polling, and clear reconnect timeout when component unmounts
   useEffect(() => {
