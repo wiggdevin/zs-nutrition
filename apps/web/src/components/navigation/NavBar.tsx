@@ -134,15 +134,13 @@ export default function NavBar() {
         </Link>
 
         {/* Nav links */}
-        <div className="flex items-center gap-1" role="tablist">
+        <div className="flex items-center gap-1">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                role="tab"
-                aria-selected={!!isActive}
                 aria-current={isActive ? 'page' : undefined}
                 data-testid={`nav-${item.label.toLowerCase()}`}
                 className={`flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${
@@ -165,15 +163,13 @@ export default function NavBar() {
         data-testid="mobile-nav"
         aria-label="Main navigation"
       >
-        <div className="flex items-center justify-around h-16 px-2" role="tablist">
+        <div className="flex items-center justify-around h-16 px-2">
           {navItems.map((item) => {
             const isActive = pathname === item.href || pathname?.startsWith(item.href + '/');
             return (
               <Link
                 key={item.href}
                 href={item.href}
-                role="tab"
-                aria-selected={!!isActive}
                 aria-current={isActive ? 'page' : undefined}
                 data-testid={`nav-${item.label.toLowerCase()}`}
                 className={`flex flex-col items-center justify-center gap-0.5 rounded-lg px-3 py-1.5 min-w-[60px] transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-2 ${

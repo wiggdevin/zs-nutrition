@@ -1,6 +1,12 @@
+import type { Metadata } from 'next';
 import ActivityLog from '@/components/fitness/ActivityLog';
 import FitnessConnections from '@/components/fitness/FitnessConnections';
 import NavBar from '@/components/navigation/NavBar';
+
+export const metadata: Metadata = {
+  title: 'Activity',
+  robots: { index: false, follow: false },
+};
 
 export default function ActivityPage() {
   return (

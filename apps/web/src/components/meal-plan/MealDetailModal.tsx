@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect } from 'react';
+import { useEffect, useRef } from 'react';
 
 interface MealNutrition {
   kcal: number;
@@ -36,10 +36,12 @@ interface MealDetailModalProps {
 
 export default function MealDetailModal({
   meal,
-  dayNumber,
-  mealIdx,
+  dayNumber: _dayNumber,
+  mealIdx: _mealIdx,
   onClose,
 }: MealDetailModalProps) {
+  const modalRef = useRef<HTMLDivElement>(null);
+
   // Close on Escape key
   useEffect(() => {
     const handleEscape = (e: KeyboardEvent) => {
@@ -61,6 +63,52 @@ export default function MealDetailModal({
     };
   }, [meal]);
 
+  // Focus trap: focus close button on open, trap Tab within modal
+  useEffect(() => {
+    if (!meal) return;
+
+    const modal = modalRef.current;
+    if (!modal) return;
+
+    // Store the element that triggered the modal so we can return focus on close
+    const previouslyFocused = document.activeElement as HTMLElement | null;
+
+    // Focus the close button on open
+    const closeBtn = modal.querySelector<HTMLElement>('[data-testid="meal-detail-close"]');
+    closeBtn?.focus();
+
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Tab') return;
+
+      const focusableEls = modal.querySelectorAll<HTMLElement>(
+        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
+      );
+      if (focusableEls.length === 0) return;
+
+      const firstEl = focusableEls[0];
+      const lastEl = focusableEls[focusableEls.length - 1];
+
+      if (e.shiftKey) {
+        if (document.activeElement === firstEl) {
+          e.preventDefault();
+          lastEl.focus();
+        }
+      } else {
+        if (document.activeElement === lastEl) {
+          e.preventDefault();
+          firstEl.focus();
+        }
+      }
+    };
+
+    modal.addEventListener('keydown', handleKeyDown);
+    return () => {
+      modal.removeEventListener('keydown', handleKeyDown);
+      // Return focus to the element that triggered the modal
+      previouslyFocused?.focus();
+    };
+  }, [meal]);
+
   if (!meal) return null;
 
   const hasIngredients = meal.ingredients && meal.ingredients.length > 0;
@@ -71,9 +119,13 @@ export default function MealDetailModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-8"
       data-testid="meal-detail-modal"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="meal-detail-title"
       onClick={onClose}
     >
       <div
+        ref={modalRef}
         className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-xl border border-border bg-card shadow-2xl flex flex-col"
         onClick={(e) => e.stopPropagation()}
         data-testid="meal-detail-modal-content"
@@ -155,6 +207,7 @@ export default function MealDetailModal({
 
               {/* Meal name */}
               <h2
+                id="meal-detail-title"
                 className="text-xl sm:text-2xl font-heading font-bold uppercase tracking-wider text-foreground leading-tight"
                 data-testid="meal-detail-name"
               >
