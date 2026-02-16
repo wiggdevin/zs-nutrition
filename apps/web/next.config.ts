@@ -1,13 +1,13 @@
-import type { NextConfig } from 'next'
-import path from 'path'
-import { fileURLToPath } from 'url'
-import bundleAnalyzer from '@next/bundle-analyzer'
+import type { NextConfig } from 'next';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import bundleAnalyzer from '@next/bundle-analyzer';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url))
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
-})
+});
 
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
@@ -19,7 +19,7 @@ const nextConfig: NextConfig = {
   },
   transpilePackages: ['@zero-sum/nutrition-engine'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
-  serverExternalPackages: [],
+  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'sharp'],
   turbopack: {
     resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
   },
@@ -29,6 +29,8 @@ const nextConfig: NextConfig = {
     optimizePackageImports: [
       'recharts',
       'lucide-react',
+      '@clerk/nextjs',
+      '@tanstack/react-query',
       '@radix-ui/react-slot',
       '@radix-ui/react-dialog',
       '@radix-ui/react-dropdown-menu',
@@ -41,6 +43,7 @@ const nextConfig: NextConfig = {
       'date-fns',
       'zod',
       'sonner',
+      'class-variance-authority',
     ],
   },
 
@@ -125,8 +128,8 @@ const nextConfig: NextConfig = {
           },
         ],
       },
-    ]
+    ];
   },
-}
+};
 
-export default withBundleAnalyzer(nextConfig)
+export default withBundleAnalyzer(nextConfig);

@@ -1,18 +1,15 @@
 import { Queue } from 'bullmq';
 import { createNewRedisConnection } from './redis';
 import { logger } from '@/lib/safe-logger';
+import { PLAN_GENERATION_QUEUE, DEFAULT_JOB_OPTIONS } from '@zsn/queue-config';
+import type { PlanGenerationJobData } from '@zsn/shared-types';
+
+export type { PlanGenerationJobData } from '@zsn/shared-types';
+export { PLAN_GENERATION_QUEUE } from '@zsn/queue-config';
 
 const globalForQueue = globalThis as unknown as {
   planGenerationQueue: Queue | MockQueue | undefined;
 };
-
-export const PLAN_GENERATION_QUEUE = 'plan-generation';
-
-export interface PlanGenerationJobData {
-  jobId: string;
-  userId: string;
-  intakeData: Record<string, unknown>;
-}
 
 /**
  * Mock queue for development when Redis is not available.
@@ -47,21 +44,7 @@ function createQueue(): Queue | MockQueue {
 
   return new Queue(PLAN_GENERATION_QUEUE, {
     connection: createNewRedisConnection(),
-    // IMPORTANT: Keep in sync with workers/queue-processor/src/queues.ts
-    defaultJobOptions: {
-      attempts: 3,
-      backoff: {
-        type: 'exponential',
-        delay: 5000,
-      },
-      removeOnComplete: {
-        age: 24 * 3600, // keep completed jobs for 24 hours
-        count: 100,
-      },
-      removeOnFail: {
-        age: 7 * 24 * 3600, // keep failed jobs for 7 days
-      },
-    },
+    defaultJobOptions: DEFAULT_JOB_OPTIONS,
   });
 }
 

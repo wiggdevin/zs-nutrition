@@ -1,5 +1,8 @@
-import { Queue, QueueOptions } from 'bullmq';
+import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
+import { QUEUE_NAMES, DEFAULT_JOB_OPTIONS } from '@zsn/queue-config';
+
+export { QUEUE_NAMES } from '@zsn/queue-config';
 
 /**
  * Redis connection configuration.
@@ -23,42 +26,13 @@ export function createRedisConnection(): IORedis {
 }
 
 /**
- * Queue name constants
- */
-export const QUEUE_NAMES = {
-  PLAN_GENERATION: 'plan-generation',
-  DEAD_LETTER: 'dead-letter',
-} as const;
-
-// IMPORTANT: Keep in sync with apps/web/src/lib/queue.ts
-/**
- * Default queue options shared across all queues.
- */
-export const defaultQueueOptions: Partial<QueueOptions> = {
-  defaultJobOptions: {
-    attempts: 3,
-    backoff: {
-      type: 'exponential',
-      delay: 5000,
-    },
-    removeOnComplete: {
-      age: 24 * 3600, // keep completed jobs for 24 hours
-      count: 100,
-    },
-    removeOnFail: {
-      age: 7 * 24 * 3600, // keep failed jobs for 7 days
-    },
-  },
-};
-
-/**
  * Create the plan-generation queue instance.
  * Use this from the web app to enqueue jobs.
  */
 export function createPlanGenerationQueue(connection: IORedis): Queue {
   return new Queue(QUEUE_NAMES.PLAN_GENERATION, {
     connection,
-    ...defaultQueueOptions,
+    defaultJobOptions: DEFAULT_JOB_OPTIONS,
   });
 }
 
