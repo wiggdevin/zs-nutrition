@@ -16,7 +16,7 @@ const testMeal = {
   prepTimeMin: 10,
   cookTimeMin: 5,
   estimatedNutrition: {
-    kcal: 650,  // 30% above target of 500
+    kcal: 650, // 30% above target of 500
     proteinG: 20,
     carbsG: 85,
     fatG: 18,
@@ -27,7 +27,7 @@ const testMeal = {
   tags: ['vegetarian', 'meal-prep'],
   // ADD THIS: Target nutrition for proper scaling
   targetNutrition: {
-    kcal: 500,  // Target is 500 kcal
+    kcal: 500, // Target is 500 kcal
     proteinG: 18,
     carbsG: 65,
     fatG: 14,
@@ -59,31 +59,35 @@ async function testPortionScaling() {
 
   // Mock search results - return oatmeal with 600 kcal per serving
   mockAdapter.searchFoods = async (query, maxResults) => {
-    return [{
-      foodId: 'oatmeal-test',
-      name: 'Oatmeal with Nuts and Berries',
-      calories: 600,
-      protein: 22,
-      carbohydrate: 90,
-      fat: 20,
-    }];
+    return [
+      {
+        foodId: 'oatmeal-test',
+        name: 'Oatmeal with Nuts and Berries',
+        calories: 600,
+        protein: 22,
+        carbohydrate: 90,
+        fat: 20,
+      },
+    ];
   };
 
   mockAdapter.getFood = async (foodId) => {
     return {
       foodId: 'oatmeal-test',
       name: 'Oatmeal with Nuts and Berries',
-      servings: [{
-        servingId: 'serving_1',
-        servingDescription: '1 bowl (300g)',
-        metricServingAmount: 300,
-        metricServingUnit: 'g',
-        calories: 600,
-        protein: 22,
-        carbohydrate: 90,
-        fat: 20,
-        fiber: 10,
-      }],
+      servings: [
+        {
+          servingId: 'serving_1',
+          servingDescription: '1 bowl (300g)',
+          metricServingAmount: 300,
+          metricServingUnit: 'g',
+          calories: 600,
+          protein: 22,
+          carbohydrate: 90,
+          fat: 20,
+          fiber: 10,
+        },
+      ],
     };
   };
 
@@ -107,15 +111,15 @@ async function testPortionScaling() {
 
     // Check if portion was scaled down
     const scale = meal.nutrition.kcal / 600;
-    const variance = Math.abs(meal.nutrition.kcal - 500) / 500 * 100;
+    const variance = (Math.abs(meal.nutrition.kcal - 500) / 500) * 100;
 
     console.log(`\n- Variance from target: ${variance.toFixed(1)}%`);
 
     // Check if ingredients were adjusted
-    const mainIngredient = meal.ingredients.find(i => i.name.includes('Oatmeal'));
+    const mainIngredient = meal.ingredients.find((i) => i.name.includes('Oatmeal'));
     if (mainIngredient) {
       console.log(`- Main ingredient amount: ${mainIngredient.amount} ${mainIngredient.unit}`);
-      console.log(`- Expected scale: ~${(500 / 600 * 300).toFixed(0)}g (scaled from 300g)`);
+      console.log(`- Expected scale: ~${((500 / 600) * 300).toFixed(0)}g (scaled from 300g)`);
     }
 
     // Test assertions
@@ -159,7 +163,6 @@ async function testPortionScaling() {
       console.log('\n❌ FEATURE #120: FAILING\n');
       process.exit(1);
     }
-
   } catch (error) {
     console.error('ERROR:', error);
     process.exit(1);

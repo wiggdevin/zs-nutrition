@@ -57,6 +57,7 @@ TURBO_TEAM=<your-team-slug>
 ```
 
 To find your team slug:
+
 ```bash
 # Run locally after `turbo link`
 cat .turbo/config.json
@@ -114,6 +115,7 @@ pnpm turbo run build
 ### CI/CD
 
 Check GitHub Actions logs for:
+
 ```
 >>> TURBO
 >>> Remote caching enabled
@@ -121,6 +123,7 @@ Check GitHub Actions logs for:
 ```
 
 Successful cache hits show:
+
 ```
 @zsn/web:build: cache hit, replaying logs
 ```
@@ -132,7 +135,7 @@ Successful cache hits show:
 ```json
 {
   "remoteCache": {
-    "signature": true  // Enable signature verification for security
+    "signature": true // Enable signature verification for security
   },
   "tasks": {
     "build": {
@@ -150,6 +153,7 @@ Successful cache hits show:
 ### Cache Invalidation
 
 Turbo automatically invalidates cache when:
+
 - Source code changes
 - Dependencies change (package.json, pnpm-lock.yaml)
 - Environment variables change (listed in `env`)
@@ -158,11 +162,13 @@ Turbo automatically invalidates cache when:
 ### Security
 
 **Signature Verification:**
+
 - `"signature": true` ensures cache artifacts are signed
 - Prevents cache poisoning attacks
 - Required for secure CI/CD environments
 
 **Access Control:**
+
 - Only team members can access remote cache
 - Tokens are scoped to specific teams
 - Revoke tokens immediately if compromised
@@ -172,12 +178,14 @@ Turbo automatically invalidates cache when:
 ### Issue: Remote cache not working
 
 **Check:**
+
 1. Verify `.turbo/config.json` exists (local)
 2. Verify `TURBO_TOKEN` and `TURBO_TEAM` set (CI)
 3. Check internet connectivity
 4. Verify Vercel account is active
 
 **Debug:**
+
 ```bash
 # Verbose logging
 pnpm turbo run build --verbosity=3
@@ -186,6 +194,7 @@ pnpm turbo run build --verbosity=3
 ### Issue: "No remote cache configured"
 
 **Solution:**
+
 ```bash
 # Re-link to Vercel
 npx turbo login
@@ -197,6 +206,7 @@ npx turbo link
 **Cause:** Environment variables changed
 
 **Solution:**
+
 - Ensure consistent env vars across builds
 - Only include env vars that affect output in `turbo.json`
 
@@ -205,6 +215,7 @@ npx turbo link
 **Cause:** Non-deterministic builds or inputs changing
 
 **Check:**
+
 1. Timestamps in files (use deterministic builds)
 2. Random values in code
 3. External API calls during build
@@ -243,7 +254,7 @@ pnpm install --frozen-lockfile
   "tasks": {
     "build": {
       // Include only necessary outputs
-      "outputs": [".next/**", "!.next/cache/**"],
+      "outputs": [".next/**", "!.next/cache/**"]
       // Exclude large files that don't need caching
     }
   }
@@ -253,11 +264,13 @@ pnpm install --frozen-lockfile
 ### 4. Monitor Cache Effectiveness
 
 Check Turbo metrics:
+
 ```bash
 pnpm turbo run build --summarize
 ```
 
 Look for:
+
 - Cache hit rate (target: >80%)
 - Time saved per build
 - Bandwidth usage
@@ -267,6 +280,7 @@ Look for:
 Vercel automatically expires old cache artifacts after 7 days (default).
 
 To manually clear:
+
 ```bash
 # Clear local cache
 rm -rf .turbo
@@ -278,10 +292,12 @@ rm -rf .turbo
 ## Costs
 
 **Vercel Free Tier:**
+
 - Unlimited remote caching
 - 6,000 build minutes/month (shared with deployments)
 
 **Vercel Pro:**
+
 - Unlimited remote caching
 - 24,000 build minutes/month
 

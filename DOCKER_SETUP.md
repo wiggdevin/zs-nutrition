@@ -23,6 +23,7 @@ pnpm services:reset
 ## Services
 
 ### PostgreSQL 16
+
 - **Container**: `zsn-postgres`
 - **Port**: `5432`
 - **Database**: `zero_sum_nutrition`
@@ -31,6 +32,7 @@ pnpm services:reset
 - **Connection String**: `postgresql://zsn:zsn_dev@localhost:5432/zero_sum_nutrition`
 
 ### Redis 7
+
 - **Container**: `zsn-redis`
 - **Port**: `6379`
 - **Connection String**: `redis://localhost:6379`

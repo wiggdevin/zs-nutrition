@@ -34,7 +34,7 @@ async function testConnection() {
       'weightEntry',
       'calorieAdjustment',
       'fitnessConnection',
-      'activitySync'
+      'activitySync',
     ];
 
     for (const model of models) {
@@ -56,7 +56,7 @@ async function testConnection() {
       create: {
         clerkUserId: 'test_feature_33',
         email: 'test-feature-33@example.com',
-      }
+      },
     });
     console.log(`✅ Write query successful: Created/updated test user with ID: ${testUser.id}`);
 
@@ -64,11 +64,13 @@ async function testConnection() {
     console.log('\n🔍 Step 5: Verifying data persists in database...');
 
     const retrievedUser = await prisma.user.findUnique({
-      where: { clerkUserId: 'test_feature_33' }
+      where: { clerkUserId: 'test_feature_33' },
     });
 
     if (retrievedUser && retrievedUser.id === testUser.id) {
-      console.log(`✅ Data persistence verified: User ${retrievedUser.email} persisted in database`);
+      console.log(
+        `✅ Data persistence verified: User ${retrievedUser.email} persisted in database`
+      );
     } else {
       console.log('❌ Data persistence FAILED: Could not retrieve user');
     }
@@ -76,12 +78,11 @@ async function testConnection() {
     // Cleanup test data
     console.log('\n🧹 Cleaning up test data...');
     await prisma.user.delete({
-      where: { clerkUserId: 'test_feature_33' }
+      where: { clerkUserId: 'test_feature_33' },
     });
     console.log('✅ Test data cleaned up');
 
     console.log('\n🎉 All database connection tests PASSED!');
-
   } catch (error) {
     console.error('\n❌ Database connection test FAILED:');
     console.error(error);

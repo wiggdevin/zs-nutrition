@@ -23,14 +23,14 @@ async function main() {
   const page = await context.newPage();
 
   // Enable console logging
-  page.on('console', msg => {
+  page.on('console', (msg) => {
     if (msg.type() === 'error' || msg.type() === 'warn') {
       console.log(`[${msg.type()}] ${msg.text().slice(0, 200)}`);
     }
   });
 
   // Monitor network requests
-  page.on('response', async response => {
+  page.on('response', async (response) => {
     const url = response.url();
     if (url.includes('/api/')) {
       const status = response.status();
@@ -80,7 +80,7 @@ async function main() {
 
     // Get cookies
     const cookies = await context.cookies();
-    const devUserIdCookie = cookies.find(c => c.name === 'dev-user-id');
+    const devUserIdCookie = cookies.find((c) => c.name === 'dev-user-id');
     console.log(`6. dev-user-id cookie: ${devUserIdCookie?.value || 'NOT SET'}`);
 
     // Navigate to dashboard explicitly
@@ -89,7 +89,9 @@ async function main() {
     await page.waitForTimeout(3000);
 
     // Check for plan content
-    const planMealsCount = await page.locator('[data-testid="plan-meal"], .plan-meal, [class*="meal"]').count();
+    const planMealsCount = await page
+      .locator('[data-testid="plan-meal"], .plan-meal, [class*="meal"]')
+      .count();
     console.log(`8. Plan meals on page: ${planMealsCount}`);
 
     // Check for empty state
@@ -103,7 +105,6 @@ async function main() {
     await new Promise<void>((resolve) => {
       process.on('SIGINT', () => resolve());
     });
-
   } catch (error) {
     console.error('\nError:', error);
   } finally {

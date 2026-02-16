@@ -9,7 +9,11 @@
 
 import 'dotenv/config';
 import { PrismaClient } from '@prisma/client';
-import { NutritionPipelineOrchestrator, RawIntakeForm, PipelineConfig } from '@zero-sum/nutrition-engine';
+import {
+  NutritionPipelineOrchestrator,
+  RawIntakeForm,
+  PipelineConfig,
+} from '@zero-sum/nutrition-engine';
 import { v4 as uuidv4 } from 'uuid';
 
 // Load env from apps/web/.env.local
@@ -99,8 +103,12 @@ async function main() {
   // Parse JSON fields
   const allergies = profile.allergies ? JSON.parse(profile.allergies) : [];
   const exclusions = profile.exclusions ? JSON.parse(profile.exclusions) : [];
-  const cuisinePreferences = profile.cuisinePreferences ? JSON.parse(profile.cuisinePreferences) : [];
-  const trainingDays = profile.trainingDays ? JSON.parse(profile.trainingDays) : ['monday', 'wednesday', 'friday'];
+  const cuisinePreferences = profile.cuisinePreferences
+    ? JSON.parse(profile.cuisinePreferences)
+    : [];
+  const trainingDays = profile.trainingDays
+    ? JSON.parse(profile.trainingDays)
+    : ['monday', 'wednesday', 'friday'];
 
   // Convert profile to RawIntakeForm
   const intakeForm: RawIntakeForm = {
@@ -112,10 +120,21 @@ async function main() {
     bodyFatPercent: profile.bodyFatPct || undefined,
     goalType: profile.goalType as 'cut' | 'maintain' | 'bulk',
     goalRate: profile.goalRate || 1,
-    activityLevel: profile.activityLevel as 'sedentary' | 'lightly_active' | 'moderately_active' | 'very_active' | 'extremely_active',
+    activityLevel: profile.activityLevel as
+      | 'sedentary'
+      | 'lightly_active'
+      | 'moderately_active'
+      | 'very_active'
+      | 'extremely_active',
     trainingDays: trainingDays,
     trainingTime: (profile.trainingTime as 'morning' | 'afternoon' | 'evening') || undefined,
-    dietaryStyle: profile.dietaryStyle as 'omnivore' | 'vegetarian' | 'vegan' | 'pescatarian' | 'keto' | 'paleo',
+    dietaryStyle: profile.dietaryStyle as
+      | 'omnivore'
+      | 'vegetarian'
+      | 'vegan'
+      | 'pescatarian'
+      | 'keto'
+      | 'paleo',
     allergies,
     exclusions,
     cuisinePreferences,
@@ -135,6 +154,7 @@ async function main() {
     anthropicApiKey: anthropicKey,
     fatsecretClientId,
     fatsecretClientSecret,
+    usdaApiKey: process.env.USDA_API_KEY || undefined,
   };
 
   const orchestrator = new NutritionPipelineOrchestrator(config);
@@ -152,7 +172,9 @@ async function main() {
 
   const result = await orchestrator.run(intakeForm, (progress) => {
     const elapsed = ((Date.now() - startTime) / 1000).toFixed(1);
-    console.log(`[${elapsed}s] Agent ${progress.agent} (${progress.agentName}): ${progress.message}`);
+    console.log(
+      `[${elapsed}s] Agent ${progress.agent} (${progress.agentName}): ${progress.message}`
+    );
   });
 
   const totalTime = ((Date.now() - startTime) / 1000).toFixed(1);
@@ -175,9 +197,13 @@ async function main() {
   console.log('\n📅 Daily Breakdown:');
   for (const day of plan.days) {
     console.log(`\n   ${day.dayName} (Day ${day.dayNumber})${day.isTrainingDay ? ' 🏋️' : ''}:`);
-    console.log(`   Target: ${day.targetKcal} kcal | Actual: ${day.dailyTotals.kcal} kcal (${day.variancePercent.toFixed(1)}% variance)`);
+    console.log(
+      `   Target: ${day.targetKcal} kcal | Actual: ${day.dailyTotals.kcal} kcal (${day.variancePercent.toFixed(1)}% variance)`
+    );
     for (const meal of day.meals) {
-      console.log(`      ${meal.slot}: ${meal.name} (${meal.nutrition.kcal} kcal, ${meal.nutrition.proteinG}g protein)`);
+      console.log(
+        `      ${meal.slot}: ${meal.name} (${meal.nutrition.kcal} kcal, ${meal.nutrition.proteinG}g protein)`
+      );
     }
   }
 
@@ -192,12 +218,11 @@ async function main() {
 
   // Extract base goal and training bonus from the plan's per-day targets
   // Rest days have the base targetKcal, training days have base + bonus
-  const restDay = plan.days.find(d => !d.isTrainingDay);
-  const trainingDay = plan.days.find(d => d.isTrainingDay);
+  const restDay = plan.days.find((d) => !d.isTrainingDay);
+  const trainingDay = plan.days.find((d) => d.isTrainingDay);
   const baseGoalKcal = restDay?.targetKcal || Math.round(plan.weeklyTotals.avgKcal);
-  const trainingBonusKcal = trainingDay && restDay
-    ? trainingDay.targetKcal - restDay.targetKcal
-    : 200;
+  const trainingBonusKcal =
+    trainingDay && restDay ? trainingDay.targetKcal - restDay.targetKcal : 200;
 
   // Create the meal plan record using correct schema fields
   // dailyKcalTarget should be the BASE goal (rest day target), not the average

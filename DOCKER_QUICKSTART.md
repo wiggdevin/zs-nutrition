@@ -43,10 +43,10 @@ pnpm dev:web
 
 ## Connection Details
 
-| Service | Port | Connection String |
-|---------|------|-------------------|
+| Service    | Port | Connection String                                            |
+| ---------- | ---- | ------------------------------------------------------------ |
 | PostgreSQL | 5432 | `postgresql://zsn:zsn_dev@localhost:5432/zero_sum_nutrition` |
-| Redis | 6379 | `redis://localhost:6379` |
+| Redis      | 6379 | `redis://localhost:6379`                                     |
 
 ## Common Commands
 
@@ -67,18 +67,21 @@ redis-cli -h localhost -p 6379
 ## Troubleshooting
 
 **Services won't start?**
+
 ```bash
 pnpm services:down
 pnpm services:up
 ```
 
 **Need fresh database?**
+
 ```bash
 pnpm services:reset
 cd apps/web && pnpm prisma migrate dev
 ```
 
 **Port already in use?**
+
 ```bash
 lsof -i :5432  # Check what's using PostgreSQL port
 lsof -i :6379  # Check what's using Redis port

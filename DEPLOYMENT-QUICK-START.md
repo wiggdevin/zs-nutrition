@@ -133,6 +133,7 @@ This enables build caching across deployments.
 ### Step 9: Verify Deployment (3 min)
 
 **Test Web App:**
+
 1. Visit your Vercel URL
 2. Sign up with Clerk
 3. Complete onboarding
@@ -141,6 +142,7 @@ This enables build caching across deployments.
 6. Verify plan displays
 
 **Check Railway Logs:**
+
 ```bash
 # Install Railway CLI
 npm i -g @railway/cli
@@ -153,6 +155,7 @@ railway logs --service queue-processor
 ```
 
 Look for job processing:
+
 ```
 📦 Processing job <id>: generate-plan
   Agent 1 (Intake Normalizer): Cleaning and validating...
@@ -182,6 +185,7 @@ Look for job processing:
 **Cause:** CORS or API route issues
 
 **Fix:**
+
 ```bash
 # Check Vercel deployment logs
 vercel logs <your-url>
@@ -195,6 +199,7 @@ vercel logs <your-url>
 **Cause:** Worker not processing jobs
 
 **Fix:**
+
 1. Check Railway service is running (not crashed)
 2. Verify `REDIS_URL` matches Vercel and Railway
 3. Check Railway logs for errors
@@ -205,6 +210,7 @@ vercel logs <your-url>
 **Cause:** Clerk not configured correctly
 
 **Fix:**
+
 1. Verify Clerk publishable key is PUBLIC (starts with `pk_`)
 2. Verify Clerk secret key is correct (starts with `sk_`)
 3. Check Clerk dashboard > Application > API Keys
@@ -215,6 +221,7 @@ vercel logs <your-url>
 **Cause:** Redis pub/sub not working
 
 **Fix:**
+
 1. Test Redis connection:
    ```bash
    redis-cli -u $REDIS_URL ping
@@ -242,25 +249,30 @@ vercel logs <your-url>
 ### Configure Alerts
 
 **Railway:**
+
 - Settings > Notifications > Slack/Discord/Email
 - Alert on: Service crash, high CPU, high memory
 
 **Vercel:**
+
 - Dashboard > Settings > Notifications
 - Alert on: Deployment failures, function errors
 
 **Upstash:**
+
 - Dashboard > Alerts
 - Alert on: Connection issues, memory limits
 
 ### Backup Strategy
 
 **Database (Neon):**
+
 - Free tier: 7-day point-in-time recovery
 - Pro tier: 30-day recovery
 - Manual backups: `pg_dump` weekly
 
 **Redis (Upstash):**
+
 - Persistence enabled by default
 - Daily backups (Pro plan)
 
@@ -357,6 +369,7 @@ When you're ready to scale:
 If you've completed all steps and health checks pass, your application is now live in production!
 
 **Your deployment:**
+
 - Web App: https://your-app.vercel.app
 - Worker: Running on Railway
 - Database: Hosted on Neon
@@ -364,6 +377,7 @@ If you've completed all steps and health checks pass, your application is now li
 - Cache: Turbo remote cache enabled
 
 **Performance targets:**
+
 - Page load: <2s
 - Plan generation: 120-180s
 - Vision analysis: <10s

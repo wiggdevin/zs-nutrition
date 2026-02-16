@@ -41,8 +41,10 @@ const profile1 = calculator.calculate(intake1);
 
 console.log('Metabolic Profile:');
 console.log(`  Goal kcal: ${profile1.goalKcal}`);
-console.log(`  Protein: ${profile1.proteinTargetG}g, Carbs: ${profile1.carbsTargetG}g, Fat: ${profile1.fatTargetG}g`);
-console.log(`  Meal targets: ${profile1.mealTargets.map(t => t.label).join(', ')}`);
+console.log(
+  `  Protein: ${profile1.proteinTargetG}g, Carbs: ${profile1.carbsTargetG}g, Fat: ${profile1.fatTargetG}g`
+);
+console.log(`  Meal targets: ${profile1.mealTargets.map((t) => t.label).join(', ')}`);
 
 const draft1 = await curator.generate(profile1, intake1);
 
@@ -51,7 +53,9 @@ console.log('\n✅ Step 1: Input metabolic profile + client intake - PASS');
 
 // Step 2: Verify 7 days of meals are generated
 const step2 = draft1.days.length === 7;
-console.log(`${step2 ? '✅' : '❌'} Step 2: 7 days generated - ${draft1.days.length} days (expected 7)`);
+console.log(
+  `${step2 ? '✅' : '❌'} Step 2: 7 days generated - ${draft1.days.length} days (expected 7)`
+);
 
 // Step 3: Verify each meal has name, cuisine, prep time, estimated nutrition
 let step3Pass = true;
@@ -67,12 +71,18 @@ for (const day of draft1.days) {
     }
   }
 }
-console.log(`${step3Pass ? '✅' : '❌'} Step 3: Each meal has name, cuisine, prep time, estimated nutrition`);
+console.log(
+  `${step3Pass ? '✅' : '❌'} Step 3: Each meal has name, cuisine, prep time, estimated nutrition`
+);
 
 // Print sample meal details
 const sampleMeal = draft1.days[0].meals[0];
-console.log(`  Sample: "${sampleMeal.name}", cuisine="${sampleMeal.cuisine}", prep=${sampleMeal.prepTimeMin}min, cook=${sampleMeal.cookTimeMin}min`);
-console.log(`  Nutrition: ${sampleMeal.estimatedNutrition.kcal}kcal, P:${sampleMeal.estimatedNutrition.proteinG}g, C:${sampleMeal.estimatedNutrition.carbsG}g, F:${sampleMeal.estimatedNutrition.fatG}g`);
+console.log(
+  `  Sample: "${sampleMeal.name}", cuisine="${sampleMeal.cuisine}", prep=${sampleMeal.prepTimeMin}min, cook=${sampleMeal.cookTimeMin}min`
+);
+console.log(
+  `  Nutrition: ${sampleMeal.estimatedNutrition.kcal}kcal, P:${sampleMeal.estimatedNutrition.proteinG}g, C:${sampleMeal.estimatedNutrition.carbsG}g, F:${sampleMeal.estimatedNutrition.fatG}g`
+);
 
 // Step 7: Verify output matches MealPlanDraftSchema
 let step7Pass = false;
@@ -112,7 +122,9 @@ for (const day of draft2.days) {
     const proteinLC = meal.primaryProtein.toLowerCase();
     for (const kw of meatKeywords) {
       if (nameLC.includes(kw) || proteinLC.includes(kw)) {
-        console.log(`  ❌ Vegetarian plan contains meat: "${meal.name}" (protein: ${meal.primaryProtein})`);
+        console.log(
+          `  ❌ Vegetarian plan contains meat: "${meal.name}" (protein: ${meal.primaryProtein})`
+        );
         step4Pass = false;
       }
     }
@@ -124,7 +136,7 @@ for (const day of draft2.days) {
   }
 }
 console.log(`${step4Pass ? '✅' : '❌'} Step 4: Dietary style respected (no meat for vegetarian)`);
-console.log(`  Sample meals: ${draft2.days[0].meals.map(m => m.name).join(', ')}`);
+console.log(`  Sample meals: ${draft2.days[0].meals.map((m) => m.name).join(', ')}`);
 
 // ===== Test Case 3: Allergies & Exclusions =====
 console.log('\n========== TEST CASE 3: Allergies & Exclusions ==========\n');
@@ -156,7 +168,9 @@ for (const day of draft3.days) {
   }
 }
 console.log(`${step5Pass ? '✅' : '❌'} Step 5: Allergies and exclusions honored`);
-console.log(`  Allergies: ${rawIntake3.allergies.join(', ')}, Exclusions: ${rawIntake3.exclusions.join(', ')}`);
+console.log(
+  `  Allergies: ${rawIntake3.allergies.join(', ')}, Exclusions: ${rawIntake3.exclusions.join(', ')}`
+);
 
 // ===== Test Case 4: Cuisine preferences =====
 console.log('\n========== TEST CASE 4: Cuisine Preferences ==========\n');
@@ -170,7 +184,9 @@ for (const day of draft1.days) {
   }
 }
 const step6Pass = allCuisines1.size >= 3; // at least 3 different cuisines
-console.log(`${step6Pass ? '✅' : '❌'} Step 6: Cuisine preferences considered - ${allCuisines1.size} cuisines used: ${[...allCuisines1].join(', ')}`);
+console.log(
+  `${step6Pass ? '✅' : '❌'} Step 6: Cuisine preferences considered - ${allCuisines1.size} cuisines used: ${[...allCuisines1].join(', ')}`
+);
 
 // ===== SUMMARY =====
 console.log('\n========== SUMMARY ==========\n');
@@ -187,8 +203,12 @@ if (passCount === 7) {
 // Print all 7 days for reference
 console.log('\n--- Full 7-Day Plan (Omnivore) ---\n');
 for (const day of draft1.days) {
-  console.log(`Day ${day.dayNumber} (${day.dayName}) - Training: ${day.isTrainingDay} - Target: ${day.targetKcal}kcal`);
+  console.log(
+    `Day ${day.dayNumber} (${day.dayName}) - Training: ${day.isTrainingDay} - Target: ${day.targetKcal}kcal`
+  );
   for (const meal of day.meals) {
-    console.log(`  [${meal.slot}] ${meal.name} (${meal.cuisine}) - ${meal.estimatedNutrition.kcal}kcal P:${meal.estimatedNutrition.proteinG}g C:${meal.estimatedNutrition.carbsG}g F:${meal.estimatedNutrition.fatG}g`);
+    console.log(
+      `  [${meal.slot}] ${meal.name} (${meal.cuisine}) - ${meal.estimatedNutrition.kcal}kcal P:${meal.estimatedNutrition.proteinG}g C:${meal.estimatedNutrition.carbsG}g F:${meal.estimatedNutrition.fatG}g`
+    );
   }
 }

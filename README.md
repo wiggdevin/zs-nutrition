@@ -4,21 +4,21 @@ AI-powered meal planning and macro tracking web application. Transforms your dem
 
 ## Tech Stack
 
-| Layer | Technology |
-|-------|-----------|
-| Frontend | Next.js 15 (App Router) + React 19 |
-| Styling | Tailwind CSS + shadcn/ui |
-| Charts | Recharts |
-| State | Zustand |
-| Backend | Node.js (Next.js serverless + Railway worker) |
-| Database | PostgreSQL (Neon) + Prisma ORM |
-| Cache/Queue | Upstash Redis + BullMQ |
-| API | tRPC v11 (end-to-end type safety) |
-| Auth | Clerk (magic links + OAuth) |
-| AI | Claude SDK (recipe curation) + Claude Vision (food scanning) |
-| Nutrition Data | FatSecret Platform API |
-| Deployment | Vercel (web) + Railway (worker) |
-| Monorepo | Turborepo + pnpm workspaces |
+| Layer          | Technology                                                   |
+| -------------- | ------------------------------------------------------------ |
+| Frontend       | Next.js 15 (App Router) + React 19                           |
+| Styling        | Tailwind CSS + shadcn/ui                                     |
+| Charts         | Recharts                                                     |
+| State          | Zustand                                                      |
+| Backend        | Node.js (Next.js serverless + Railway worker)                |
+| Database       | PostgreSQL (Neon) + Prisma ORM                               |
+| Cache/Queue    | Upstash Redis + BullMQ                                       |
+| API            | tRPC v11 (end-to-end type safety)                            |
+| Auth           | Clerk (magic links + OAuth)                                  |
+| AI             | Claude SDK (recipe curation) + Claude Vision (food scanning) |
+| Nutrition Data | FatSecret Platform API                                       |
+| Deployment     | Vercel (web) + Railway (worker)                              |
+| Monorepo       | Turborepo + pnpm workspaces                                  |
 
 ## Project Structure
 
@@ -98,6 +98,7 @@ chmod +x init.sh
 ## Prerequisites
 
 ### Required
+
 - **Node.js 20+**
 - **pnpm** (`npm install -g pnpm`)
 - **Clerk** account (authentication)
@@ -105,10 +106,13 @@ chmod +x init.sh
 - **FatSecret Platform API** credentials (nutrition data)
 
 ### Database & Cache (Choose One)
+
 **Local Development (Recommended)**:
+
 - **Docker Desktop** (for PostgreSQL + Redis locally)
 
 **Cloud Development**:
+
 - **Neon PostgreSQL** account (cloud database)
 - **Upstash Redis** account (cloud cache/queue)
 
@@ -152,6 +156,7 @@ BLOB_READ_WRITE_TOKEN=...
 ## Development
 
 ### Local Services (Docker)
+
 ```bash
 pnpm services:up      # Start PostgreSQL + Redis
 pnpm services:down    # Stop services
@@ -159,6 +164,7 @@ pnpm services:reset   # Reset database (wipe data)
 ```
 
 ### Application
+
 ```bash
 pnpm dev              # Start all services
 pnpm dev:web          # Start web app only

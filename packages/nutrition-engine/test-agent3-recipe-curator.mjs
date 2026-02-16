@@ -60,7 +60,9 @@ const intake = makeIntake();
 const metabolicProfile = calculator.calculate(intake);
 assert(metabolicProfile.goalKcal > 0, 'Metabolic profile has goalKcal > 0');
 assert(metabolicProfile.mealTargets.length > 0, 'Metabolic profile has meal targets');
-console.log(`  → goalKcal=${metabolicProfile.goalKcal}, targets=${metabolicProfile.mealTargets.length}`);
+console.log(
+  `  → goalKcal=${metabolicProfile.goalKcal}, targets=${metabolicProfile.mealTargets.length}`
+);
 
 const draft = await curator.generate(metabolicProfile, intake);
 assert(draft !== null && draft !== undefined, 'Draft was generated successfully');
@@ -72,8 +74,14 @@ console.log('');
 console.log('--- Step 2: Verify 7 days of meals are generated ---');
 assert(draft.days.length === 7, `Got ${draft.days.length} days (expected 7)`);
 for (let i = 0; i < draft.days.length; i++) {
-  assert(draft.days[i].dayNumber === i + 1, `Day ${i + 1} has dayNumber=${draft.days[i].dayNumber}`);
-  assert(typeof draft.days[i].dayName === 'string' && draft.days[i].dayName.length > 0, `Day ${i + 1} has dayName="${draft.days[i].dayName}"`);
+  assert(
+    draft.days[i].dayNumber === i + 1,
+    `Day ${i + 1} has dayNumber=${draft.days[i].dayNumber}`
+  );
+  assert(
+    typeof draft.days[i].dayName === 'string' && draft.days[i].dayName.length > 0,
+    `Day ${i + 1} has dayName="${draft.days[i].dayName}"`
+  );
 }
 console.log('');
 
@@ -86,24 +94,52 @@ let totalMeals = 0;
 for (const day of draft.days) {
   for (const meal of day.meals) {
     totalMeals++;
-    if (!meal.name || meal.name.length === 0) { allMealsValid = false; console.log(`  ❌ Missing name on day ${day.dayNumber}`); }
-    if (!meal.cuisine || meal.cuisine.length === 0) { allMealsValid = false; console.log(`  ❌ Missing cuisine on day ${day.dayNumber}`); }
-    if (typeof meal.prepTimeMin !== 'number') { allMealsValid = false; console.log(`  ❌ Missing prepTimeMin on day ${day.dayNumber}`); }
-    if (typeof meal.cookTimeMin !== 'number') { allMealsValid = false; console.log(`  ❌ Missing cookTimeMin on day ${day.dayNumber}`); }
-    if (!meal.estimatedNutrition) { allMealsValid = false; console.log(`  ❌ Missing estimatedNutrition on day ${day.dayNumber}`); }
-    else {
-      if (typeof meal.estimatedNutrition.kcal !== 'number') { allMealsValid = false; }
-      if (typeof meal.estimatedNutrition.proteinG !== 'number') { allMealsValid = false; }
-      if (typeof meal.estimatedNutrition.carbsG !== 'number') { allMealsValid = false; }
-      if (typeof meal.estimatedNutrition.fatG !== 'number') { allMealsValid = false; }
+    if (!meal.name || meal.name.length === 0) {
+      allMealsValid = false;
+      console.log(`  ❌ Missing name on day ${day.dayNumber}`);
+    }
+    if (!meal.cuisine || meal.cuisine.length === 0) {
+      allMealsValid = false;
+      console.log(`  ❌ Missing cuisine on day ${day.dayNumber}`);
+    }
+    if (typeof meal.prepTimeMin !== 'number') {
+      allMealsValid = false;
+      console.log(`  ❌ Missing prepTimeMin on day ${day.dayNumber}`);
+    }
+    if (typeof meal.cookTimeMin !== 'number') {
+      allMealsValid = false;
+      console.log(`  ❌ Missing cookTimeMin on day ${day.dayNumber}`);
+    }
+    if (!meal.estimatedNutrition) {
+      allMealsValid = false;
+      console.log(`  ❌ Missing estimatedNutrition on day ${day.dayNumber}`);
+    } else {
+      if (typeof meal.estimatedNutrition.kcal !== 'number') {
+        allMealsValid = false;
+      }
+      if (typeof meal.estimatedNutrition.proteinG !== 'number') {
+        allMealsValid = false;
+      }
+      if (typeof meal.estimatedNutrition.carbsG !== 'number') {
+        allMealsValid = false;
+      }
+      if (typeof meal.estimatedNutrition.fatG !== 'number') {
+        allMealsValid = false;
+      }
     }
   }
 }
-assert(allMealsValid, `All ${totalMeals} meals have name, cuisine, prep time, and estimated nutrition`);
+assert(
+  allMealsValid,
+  `All ${totalMeals} meals have name, cuisine, prep time, and estimated nutrition`
+);
 // Also verify each day has the expected number of meals (mealsPerDay + snacksPerDay = 3 + 1 = 4)
 const expectedMealsPerDay = intake.mealsPerDay + intake.snacksPerDay;
 for (const day of draft.days) {
-  assert(day.meals.length === expectedMealsPerDay, `Day ${day.dayNumber} has ${day.meals.length} meals (expected ${expectedMealsPerDay})`);
+  assert(
+    day.meals.length === expectedMealsPerDay,
+    `Day ${day.dayNumber} has ${day.meals.length} meals (expected ${expectedMealsPerDay})`
+  );
 }
 console.log('');
 
@@ -121,11 +157,15 @@ for (const day of vegDraft.days) {
   for (const meal of day.meals) {
     if (meatProteins.includes(meal.primaryProtein.toLowerCase())) {
       hasMeatInVeg = true;
-      console.log(`  ❌ Found meat protein "${meal.primaryProtein}" in vegetarian plan: "${meal.name}" on day ${day.dayNumber}`);
+      console.log(
+        `  ❌ Found meat protein "${meal.primaryProtein}" in vegetarian plan: "${meal.name}" on day ${day.dayNumber}`
+      );
     }
     if (meal.tags.includes('meat')) {
       hasMeatInVeg = true;
-      console.log(`  ❌ Found "meat" tag in vegetarian plan: "${meal.name}" on day ${day.dayNumber}`);
+      console.log(
+        `  ❌ Found "meat" tag in vegetarian plan: "${meal.name}" on day ${day.dayNumber}`
+      );
     }
   }
 }
@@ -141,7 +181,9 @@ for (const day of veganDraft.days) {
   for (const meal of day.meals) {
     if (meal.tags.includes('meat') || meal.tags.includes('dairy') || meal.tags.includes('eggs')) {
       hasAnimalInVegan = true;
-      console.log(`  ❌ Found animal product tag in vegan plan: "${meal.name}" (tags: ${meal.tags.join(',')})`);
+      console.log(
+        `  ❌ Found animal product tag in vegan plan: "${meal.name}" (tags: ${meal.tags.join(',')})`
+      );
     }
   }
 }
@@ -191,14 +233,23 @@ for (const day of draft.days) {
   }
 }
 console.log(`  Cuisines found in plan: ${[...cuisinesInDraft].join(', ')}`);
-assert(cuisinesInDraft.size >= 1, `Plan uses ${cuisinesInDraft.size} different cuisines (≥1 expected)`);
+assert(
+  cuisinesInDraft.size >= 1,
+  `Plan uses ${cuisinesInDraft.size} different cuisines (≥1 expected)`
+);
 
 // Also verify varietyReport
 assert(draft.varietyReport !== undefined, 'varietyReport exists in draft');
 assert(Array.isArray(draft.varietyReport.cuisinesUsed), 'varietyReport.cuisinesUsed is an array');
-assert(draft.varietyReport.cuisinesUsed.length >= 1, `varietyReport shows ${draft.varietyReport.cuisinesUsed.length} cuisines used`);
+assert(
+  draft.varietyReport.cuisinesUsed.length >= 1,
+  `varietyReport shows ${draft.varietyReport.cuisinesUsed.length} cuisines used`
+);
 assert(Array.isArray(draft.varietyReport.proteinsUsed), 'varietyReport.proteinsUsed is an array');
-assert(draft.varietyReport.proteinsUsed.length >= 1, `varietyReport shows ${draft.varietyReport.proteinsUsed.length} proteins used`);
+assert(
+  draft.varietyReport.proteinsUsed.length >= 1,
+  `varietyReport shows ${draft.varietyReport.proteinsUsed.length} proteins used`
+);
 console.log('');
 
 // ============================================================

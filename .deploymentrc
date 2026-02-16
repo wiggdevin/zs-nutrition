@@ -1,0 +1,71 @@
+# Zero Sum Nutrition - Deployment Configuration
+# This file documents the deployment setup completed in Tasks 6.4, 6.5, 6.6
+
+[vercel]
+config_file = apps/web/vercel.json
+build_command = cd ../.. && pnpm turbo run build --filter=@zsn/web
+output_directory = .next
+framework = nextjs
+
+[vercel.functions]
+plan_generate = 60s
+plan_stream = 300s
+vision_analyze = 30s
+vision_log_meal = 30s
+plan_pdf = 30s
+
+[railway]
+config_file = workers/queue-processor/railway.toml
+dockerfile = workers/queue-processor/Dockerfile
+service_name = queue-processor
+start_command = node dist/index.js
+
+[railway.scaling]
+min_instances = 1
+max_instances = 1
+concurrency = 2
+
+[turbo]
+remote_cache = enabled
+signature = true
+setup_command = npx turbo login && npx turbo link
+
+[documentation]
+comprehensive_guide = DEPLOYMENT.md
+quick_start = DEPLOYMENT-QUICK-START.md
+turbo_cache = TURBO_REMOTE_CACHE.md
+completion_summary = TASKS-6.4-6.5-6.6-COMPLETE.md
+
+[deployment.checklist]
+database = Neon PostgreSQL
+redis = Upstash Redis
+auth = Clerk
+ai = Anthropic Claude
+nutrition_api = FatSecret Platform
+storage = Vercel Blob
+monitoring = Sentry
+
+[deployment.timeline]
+quick_start = 30 minutes
+full_production = 1-2 hours
+first_deployment = 3-4 minutes (Vercel)
+worker_deployment = 4-6 minutes (Railway)
+
+[performance.targets]
+page_load = <2s
+api_response = <500ms
+plan_generation = 120-180s
+cache_hit_rate = >80%
+
+[costs.estimate]
+vercel = $20/month (Pro)
+railway = $5-20/month (usage-based)
+neon = $0-19/month (Free or Pro)
+total = $25-60/month
+
+[status]
+task_6_4 = completed
+task_6_5 = completed
+task_6_6 = completed
+production_ready = true
+documentation_complete = true

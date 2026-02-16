@@ -30,25 +30,29 @@ async function runFeature120Tests() {
   console.log('─'.repeat(60));
 
   const test1Draft: MealPlanDraft = {
-    days: [{
-      dayNumber: 1,
-      dayName: 'Monday',
-      isTrainingDay: false,
-      targetKcal: 2000,
-      meals: [{
-        slot: 'lunch',
-        name: 'Chicken Breast',
-        cuisine: 'american',
-        prepTimeMin: 10,
-        cookTimeMin: 20,
-        estimatedNutrition: { kcal: 370, proteinG: 53, carbsG: 0, fatG: 6 },
-        targetNutrition: { kcal: 250, proteinG: 40, carbsG: 0, fatG: 4 }, // Target is 250
-        fatsecretSearchQuery: 'chicken breast grilled',
-        suggestedServings: 1,
-        primaryProtein: 'chicken',
-        tags: ['high-protein'],
-      }],
-    }],
+    days: [
+      {
+        dayNumber: 1,
+        dayName: 'Monday',
+        isTrainingDay: false,
+        targetKcal: 2000,
+        meals: [
+          {
+            slot: 'lunch',
+            name: 'Chicken Breast',
+            cuisine: 'american',
+            prepTimeMin: 10,
+            cookTimeMin: 20,
+            estimatedNutrition: { kcal: 370, proteinG: 53, carbsG: 0, fatG: 6 },
+            targetNutrition: { kcal: 250, proteinG: 40, carbsG: 0, fatG: 4 }, // Target is 250
+            fatsecretSearchQuery: 'chicken breast grilled',
+            suggestedServings: 1,
+            primaryProtein: 'chicken',
+            tags: ['high-protein'],
+          },
+        ],
+      },
+    ],
     varietyReport: { proteinsUsed: ['chicken'], cuisinesUsed: ['american'], recipeIdsUsed: [] },
   };
 
@@ -58,22 +62,24 @@ async function runFeature120Tests() {
 
   console.log(`Input: Target = 250 kcal`);
   console.log(`Input: FatSecret Chicken Breast = 284 kcal per serving`);
-  console.log(`This is ${((284-250)/250*100).toFixed(1)}% above target`);
+  console.log(`This is ${(((284 - 250) / 250) * 100).toFixed(1)}% above target`);
 
   const scale1 = meal1.nutrition.kcal / 284;
-  const variance1 = Math.abs(meal1.nutrition.kcal - 250) / 250 * 100;
+  const variance1 = (Math.abs(meal1.nutrition.kcal - 250) / 250) * 100;
 
   console.log(`\nResult:`);
   console.log(`- Scaled calories: ${meal1.nutrition.kcal} kcal`);
   console.log(`- Scale factor: ${scale1.toFixed(3)} (< 1.0 means scaled down)`);
   console.log(`- Variance from target: ${variance1.toFixed(1)}%`);
 
-  const chicken1 = meal1.ingredients.find(i => i.name.includes('Chicken'));
+  const chicken1 = meal1.ingredients.find((i) => i.name.includes('Chicken'));
   if (chicken1) {
     console.log(`- Chicken amount: ${chicken1.amount}g (scaled from 172g)`);
     const expectedAmount = 172 * scale1;
     console.log(`- Expected amount: ${expectedAmount.toFixed(0)}g`);
-    console.log(`- Amount matches scale: ${Math.abs(chicken1.amount - expectedAmount) < 5 ? '✅' : '❌'}`);
+    console.log(
+      `- Amount matches scale: ${Math.abs(chicken1.amount - expectedAmount) < 5 ? '✅' : '❌'}`
+    );
   }
 
   if (scale1 < 1.0 && variance1 <= 10) {
@@ -90,25 +96,29 @@ async function runFeature120Tests() {
   console.log('─'.repeat(60));
 
   const test2Draft: MealPlanDraft = {
-    days: [{
-      dayNumber: 1,
-      dayName: 'Monday',
-      isTrainingDay: false,
-      targetKcal: 2000,
-      meals: [{
-        slot: 'breakfast',
-        name: 'Oatmeal',
-        cuisine: 'american',
-        prepTimeMin: 10,
-        cookTimeMin: 5,
-        estimatedNutrition: { kcal: 200, proteinG: 5, carbsG: 35, fatG: 3 },
-        targetNutrition: { kcal: 450, proteinG: 15, carbsG: 60, fatG: 10 }, // Target is 450
-        fatsecretSearchQuery: 'oats rolled dry',
-        suggestedServings: 1,
-        primaryProtein: 'mixed',
-        tags: ['vegetarian'],
-      }],
-    }],
+    days: [
+      {
+        dayNumber: 1,
+        dayName: 'Monday',
+        isTrainingDay: false,
+        targetKcal: 2000,
+        meals: [
+          {
+            slot: 'breakfast',
+            name: 'Oatmeal',
+            cuisine: 'american',
+            prepTimeMin: 10,
+            cookTimeMin: 5,
+            estimatedNutrition: { kcal: 200, proteinG: 5, carbsG: 35, fatG: 3 },
+            targetNutrition: { kcal: 450, proteinG: 15, carbsG: 60, fatG: 10 }, // Target is 450
+            fatsecretSearchQuery: 'oats rolled dry',
+            suggestedServings: 1,
+            primaryProtein: 'mixed',
+            tags: ['vegetarian'],
+          },
+        ],
+      },
+    ],
     varietyReport: { proteinsUsed: ['mixed'], cuisinesUsed: ['american'], recipeIdsUsed: [] },
   };
 
@@ -118,22 +128,24 @@ async function runFeature120Tests() {
 
   console.log(`Input: Target = 450 kcal`);
   console.log(`Input: FatSecret Oats = 152 kcal per 40g serving`);
-  console.log(`This is ${((152-450)/450*100).toFixed(1)}% below target`);
+  console.log(`This is ${(((152 - 450) / 450) * 100).toFixed(1)}% below target`);
 
   const scale2 = meal2.nutrition.kcal / 152;
-  const variance2 = Math.abs(meal2.nutrition.kcal - 450) / 450 * 100;
+  const variance2 = (Math.abs(meal2.nutrition.kcal - 450) / 450) * 100;
 
   console.log(`\nResult:`);
   console.log(`- Scaled calories: ${meal2.nutrition.kcal} kcal`);
   console.log(`- Scale factor: ${scale2.toFixed(3)} (> 1.0 means scaled up)`);
   console.log(`- Variance from target: ${variance2.toFixed(1)}%`);
 
-  const oats = meal2.ingredients.find(i => i.name.includes('Oats'));
+  const oats = meal2.ingredients.find((i) => i.name.includes('Oats'));
   if (oats) {
     console.log(`- Oats amount: ${oats.amount}g (scaled from 40g)`);
     const expectedAmount = 40 * scale2;
     console.log(`- Expected amount: ${expectedAmount.toFixed(0)}g`);
-    console.log(`- Amount matches scale: ${Math.abs(oats.amount - expectedAmount) < 10 ? '✅' : '❌'}`);
+    console.log(
+      `- Amount matches scale: ${Math.abs(oats.amount - expectedAmount) < 10 ? '✅' : '❌'}`
+    );
   }
 
   if (scale2 > 1.0 && variance2 <= 15) {
@@ -152,25 +164,29 @@ async function runFeature120Tests() {
   console.log('Checking that all ingredient amounts scale together...');
 
   const test3Draft: MealPlanDraft = {
-    days: [{
-      dayNumber: 1,
-      dayName: 'Monday',
-      isTrainingDay: false,
-      targetKcal: 2000,
-      meals: [{
-        slot: 'dinner',
-        name: 'Chicken with Brown Rice',
-        cuisine: 'american',
-        prepTimeMin: 15,
-        cookTimeMin: 25,
-        estimatedNutrition: { kcal: 500, proteinG: 35, carbsG: 45, fatG: 12 },
-        targetNutrition: { kcal: 350, proteinG: 30, carbsG: 30, fatG: 10 }, // Scale down to 350
-        fatsecretSearchQuery: 'chicken breast grilled',
-        suggestedServings: 1,
-        primaryProtein: 'chicken',
-        tags: ['high-protein'],
-      }],
-    }],
+    days: [
+      {
+        dayNumber: 1,
+        dayName: 'Monday',
+        isTrainingDay: false,
+        targetKcal: 2000,
+        meals: [
+          {
+            slot: 'dinner',
+            name: 'Chicken with Brown Rice',
+            cuisine: 'american',
+            prepTimeMin: 15,
+            cookTimeMin: 25,
+            estimatedNutrition: { kcal: 500, proteinG: 35, carbsG: 45, fatG: 12 },
+            targetNutrition: { kcal: 350, proteinG: 30, carbsG: 30, fatG: 10 }, // Scale down to 350
+            fatsecretSearchQuery: 'chicken breast grilled',
+            suggestedServings: 1,
+            primaryProtein: 'chicken',
+            tags: ['high-protein'],
+          },
+        ],
+      },
+    ],
     varietyReport: { proteinsUsed: ['chicken'], cuisinesUsed: ['american'], recipeIdsUsed: [] },
   };
 
