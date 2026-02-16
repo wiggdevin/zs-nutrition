@@ -1,6 +1,17 @@
+import type { Metadata } from 'next';
 import { SignUp } from '@clerk/nextjs';
 import { DevSignUpForm } from './SignUpContent';
 import { isDevMode } from '@/lib/dev-mode';
+
+export const metadata: Metadata = {
+  title: 'Create Your Account',
+  description:
+    'Sign up for Zero Sum Nutrition and start your personalized meal planning journey with AI-powered nutrition tracking.',
+  robots: { index: false, follow: true },
+  alternates: {
+    canonical: '/sign-up',
+  },
+};
 
 export default function SignUpPage() {
   return (

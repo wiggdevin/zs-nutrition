@@ -1,6 +1,17 @@
+import type { Metadata } from 'next';
 import { SignIn } from '@clerk/nextjs';
 import { DevSignInForm } from './SignInContent';
 import { isDevMode } from '@/lib/dev-mode';
+
+export const metadata: Metadata = {
+  title: 'Sign In',
+  description:
+    'Sign in to your Zero Sum Nutrition account to access your personalized meal plans and macro tracking.',
+  robots: { index: false, follow: true },
+  alternates: {
+    canonical: '/sign-in',
+  },
+};
 
 export default function SignInPage() {
   return (

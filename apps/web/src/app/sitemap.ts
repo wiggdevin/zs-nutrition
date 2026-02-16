@@ -1,6 +1,6 @@
-import type { MetadataRoute } from 'next'
+import type { MetadataRoute } from 'next';
 
-const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://zerosumnutrition.com'
+const baseUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://zerosumnutrition.com';
 
 export default function sitemap(): MetadataRoute.Sitemap {
   return [
@@ -14,13 +14,13 @@ export default function sitemap(): MetadataRoute.Sitemap {
       url: `${baseUrl}/sign-in`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.5,
+      priority: 0.7,
     },
     {
       url: `${baseUrl}/sign-up`,
       lastModified: new Date(),
       changeFrequency: 'monthly',
-      priority: 0.5,
+      priority: 0.7,
     },
-  ]
+  ];
 }

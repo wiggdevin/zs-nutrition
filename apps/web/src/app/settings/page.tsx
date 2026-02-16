@@ -1,3 +1,4 @@
+import type { Metadata } from 'next';
 import NavBar from '@/components/navigation/NavBar';
 import SettingsDemographics from '@/components/settings/SettingsDemographics';
 import SettingsGoals from '@/components/settings/SettingsGoals';
@@ -7,6 +8,11 @@ import SettingsMealStructure from '@/components/settings/SettingsMealStructure';
 import SettingsAccount from '@/components/settings/SettingsAccount';
 import SettingsPlanHistory from '@/components/settings/SettingsPlanHistory';
 import FitnessConnections from '@/components/fitness/FitnessConnections';
+
+export const metadata: Metadata = {
+  title: 'Settings',
+  robots: { index: false, follow: false },
+};
 
 export default function SettingsPage() {
   return (
