@@ -1,16 +1,16 @@
-import { includeIgnoreFile } from "@eslint/compat";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import js from "@eslint/js";
-import tseslint from "typescript-eslint";
-import nextPlugin from "@next/eslint-plugin-next";
-import prettier from "eslint-plugin-prettier";
-import reactPlugin from "eslint-plugin-react";
-import hooksPlugin from "eslint-plugin-react-hooks";
+import { includeIgnoreFile } from '@eslint/compat';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+import js from '@eslint/js';
+import tseslint from 'typescript-eslint';
+import nextPlugin from '@next/eslint-plugin-next';
+import prettier from 'eslint-plugin-prettier';
+import reactPlugin from 'eslint-plugin-react';
+import hooksPlugin from 'eslint-plugin-react-hooks';
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const gitignorePath = path.join(__dirname, "../../.gitignore");
+const gitignorePath = path.join(__dirname, '../../.gitignore');
 
 export default [
   // Base JavaScript/TypeScript rules
@@ -21,18 +21,18 @@ export default [
   {
     plugins: {
       react: reactPlugin,
-      "react-hooks": hooksPlugin,
+      'react-hooks': hooksPlugin,
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
       ...hooksPlugin.configs.recommended.rules,
-      "react/react-in-jsx-scope": "off", // Not needed with React 19+
-      "react/prop-types": "off", // Using TypeScript instead
-      "react/display-name": "off",
+      'react/react-in-jsx-scope': 'off', // Not needed with React 19+
+      'react/prop-types': 'off', // Using TypeScript instead
+      'react/display-name': 'off',
     },
     settings: {
       react: {
-        version: "detect",
+        version: 'detect',
       },
     },
   },
@@ -40,11 +40,11 @@ export default [
   // Next.js plugin (using object format for flat config)
   {
     plugins: {
-      "@next/next": nextPlugin,
+      '@next/next': nextPlugin,
     },
     rules: {
       ...nextPlugin.configs.recommended.rules,
-      ...nextPlugin.configs["core-web-vitals"].rules,
+      ...nextPlugin.configs['core-web-vitals'].rules,
     },
   },
 
@@ -54,7 +54,7 @@ export default [
       prettier,
     },
     rules: {
-      "prettier/prettier": "error",
+      'prettier/prettier': 'error',
     },
   },
 
@@ -63,14 +63,26 @@ export default [
 
   {
     ignores: [
-      "**/node_modules/**",
-      "**/.next/**",
-      "**/dist/**",
-      "**/build/**",
-      "**/.turbo/**",
-      "**/coverage/**",
-      "**/*.min.js",
-      "**/*.generated.*",
+      '**/node_modules/**',
+      '**/.next/**',
+      '**/dist/**',
+      '**/build/**',
+      '**/.turbo/**',
+      '**/coverage/**',
+      '**/*.min.js',
+      '**/*.generated.*',
+      // Root-level utility/test scripts (not part of app source)
+      'test-*.js',
+      'test-*.cjs',
+      'test-*.mjs',
+      'fix-*.js',
+      'find-*.js',
+      'create-*.js',
+      'update-*.js',
+      'setup-*.js',
+      'verification 2/**',
+      'next-env.d.ts',
+      'next.config.js',
     ],
   },
 
@@ -78,28 +90,28 @@ export default [
   {
     rules: {
       // TypeScript specific
-      "@typescript-eslint/no-unused-vars": [
-        "error",
+      '@typescript-eslint/no-unused-vars': [
+        'error',
         {
-          argsIgnorePattern: "^_",
-          varsIgnorePattern: "^_",
-          caughtErrorsIgnorePattern: "^_",
+          argsIgnorePattern: '^_',
+          varsIgnorePattern: '^_',
+          caughtErrorsIgnorePattern: '^_',
         },
       ],
-      "@typescript-eslint/no-explicit-any": "warn",
-      "@typescript-eslint/explicit-function-return-type": "off",
-      "@typescript-eslint/explicit-module-boundary-types": "off",
-      "@typescript-eslint/no-non-null-assertion": "warn",
+      '@typescript-eslint/no-explicit-any': 'warn',
+      '@typescript-eslint/explicit-function-return-type': 'off',
+      '@typescript-eslint/explicit-module-boundary-types': 'off',
+      '@typescript-eslint/no-non-null-assertion': 'warn',
 
       // General code quality
-      "no-console": ["error", { allow: ["warn", "error"] }],
-      "prefer-const": "error",
-      "no-var": "error",
-      "eqeqeq": ["error", "always"],
-      "curly": "off",
+      'no-console': ['error', { allow: ['warn', 'error'] }],
+      'prefer-const': 'error',
+      'no-var': 'error',
+      eqeqeq: ['error', 'always'],
+      curly: 'off',
 
       // Next.js specific
-      "@next/next/no-html-link-for-pages": "error",
+      '@next/next/no-html-link-for-pages': 'error',
     },
   },
 ];

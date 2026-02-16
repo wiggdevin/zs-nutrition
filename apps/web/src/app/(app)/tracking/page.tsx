@@ -78,7 +78,7 @@ function TrackingPageContent() {
               className="bg-card border border-border rounded-xl p-4 mb-6"
             >
               <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
-                /// Daily Totals
+                {'/// Daily Totals'}
               </p>
               <div className="grid grid-cols-2 gap-3">
                 <div className="flex items-center gap-2">

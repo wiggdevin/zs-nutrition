@@ -7,7 +7,7 @@ export function QuickActionsSection() {
       className="bg-card border border-border rounded-2xl p-6"
     >
       <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-4">
-        /// Quick Actions
+        {'/// Quick Actions'}
       </p>
       <div className="flex flex-wrap gap-3">
         <QuickAction icon="📋" label="Log from Plan" href="/dashboard#todays-plan" />

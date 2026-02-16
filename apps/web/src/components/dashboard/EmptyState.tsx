@@ -31,7 +31,7 @@ export function EmptyState({ calorieTarget, error, onDismissError }: EmptyStateP
           </div>
 
           <p className="text-xs font-mono tracking-[0.2em] uppercase text-muted-foreground mb-3">
-            /// GET STARTED
+            {'/// GET STARTED'}
           </p>
           <h2 className="text-3xl md:text-4xl font-heading uppercase tracking-tight text-foreground mb-4">
             NO MEAL PLANS YET<span className="text-primary">.</span>
@@ -85,7 +85,7 @@ export function EmptyState({ calorieTarget, error, onDismissError }: EmptyStateP
         >
           <div className="flex items-center justify-between mb-4">
             <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-              /// Today&apos;s Log
+              {"/// Today's Log"}
             </p>
             <span className="text-xs text-muted-foreground">0 items logged</span>
           </div>

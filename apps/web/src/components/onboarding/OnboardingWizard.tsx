@@ -238,7 +238,7 @@ export function OnboardingWizard() {
             Welcome to Zero Sum
           </h1>
           <p className="mt-2 font-mono text-xs uppercase tracking-widest text-muted-foreground">
-            /// ONBOARDING PROTOCOL INITIATED
+            {'/// ONBOARDING PROTOCOL INITIATED'}
           </p>
         </div>
 

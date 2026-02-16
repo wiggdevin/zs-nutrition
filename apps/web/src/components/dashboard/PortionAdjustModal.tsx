@@ -52,7 +52,7 @@ export default function PortionAdjustModal({
         role="document"
       >
         <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-1">
-          /// Adjust Portion
+          {'/// Adjust Portion'}
         </p>
         <h3 id="adjust-portion-title" className="text-lg font-bold text-foreground mb-4">
           {mealName}

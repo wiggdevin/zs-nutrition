@@ -24,7 +24,7 @@ export function TodaysLogSection({
     >
       <div className="flex items-center justify-between mb-4">
         <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          /// Today&apos;s Log
+          {"/// Today's Log"}
         </p>
         <span className="text-xs text-muted-foreground">
           {trackedMeals.length} item{trackedMeals.length !== 1 ? 's' : ''} logged

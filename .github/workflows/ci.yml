@@ -34,7 +34,6 @@ jobs:
 
       - name: Lint
         run: pnpm turbo lint
-        continue-on-error: true
 
       - name: Test
         run: pnpm turbo test
@@ -50,4 +49,4 @@ jobs:
           REDIS_URL: ${{ secrets.REDIS_URL }}
           FATSECRET_CLIENT_ID: ${{ secrets.FATSECRET_CLIENT_ID }}
           FATSECRET_CLIENT_SECRET: ${{ secrets.FATSECRET_CLIENT_SECRET }}
-          SKIP_ENV_VALIDATION: "true"
+          SKIP_ENV_VALIDATION: 'true'

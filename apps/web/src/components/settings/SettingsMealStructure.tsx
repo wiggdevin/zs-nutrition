@@ -230,7 +230,7 @@ export default function SettingsMealStructure() {
     >
       <div className="mb-6">
         <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          <span className="text-primary">///</span> Meal Structure
+          <span className="text-primary">{'///'}</span> Meal Structure
         </h2>
         <p className="mt-1 text-sm text-muted-foreground">
           Configure your macro split, cuisine preferences, and meal frequency

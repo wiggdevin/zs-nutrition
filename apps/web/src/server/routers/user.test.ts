@@ -83,6 +83,7 @@ describe('user router', () => {
         exclusions: [],
         cuisinePrefs: [],
         trainingDays: ['monday', 'wednesday', 'friday'],
+        trainingTime: null,
         mealsPerDay: 3,
         snacksPerDay: 1,
         cookingSkill: 5,
@@ -161,6 +162,7 @@ describe('user router', () => {
         exclusions: ['beef', 'pork'],
         cuisinePrefs: ['italian', 'mediterranean'],
         trainingDays: ['tuesday', 'thursday', 'saturday'],
+        trainingTime: null,
         mealsPerDay: 4,
         snacksPerDay: 2,
         cookingSkill: 7,
@@ -261,6 +263,7 @@ describe('user router', () => {
         exclusions: [],
         cuisinePrefs: ['asian', 'mexican'],
         trainingDays: ['monday', 'wednesday', 'friday', 'sunday'],
+        trainingTime: null,
         mealsPerDay: 5,
         snacksPerDay: 2,
         cookingSkill: 6,
@@ -337,6 +340,7 @@ describe('user router', () => {
         exclusions: [],
         cuisinePrefs: [],
         trainingDays: [],
+        trainingTime: null,
         mealsPerDay: 3,
         snacksPerDay: 1,
         cookingSkill: 5,
@@ -411,7 +415,7 @@ describe('user router', () => {
 
       const deactivatedUser = {
         id: 'user-deactivated',
-        clerkId: 'clerk-123',
+        clerkUserId: 'clerk-123',
         email: 'test@example.com',
         isActive: false,
         deactivatedAt: new Date(),
@@ -433,7 +437,7 @@ describe('user router', () => {
 
       const activeUser = {
         id: 'user-123',
-        clerkId: 'clerk-123',
+        clerkUserId: 'clerk-123',
         email: 'test@example.com',
         isActive: true,
         deactivatedAt: null,

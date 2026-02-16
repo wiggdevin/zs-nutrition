@@ -125,7 +125,7 @@ export default function ActivityLog() {
     return (
       <div className="bg-card border border-border rounded-lg p-6">
         <h2 className="text-xl font-heading uppercase tracking-wider mb-4">
-          <span className="text-primary">///</span> Activity Log
+          <span className="text-primary">{'///'}</span> Activity Log
         </h2>
         <div className="flex items-center justify-center py-8">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary" />
@@ -138,7 +138,7 @@ export default function ActivityLog() {
     <div className="bg-card border border-border rounded-lg p-6">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-xl font-heading uppercase tracking-wider">
-          <span className="text-primary">///</span> Activity Log
+          <span className="text-primary">{'///'}</span> Activity Log
         </h2>
 
         <input

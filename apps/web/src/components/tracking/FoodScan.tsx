@@ -289,7 +289,7 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
         {/* Nutrition Estimates - Editable */}
         <div className="mb-4">
           <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
-            /// Estimated Nutrition (Click to Edit)
+            {'/// Estimated Nutrition (Click to Edit)'}
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
@@ -461,7 +461,7 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
               Meal Logged!
             </h3>
             <p className="text-sm text-muted-foreground">
-              Your meal has been added to today's tracking
+              Your meal has been added to today&apos;s tracking
             </p>
           </div>
         </div>

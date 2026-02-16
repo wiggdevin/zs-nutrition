@@ -12,12 +12,7 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
-  eslint: {
-    // ESLint is run separately via `pnpm lint` - don't block builds
-    // This allows the build to complete while CI enforces lint rules
-    ignoreDuringBuilds: true,
-  },
-  transpilePackages: ['@zero-sum/nutrition-engine'],
+  transpilePackages: ['@zero-sum/nutrition-engine', '@zsn/queue-config'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
   serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'sharp'],
   turbopack: {

@@ -36,7 +36,7 @@ export default function LogConfirmModal({
         role="document"
       >
         <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-1">
-          /// Log Meal
+          {'/// Log Meal'}
         </p>
         <h3 id="log-meal-title" className="text-lg font-bold text-foreground mb-4">
           {meal.name}

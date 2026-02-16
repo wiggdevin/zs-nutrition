@@ -79,8 +79,8 @@ describe('tracking router', () => {
         },
       ];
 
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(mockDailyLog);
-      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue(mockTrackedMeals);
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(mockDailyLog as any);
+      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue(mockTrackedMeals as any);
 
       const result = await caller.tracking.getDailySummary({
         date: '2026-02-05',
@@ -107,8 +107,8 @@ describe('tracking router', () => {
       expect(prisma.dailyLog.findUnique).toHaveBeenCalled();
       // Verify it was called with a date parameter
       const call = vi.mocked(prisma.dailyLog.findUnique).mock.calls[0][0];
-      expect(call.where.userId_date.userId).toBe('user-123');
-      expect(call.where.userId_date.date).toBeInstanceOf(Date);
+      expect(call.where.userId_date!.userId).toBe('user-123');
+      expect(call.where.userId_date!.date).toBeInstanceOf(Date);
     });
   });
 
@@ -166,7 +166,7 @@ describe('tracking router', () => {
         },
       ];
 
-      vi.mocked(prisma.dailyLog.findMany).mockResolvedValue(mockDailyLogs);
+      vi.mocked(prisma.dailyLog.findMany).mockResolvedValue(mockDailyLogs as any);
       vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([]);
 
       const result = await caller.tracking.getWeeklyTrend({
@@ -236,8 +236,7 @@ describe('tracking router', () => {
         adherenceScore: 0,
       };
 
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
-        // @ts-expect-error - Mock transaction client
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
         return callback({
           trackedMeal: {
             create: vi.fn().mockResolvedValue(mockTrackedMeal),
@@ -344,8 +343,7 @@ describe('tracking router', () => {
         adherenceScore: 0,
       };
 
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
-        // @ts-expect-error - Mock transaction client
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
         return callback({
           trackedMeal: {
             create: vi.fn().mockResolvedValue(mockTrackedMeal),

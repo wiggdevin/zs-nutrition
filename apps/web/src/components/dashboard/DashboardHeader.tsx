@@ -7,7 +7,7 @@ export function DashboardHeader({ calorieTarget }: DashboardHeaderProps) {
     <header className="border-b border-border bg-background/80 backdrop-blur-sm sticky top-0 z-50">
       <div className="max-w-7xl xl:max-w-screen-2xl mx-auto px-4 py-4 flex items-center justify-between gap-4">
         <h1 className="text-2xl font-heading uppercase tracking-wide text-foreground">
-          <span className="text-primary">///</span> Dashboard
+          <span className="text-primary">{'///'}</span> Dashboard
         </h1>
         <div className="flex items-center gap-3">
           <div className="flex flex-col items-end">

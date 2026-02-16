@@ -44,10 +44,22 @@ export async function POST() {
         goalRate: profile.goalRate,
         activityLevel: profile.activityLevel,
         dietaryStyle: profile.dietaryStyle,
-        allergies: JSON.parse(profile.allergies),
-        exclusions: JSON.parse(profile.exclusions),
-        cuisinePreferences: JSON.parse(profile.cuisinePrefs),
-        trainingDays: JSON.parse(profile.trainingDays),
+        allergies:
+          typeof profile.allergies === 'string'
+            ? JSON.parse(profile.allergies)
+            : (profile.allergies ?? []),
+        exclusions:
+          typeof profile.exclusions === 'string'
+            ? JSON.parse(profile.exclusions)
+            : (profile.exclusions ?? []),
+        cuisinePreferences:
+          typeof profile.cuisinePrefs === 'string'
+            ? JSON.parse(profile.cuisinePrefs)
+            : (profile.cuisinePrefs ?? []),
+        trainingDays:
+          typeof profile.trainingDays === 'string'
+            ? JSON.parse(profile.trainingDays)
+            : (profile.trainingDays ?? []),
         trainingTime: profile.trainingTime,
         mealsPerDay: profile.mealsPerDay,
         snacksPerDay: profile.snacksPerDay,
