@@ -25,6 +25,9 @@ jobs:
 
       - run: pnpm install --frozen-lockfile
 
+      - name: Security Audit
+        run: pnpm audit --audit-level=high
+
       - name: Lint
         run: pnpm lint
         continue-on-error: true  # Allow lint warnings during Phase 2 transition

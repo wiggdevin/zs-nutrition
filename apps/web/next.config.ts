@@ -95,8 +95,8 @@ const nextConfig: NextConfig = {
               // Default to self for anything not explicitly set
               "default-src 'self'",
 
-              // Allow scripts from self, inline (needed for Next.js), and Clerk
-              "script-src 'self' 'unsafe-inline' 'unsafe-eval' https://*.clerk.accounts.dev https://*.clerk.com",
+              // Allow scripts from self, inline (needed for Next.js hydration), and Clerk
+              "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com",
 
               // Allow styles from self and inline (needed for styled-components, Tailwind, etc.)
               "style-src 'self' 'unsafe-inline'",

@@ -170,6 +170,20 @@ function devMiddleware(request: NextRequest) {
 const handler = isDevMode ? devMiddleware : protectedMiddleware;
 
 export default function middleware(request: NextRequest, event: NextFetchEvent) {
+  // Defense in depth: block dev/test/debug/seed API routes in production
+  // (supplements route-level checks that already return 404)
+  if (isProduction) {
+    const { pathname } = request.nextUrl;
+    if (
+      pathname.startsWith('/api/dev-') ||
+      pathname.startsWith('/api/test-') ||
+      pathname.startsWith('/api/debug-') ||
+      pathname.startsWith('/api/seed-')
+    ) {
+      return NextResponse.json({ error: 'Not Found' }, { status: 403 });
+    }
+  }
+
   const csrfResponse = csrfCheck(request);
   if (csrfResponse) return csrfResponse;
 
