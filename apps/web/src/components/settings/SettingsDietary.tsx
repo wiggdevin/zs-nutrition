@@ -217,26 +217,15 @@ export default function SettingsDietary() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Loading dietary preferences...</span>
-        </div>
+      <div className="flex items-center gap-3 py-2">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-sm text-muted-foreground">Loading dietary preferences...</span>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6" data-testid="dietary-section">
-      <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          <span className="text-primary">{'///'}</span> Dietary Preferences
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Manage your dietary style, allergies, and exclusions
-        </p>
-      </div>
-
+    <div data-testid="dietary-section">
       <div className="space-y-5">
         {/* Dietary Style */}
         <div>

@@ -122,11 +122,9 @@ export default function SettingsGoals() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Loading goals...</span>
-        </div>
+      <div className="flex items-center gap-3 py-2">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-sm text-muted-foreground">Loading goals...</span>
       </div>
     );
   }
@@ -135,16 +133,7 @@ export default function SettingsGoals() {
   const displayRate = isMaintain ? 0 : goalRate;
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6" data-testid="goals-section">
-      <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          <span className="text-primary">{'///'}</span> Goals
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Set your nutrition goal and target rate
-        </p>
-      </div>
-
+    <div data-testid="goals-section">
       <div className="space-y-5">
         {/* Goal Type */}
         <div>

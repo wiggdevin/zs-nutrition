@@ -7,15 +7,36 @@ import SettingsGoals from '@/components/settings/SettingsGoals';
 import SettingsDietary from '@/components/settings/SettingsDietary';
 import SettingsActivity from '@/components/settings/SettingsActivity';
 import SettingsMealStructure from '@/components/settings/SettingsMealStructure';
-import SettingsAccount from '@/components/settings/SettingsAccount';
 import SettingsPlanHistory from '@/components/settings/SettingsPlanHistory';
-import FitnessConnections from '@/components/fitness/FitnessConnections';
+import SettingsAccountConsolidated from '@/components/settings/SettingsAccountConsolidated';
 import { SettingsSkeleton } from '@/components/loaders/SettingsSkeleton';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 
 export const metadata: Metadata = {
   title: 'Settings',
   robots: { index: false, follow: false },
 };
+
+function SectionLabel({ children }: { children: React.ReactNode }) {
+  return (
+    <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
+      <span className="text-primary">{'///'}</span> {children}
+    </h2>
+  );
+}
+
+function AccordionSectionTitle({ title }: { title: string }) {
+  return (
+    <span className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
+      <span className="text-primary">{'///'}</span> {title}
+    </span>
+  );
+}
 
 export default function SettingsPage() {
   return (
@@ -32,29 +53,73 @@ export default function SettingsPage() {
           />
           <div className="min-h-screen bg-background text-foreground">
             <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
-              {/* Demographics Section (name, sex, age, height, weight) */}
-              <SettingsDemographics />
+              {/* Group 1: Profile & Preferences */}
+              <section>
+                <div className="mb-4">
+                  <SectionLabel>Profile & Preferences</SectionLabel>
+                </div>
+                <Accordion type="multiple" defaultValue={['demographics']}>
+                  <div className="space-y-3">
+                    <AccordionItem value="demographics">
+                      <AccordionTrigger>
+                        <AccordionSectionTitle title="Demographics" />
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <SettingsDemographics />
+                      </AccordionContent>
+                    </AccordionItem>
 
-              {/* Goals Section (goalType, goalRate) */}
-              <SettingsGoals />
+                    <AccordionItem value="goals">
+                      <AccordionTrigger>
+                        <AccordionSectionTitle title="Goals" />
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <SettingsGoals />
+                      </AccordionContent>
+                    </AccordionItem>
 
-              {/* Dietary Preferences Section */}
-              <SettingsDietary />
+                    <AccordionItem value="dietary">
+                      <AccordionTrigger>
+                        <AccordionSectionTitle title="Dietary Preferences" />
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <SettingsDietary />
+                      </AccordionContent>
+                    </AccordionItem>
 
-              {/* Activity and Training Section */}
-              <SettingsActivity />
+                    <AccordionItem value="activity">
+                      <AccordionTrigger>
+                        <AccordionSectionTitle title="Activity & Training" />
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <SettingsActivity />
+                      </AccordionContent>
+                    </AccordionItem>
 
-              {/* Fitness Tracker Integration */}
-              <FitnessConnections />
+                    <AccordionItem value="meal-structure">
+                      <AccordionTrigger>
+                        <AccordionSectionTitle title="Meal Structure" />
+                      </AccordionTrigger>
+                      <AccordionContent>
+                        <SettingsMealStructure />
+                      </AccordionContent>
+                    </AccordionItem>
+                  </div>
+                </Accordion>
+              </section>
 
-              {/* Meal Structure Section */}
-              <SettingsMealStructure />
+              {/* Group 2: Plan History */}
+              <section>
+                <SettingsPlanHistory />
+              </section>
 
-              {/* Plan History Section */}
-              <SettingsPlanHistory />
-
-              {/* Sign Out and Account Deactivation */}
-              <SettingsAccount />
+              {/* Group 3: Account & Security */}
+              <section>
+                <div className="mb-4">
+                  <SectionLabel>Account & Security</SectionLabel>
+                </div>
+                <SettingsAccountConsolidated />
+              </section>
             </div>
           </div>
         </Suspense>

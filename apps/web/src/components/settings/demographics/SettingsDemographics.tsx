@@ -31,18 +31,16 @@ export default function SettingsDemographics() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Loading profile...</span>
-        </div>
+      <div className="flex items-center gap-3 py-2">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-sm text-muted-foreground">Loading profile...</span>
       </div>
     );
   }
 
   if (error && !profile) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6">
+      <div>
         <p className="text-sm text-red-400">{error}</p>
         <button
           onClick={fetchProfile}
@@ -55,18 +53,7 @@ export default function SettingsDemographics() {
   }
 
   return (
-    <div
-      className="rounded-2xl border border-border bg-card p-6"
-      data-testid="demographics-section"
-    >
-      {/* Section Header */}
-      <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          <span className="text-primary">{'///'}</span> Demographics
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">Update your basic profile information</p>
-      </div>
-
+    <div data-testid="demographics-section">
       <div className="space-y-5">
         <BasicInfoSection
           editName={editName}
