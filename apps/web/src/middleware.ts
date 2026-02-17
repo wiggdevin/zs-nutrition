@@ -70,6 +70,7 @@ const productionPublicPaths = [
   '/api/plan/complete',
   '/api/plan/intake',
   '/api/plan/progress',
+  '/api/cron',
   '/robots.txt',
   '/sitemap.xml',
 ];
@@ -110,6 +111,7 @@ const productionPublicRoutes = [
   '/api/plan/complete',
   '/api/plan/intake',
   '/api/plan/progress',
+  '/api/cron(.*)',
   '/robots.txt',
   '/sitemap.xml',
 ];

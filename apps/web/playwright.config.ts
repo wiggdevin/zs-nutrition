@@ -11,7 +11,10 @@ export default defineConfig({
     baseURL: 'http://localhost:3456',
     trace: 'on-first-retry',
   },
-  projects: [{ name: 'chromium', use: { ...devices['Desktop Chrome'] } }],
+  projects: [
+    { name: 'chromium', use: { ...devices['Desktop Chrome'] } },
+    { name: 'mobile', use: { ...devices['Pixel 5'] } },
+  ],
   webServer: {
     command: 'pnpm dev:web',
     url: 'http://localhost:3456',

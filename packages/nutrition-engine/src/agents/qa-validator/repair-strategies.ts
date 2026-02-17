@@ -1,117 +1,16 @@
-import type { CompiledDay, CompiledMeal, GroceryCategory } from '../../types/schemas';
-import { recalcDailyTotals, type Violation } from './tolerance-checks';
+import type { CompiledDay, GroceryCategory } from '../../types/schemas';
+import type { Violation } from './tolerance-checks';
+import { proportionalScaling } from './strategies/proportional-scaling';
 
 /**
- * Attempt to optimize a day by proportionally scaling ALL meals.
- *
- * For kcal violations: scale factor is targetKcal / currentKcal.
- * For macro violations: compute the scale factor that would bring the
- * worst-offending macro into tolerance, then apply proportionally to all
- * meals (since proportional scaling preserves macro ratios).
- *
- * Ingredient amounts are also scaled to keep the grocery list consistent.
- *
- * Guard range: 0.75x - 1.25x (slightly wider than old 0.8-1.2 to handle
- * more edge cases while still rejecting unreasonable adjustments).
+ * Backward-compatible wrapper that delegates to the proportional-scaling strategy.
+ * @deprecated Use the strategy cascade in QAValidator instead.
  */
 export function optimizeDay(
   day: CompiledDay,
   violation: Violation
 ): { adjustedDay: CompiledDay; description: string } | null {
-  if (day.dailyTotals.kcal === 0) {
-    return null;
-  }
-
-  let scaleFactor: number;
-  let descriptionContext: string;
-
-  if (violation.type === 'kcal') {
-    const targetKcal = day.targetKcal;
-    const currentKcal = day.dailyTotals.kcal;
-    scaleFactor = targetKcal / currentKcal;
-    descriptionContext = `kcal from ${currentKcal} toward ${targetKcal}`;
-  } else if (violation.type === 'macro' && day.macroTargets) {
-    // For macro violations, find the worst-offending macro and compute the
-    // scale factor that would bring it to its target. Proportional scaling
-    // moves all macros in the same direction, so fixing the worst one tends
-    // to improve the others.
-    const { proteinG: tP, carbsG: tC, fatG: tF } = day.macroTargets;
-    const { proteinG: aP, carbsG: aC, fatG: aF } = day.dailyTotals;
-
-    const candidates: Array<{ name: string; target: number; actual: number; variance: number }> =
-      [];
-    if (tP > 0)
-      candidates.push({
-        name: 'protein',
-        target: tP,
-        actual: aP,
-        variance: Math.abs(aP - tP) / tP,
-      });
-    if (tC > 0)
-      candidates.push({ name: 'carbs', target: tC, actual: aC, variance: Math.abs(aC - tC) / tC });
-    if (tF > 0)
-      candidates.push({ name: 'fat', target: tF, actual: aF, variance: Math.abs(aF - tF) / tF });
-
-    if (candidates.length === 0) {
-      return null;
-    }
-
-    // Pick the macro with the worst variance
-    candidates.sort((a, b) => b.variance - a.variance);
-    const worst = candidates[0];
-
-    if (worst.actual === 0) {
-      return null;
-    }
-
-    scaleFactor = worst.target / worst.actual;
-    descriptionContext = `${worst.name} from ${worst.actual}g toward ${worst.target}g`;
-  } else {
-    return null;
-  }
-
-  // Only scale if it's a reasonable adjustment
-  if (scaleFactor < 0.75 || scaleFactor > 1.25) {
-    return null;
-  }
-
-  // Scale ALL meals proportionally
-  const scaledMeals: CompiledMeal[] = day.meals.map((meal) => ({
-    ...meal,
-    nutrition: {
-      kcal: Math.round(meal.nutrition.kcal * scaleFactor),
-      proteinG: Math.round(meal.nutrition.proteinG * scaleFactor * 10) / 10,
-      carbsG: Math.round(meal.nutrition.carbsG * scaleFactor * 10) / 10,
-      fatG: Math.round(meal.nutrition.fatG * scaleFactor * 10) / 10,
-      fiberG: meal.nutrition.fiberG
-        ? Math.round(meal.nutrition.fiberG * scaleFactor * 10) / 10
-        : undefined,
-    },
-    ingredients: meal.ingredients.map((ing) => ({
-      ...ing,
-      amount: Math.round(ing.amount * scaleFactor * 100) / 100,
-    })),
-  }));
-
-  // Recalculate daily totals
-  const targetKcal = day.targetKcal;
-  const newTotals = recalcDailyTotals(scaledMeals);
-  const newVarianceKcal = newTotals.kcal - targetKcal;
-  const newVariancePercent =
-    targetKcal > 0 ? Math.round((newVarianceKcal / targetKcal) * 10000) / 100 : 0;
-
-  const adjustedDay: CompiledDay = {
-    ...day,
-    meals: scaledMeals,
-    dailyTotals: newTotals,
-    varianceKcal: Math.round(newVarianceKcal),
-    variancePercent: newVariancePercent,
-  };
-
-  const pctChange = Math.round((scaleFactor - 1) * 100);
-  const description = `Day ${day.dayNumber}: Proportionally scaled all ${scaledMeals.length} meals by ${pctChange > 0 ? '+' : ''}${pctChange}% to fix ${descriptionContext}`;
-
-  return { adjustedDay, description };
+  return proportionalScaling.attempt(day, violation);
 }
 
 /**

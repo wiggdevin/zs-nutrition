@@ -14,12 +14,26 @@ import {
   calculateQAScore,
   calculateWeeklyTotals,
 } from './tolerance-checks';
-import { optimizeDay, aggregateGroceryList } from './repair-strategies';
+import { aggregateGroceryList } from './repair-strategies';
+import type { RepairStrategy } from './strategies/index';
+import { proportionalScaling } from './strategies/proportional-scaling';
+import { selectiveScaling } from './strategies/selective-scaling';
+import { snackAdjustment } from './strategies/snack-adjustment';
+import { ingredientSubstitution } from './strategies/ingredient-substitution';
+
+/** Ordered cascade of repair strategies. For each violation, strategies are
+ *  tried in order until one succeeds. */
+const REPAIR_CASCADE: RepairStrategy[] = [
+  proportionalScaling,
+  selectiveScaling,
+  snackAdjustment,
+  ingredientSubstitution,
+];
 
 /**
  * Agent 5: QA Validator
  * Enforces calorie (+/-3%) and per-macro tolerances (P:10%, C:15%, F:15%).
- * Runs a single optimization pass then determines final status.
+ * Runs a cascade of repair strategies then determines final status.
  * Generates QA score 0-100 and aggregates grocery list.
  */
 export class QAValidator {
@@ -27,17 +41,26 @@ export class QAValidator {
     const currentDays = [...compiled.days];
     const adjustmentsMade: string[] = [];
 
-    // Single optimization pass (P2-T07: replaced 3-iteration loop)
+    // Find violations and attempt repair via strategy cascade
     const violations = findViolations(currentDays);
 
     if (violations.length > 0) {
-      // Attempt to fix violations by scaling meal portions
       for (const violation of violations) {
-        const day = currentDays[violation.dayIndex];
-        const adjustment = optimizeDay(day, violation);
-        if (adjustment) {
-          currentDays[violation.dayIndex] = adjustment.adjustedDay;
-          adjustmentsMade.push(adjustment.description);
+        let repaired = false;
+        for (const strategy of REPAIR_CASCADE) {
+          const day = currentDays[violation.dayIndex];
+          const result = strategy.attempt(day, violation);
+          if (result) {
+            currentDays[violation.dayIndex] = result.adjustedDay;
+            adjustmentsMade.push(result.description);
+            repaired = true;
+            break;
+          }
+        }
+        if (!repaired) {
+          adjustmentsMade.push(
+            `Day ${currentDays[violation.dayIndex].dayNumber}: No strategy could fix ${violation.type} violation (${violation.variancePercent}%)`
+          );
         }
       }
     }

@@ -22,6 +22,10 @@ const PlanVersionHistory = dynamic(() => import('./PlanVersionHistory'), {
   ssr: false,
 });
 
+const MealPrepMode = dynamic(() => import('./MealPrepMode'), {
+  ssr: false,
+});
+
 export default function MealPlanPage() {
   const {
     plan,
@@ -51,6 +55,7 @@ export default function MealPlanPage() {
   const scrollRef = useRef<HTMLDivElement>(null);
   const [scrolledStart, setScrolledStart] = useState(false);
   const [scrolledEnd, setScrolledEnd] = useState(false);
+  const [prepMode, setPrepMode] = useState(false);
 
   const handleScroll = useCallback(() => {
     const el = scrollRef.current;
@@ -96,8 +101,25 @@ export default function MealPlanPage() {
         <div className="min-h-screen bg-background text-foreground">
           <DayNavigator activeTab={activeTab} onTabChange={setActiveTab} plan={plan} />
 
+          {/* Prep Mode Toggle */}
+          {activeTab === 'meal-plan' && days.length > 0 && (
+            <div className="mx-auto max-w-[1600px] px-4 pt-4">
+              <button
+                onClick={() => setPrepMode(!prepMode)}
+                className={`px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${
+                  prepMode
+                    ? 'bg-primary text-background'
+                    : 'bg-card border border-border text-foreground hover:bg-muted'
+                }`}
+                data-testid="prep-mode-toggle"
+              >
+                {prepMode ? 'Exit Prep Mode' : 'Prep Mode'}
+              </button>
+            </div>
+          )}
+
           {/* 7-day grid - Responsive layout */}
-          {activeTab === 'meal-plan' && (
+          {activeTab === 'meal-plan' && !prepMode && (
             <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="meal-plan-view">
               <div
                 className={`scroll-fade-container ${scrolledStart ? 'scrolled-start' : ''} ${scrolledEnd ? 'scrolled-end' : ''}`}
@@ -139,6 +161,9 @@ export default function MealPlanPage() {
               )}
             </div>
           )}
+
+          {/* Meal Prep Mode View */}
+          {activeTab === 'meal-plan' && prepMode && <MealPrepMode days={days} />}
 
           {/* Grocery List View */}
           {activeTab === 'grocery-list' && (

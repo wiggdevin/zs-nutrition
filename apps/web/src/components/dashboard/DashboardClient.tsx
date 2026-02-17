@@ -19,6 +19,14 @@ import { QuickActionsSection } from './QuickActionsSection';
 const LogConfirmModal = dynamic(() => import('./LogConfirmModal'), {
   ssr: false,
 });
+const WaterTrackingSection = dynamic(
+  () => import('./WaterTrackingSection').then((m) => ({ default: m.WaterTrackingSection })),
+  { ssr: false }
+);
+const MonthlyAdherenceSection = dynamic(
+  () => import('./MonthlyAdherenceSection').then((m) => ({ default: m.MonthlyAdherenceSection })),
+  { ssr: false }
+);
 
 export default function DashboardClient() {
   const {
@@ -164,10 +172,14 @@ export default function DashboardClient() {
           trainingBonusKcal={trainingBonusKcal}
         />
 
+        <WaterTrackingSection />
+
         <AdherenceScoreSection
           adherenceScore={adherenceScore}
           weeklyAverageAdherence={weeklyAverageAdherence}
         />
+
+        <MonthlyAdherenceSection />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <TodaysPlanSection

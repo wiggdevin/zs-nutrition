@@ -33,6 +33,7 @@ model User {
   calorieAdjustments CalorieAdjustment[]
   fitnessConnections FitnessConnection[]
   activitySyncs      ActivitySync[]
+  waterLogs          WaterLog[]
 }
 
 // ============================================================
@@ -130,6 +131,7 @@ model MealPlan {
   @@index([userId, isActive])
   @@index([userId, status, isActive])
   @@index([userId, isActive, deletedAt])
+  @@index([generatedAt])
 }
 
 // ============================================================
@@ -344,4 +346,19 @@ model ActivitySync {
   @@index([userId, syncDate])
   @@index([connectionId, syncDate])
   @@index([processed])
+}
+
+// ============================================================
+// Water Log (daily water intake tracking)
+// ============================================================
+model WaterLog {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  date      DateTime
+  amountMl  Int
+  source    String   @default("manual") // manual | quick_add
+  createdAt DateTime @default(now())
+
+  @@index([userId, date])
 }
