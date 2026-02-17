@@ -1,8 +1,16 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
 import { recalculateDailyLog, calculateAdherenceScore } from '@/server/utils/daily-log';
+import {
+  apiSuccess,
+  unauthorized,
+  forbidden,
+  notFound,
+  badRequest,
+  serverError,
+} from '@/lib/api-response';
 
 /**
  * PUT /api/tracking/adjust-portion
@@ -17,32 +25,28 @@ export async function PUT(request: NextRequest) {
       ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
-      const status = message === 'Account is deactivated' ? 403 : 401;
-      return NextResponse.json({ error: message }, { status });
+      return message === 'Account is deactivated' ? forbidden(message) : unauthorized(message);
     }
 
     const user = await prisma.user.findUnique({ where: { clerkUserId } });
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return notFound('User not found');
     }
 
     let body: any;
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+      return badRequest('Invalid JSON in request body');
     }
     const { trackedMealId, newPortion } = body;
 
     if (!trackedMealId || typeof trackedMealId !== 'string') {
-      return NextResponse.json({ error: 'trackedMealId is required' }, { status: 400 });
+      return badRequest('trackedMealId is required');
     }
 
     if (typeof newPortion !== 'number' || newPortion <= 0 || newPortion > 10) {
-      return NextResponse.json(
-        { error: 'newPortion must be a number between 0.1 and 10' },
-        { status: 400 }
-      );
+      return badRequest('newPortion must be a number between 0.1 and 10');
     }
 
     // Get the tracked meal, ensuring it belongs to this user
@@ -51,7 +55,7 @@ export async function PUT(request: NextRequest) {
     });
 
     if (!trackedMeal) {
-      return NextResponse.json({ error: 'Tracked meal not found' }, { status: 404 });
+      return notFound('Tracked meal not found');
     }
 
     // Calculate base nutrition values (per 1.0 portion)
@@ -125,7 +129,7 @@ export async function PUT(request: NextRequest) {
       });
     }
 
-    return NextResponse.json({
+    return apiSuccess({
       success: true,
       trackedMeal: {
         id: updatedMeal.id,
@@ -145,6 +149,6 @@ export async function PUT(request: NextRequest) {
     });
   } catch (error) {
     logger.error('Adjust portion error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return serverError();
   }
 }

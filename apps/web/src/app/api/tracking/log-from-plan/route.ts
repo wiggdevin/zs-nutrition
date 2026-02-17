@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { requireActiveUser } from '@/lib/auth';
@@ -6,6 +6,14 @@ import { calculateAdherenceScore } from '@/lib/adherence';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay } from '@/lib/date-utils';
 import { decompressJson } from '@/lib/compression';
+import {
+  apiSuccess,
+  unauthorized,
+  forbidden,
+  notFound,
+  badRequest,
+  serverError,
+} from '@/lib/api-response';
 
 export async function POST(request: NextRequest) {
   try {
@@ -15,8 +23,7 @@ export async function POST(request: NextRequest) {
       ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
-      const status = message === 'Account is deactivated' ? 403 : 401;
-      return NextResponse.json({ error: message }, { status });
+      return message === 'Account is deactivated' ? forbidden(message) : unauthorized(message);
     }
 
     const user = await prisma.user.findUnique({
@@ -24,23 +31,20 @@ export async function POST(request: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return notFound('User not found');
     }
 
     let body: any;
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+      return badRequest('Invalid JSON in request body');
     }
     const { planId, dayNumber, slot, portion: portionInput } = body;
     const portion = typeof portionInput === 'number' && portionInput > 0 ? portionInput : 1.0;
 
     if (!planId || !dayNumber || !slot) {
-      return NextResponse.json(
-        { error: 'Missing required fields: planId, dayNumber, slot' },
-        { status: 400 }
-      );
+      return badRequest('Missing required fields: planId, dayNumber, slot');
     }
 
     // Get the meal plan (exclude soft-deleted)
@@ -49,7 +53,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!mealPlan) {
-      return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });
+      return notFound('Meal plan not found');
     }
 
     // Decompress validatedPlan (handles both compressed and legacy uncompressed data)
@@ -73,7 +77,7 @@ export async function POST(request: NextRequest) {
     const day = validatedPlan?.days?.find((d) => d.dayNumber === dayNumber);
 
     if (!day) {
-      return NextResponse.json({ error: 'Day not found in plan' }, { status: 404 });
+      return notFound('Day not found in plan');
     }
 
     const meal = day.meals?.find(
@@ -81,7 +85,7 @@ export async function POST(request: NextRequest) {
     );
 
     if (!meal) {
-      return NextResponse.json({ error: 'Meal not found in plan day' }, { status: 404 });
+      return notFound('Meal not found in plan day');
     }
 
     // Create today's date at midnight (local time, stored as UTC midnight)
@@ -224,7 +228,7 @@ export async function POST(request: NextRequest) {
           },
         });
         if (existing) {
-          return NextResponse.json({
+          return apiSuccess({
             success: true,
             duplicate: true,
             trackedMeal: {
@@ -244,9 +248,9 @@ export async function POST(request: NextRequest) {
       throw error;
     }
 
-    return NextResponse.json(result);
+    return apiSuccess({ ...result });
   } catch (error) {
     logger.error('Log from plan error:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return serverError();
   }
 }

@@ -1,9 +1,16 @@
-import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
 import { calculateAdherenceScore } from '@/lib/adherence';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay, parseLocalDay } from '@/lib/date-utils';
+import {
+  apiSuccess,
+  unauthorized,
+  forbidden,
+  notFound,
+  badRequest,
+  serverError,
+} from '@/lib/api-response';
 
 /**
  * POST /api/tracking/quick-add
@@ -18,20 +25,19 @@ export async function POST(request: Request) {
       ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
-      const status = message === 'Account is deactivated' ? 403 : 401;
-      return NextResponse.json({ error: message }, { status });
+      return message === 'Account is deactivated' ? forbidden(message) : unauthorized(message);
     }
 
     const user = await prisma.user.findUnique({ where: { clerkUserId } });
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return notFound('User not found');
     }
 
     let body: any;
     try {
       body = await request.json();
     } catch {
-      return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
+      return badRequest('Invalid JSON in request body');
     }
     const { calories, protein, carbs, fat, label, loggedDate } = body;
 
@@ -42,10 +48,7 @@ export async function POST(request: Request) {
       isNaN(Number(calories)) ||
       Number(calories) <= 0
     ) {
-      return NextResponse.json(
-        { error: 'A valid calorie amount is required (must be > 0)' },
-        { status: 400 }
-      );
+      return badRequest('A valid calorie amount is required (must be > 0)');
     }
 
     const kcal = Math.round(Number(calories));
@@ -201,12 +204,9 @@ export async function POST(request: Request) {
       };
     });
 
-    return NextResponse.json(result);
+    return apiSuccess({ ...result });
   } catch (error) {
     logger.error('Quick add error:', error);
-    return NextResponse.json(
-      { success: false, error: 'Something went wrong. Please try again later.' },
-      { status: 500 }
-    );
+    return serverError();
   }
 }

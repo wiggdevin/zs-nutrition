@@ -1,10 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
+import { NextRequest } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { requireActiveUser } from '@/lib/auth';
 import { mealSwapLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/safe-logger';
 import { decompressJson, compressJson } from '@/lib/compression';
+import {
+  apiSuccess,
+  unauthorized,
+  forbidden,
+  notFound,
+  badRequest,
+  serverError,
+} from '@/lib/api-response';
 
 interface MealNutrition {
   kcal: number;
@@ -47,8 +55,7 @@ export async function POST(req: NextRequest) {
       ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
-      const status = message === 'Account is deactivated' ? 403 : 401;
-      return NextResponse.json({ error: message }, { status });
+      return message === 'Account is deactivated' ? forbidden(message) : unauthorized(message);
     }
 
     // Rate limit: 10 meal swaps per hour per user
@@ -61,7 +68,7 @@ export async function POST(req: NextRequest) {
     const { planId, dayNumber, slot, mealIdx, originalMeal, newMeal } = body;
 
     if (!planId || !dayNumber || !slot || mealIdx === undefined || !originalMeal || !newMeal) {
-      return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
+      return badRequest('Missing required fields');
     }
 
     // Verify user owns this plan
@@ -70,7 +77,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
+      return notFound('User not found');
     }
 
     const mealPlan = await prisma.mealPlan.findFirst({
@@ -82,7 +89,7 @@ export async function POST(req: NextRequest) {
     });
 
     if (!mealPlan) {
-      return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });
+      return notFound('Meal plan not found');
     }
 
     // Decompress validatedPlan (handles both compressed and legacy uncompressed data)
@@ -90,18 +97,18 @@ export async function POST(req: NextRequest) {
       mealPlan.validatedPlan
     );
     if (!validatedPlan?.days) {
-      return NextResponse.json({ error: 'Invalid plan data' }, { status: 500 });
+      return serverError('Invalid plan data');
     }
 
     // Find the day and replace the meal
     const dayIdx = validatedPlan.days.findIndex((d: PlanDay) => d.dayNumber === dayNumber);
     if (dayIdx === -1) {
-      return NextResponse.json({ error: 'Day not found in plan' }, { status: 404 });
+      return notFound('Day not found in plan');
     }
 
     const day = validatedPlan.days[dayIdx];
     if (mealIdx < 0 || mealIdx >= day.meals.length) {
-      return NextResponse.json({ error: 'Invalid meal index' }, { status: 400 });
+      return badRequest('Invalid meal index');
     }
 
     // Replace the meal in the plan
@@ -131,14 +138,13 @@ export async function POST(req: NextRequest) {
       }),
     ]);
 
-    const response = NextResponse.json({
+    return apiSuccess({
       success: true,
       message: `Swapped ${originalMeal.name} with ${newMeal.name}`,
       updatedDay: validatedPlan.days[dayIdx],
     });
-    return response;
   } catch (error) {
     logger.error('Error swapping meal:', error);
-    return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
+    return serverError();
   }
 }

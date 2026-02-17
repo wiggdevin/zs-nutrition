@@ -267,6 +267,157 @@ export const trackingRouter = router({
     }),
 
   /**
+   * getMonthlyTrend: Returns all daily summaries for a given month for adherence heatmap.
+   */
+  getMonthlyTrend: protectedProcedure
+    .input(
+      z.object({
+        month: z.number().min(1).max(12),
+        year: z.number().min(2024).max(2030),
+      })
+    )
+    .query(async ({ ctx, input }) => {
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
+
+      const startDate = new Date(Date.UTC(input.year, input.month - 1, 1));
+      const endDate = new Date(Date.UTC(input.year, input.month, 1));
+
+      const dailyLogs = await prisma.dailyLog.findMany({
+        where: {
+          userId: dbUserId,
+          date: { gte: startDate, lt: endDate },
+        },
+        orderBy: { date: 'asc' },
+      });
+
+      const daysTracked = dailyLogs.length;
+      const dailyScores = dailyLogs.map((log) => ({
+        date: log.date.toISOString(),
+        adherenceScore: log.adherenceScore ?? 0,
+        kcal: log.actualKcal,
+        proteinG: log.actualProteinG,
+        carbsG: log.actualCarbsG,
+        fatG: log.actualFatG,
+      }));
+
+      const avgAdherence =
+        daysTracked > 0
+          ? Math.round(dailyScores.reduce((sum, d) => sum + d.adherenceScore, 0) / daysTracked)
+          : 0;
+      const avgKcal =
+        daysTracked > 0
+          ? Math.round(dailyScores.reduce((sum, d) => sum + d.kcal, 0) / daysTracked)
+          : 0;
+      const avgProteinG =
+        daysTracked > 0
+          ? Math.round(dailyScores.reduce((sum, d) => sum + d.proteinG, 0) / daysTracked)
+          : 0;
+      const avgCarbsG =
+        daysTracked > 0
+          ? Math.round(dailyScores.reduce((sum, d) => sum + d.carbsG, 0) / daysTracked)
+          : 0;
+      const avgFatG =
+        daysTracked > 0
+          ? Math.round(dailyScores.reduce((sum, d) => sum + d.fatG, 0) / daysTracked)
+          : 0;
+
+      let bestStreak = 0;
+      let currentStreak = 0;
+      for (const score of dailyScores) {
+        if (score.adherenceScore >= 70) {
+          currentStreak++;
+          bestStreak = Math.max(bestStreak, currentStreak);
+        } else {
+          currentStreak = 0;
+        }
+      }
+
+      return {
+        month: input.month,
+        year: input.year,
+        avgAdherence,
+        daysTracked,
+        dailyScores,
+        avgKcal,
+        avgProteinG,
+        avgCarbsG,
+        avgFatG,
+        bestStreak,
+      };
+    }),
+
+  /**
+   * getWaterLog: Returns water intake entries for a given date.
+   */
+  getWaterLog: protectedProcedure
+    .input(
+      z
+        .object({
+          date: z.string().optional(),
+        })
+        .optional()
+    )
+    .query(async ({ ctx, input }) => {
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
+      const dateOnly = input?.date ? parseLocalDay(input.date) : toLocalDay();
+
+      const entries = await prisma.waterLog.findMany({
+        where: { userId: dbUserId, date: dateOnly },
+        orderBy: { createdAt: 'asc' },
+      });
+
+      const totalMl = entries.reduce((sum, e) => sum + e.amountMl, 0);
+
+      return {
+        date: dateOnly.toISOString(),
+        totalMl,
+        entries: entries.map((e) => ({
+          id: e.id,
+          amountMl: e.amountMl,
+          source: e.source,
+          createdAt: e.createdAt,
+        })),
+      };
+    }),
+
+  /**
+   * logWater: Add a water intake entry for a given date.
+   */
+  logWater: protectedProcedure
+    .input(
+      z.object({
+        amountMl: z.number().int().min(1).max(5000),
+        date: z.string().optional(),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const { prisma } = ctx;
+      const dbUserId = ctx.dbUserId;
+      const dateOnly = input.date ? parseLocalDay(input.date) : toLocalDay();
+
+      const entry = await prisma.waterLog.create({
+        data: {
+          userId: dbUserId,
+          date: dateOnly,
+          amountMl: input.amountMl,
+          source: 'manual',
+        },
+      });
+
+      const allEntries = await prisma.waterLog.findMany({
+        where: { userId: dbUserId, date: dateOnly },
+      });
+      const totalMl = allEntries.reduce((sum, e) => sum + e.amountMl, 0);
+
+      return {
+        entry: { id: entry.id, amountMl: entry.amountMl, createdAt: entry.createdAt },
+        totalMl,
+      };
+    }),
+
+  /**
    * logMeal: Log a meal with macro tracking. Validates all nutritional values are non-negative.
    */
   logMeal: protectedProcedure

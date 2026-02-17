@@ -100,6 +100,12 @@ export const userRouter = router({
       const goalKcal = calculateGoalCalories(tdee, input.goalType, input.goalRate);
       const macros = calculateMacroTargets(goalKcal, input.macroStyle);
 
+      // Deactivate any existing active profiles before creating new one
+      await ctx.prisma.userProfile.updateMany({
+        where: { userId: dbUserId, isActive: true },
+        data: { isActive: false },
+      });
+
       // Create user profile - Json fields accept arrays directly
       const profile = await ctx.prisma.userProfile.create({
         data: {
