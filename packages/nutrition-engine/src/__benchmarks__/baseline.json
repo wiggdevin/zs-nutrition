@@ -1,0 +1,602 @@
+{
+  "metadata": {
+    "timestamp": "2026-02-17T09:18:09.408Z",
+    "mode": "mock",
+    "iterations": 3,
+    "fixtures": ["A", "B", "C", "D"],
+    "nodeVersion": "v22.14.0",
+    "platform": "darwin"
+  },
+  "results": [
+    {
+      "fixtureId": "A",
+      "fixtureLabel": "Cut Male (Katch-McArdle, high_protein, 4 meals)",
+      "pipelineMode": "full",
+      "samples": [
+        {
+          "iteration": 1,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2764,
+          "agentTimingsMs": {
+            "intakeNormalizer": 1,
+            "metabolicCalculator": 1,
+            "recipeCurator": 218,
+            "nutritionCompiler": 4,
+            "qaValidator": 8,
+            "brandRenderer": 2532
+          }
+        },
+        {
+          "iteration": 1,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2123,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 117,
+            "nutritionCompiler": 2,
+            "qaValidator": 2,
+            "brandRenderer": 2002
+          }
+        },
+        {
+          "iteration": 2,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2198,
+          "agentTimingsMs": {
+            "intakeNormalizer": 1,
+            "metabolicCalculator": 0,
+            "recipeCurator": 185,
+            "nutritionCompiler": 2,
+            "qaValidator": 0,
+            "brandRenderer": 2010
+          }
+        },
+        {
+          "iteration": 2,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2123,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 105,
+            "nutritionCompiler": 2,
+            "qaValidator": 1,
+            "brandRenderer": 2015
+          }
+        },
+        {
+          "iteration": 3,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2123,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 123,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1998
+          }
+        },
+        {
+          "iteration": 3,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2129,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 136,
+            "nutritionCompiler": 2,
+            "qaValidator": 0,
+            "brandRenderer": 1991
+          }
+        }
+      ],
+      "stats": {
+        "totalTime": {
+          "mean": 2243,
+          "p50": 2126,
+          "p95": 2623,
+          "min": 2123,
+          "max": 2764,
+          "count": 6
+        },
+        "agents": {
+          "intakeNormalizer": {
+            "mean": 0,
+            "p50": 0,
+            "p95": 1,
+            "min": 0,
+            "max": 1,
+            "count": 6
+          },
+          "metabolicCalculator": {
+            "mean": 0,
+            "p50": 0,
+            "p95": 1,
+            "min": 0,
+            "max": 1,
+            "count": 6
+          },
+          "recipeCurator": {
+            "mean": 147,
+            "p50": 130,
+            "p95": 210,
+            "min": 105,
+            "max": 218,
+            "count": 6
+          },
+          "nutritionCompiler": {
+            "mean": 2,
+            "p50": 2,
+            "p95": 4,
+            "min": 1,
+            "max": 4,
+            "count": 6
+          },
+          "qaValidator": {
+            "mean": 2,
+            "p50": 1,
+            "p95": 7,
+            "min": 0,
+            "max": 8,
+            "count": 6
+          },
+          "brandRenderer": {
+            "mean": 2091,
+            "p50": 2006,
+            "p95": 2403,
+            "min": 1991,
+            "max": 2532,
+            "count": 6
+          }
+        }
+      }
+    },
+    {
+      "fixtureId": "B",
+      "fixtureLabel": "Maintain Female Vegan (Mifflin, balanced, allergies)",
+      "pipelineMode": "full",
+      "samples": [
+        {
+          "iteration": 1,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2076,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 108,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1966
+          }
+        },
+        {
+          "iteration": 1,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2083,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 114,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1967
+          }
+        },
+        {
+          "iteration": 2,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2097,
+          "agentTimingsMs": {
+            "intakeNormalizer": 1,
+            "metabolicCalculator": 0,
+            "recipeCurator": 122,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1972
+          }
+        },
+        {
+          "iteration": 2,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2093,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 122,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1969
+          }
+        },
+        {
+          "iteration": 3,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2081,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 105,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1974
+          }
+        },
+        {
+          "iteration": 3,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2083,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 123,
+            "nutritionCompiler": 2,
+            "qaValidator": 0,
+            "brandRenderer": 1958
+          }
+        }
+      ],
+      "stats": {
+        "totalTime": {
+          "mean": 2086,
+          "p50": 2083,
+          "p95": 2096,
+          "min": 2076,
+          "max": 2097,
+          "count": 6
+        },
+        "agents": {
+          "intakeNormalizer": {
+            "mean": 0,
+            "p50": 0,
+            "p95": 1,
+            "min": 0,
+            "max": 1,
+            "count": 6
+          },
+          "metabolicCalculator": {
+            "mean": 0,
+            "p50": 0,
+            "p95": 0,
+            "min": 0,
+            "max": 0,
+            "count": 6
+          },
+          "recipeCurator": {
+            "mean": 116,
+            "p50": 118,
+            "p95": 123,
+            "min": 105,
+            "max": 123,
+            "count": 6
+          },
+          "nutritionCompiler": {
+            "mean": 1,
+            "p50": 1,
+            "p95": 2,
+            "min": 1,
+            "max": 2,
+            "count": 6
+          },
+          "qaValidator": {
+            "mean": 1,
+            "p50": 1,
+            "p95": 1,
+            "min": 0,
+            "max": 1,
+            "count": 6
+          },
+          "brandRenderer": {
+            "mean": 1968,
+            "p50": 1968,
+            "p95": 1974,
+            "min": 1958,
+            "max": 1974,
+            "count": 6
+          }
+        }
+      }
+    },
+    {
+      "fixtureId": "C",
+      "fixtureLabel": "Bulk Pescatarian (Mifflin, very_active, 5 meals)",
+      "pipelineMode": "full",
+      "samples": [
+        {
+          "iteration": 1,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2420,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 1,
+            "recipeCurator": 107,
+            "nutritionCompiler": 2,
+            "qaValidator": 1,
+            "brandRenderer": 2309
+          }
+        },
+        {
+          "iteration": 1,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2413,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 108,
+            "nutritionCompiler": 2,
+            "qaValidator": 1,
+            "brandRenderer": 2302
+          }
+        },
+        {
+          "iteration": 2,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2498,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 1,
+            "recipeCurator": 168,
+            "nutritionCompiler": 2,
+            "qaValidator": 1,
+            "brandRenderer": 2326
+          }
+        },
+        {
+          "iteration": 2,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2469,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 115,
+            "nutritionCompiler": 2,
+            "qaValidator": 1,
+            "brandRenderer": 2351
+          }
+        },
+        {
+          "iteration": 3,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 2466,
+          "agentTimingsMs": {
+            "intakeNormalizer": 1,
+            "metabolicCalculator": 0,
+            "recipeCurator": 110,
+            "nutritionCompiler": 2,
+            "qaValidator": 1,
+            "brandRenderer": 2352
+          }
+        },
+        {
+          "iteration": 3,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 2481,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "recipeCurator": 131,
+            "nutritionCompiler": 2,
+            "qaValidator": 1,
+            "brandRenderer": 2347
+          }
+        }
+      ],
+      "stats": {
+        "totalTime": {
+          "mean": 2458,
+          "p50": 2468,
+          "p95": 2494,
+          "min": 2413,
+          "max": 2498,
+          "count": 6
+        },
+        "agents": {
+          "intakeNormalizer": {
+            "mean": 0,
+            "p50": 0,
+            "p95": 1,
+            "min": 0,
+            "max": 1,
+            "count": 6
+          },
+          "metabolicCalculator": {
+            "mean": 0,
+            "p50": 0,
+            "p95": 1,
+            "min": 0,
+            "max": 1,
+            "count": 6
+          },
+          "recipeCurator": {
+            "mean": 123,
+            "p50": 113,
+            "p95": 159,
+            "min": 107,
+            "max": 168,
+            "count": 6
+          },
+          "nutritionCompiler": {
+            "mean": 2,
+            "p50": 2,
+            "p95": 2,
+            "min": 2,
+            "max": 2,
+            "count": 6
+          },
+          "qaValidator": {
+            "mean": 1,
+            "p50": 1,
+            "p95": 1,
+            "min": 1,
+            "max": 1,
+            "count": 6
+          },
+          "brandRenderer": {
+            "mean": 2331,
+            "p50": 2337,
+            "p95": 2352,
+            "min": 2302,
+            "max": 2352,
+            "count": 6
+          }
+        }
+      }
+    },
+    {
+      "fixtureId": "D",
+      "fixtureLabel": "Fast Path (skip Agent 3, reuse draft)",
+      "pipelineMode": "fast",
+      "samples": [
+        {
+          "iteration": 1,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 1806,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "nutritionCompiler": 1,
+            "qaValidator": 0,
+            "brandRenderer": 1804
+          }
+        },
+        {
+          "iteration": 1,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 1834,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1832
+          }
+        },
+        {
+          "iteration": 2,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 1829,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1827
+          }
+        },
+        {
+          "iteration": 2,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 1808,
+          "agentTimingsMs": {
+            "intakeNormalizer": 1,
+            "metabolicCalculator": 0,
+            "nutritionCompiler": 1,
+            "qaValidator": 0,
+            "brandRenderer": 1806
+          }
+        },
+        {
+          "iteration": 3,
+          "cacheMode": "cold",
+          "success": true,
+          "totalTimeMs": 1798,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1796
+          }
+        },
+        {
+          "iteration": 3,
+          "cacheMode": "warm",
+          "success": true,
+          "totalTimeMs": 1811,
+          "agentTimingsMs": {
+            "intakeNormalizer": 0,
+            "metabolicCalculator": 0,
+            "nutritionCompiler": 1,
+            "qaValidator": 1,
+            "brandRenderer": 1809
+          }
+        }
+      ],
+      "stats": {
+        "totalTime": {
+          "mean": 1814,
+          "p50": 1810,
+          "p95": 1833,
+          "min": 1798,
+          "max": 1834,
+          "count": 6
+        },
+        "agents": {
+          "intakeNormalizer": {
+            "mean": 0,
+            "p50": 0,
+            "p95": 1,
+            "min": 0,
+            "max": 1,
+            "count": 6
+          },
+          "metabolicCalculator": {
+            "mean": 0,
+            "p50": 0,
+            "p95": 0,
+            "min": 0,
+            "max": 0,
+            "count": 6
+          },
+          "nutritionCompiler": {
+            "mean": 1,
+            "p50": 1,
+            "p95": 1,
+            "min": 1,
+            "max": 1,
+            "count": 6
+          },
+          "qaValidator": {
+            "mean": 1,
+            "p50": 1,
+            "p95": 1,
+            "min": 0,
+            "max": 1,
+            "count": 6
+          },
+          "brandRenderer": {
+            "mean": 1812,
+            "p50": 1808,
+            "p95": 1831,
+            "min": 1796,
+            "max": 1832,
+            "count": 6
+          }
+        }
+      }
+    }
+  ]
+}
