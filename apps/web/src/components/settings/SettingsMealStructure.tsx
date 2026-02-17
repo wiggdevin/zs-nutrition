@@ -214,29 +214,15 @@ export default function SettingsMealStructure() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Loading meal structure...</span>
-        </div>
+      <div className="flex items-center gap-3 py-2">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-sm text-muted-foreground">Loading meal structure...</span>
       </div>
     );
   }
 
   return (
-    <div
-      className="rounded-2xl border border-border bg-card p-6"
-      data-testid="meal-structure-section"
-    >
-      <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          <span className="text-primary">{'///'}</span> Meal Structure
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Configure your macro split, cuisine preferences, and meal frequency
-        </p>
-      </div>
-
+    <div data-testid="meal-structure-section">
       <div className="space-y-5">
         {/* Macro Style */}
         <div>

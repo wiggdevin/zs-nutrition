@@ -51,6 +51,8 @@
   --font-mono:
     var(--font-jetbrains), 'JetBrains Mono', ui-monospace, SFMono-Regular, 'SF Mono', Menlo,
     Consolas, monospace;
+  --animate-accordion-down: accordion-down 200ms ease-out;
+  --animate-accordion-up: accordion-up 200ms ease-out;
 }
 
 /*
@@ -422,6 +424,52 @@ body {
   animation: confetti-fall linear forwards;
   pointer-events: none;
   z-index: 100;
+}
+
+/* Accordion animations — powered by Radix --radix-accordion-content-height */
+@keyframes accordion-down {
+  from {
+    height: 0;
+  }
+  to {
+    height: var(--radix-accordion-content-height);
+  }
+}
+
+@keyframes accordion-up {
+  from {
+    height: var(--radix-accordion-content-height);
+  }
+  to {
+    height: 0;
+  }
+}
+
+/* Clerk UserProfile embed overrides for settings page */
+.cl-userProfile-root .cl-rootBox {
+  width: 100%;
+}
+.cl-userProfile-root .cl-cardBox {
+  width: 100%;
+  box-shadow: none;
+}
+.cl-userProfile-root .cl-card {
+  background: transparent !important;
+  box-shadow: none !important;
+  border: none !important;
+  width: 100%;
+}
+.cl-userProfile-root .cl-navbar {
+  display: none;
+}
+.cl-userProfile-root .cl-navbarMobileMenuButton {
+  display: none;
+}
+.cl-userProfile-root .cl-pageScrollBox {
+  padding: 0;
+}
+.cl-userProfile-root .cl-profileSection {
+  border-color: var(--border);
 }
 
 /* Landing page animations */

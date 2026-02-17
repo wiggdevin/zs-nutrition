@@ -193,26 +193,15 @@ export default function SettingsActivity() {
 
   if (loading) {
     return (
-      <div className="rounded-2xl border border-border bg-card p-6">
-        <div className="flex items-center gap-3">
-          <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
-          <span className="text-sm text-muted-foreground">Loading activity settings...</span>
-        </div>
+      <div className="flex items-center gap-3 py-2">
+        <div className="h-5 w-5 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+        <span className="text-sm text-muted-foreground">Loading activity settings...</span>
       </div>
     );
   }
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6" data-testid="activity-section">
-      <div className="mb-6">
-        <h2 className="text-xs font-mono tracking-wider uppercase text-muted-foreground">
-          <span className="text-primary">{'///'}</span> Activity & Training
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          Update your activity level, training schedule, and cooking preferences
-        </p>
-      </div>
-
+    <div data-testid="activity-section">
       <div className="space-y-5">
         {/* Activity Level */}
         <div>
