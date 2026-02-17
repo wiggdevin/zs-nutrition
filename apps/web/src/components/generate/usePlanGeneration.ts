@@ -26,11 +26,29 @@ export function usePlanGeneration() {
   const reconnectAttemptsRef = useRef(0);
   const reconnectTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
-  // Check if user has completed onboarding
+  // Check if user has completed onboarding (localStorage first, then DB fallback)
   useEffect(() => {
     const profile = localStorage.getItem('zsn_user_profile');
     const onboardingComplete = localStorage.getItem('zsn_onboarding_complete');
-    setHasProfile(!!profile && onboardingComplete === 'true');
+
+    if (profile && onboardingComplete === 'true') {
+      setHasProfile(true);
+      return;
+    }
+
+    // localStorage was cleared (e.g. after sign-out/sign-in) — check the database
+    fetch('/api/onboarding')
+      .then((res) => (res.ok ? res.json() : null))
+      .then((data) => {
+        if (data?.completed) {
+          // Restore localStorage so subsequent checks are instant
+          localStorage.setItem('zsn_onboarding_complete', 'true');
+          setHasProfile(true);
+        }
+      })
+      .catch(() => {
+        // Network error — leave hasProfile false
+      });
   }, []);
 
   const startPolling = useCallback((pollJobId: string) => {
@@ -211,13 +229,6 @@ export function usePlanGeneration() {
     setStatus('generating');
     setCurrentAgent(0);
     setErrorMessage(null);
-
-    const profileStr = localStorage.getItem('zsn_user_profile');
-    if (!profileStr) {
-      setErrorMessage('Profile data not found. Please complete onboarding first.');
-      setStatus('failed');
-      return;
-    }
 
     try {
       const res = await fetch('/api/plan/generate', {
