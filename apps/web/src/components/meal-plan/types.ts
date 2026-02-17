@@ -44,6 +44,7 @@ export interface GroceryCategory {
 
 export interface PlanData {
   id: string;
+  version?: number;
   dailyKcalTarget: number | null;
   dailyProteinG: number | null;
   dailyCarbsG: number | null;

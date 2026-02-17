@@ -33,6 +33,7 @@
     "@upstash/ratelimit": "^2.0.8",
     "@upstash/redis": "^1.36.2",
     "@vercel/blob": "^2.0.1",
+    "@vercel/edge-config": "^1.4.0",
     "@zero-sum/nutrition-engine": "workspace:*",
     "@zsn/queue-config": "workspace:*",
     "@zsn/shared-types": "workspace:*",

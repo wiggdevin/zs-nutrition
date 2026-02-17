@@ -1,13 +1,83 @@
-import type { MealPlanValidated } from '../../types/schemas';
-import { generateGroceryCategory } from './formatters';
+import type { MealPlanValidated, GroceryCategory } from '../../types/schemas';
+import { generateGroceryCategory, escapeHtml, formatAmount } from './formatters';
+
+/**
+ * Items commonly already in a home pantry. Matched case-insensitively.
+ */
+const PANTRY_STAPLES = new Set([
+  'salt',
+  'pepper',
+  'black pepper',
+  'olive oil',
+  'cooking spray',
+  'water',
+  'ice',
+  'vegetable oil',
+  'canola oil',
+  'nonstick spray',
+]);
+
+function isPantryStaple(name: string): boolean {
+  return PANTRY_STAPLES.has(name.toLowerCase().trim());
+}
+
+/**
+ * Separate pantry staples from items to buy, returning modified categories
+ * and a flat list of staple items.
+ */
+function separatePantryStaples(groceryList: GroceryCategory[]): {
+  filteredCategories: GroceryCategory[];
+  pantryItems: Array<{ name: string; amount: number; unit: string }>;
+} {
+  const pantryItems: Array<{ name: string; amount: number; unit: string }> = [];
+  const filteredCategories: GroceryCategory[] = [];
+
+  for (const cat of groceryList) {
+    const staples = cat.items.filter((item) => isPantryStaple(item.name));
+    const toBuy = cat.items.filter((item) => !isPantryStaple(item.name));
+    pantryItems.push(...staples);
+    if (toBuy.length > 0) {
+      filteredCategories.push({ ...cat, items: toBuy });
+    }
+  }
+
+  return { filteredCategories, pantryItems };
+}
 
 /**
  * Generate grocery list HTML organized by store section
  */
 export function generateGroceryHtml(plan: MealPlanValidated): string {
-  const categoriesHtml = plan.groceryList.map((cat) => generateGroceryCategory(cat)).join('\n');
+  const { filteredCategories, pantryItems } = separatePantryStaples(plan.groceryList);
+
+  const categoriesHtml = filteredCategories.map((cat) => generateGroceryCategory(cat)).join('\n');
+
+  const pantryHtml =
+    pantryItems.length > 0
+      ? `<div class="category pantry-staples">
+        <div class="category-header" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
+          <span>🏠 Pantry Staples (likely on hand)</span>
+          <span class="category-count">${pantryItems.length} items</span>
+        </div>
+        <div class="items-list">
+          ${pantryItems
+            .map(
+              (item) => `
+          <div class="item pantry-item">
+            <div style="display: flex; align-items: center; flex: 1;">
+              <input type="checkbox" class="checkbox" checked disabled />
+              <span class="item-name" style="color: #94a3b8;">${escapeHtml(item.name)}</span>
+            </div>
+            <span class="item-quantity" style="background: #f1f5f9; color: #94a3b8;">${formatAmount(item.amount)} ${escapeHtml(item.unit)}</span>
+          </div>`
+            )
+            .join('\n          ')}
+        </div>
+      </div>`
+      : '';
 
   const totalItems = plan.groceryList.reduce((sum, cat) => sum + cat.items.length, 0);
+  const toBuyCount = totalItems - pantryItems.length;
 
   return `
 <!DOCTYPE html>
@@ -145,11 +215,11 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
 
     <div class="summary">
       <div class="summary-item">
-        <div class="summary-value">${totalItems}</div>
-        <div class="summary-label">Total Items</div>
+        <div class="summary-value">${toBuyCount}</div>
+        <div class="summary-label">Items to Buy</div>
       </div>
       <div class="summary-item">
-        <div class="summary-value">${plan.groceryList.length}</div>
+        <div class="summary-value">${filteredCategories.length}</div>
         <div class="summary-label">Categories</div>
       </div>
       <div class="summary-item">
@@ -160,6 +230,7 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
 
     <div class="categories">
       ${categoriesHtml}
+      ${pantryHtml}
     </div>
   </div>
 </body>

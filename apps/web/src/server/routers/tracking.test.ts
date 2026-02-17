@@ -134,7 +134,7 @@ describe('tracking router', () => {
       const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
       const caller = createCaller(ctx);
 
-      const startDate = new Date('2026-02-01');
+      const _startDate = new Date('2026-02-01');
       const mockDailyLogs = [
         {
           id: 'log-1',

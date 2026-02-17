@@ -10,7 +10,10 @@
     "dev": "tsc --watch",
     "lint": "eslint src/",
     "test": "vitest run",
-    "test:watch": "vitest"
+    "test:watch": "vitest",
+    "benchmark": "tsx src/__benchmarks__/run-benchmark.ts",
+    "benchmark:baseline": "tsx src/__benchmarks__/run-benchmark.ts --output=src/__benchmarks__/baseline.json",
+    "benchmark:compare": "tsx src/__benchmarks__/compare.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.72.1",
@@ -29,6 +32,7 @@
     "prettier": "^3.4.2",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.19.1",
+    "tsx": "^4.19.0",
     "vitest": "^4.0.18"
   }
 }

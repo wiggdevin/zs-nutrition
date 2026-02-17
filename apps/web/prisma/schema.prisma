@@ -122,6 +122,7 @@ model MealPlan {
   isActive          Boolean     @default(true)
   deletedAt         DateTime? // Soft delete timestamp - null means not deleted
   generatedAt       DateTime    @default(now())
+  versionedAt       DateTime?   @default(now())
 
   swaps        MealSwap[]
   trackedMeals TrackedMeal[]

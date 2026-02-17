@@ -62,8 +62,11 @@ export async function GET(request: NextRequest) {
       }
     }
 
+    // Decompress intakeData (handles both compressed and raw formats transparently)
+    const intakeData = decompressJson(job.intakeData);
+
     return NextResponse.json({
-      intakeData: job.intakeData,
+      intakeData,
       ...(draftData ? { draftData } : {}),
     });
   } catch (error) {

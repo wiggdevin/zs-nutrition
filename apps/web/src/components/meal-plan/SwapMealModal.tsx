@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModal } from '@/hooks/useModal';
 import type { Meal, SwapTarget } from './types';
 
 interface SwapMealModalProps {
@@ -18,6 +19,7 @@ export function SwapMealModal({
   onSelect,
   onClose,
 }: SwapMealModalProps) {
+  const { modalRef, handleBackdropClick } = useModal(onClose);
   const [selecting, setSelecting] = useState(false);
 
   const handleSelect = (alt: Meal) => {
@@ -30,8 +32,12 @@ export function SwapMealModal({
     <div
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
       data-testid="swap-modal"
+      onClick={handleBackdropClick}
     >
-      <div className="relative mx-4 w-full max-w-lg rounded-xl border border-border card-elevation-modal">
+      <div
+        ref={modalRef}
+        className="relative mx-4 w-full max-w-lg max-w-[95vw] max-h-[90vh] overflow-y-auto rounded-xl border border-border card-elevation-modal"
+      >
         {/* Modal header */}
         <div className="flex items-center justify-between border-b border-border px-5 py-4">
           <div>

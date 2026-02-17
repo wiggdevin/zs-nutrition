@@ -2,50 +2,71 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkRedisHealth } from '@/lib/redis';
 
-const startTime = Date.now();
+const HEALTH_CHECK_TIMEOUT_MS = 5000;
+const APP_VERSION = process.env.npm_package_version || '0.1.0';
+
+type HealthStatus = 'ok' | 'degraded' | 'error';
+
+interface HealthResponse {
+  status: HealthStatus;
+  db: boolean;
+  redis: boolean;
+  timestamp: string;
+  version: string;
+}
+
+function withTimeout<T>(promise: Promise<T>, ms: number, fallback: T): Promise<T> {
+  return Promise.race([
+    promise,
+    new Promise<T>((resolve) => setTimeout(() => resolve(fallback), ms)),
+  ]);
+}
+
+async function checkDatabase(): Promise<boolean> {
+  try {
+    await prisma.$queryRawUnsafe('SELECT 1');
+    return true;
+  } catch {
+    return false;
+  }
+}
+
+async function checkRedis(): Promise<boolean> {
+  try {
+    return await checkRedisHealth();
+  } catch {
+    return false;
+  }
+}
 
 export async function GET() {
-  const timestamp = new Date().toISOString();
-  const uptimeSeconds = Math.floor((Date.now() - startTime) / 1000);
+  const [dbHealthy, redisHealthy] = await withTimeout(
+    Promise.all([checkDatabase(), checkRedis()]),
+    HEALTH_CHECK_TIMEOUT_MS,
+    [false, false]
+  );
 
-  // Check database
-  let dbStatus: 'ok' | 'down' = 'down';
-  try {
-    await prisma.$queryRaw`SELECT 1`;
-    dbStatus = 'ok';
-  } catch {
-    dbStatus = 'down';
+  let status: HealthStatus;
+  if (dbHealthy && redisHealthy) {
+    status = 'ok';
+  } else if (dbHealthy) {
+    status = 'degraded';
+  } else {
+    status = 'error';
   }
 
-  // Check Redis (optional service)
-  let redisStatus: 'ok' | 'down' | 'not_configured' = 'not_configured';
-  if (process.env.REDIS_URL) {
-    redisStatus = (await checkRedisHealth()) ? 'ok' : 'down';
-  }
-
-  // Pipeline readiness: check that critical env vars exist (not their values)
-  const redisUrl = process.env.REDIS_URL || '';
-  const pipeline = {
-    redisConfigured: !!process.env.REDIS_URL,
-    redisTls: redisUrl.startsWith('rediss://'),
-    internalApiSecret: !!process.env.INTERNAL_API_SECRET,
-    anthropicApiKey: !!process.env.ANTHROPIC_API_KEY,
+  const response: HealthResponse = {
+    status,
+    db: dbHealthy,
+    redis: redisHealthy,
+    timestamp: new Date().toISOString(),
+    version: APP_VERSION,
   };
 
-  const overallStatus = dbStatus === 'ok' ? 'ok' : 'degraded';
-  const httpStatus = dbStatus === 'ok' ? 200 : 503;
-
-  return NextResponse.json(
-    {
-      status: overallStatus,
-      timestamp,
-      uptime: uptimeSeconds,
-      services: {
-        database: dbStatus,
-        redis: redisStatus,
-      },
-      pipeline,
+  return NextResponse.json(response, {
+    status: status === 'error' ? 503 : 200,
+    headers: {
+      'Cache-Control': 'no-store, no-cache, must-revalidate',
     },
-    { status: httpStatus }
-  );
+  });
 }
