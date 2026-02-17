@@ -86,6 +86,7 @@ export async function GET() {
       hasActivePlan: true,
       plan: {
         id: activePlan.id,
+        version: activePlan.version,
         dailyKcalTarget: activePlan.dailyKcalTarget,
         dailyProteinG: activePlan.dailyProteinG,
         dailyCarbsG: activePlan.dailyCarbsG,

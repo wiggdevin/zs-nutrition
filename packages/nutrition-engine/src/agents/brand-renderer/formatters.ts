@@ -15,6 +15,76 @@ export function escapeHtml(str: string): string {
 }
 
 /**
+ * Common fraction mappings for readable ingredient amounts.
+ */
+const FRACTION_MAP: [number, string][] = [
+  [0.25, '1/4'],
+  [0.33, '1/3'],
+  [0.5, '1/2'],
+  [0.67, '2/3'],
+  [0.75, '3/4'],
+];
+
+/**
+ * Format a numeric amount into a human-readable string with fractions.
+ * Examples: 0.5 → "1/2", 1.5 → "1 1/2", 2 → "2", 0.33 → "1/3"
+ */
+export function formatAmount(amount: number): string {
+  if (amount <= 0) return '0';
+
+  const whole = Math.floor(amount);
+  const decimal = amount - whole;
+
+  // Pure whole number
+  if (decimal < 0.01) return whole.toString();
+
+  // Find closest fraction (within tolerance of 0.05)
+  const fraction = FRACTION_MAP.find(([val]) => Math.abs(decimal - val) < 0.05);
+
+  if (fraction) {
+    return whole > 0 ? `${whole} ${fraction[1]}` : fraction[1];
+  }
+
+  // No matching fraction — use one decimal place
+  return amount % 1 === 0 ? amount.toString() : amount.toFixed(1);
+}
+
+/**
+ * Cooking verbs to highlight in instruction steps.
+ */
+const COOKING_VERBS = [
+  'saut[eé]',
+  'bake',
+  'grill',
+  'roast',
+  'simmer',
+  'boil',
+  'fry',
+  'steam',
+  'broil',
+  'poach',
+  'braise',
+  'blanch',
+  'sear',
+  'whisk',
+  'fold',
+  'dice',
+  'mince',
+  'chop',
+  'slice',
+  'julienne',
+];
+
+const COOKING_VERB_REGEX = new RegExp(`\\b(${COOKING_VERBS.join('|')})(s|ed|ing|e)?\\b`, 'gi');
+
+/**
+ * Highlight cooking verbs in an instruction step with a CSS class.
+ */
+function highlightCookingVerbs(step: string): string {
+  return step.replace(COOKING_VERB_REGEX, '<span class="cooking-verb">$&</span>');
+}
+
+/**
  * Get emoji for grocery category
  */
 export function getCategoryEmoji(category: string): string {
@@ -60,12 +130,22 @@ export function generateDayCard(day: CompiledDay): string {
           ? `<div class="meal-time">⏱️ Prep: ${meal.prepTimeMin}min • Cook: ${meal.cookTimeMin}min</div>`
           : '';
 
+      const primaryProteinLower = meal.primaryProtein.toLowerCase();
       const ingredientsHtml =
         meal.ingredients.length > 0
           ? `<div class="meal-ingredients">
               <div class="ingredients-title">Ingredients:</div>
               <ul class="ingredients-list">
-                ${meal.ingredients.map((ing) => `<li>${ing.amount} ${escapeHtml(ing.unit)} ${escapeHtml(ing.name)}</li>`).join('\n                ')}
+                ${meal.ingredients
+                  .map((ing) => {
+                    const isPrimary =
+                      primaryProteinLower && ing.name.toLowerCase().includes(primaryProteinLower);
+                    const nameHtml = isPrimary
+                      ? `<strong>${escapeHtml(ing.name)}</strong>`
+                      : escapeHtml(ing.name);
+                    return `<li>${formatAmount(ing.amount)} ${escapeHtml(ing.unit)} ${nameHtml}</li>`;
+                  })
+                  .join('\n                ')}
               </ul>
             </div>`
           : '';
@@ -75,7 +155,7 @@ export function generateDayCard(day: CompiledDay): string {
           ? `<div class="meal-instructions">
               <div class="instructions-title">Instructions:</div>
               <ol class="instructions-list">
-                ${meal.instructions.map((step) => `<li>${escapeHtml(step)}</li>`).join('\n                ')}
+                ${meal.instructions.map((step, i) => `<li><span class="step-number">${i + 1}</span>${highlightCookingVerbs(escapeHtml(step))}</li>`).join('\n                ')}
               </ol>
             </div>`
           : '';
@@ -136,7 +216,7 @@ export function generateGroceryCategory(category: GroceryCategory): string {
           <input type="checkbox" class="checkbox" />
           <span class="item-name">${escapeHtml(item.name)}</span>
         </div>
-        <span class="item-quantity">${item.amount} ${escapeHtml(item.unit)}</span>
+        <span class="item-quantity">${formatAmount(item.amount)} ${escapeHtml(item.unit)}</span>
       </div>
     `
     )

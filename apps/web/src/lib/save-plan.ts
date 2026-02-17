@@ -5,7 +5,7 @@ import { uploadPlanPdf } from '@/lib/upload-pdf';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay, addDays } from '@/lib/date-utils';
 import { isUniqueConstraintError } from '@/lib/plan-utils';
-import { compressJson, jsonSizeBytes } from '@/lib/compression';
+import { compressJson, decompressJson, jsonSizeBytes } from '@/lib/compression';
 
 /**
  * Saves a completed plan generation result to the MealPlan table.
@@ -112,9 +112,9 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
     });
 
     // If no active profile, create one from intake data
-    // intakeData is now a Prisma Json type - no parsing needed
+    // Decompress intakeData (handles both compressed and raw formats)
     if (!profile) {
-      const intakeData = job.intakeData as Record<string, unknown>;
+      const intakeData = decompressJson<Record<string, unknown>>(job.intakeData);
 
       profile = await prisma.userProfile.create({
         data: {
@@ -192,16 +192,38 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
     const compressedPlan = compressJson(planData);
     const compressedDraft = draftData ? compressJson(draftData) : undefined;
 
+    // Storage metrics logging
     const planSizeRaw = jsonSizeBytes(planData);
     const planSizeStored = compressedPlan.compressed
-      ? Buffer.byteLength(compressedPlan.data as string)
+      ? Buffer.byteLength(compressedPlan.data as string, 'utf-8')
       : planSizeRaw;
-    logger.info(
-      `[savePlanToDatabase] Storage: plan=${planSizeRaw}B->${planSizeStored}B (${compressedPlan.compressed ? 'compressed' : 'raw'})` +
-        (compressedDraft
-          ? `, draft=${jsonSizeBytes(draftData)}B->${compressedDraft.compressed ? Buffer.byteLength(compressedDraft.data as string) : jsonSizeBytes(draftData)}B (${compressedDraft.compressed ? 'compressed' : 'raw'})`
-          : '')
-    );
+    const draftSizeRaw = draftData ? jsonSizeBytes(draftData) : 0;
+    const draftSizeStored = compressedDraft
+      ? compressedDraft.compressed
+        ? Buffer.byteLength(compressedDraft.data as string, 'utf-8')
+        : draftSizeRaw
+      : 0;
+    const totalRaw = planSizeRaw + draftSizeRaw;
+    const totalStored = planSizeStored + draftSizeStored;
+    const savingsPercent = totalRaw > 0 ? Math.round((1 - totalStored / totalRaw) * 100) : 0;
+
+    logger.info('[savePlanToDatabase] Storage metrics', {
+      plan: {
+        rawBytes: planSizeRaw,
+        storedBytes: planSizeStored,
+        compressed: compressedPlan.compressed,
+      },
+      draft: draftData
+        ? {
+            rawBytes: draftSizeRaw,
+            storedBytes: draftSizeStored,
+            compressed: compressedDraft?.compressed ?? false,
+          }
+        : null,
+      totalRawBytes: totalRaw,
+      totalStoredBytes: totalStored,
+      savingsPercent,
+    });
 
     // 6. Deactivate old plans and create new plan atomically in a transaction
     // This prevents race conditions where plans could be left in an inconsistent state

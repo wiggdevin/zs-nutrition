@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "MealPlan" ADD COLUMN     "versionedAt" TIMESTAMP(3) DEFAULT CURRENT_TIMESTAMP;

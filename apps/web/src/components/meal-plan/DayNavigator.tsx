@@ -4,9 +4,11 @@ import Link from 'next/link';
 import { PageHeader } from '@/components/ui/PageHeader';
 import type { PlanData } from './types';
 
+export type MealPlanTab = 'meal-plan' | 'grocery-list' | 'history';
+
 interface DayNavigatorProps {
-  activeTab: 'meal-plan' | 'grocery-list';
-  onTabChange: (tab: 'meal-plan' | 'grocery-list') => void;
+  activeTab: MealPlanTab;
+  onTabChange: (tab: MealPlanTab) => void;
   plan: PlanData;
 }
 
@@ -69,6 +71,19 @@ export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps
           >
             🛒 Grocery List
           </button>
+          <button
+            onClick={() => onTabChange('history')}
+            className={`px-6 py-3 text-sm font-bold uppercase tracking-wider transition-colors border-b-2 -mb-px ${
+              activeTab === 'history'
+                ? 'border-primary text-primary'
+                : 'border-transparent text-muted-foreground hover:text-foreground hover:border-border/80'
+            }`}
+            data-testid="tab-history"
+            aria-label="View plan version history"
+            aria-selected={activeTab === 'history'}
+          >
+            🕐 History
+          </button>
         </div>
       </div>
     </>
@@ -78,6 +93,15 @@ export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps
 function PlanHeaderActions({ plan }: { plan: PlanData }) {
   return (
     <div className="flex items-center gap-4">
+      {plan.version !== null && plan.version !== undefined && (
+        <span
+          className="inline-flex items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary"
+          data-testid="plan-version-badge"
+          title={`Plan version ${plan.version}`}
+        >
+          v{plan.version}
+        </span>
+      )}
       {plan.qaStatus && (
         <div
           className="rounded-lg border px-3 py-2 text-center"

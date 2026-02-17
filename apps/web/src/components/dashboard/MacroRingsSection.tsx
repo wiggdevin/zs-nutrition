@@ -1,3 +1,6 @@
+'use client';
+
+import { useEffect, useState } from 'react';
 import { MacroRing } from './MacroRing';
 import type { MacroData, RemainingBudget } from './useDashboardComputations';
 
@@ -18,6 +21,15 @@ export function MacroRingsSection({
   isTrainingDay,
   trainingBonusKcal,
 }: MacroRingsSectionProps) {
+  const [ringSize, setRingSize] = useState(120);
+
+  useEffect(() => {
+    const update = () => setRingSize(window.innerWidth < 640 ? 90 : 120);
+    update();
+    window.addEventListener('resize', update);
+    return () => window.removeEventListener('resize', update);
+  }, []);
+
   return (
     <section
       data-testid="macro-rings-section"
@@ -54,7 +66,7 @@ export function MacroRingsSection({
           target={macros.calories.target}
           unit="kcal"
           color="var(--primary)"
-          size={120}
+          size={ringSize}
         />
         <MacroRing
           label="Protein"
@@ -62,7 +74,7 @@ export function MacroRingsSection({
           target={macros.protein.target}
           unit="g"
           color="var(--chart-3)"
-          size={120}
+          size={ringSize}
         />
         <MacroRing
           label="Carbs"
@@ -70,7 +82,7 @@ export function MacroRingsSection({
           target={macros.carbs.target}
           unit="g"
           color="var(--color-warning)"
-          size={120}
+          size={ringSize}
         />
         <MacroRing
           label="Fat"
@@ -78,7 +90,7 @@ export function MacroRingsSection({
           target={macros.fat.target}
           unit="g"
           color="var(--destructive)"
-          size={120}
+          size={ringSize}
         />
       </div>
 

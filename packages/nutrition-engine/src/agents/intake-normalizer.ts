@@ -1,5 +1,38 @@
 import { RawIntakeForm, ClientIntake, ClientIntakeSchema } from '../types/schemas';
 
+export const ALLERGY_SYNONYMS: Record<string, string[]> = {
+  'tree nut': [
+    'walnut',
+    'cashew',
+    'almond',
+    'pecan',
+    'pistachio',
+    'macadamia',
+    'brazil nut',
+    'hazelnut',
+  ],
+  shellfish: ['shrimp', 'crab', 'lobster', 'crawfish', 'crayfish', 'prawn'],
+  dairy: ['milk', 'cheese', 'yogurt', 'butter', 'cream', 'whey', 'casein', 'lactose'],
+  gluten: ['wheat', 'barley', 'rye', 'spelt', 'kamut', 'triticale'],
+  soy: ['soybean', 'tofu', 'tempeh', 'edamame', 'soy sauce', 'soy milk'],
+  egg: ['eggs', 'egg white', 'egg yolk', 'mayonnaise'],
+  fish: ['salmon', 'tuna', 'cod', 'tilapia', 'halibut', 'sardine', 'anchovy', 'bass', 'trout'],
+  peanut: ['peanuts', 'peanut butter', 'groundnut'],
+};
+
+export function expandAllergySynonyms(allergies: string[]): string[] {
+  const expanded = new Set(allergies);
+  for (const allergy of allergies) {
+    const synonyms = ALLERGY_SYNONYMS[allergy];
+    if (synonyms) {
+      for (const syn of synonyms) {
+        expanded.add(syn);
+      }
+    }
+  }
+  return [...expanded];
+}
+
 /**
  * Cross-validate dietaryStyle against macroStyle for constraint compatibility.
  * Detects conflicting combinations before the pipeline proceeds, avoiding
@@ -76,7 +109,7 @@ export class IntakeNormalizer {
       trainingDays: input.trainingDays,
       trainingTime: input.trainingTime,
       dietaryStyle: input.dietaryStyle,
-      allergies: cleanArray(input.allergies),
+      allergies: expandAllergySynonyms(cleanArray(input.allergies)),
       exclusions: cleanArray(input.exclusions),
       cuisinePreferences: cleanArray(input.cuisinePreferences),
       mealsPerDay: input.mealsPerDay,

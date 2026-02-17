@@ -10,6 +10,7 @@ interface PlanVersion {
   id: string;
   version: number;
   generatedAt: string;
+  versionedAt: string | null;
   qaScore: number | null;
   qaStatus: string | null;
   dailyKcalTarget: number | null;
@@ -384,7 +385,9 @@ export default function PlanVersionHistory() {
                     {v.status}
                   </span>
                 </div>
-                <span className="text-xs text-muted-foreground">{formatDate(v.generatedAt)}</span>
+                <span className="text-xs text-muted-foreground">
+                  {formatDate(v.versionedAt || v.generatedAt)}
+                </span>
               </div>
 
               <div className="mt-2 flex items-center gap-4 text-xs">

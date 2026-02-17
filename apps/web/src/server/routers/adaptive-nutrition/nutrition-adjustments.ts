@@ -54,7 +54,10 @@ export const nutritionAdjustmentsRouter = router({
     let adjustmentReason = 'No adjustment needed - on track';
     let shouldAdjust = false;
 
-    const minSafeKcal = (profile.bmrKcal ?? 0) + 200;
+    const minSafeKcal = Math.max(
+      (profile.bmrKcal ?? 0) + 200,
+      profile.sex === 'male' ? 1500 : 1200
+    );
     const maxSafeKcal = (profile.bmrKcal ?? 0) + 1500;
 
     if (profile.goalType === 'cut') {
@@ -153,7 +156,7 @@ export const nutritionAdjustmentsRouter = router({
         });
       }
 
-      const minSafeKcal = profile.bmrKcal + 200;
+      const minSafeKcal = Math.max(profile.bmrKcal + 200, profile.sex === 'male' ? 1500 : 1200);
       const maxSafeKcal = profile.bmrKcal + 1500;
 
       if (input.newGoalKcal < minSafeKcal || input.newGoalKcal > maxSafeKcal) {

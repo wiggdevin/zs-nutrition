@@ -14,6 +14,61 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
     day: 'numeric',
   });
 
+  // Macro percentage calculations
+  const proteinPercent =
+    weeklyTotals.avgKcal > 0
+      ? Math.round(((weeklyTotals.avgProteinG * 4) / weeklyTotals.avgKcal) * 100)
+      : 0;
+  const carbsPercent =
+    weeklyTotals.avgKcal > 0
+      ? Math.round(((weeklyTotals.avgCarbsG * 4) / weeklyTotals.avgKcal) * 100)
+      : 0;
+  const fatPercent =
+    weeklyTotals.avgKcal > 0
+      ? Math.round(((weeklyTotals.avgFatG * 9) / weeklyTotals.avgKcal) * 100)
+      : 0;
+
+  // Training vs rest day differential
+  const trainingDays = plan.days.filter((d) => d.isTrainingDay);
+  const restDays = plan.days.filter((d) => !d.isTrainingDay);
+
+  const avgTrainingKcal =
+    trainingDays.length > 0
+      ? Math.round(trainingDays.reduce((s, d) => s + d.targetKcal, 0) / trainingDays.length)
+      : 0;
+  const avgRestKcal =
+    restDays.length > 0
+      ? Math.round(restDays.reduce((s, d) => s + d.targetKcal, 0) / restDays.length)
+      : 0;
+
+  const avgTrainingMacros =
+    trainingDays.length > 0
+      ? {
+          protein: Math.round(
+            trainingDays.reduce((s, d) => s + d.dailyTotals.proteinG, 0) / trainingDays.length
+          ),
+          carbs: Math.round(
+            trainingDays.reduce((s, d) => s + d.dailyTotals.carbsG, 0) / trainingDays.length
+          ),
+          fat: Math.round(
+            trainingDays.reduce((s, d) => s + d.dailyTotals.fatG, 0) / trainingDays.length
+          ),
+        }
+      : null;
+
+  const avgRestMacros =
+    restDays.length > 0
+      ? {
+          protein: Math.round(
+            restDays.reduce((s, d) => s + d.dailyTotals.proteinG, 0) / restDays.length
+          ),
+          carbs: Math.round(
+            restDays.reduce((s, d) => s + d.dailyTotals.carbsG, 0) / restDays.length
+          ),
+          fat: Math.round(restDays.reduce((s, d) => s + d.dailyTotals.fatG, 0) / restDays.length),
+        }
+      : null;
+
   return `
 <!DOCTYPE html>
 <html lang="en">
@@ -141,6 +196,45 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
     .meta p {
       margin-bottom: 4px;
     }
+    .macro-percent {
+      font-size: 13px;
+      color: #64748b;
+      font-weight: 400;
+    }
+    .differential-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 16px;
+      margin-top: 16px;
+    }
+    .differential-card {
+      background: #f8fafc;
+      border-radius: 8px;
+      padding: 20px;
+      border: 1px solid #e2e8f0;
+    }
+    .differential-card.training {
+      border-left: 4px solid #f59e0b;
+    }
+    .differential-card.rest {
+      border-left: 4px solid #667eea;
+    }
+    .differential-title {
+      font-size: 14px;
+      font-weight: 600;
+      color: #1e293b;
+      margin-bottom: 12px;
+    }
+    .differential-row {
+      display: flex;
+      justify-content: space-between;
+      font-size: 13px;
+      color: #475569;
+      padding: 4px 0;
+    }
+    .differential-row strong {
+      color: #1e293b;
+    }
   </style>
 </head>
 <body>
@@ -172,18 +266,18 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
           </div>
           <div class="macro-card">
             <div class="macro-label">Protein Target</div>
-            <div class="macro-value">${Math.round(weeklyTotals.avgProteinG)}</div>
-            <div class="macro-unit">grams/day</div>
+            <div class="macro-value">${Math.round(weeklyTotals.avgProteinG)}<span class="macro-unit">g</span></div>
+            <div class="macro-percent">${proteinPercent}% of calories</div>
           </div>
           <div class="macro-card">
             <div class="macro-label">Carb Target</div>
-            <div class="macro-value">${Math.round(weeklyTotals.avgCarbsG)}</div>
-            <div class="macro-unit">grams/day</div>
+            <div class="macro-value">${Math.round(weeklyTotals.avgCarbsG)}<span class="macro-unit">g</span></div>
+            <div class="macro-percent">${carbsPercent}% of calories</div>
           </div>
           <div class="macro-card">
             <div class="macro-label">Fat Target</div>
-            <div class="macro-value">${Math.round(weeklyTotals.avgFatG)}</div>
-            <div class="macro-unit">grams/day</div>
+            <div class="macro-value">${Math.round(weeklyTotals.avgFatG)}<span class="macro-unit">g</span></div>
+            <div class="macro-percent">${fatPercent}% of calories</div>
           </div>
           ${(() => {
             const totalFiber = plan.days.reduce(
@@ -205,6 +299,44 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
           <h4>✓ Daily Targets Met</h4>
           <p>Your meal plan provides an average of ${Math.round(weeklyTotals.avgKcal)} calories per day, optimized for your goals.</p>
         </div>
+
+        ${
+          trainingDays.length > 0 && restDays.length > 0
+            ? `
+        <div style="margin-top: 24px;">
+          <div class="section-title">Training vs Rest Day Targets</div>
+          <div class="differential-grid">
+            <div class="differential-card training">
+              <div class="differential-title">💪 Training Days (${trainingDays.length})</div>
+              <div class="differential-row"><span>Calories</span><strong>${avgTrainingKcal} kcal</strong></div>
+              ${
+                avgTrainingMacros
+                  ? `
+              <div class="differential-row"><span>Protein</span><strong>${avgTrainingMacros.protein}g</strong></div>
+              <div class="differential-row"><span>Carbs</span><strong>${avgTrainingMacros.carbs}g</strong></div>
+              <div class="differential-row"><span>Fat</span><strong>${avgTrainingMacros.fat}g</strong></div>
+              `
+                  : ''
+              }
+            </div>
+            <div class="differential-card rest">
+              <div class="differential-title">🧘 Rest Days (${restDays.length})</div>
+              <div class="differential-row"><span>Calories</span><strong>${avgRestKcal} kcal</strong></div>
+              ${
+                avgRestMacros
+                  ? `
+              <div class="differential-row"><span>Protein</span><strong>${avgRestMacros.protein}g</strong></div>
+              <div class="differential-row"><span>Carbs</span><strong>${avgRestMacros.carbs}g</strong></div>
+              <div class="differential-row"><span>Fat</span><strong>${avgRestMacros.fat}g</strong></div>
+              `
+                  : ''
+              }
+            </div>
+          </div>
+        </div>
+        `
+            : ''
+        }
       </div>
 
       ${

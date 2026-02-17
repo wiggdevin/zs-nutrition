@@ -2,6 +2,7 @@ import { prisma } from '@/lib/prisma';
 import { v4 as uuidv4 } from 'uuid';
 import { NextResponse } from 'next/server';
 import type { Prisma } from '@prisma/client';
+import { compressJson } from '@/lib/compression';
 
 /**
  * Build the intakeData object from an active user profile.
@@ -110,15 +111,17 @@ export async function checkExistingJob(userId: string): Promise<NextResponse | n
 
 /**
  * Create a new plan generation job record in the database.
+ * Compresses intakeData if >10KB for storage optimization.
  */
 export async function createPlanGenerationJob(userId: string, intakeData: Prisma.InputJsonValue) {
   const jobId = uuidv4();
+  const compressed = compressJson(intakeData);
   const job = await prisma.planGenerationJob.create({
     data: {
       id: jobId,
       userId,
       status: 'pending',
-      intakeData,
+      intakeData: compressed as unknown as Prisma.InputJsonValue,
     },
   });
 

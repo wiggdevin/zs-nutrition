@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModal } from '@/hooks/useModal';
 
 export interface PortionAdjustModalProps {
   mealName: string;
@@ -25,6 +26,7 @@ export default function PortionAdjustModal({
   onCancel,
   isAdjusting,
 }: PortionAdjustModalProps) {
+  const { modalRef, handleBackdropClick } = useModal(onCancel);
   const [portion, setPortion] = useState(currentPortion);
 
   // Calculate base nutrition (per 1.0 portion)
@@ -45,10 +47,12 @@ export default function PortionAdjustModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="adjust-portion-title"
+      onClick={handleBackdropClick}
     >
       <div
+        ref={modalRef}
         data-testid="adjust-portion-modal"
-        className="bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-w-[95vw] max-h-[90vh] overflow-y-auto mx-4 shadow-2xl"
         role="document"
       >
         <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-1">

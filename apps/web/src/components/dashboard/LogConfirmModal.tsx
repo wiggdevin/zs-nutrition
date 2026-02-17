@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { useModal } from '@/hooks/useModal';
 import type { PlanMeal } from './types';
 
 export interface LogConfirmModalProps {
@@ -16,6 +17,7 @@ export default function LogConfirmModal({
   onCancel,
   isLogging,
 }: LogConfirmModalProps) {
+  const { modalRef, handleBackdropClick } = useModal(onCancel);
   const [portion, setPortion] = useState(1.0);
 
   const adjustedCalories = Math.round(meal.calories * portion);
@@ -29,10 +31,12 @@ export default function LogConfirmModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="log-meal-title"
+      onClick={handleBackdropClick}
     >
       <div
+        ref={modalRef}
         data-testid="log-confirm-modal"
-        className="bg-card border border-border rounded-2xl p-6 w-full max-w-md mx-4 shadow-2xl"
+        className="bg-card border border-border rounded-2xl p-6 w-full max-w-md max-w-[95vw] max-h-[90vh] overflow-y-auto mx-4 shadow-2xl"
         role="document"
       >
         <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-1">

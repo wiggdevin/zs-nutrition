@@ -3,6 +3,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { logger } from '@/lib/safe-logger';
 import type { PlanData, Meal } from './types';
+import type { MealPlanTab } from './DayNavigator';
 import { useSwapMeal } from './useSwapMeal';
 
 export function useMealPlanData() {
@@ -27,7 +28,7 @@ export function useMealPlanData() {
   const planFetchGenRef = useRef(0);
 
   // Tab view state
-  const [activeTab, setActiveTab] = useState<'meal-plan' | 'grocery-list'>('meal-plan');
+  const [activeTab, setActiveTab] = useState<MealPlanTab>('meal-plan');
 
   const fetchPlan = useCallback(async () => {
     // Abort any in-flight request before starting a new one

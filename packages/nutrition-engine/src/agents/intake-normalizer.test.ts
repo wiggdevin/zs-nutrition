@@ -160,7 +160,11 @@ describe('IntakeNormalizer', () => {
 
       const result = normalizer.normalize(input);
 
-      expect(result.allergies).toEqual(['peanuts', 'shellfish', 'tree nuts']);
+      // expandAllergySynonyms expands "shellfish" into component items
+      expect(result.allergies).toContain('peanuts');
+      expect(result.allergies).toContain('shellfish');
+      expect(result.allergies).toContain('tree nuts');
+      expect(result.allergies).toContain('shrimp');
     });
 
     it('removes duplicate allergies', () => {
@@ -170,7 +174,12 @@ describe('IntakeNormalizer', () => {
 
       const result = normalizer.normalize(input);
 
-      expect(result.allergies).toEqual(['peanuts', 'shellfish']);
+      // Deduped + expanded: peanuts + shellfish synonyms
+      expect(result.allergies).toContain('peanuts');
+      expect(result.allergies).toContain('shellfish');
+      expect(result.allergies).toContain('shrimp');
+      // No duplicates
+      expect(new Set(result.allergies).size).toBe(result.allergies.length);
     });
 
     it('filters out empty strings', () => {
@@ -180,7 +189,10 @@ describe('IntakeNormalizer', () => {
 
       const result = normalizer.normalize(input);
 
-      expect(result.allergies).toEqual(['peanuts', 'shellfish']);
+      expect(result.allergies).toContain('peanuts');
+      expect(result.allergies).toContain('shellfish');
+      expect(result.allergies).not.toContain('');
+      expect(result.allergies).not.toContain('  ');
     });
 
     it('handles empty allergy array', () => {
@@ -303,7 +315,11 @@ describe('IntakeNormalizer', () => {
       expect(result.name).toBe('Jane Smith');
       expect(result.heightCm).toBe(167.6); // 5'6"
       expect(result.weightKg).toBe(63.5); // 140 lbs
-      expect(result.allergies).toEqual(['peanuts', 'shellfish']);
+      // Deduped + expanded shellfish synonyms
+      expect(result.allergies).toContain('peanuts');
+      expect(result.allergies).toContain('shellfish');
+      expect(result.allergies).toContain('shrimp');
+      expect(new Set(result.allergies).size).toBe(result.allergies.length);
       expect(result.exclusions).toEqual(['beef', 'pork']);
       expect(result.cuisinePreferences).toEqual(['italian', 'japanese']);
     });

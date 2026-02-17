@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
+import { useModal } from '@/hooks/useModal';
 
 interface MealNutrition {
   kcal: number;
@@ -40,74 +40,7 @@ export default function MealDetailModal({
   mealIdx: _mealIdx,
   onClose,
 }: MealDetailModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
-
-  // Close on Escape key
-  useEffect(() => {
-    const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') onClose();
-    };
-    window.addEventListener('keydown', handleEscape);
-    return () => window.removeEventListener('keydown', handleEscape);
-  }, [onClose]);
-
-  // Prevent body scroll when modal is open
-  useEffect(() => {
-    if (meal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [meal]);
-
-  // Focus trap: focus close button on open, trap Tab within modal
-  useEffect(() => {
-    if (!meal) return;
-
-    const modal = modalRef.current;
-    if (!modal) return;
-
-    // Store the element that triggered the modal so we can return focus on close
-    const previouslyFocused = document.activeElement as HTMLElement | null;
-
-    // Focus the close button on open
-    const closeBtn = modal.querySelector<HTMLElement>('[data-testid="meal-detail-close"]');
-    closeBtn?.focus();
-
-    const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key !== 'Tab') return;
-
-      const focusableEls = modal.querySelectorAll<HTMLElement>(
-        'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-      );
-      if (focusableEls.length === 0) return;
-
-      const firstEl = focusableEls[0];
-      const lastEl = focusableEls[focusableEls.length - 1];
-
-      if (e.shiftKey) {
-        if (document.activeElement === firstEl) {
-          e.preventDefault();
-          lastEl.focus();
-        }
-      } else {
-        if (document.activeElement === lastEl) {
-          e.preventDefault();
-          firstEl.focus();
-        }
-      }
-    };
-
-    modal.addEventListener('keydown', handleKeyDown);
-    return () => {
-      modal.removeEventListener('keydown', handleKeyDown);
-      // Return focus to the element that triggered the modal
-      previouslyFocused?.focus();
-    };
-  }, [meal]);
+  const { modalRef, handleBackdropClick } = useModal(onClose);
 
   if (!meal) return null;
 
@@ -122,12 +55,11 @@ export default function MealDetailModal({
       role="dialog"
       aria-modal="true"
       aria-labelledby="meal-detail-title"
-      onClick={onClose}
+      onClick={handleBackdropClick}
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-xl border border-border bg-card shadow-2xl flex flex-col"
-        onClick={(e) => e.stopPropagation()}
+        className="relative w-full max-w-3xl max-w-[95vw] max-h-[90vh] overflow-hidden rounded-xl border border-border bg-card shadow-2xl flex flex-col"
         data-testid="meal-detail-modal-content"
       >
         {/* Header - Fixed */}

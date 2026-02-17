@@ -255,6 +255,69 @@ body {
   }
 }
 
+/* Prevent iOS Safari auto-zoom on input focus (triggered by font-size < 16px) */
+@media screen and (max-width: 768px) {
+  input,
+  select,
+  textarea {
+    font-size: 16px !important;
+  }
+}
+
+/* Ensure minimum 44x44px touch targets on touch devices (WCAG 2.5.5) */
+@media (pointer: coarse) {
+  button,
+  a,
+  [role='button'],
+  input[type='checkbox'],
+  input[type='radio'] {
+    min-height: 44px;
+  }
+}
+
+/* Horizontal scroll fade indicators for mobile */
+.scroll-fade-container {
+  position: relative;
+}
+
+.scroll-fade-container::before,
+.scroll-fade-container::after {
+  content: '';
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 24px;
+  pointer-events: none;
+  z-index: 10;
+  transition: opacity 0.2s;
+}
+
+.scroll-fade-container::before {
+  left: 0;
+  background: linear-gradient(to right, var(--background), transparent);
+  opacity: 0;
+}
+
+.scroll-fade-container::after {
+  right: 0;
+  background: linear-gradient(to left, var(--background), transparent);
+}
+
+.scroll-fade-container.scrolled-start::before {
+  opacity: 1;
+}
+
+.scroll-fade-container.scrolled-end::after {
+  opacity: 0;
+}
+
+@media (min-width: 768px) {
+  .scroll-fade-container::before,
+  .scroll-fade-container::after {
+    display: none;
+  }
+}
+
 /* Toast slide-in animation */
 @keyframes slideIn {
   from {

@@ -198,9 +198,33 @@ export function generateGridHtml(plan: MealPlanValidated): string {
       margin: 0;
     }
     .instructions-list li {
-      padding: 2px 0;
+      padding: 4px 0;
       color: #334155;
       font-size: 13px;
+      display: flex;
+      align-items: flex-start;
+      gap: 8px;
+    }
+    .step-number {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 22px;
+      height: 22px;
+      min-width: 22px;
+      background: #667eea;
+      color: white;
+      border-radius: 50%;
+      font-size: 11px;
+      font-weight: 600;
+      line-height: 1;
+    }
+    .cooking-verb {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 0 3px;
+      border-radius: 3px;
+      font-weight: 500;
     }
     @media (max-width: 768px) {
       .days-grid {

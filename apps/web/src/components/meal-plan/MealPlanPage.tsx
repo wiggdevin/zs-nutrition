@@ -1,5 +1,6 @@
 'use client';
 
+import { useRef, useState, useCallback } from 'react';
 import dynamic from 'next/dynamic';
 import NavBar from '@/components/navigation/NavBar';
 import { useMealPlanData } from './useMealPlanData';
@@ -14,6 +15,10 @@ import { PlanReplacedBanner } from './PlanReplacedBanner';
 import { SwapErrorToast } from './SwapErrorToast';
 
 const MealDetailModal = dynamic(() => import('./MealDetailModal'), {
+  ssr: false,
+});
+
+const PlanVersionHistory = dynamic(() => import('./PlanVersionHistory'), {
   ssr: false,
 });
 
@@ -42,6 +47,17 @@ export default function MealPlanPage() {
     handleDismissReplacedBanner,
     handleViewNewerPlan,
   } = useMealPlanData();
+
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [scrolledStart, setScrolledStart] = useState(false);
+  const [scrolledEnd, setScrolledEnd] = useState(false);
+
+  const handleScroll = useCallback(() => {
+    const el = scrollRef.current;
+    if (!el) return;
+    setScrolledStart(el.scrollLeft > 8);
+    setScrolledEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 8);
+  }, []);
 
   if (loading) {
     return (
@@ -84,30 +100,36 @@ export default function MealPlanPage() {
           {activeTab === 'meal-plan' && (
             <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="meal-plan-view">
               <div
-                className="
-                  flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory
-                  md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0
-                  lg:grid-cols-4
-                  xl:grid-cols-5
-                  2xl:grid-cols-7
-                "
-                data-testid="seven-day-grid"
+                className={`scroll-fade-container ${scrolledStart ? 'scrolled-start' : ''} ${scrolledEnd ? 'scrolled-end' : ''}`}
               >
-                {days.map((day) => (
-                  <div key={day.dayNumber} className="min-w-[280px] snap-start md:min-w-0">
-                    <DayColumn
-                      day={day}
-                      swappingMeal={swappingMeal}
-                      swapSuccess={swapSuccess}
-                      swapInProgress={swapLoading || swappingMeal !== null}
-                      onSwapClick={handleSwapClick}
-                      onMealClick={(dayNumber, mealIdx, meal) =>
-                        setSelectedMeal({ dayNumber, mealIdx, meal })
-                      }
-                      onUndoClick={handleUndoClick}
-                    />
-                  </div>
-                ))}
+                <div
+                  ref={scrollRef}
+                  onScroll={handleScroll}
+                  className="
+                    flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory
+                    md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0
+                    lg:grid-cols-4
+                    xl:grid-cols-5
+                    2xl:grid-cols-7
+                  "
+                  data-testid="seven-day-grid"
+                >
+                  {days.map((day) => (
+                    <div key={day.dayNumber} className="min-w-[280px] snap-start md:min-w-0">
+                      <DayColumn
+                        day={day}
+                        swappingMeal={swappingMeal}
+                        swapSuccess={swapSuccess}
+                        swapInProgress={swapLoading || swappingMeal !== null}
+                        onSwapClick={handleSwapClick}
+                        onMealClick={(dayNumber, mealIdx, meal) =>
+                          setSelectedMeal({ dayNumber, mealIdx, meal })
+                        }
+                        onUndoClick={handleUndoClick}
+                      />
+                    </div>
+                  ))}
+                </div>
               </div>
 
               {days.length === 0 && (
@@ -130,6 +152,13 @@ export default function MealPlanPage() {
                   <p className="text-muted-foreground">No grocery list available.</p>
                 </div>
               )}
+            </div>
+          )}
+
+          {/* Version History View */}
+          {activeTab === 'history' && (
+            <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="history-view">
+              <PlanVersionHistory />
             </div>
           )}
         </div>
