@@ -23,6 +23,15 @@ export async function GET() {
     redisStatus = (await checkRedisHealth()) ? 'ok' : 'down';
   }
 
+  // Pipeline readiness: check that critical env vars exist (not their values)
+  const redisUrl = process.env.REDIS_URL || '';
+  const pipeline = {
+    redisConfigured: !!process.env.REDIS_URL,
+    redisTls: redisUrl.startsWith('rediss://'),
+    internalApiSecret: !!process.env.INTERNAL_API_SECRET,
+    anthropicApiKey: !!process.env.ANTHROPIC_API_KEY,
+  };
+
   const overallStatus = dbStatus === 'ok' ? 'ok' : 'degraded';
   const httpStatus = dbStatus === 'ok' ? 200 : 503;
 
@@ -35,6 +44,7 @@ export async function GET() {
         database: dbStatus,
         redis: redisStatus,
       },
+      pipeline,
     },
     { status: httpStatus }
   );
