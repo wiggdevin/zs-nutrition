@@ -1,8 +1,10 @@
 /**
  * Authenticated app layout for all protected routes.
  * Dashboard, meal plans, tracking, settings, etc. are nested under this layout.
- * Individual pages include their own NavBar component for now.
+ * AccountStatusGate redirects deactivated users to /account-deactivated.
  */
+import { AccountStatusGate } from '@/components/auth/AccountStatusGate';
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  return <>{children}</>;
+  return <AccountStatusGate>{children}</AccountStatusGate>;
 }
