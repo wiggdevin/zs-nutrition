@@ -85,7 +85,7 @@ function TrackingPageContent() {
                     data-testid="tracking-calories"
                     className="text-sm font-bold text-foreground ml-auto"
                   >
-                    {current.calories} / {targets.calories}
+                    {parseFloat(current.calories.toFixed(1))} / {targets.calories}
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -95,7 +95,7 @@ function TrackingPageContent() {
                     data-testid="tracking-protein"
                     className="text-sm font-bold text-foreground ml-auto"
                   >
-                    {current.protein}g / {targets.protein}g
+                    {parseFloat(current.protein.toFixed(1))}g / {targets.protein}g
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -105,7 +105,7 @@ function TrackingPageContent() {
                     data-testid="tracking-carbs"
                     className="text-sm font-bold text-foreground ml-auto"
                   >
-                    {current.carbs}g / {targets.carbs}g
+                    {parseFloat(current.carbs.toFixed(1))}g / {targets.carbs}g
                   </span>
                 </div>
                 <div className="flex items-center gap-2">
@@ -115,7 +115,7 @@ function TrackingPageContent() {
                     data-testid="tracking-fat"
                     className="text-sm font-bold text-foreground ml-auto"
                   >
-                    {current.fat}g / {targets.fat}g
+                    {parseFloat(current.fat.toFixed(1))}g / {targets.fat}g
                   </span>
                 </div>
               </div>
