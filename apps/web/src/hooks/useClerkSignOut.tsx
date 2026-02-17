@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useAuth } from '@clerk/nextjs';
 import { logger } from '@/lib/safe-logger';
 
 /**
@@ -43,7 +44,8 @@ export function useClerkSignOut(): (() => Promise<void>) | undefined {
 
 /**
  * A wrapper component that safely uses Clerk's useAuth hook.
- * This component should only be rendered when Clerk is available.
+ * This component should only be rendered when Clerk is available
+ * (i.e. inside ClerkProvider).
  */
 export function ClerkSignOutHandler({
   onSignOut: _onSignOut,
@@ -52,18 +54,8 @@ export function ClerkSignOutHandler({
   onSignOut?: () => void;
   children: (signOut: (() => Promise<void>) | undefined) => React.ReactNode;
 }) {
-  let clerkSignOut: (() => Promise<void>) | undefined = undefined;
-
-  try {
-    // Only import and use Clerk hooks if the module is available
-    // eslint-disable-next-line @typescript-eslint/no-require-imports
-    const { useAuth } = require('@clerk/nextjs');
-    const auth = useAuth();
-    clerkSignOut = () => auth.signOut({ redirectUrl: '/sign-in' });
-  } catch (_e) {
-    // Clerk not available, will use dev mode
-    logger.debug('Clerk hooks not available in ClerkSignOutHandler');
-  }
+  const auth = useAuth();
+  const clerkSignOut = () => auth.signOut({ redirectUrl: '/sign-in' });
 
   return <>{children(clerkSignOut)}</>;
 }
