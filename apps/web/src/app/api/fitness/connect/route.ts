@@ -89,7 +89,7 @@ function getOAuthConfig(platform: string) {
         clientId: process.env.OURA_CLIENT_ID,
         clientSecret: process.env.OURA_CLIENT_SECRET,
         redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456'}/api/fitness/callback/oura`,
-        scopes: ['email', 'personal_info', 'daily', 'sleep', 'activity', 'heartrate'],
+        scopes: ['personal', 'daily', 'heartrate', 'workout'],
       };
     case 'google_fit':
       return {
