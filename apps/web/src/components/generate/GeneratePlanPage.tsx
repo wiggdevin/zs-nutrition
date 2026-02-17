@@ -10,6 +10,7 @@ export function GeneratePlanPage() {
     status,
     currentAgent,
     hasProfile,
+    profileLoading,
     jobId,
     errorMessage,
     isReconnecting,
@@ -17,6 +18,15 @@ export function GeneratePlanPage() {
     handleGenerate,
     handleRetry,
   } = usePlanGeneration();
+
+  // Still checking onboarding status
+  if (profileLoading) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background">
+        <div className="h-8 w-8 animate-spin rounded-full border-2 border-primary border-t-transparent" />
+      </div>
+    );
+  }
 
   // Not completed onboarding
   if (!hasProfile) {
