@@ -82,25 +82,25 @@ export default async function HomePage() {
       <div className="relative min-h-screen bg-background">
         {/* ─── SECTION 1: STICKY HEADER ─── */}
         <header className="fixed top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4 sm:px-8 lg:px-12">
+          <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-12">
             <div className="flex items-center gap-2">
-              <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-primary">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-primary">
                 <span className="text-sm font-bold text-white">ZS</span>
               </div>
-              <span className="text-lg font-bold uppercase tracking-wide text-foreground">
+              <span className="whitespace-nowrap text-base font-bold uppercase tracking-wide text-foreground sm:text-lg">
                 ZS-<span className="text-primary">MAC</span>
               </span>
             </div>
-            <nav className="flex items-center gap-3">
+            <nav className="flex items-center gap-2 sm:gap-3">
               <Link
                 href="/sign-in"
-                className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
+                className="whitespace-nowrap rounded-lg px-4 py-3 text-sm font-medium text-muted-foreground transition-colors hover:text-foreground"
               >
                 Sign In
               </Link>
               <Link
                 href="/sign-up"
-                className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-background transition-colors hover:bg-primary/90"
+                className="whitespace-nowrap rounded-lg bg-primary px-4 py-3 text-sm font-medium text-background transition-colors hover:bg-primary/90"
               >
                 Get Started
               </Link>
@@ -110,7 +110,7 @@ export default async function HomePage() {
 
         <main id="main-content">
           {/* ─── SECTION 2: HERO ─── */}
-          <section className="relative flex min-h-screen items-center pt-20">
+          <section className="relative flex items-center pt-20 pb-12 lg:min-h-screen lg:pb-0">
             <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12">
               {/* Left: Copy */}
               <div className="flex flex-col justify-center">
@@ -121,7 +121,7 @@ export default async function HomePage() {
                   {'/// AI-POWERED NUTRITION'}
                 </p>
                 <h1
-                  className="mt-4 font-heading text-4xl uppercase leading-[1.1] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
+                  className="mt-4 font-heading text-4xl uppercase leading-[1.2] tracking-tight text-foreground sm:text-5xl lg:text-6xl"
                   style={{ animation: 'fadeInUp 0.6s ease-out 0.1s both' }}
                 >
                   STOP GUESSING<span className="text-primary">.</span>
@@ -221,7 +221,7 @@ export default async function HomePage() {
                               </span>
                             </div>
                           </div>
-                          <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
+                          <span className="text-[11px] font-mono uppercase tracking-wider text-muted-foreground">
                             {macro.label}
                           </span>
                         </div>
@@ -232,19 +232,19 @@ export default async function HomePage() {
                   {/* Floating status pills */}
                   <div className="mt-4 flex flex-wrap gap-2">
                     <span
-                      className="rounded-full border border-chart-2/30 bg-chart-2/10 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-chart-2"
+                      className="rounded-full border border-chart-2/30 bg-chart-2/10 px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-chart-2"
                       style={{ animation: 'float 3s ease-in-out infinite' }}
                     >
                       FatSecret Verified
                     </span>
                     <span
-                      className="rounded-full border border-chart-3/30 bg-chart-3/10 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-chart-3"
+                      className="rounded-full border border-chart-3/30 bg-chart-3/10 px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-chart-3"
                       style={{ animation: 'float 3s ease-in-out 0.5s infinite' }}
                     >
                       QA Validated
                     </span>
                     <span
-                      className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[10px] font-mono uppercase tracking-wider text-primary"
+                      className="rounded-full border border-primary/30 bg-primary/10 px-3 py-1 text-[11px] font-mono uppercase tracking-wider text-primary"
                       style={{ animation: 'float 3s ease-in-out 1s infinite' }}
                     >
                       On Track
@@ -257,7 +257,7 @@ export default async function HomePage() {
 
           {/* ─── SECTION 3: TRUST BAR ─── */}
           <section className="border-y border-border bg-card/50">
-            <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 py-12 sm:px-8 lg:grid-cols-4 lg:py-16">
+            <div className="mx-auto grid max-w-5xl grid-cols-2 gap-8 px-6 py-8 sm:px-8 sm:py-12 lg:grid-cols-4 lg:py-16">
               {[
                 { value: 6, suffix: '', label: 'AI Agents' },
                 { value: 7, suffix: '', label: 'Days Per Plan' },
@@ -281,7 +281,7 @@ export default async function HomePage() {
           </section>
 
           {/* ─── SECTION 4: HOW IT WORKS — 6-AGENT PIPELINE ─── */}
-          <section className="mx-auto max-w-7xl px-6 py-20 sm:px-8 lg:px-12 lg:py-28">
+          <section className="mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-20 lg:px-12 lg:py-28">
             <div className="mb-12 text-center">
               <p className="section-label text-primary">{'/// THE ENGINE'}</p>
               <h2 className="mt-3 font-heading text-3xl uppercase tracking-tight text-foreground sm:text-4xl lg:text-5xl">
@@ -297,7 +297,7 @@ export default async function HomePage() {
           </section>
 
           {/* ─── SECTION 5: FEATURES GRID (BENTO LAYOUT) ─── */}
-          <section className="mx-auto max-w-7xl px-6 py-20 sm:px-8 lg:px-12 lg:py-28">
+          <section className="mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-20 lg:px-12 lg:py-28">
             <div className="mb-12 text-center">
               <p className="section-label text-primary">{'/// FEATURES'}</p>
               <h2 className="mt-3 font-heading text-3xl uppercase tracking-tight text-foreground sm:text-4xl lg:text-5xl">
@@ -306,7 +306,7 @@ export default async function HomePage() {
             </div>
             <div className="grid grid-cols-1 gap-4 sm:grid-cols-12">
               {/* 7-Day Personalized Plans (large) */}
-              <div className="rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-primary/30 sm:col-span-8 sm:p-8">
+              <div className="rounded-2xl border border-border border-t-2 border-t-primary/40 bg-card p-6 transition-all duration-300 hover:border-primary/30 sm:border-t sm:border-t-border sm:col-span-8 sm:p-8">
                 <p className="section-label text-primary mb-3">{'/// MEAL PLANNING'}</p>
                 <h3 className="font-heading text-xl uppercase tracking-tight text-foreground sm:text-2xl">
                   7-Day Personalized Plans
@@ -416,7 +416,7 @@ export default async function HomePage() {
               </div>
 
               {/* Watch Your Plan Being Built (large) */}
-              <div className="rounded-2xl border border-border bg-card p-6 transition-all duration-300 hover:border-primary/30 sm:col-span-8 sm:p-8">
+              <div className="rounded-2xl border border-border border-t-2 border-t-primary/40 bg-card p-6 transition-all duration-300 hover:border-primary/30 sm:border-t sm:border-t-border sm:col-span-8 sm:p-8">
                 <p className="section-label text-primary mb-3">{'/// REAL-TIME'}</p>
                 <h3 className="font-heading text-xl uppercase tracking-tight text-foreground sm:text-2xl">
                   Watch Your Plan Being Built
@@ -518,7 +518,7 @@ export default async function HomePage() {
           </section>
 
           {/* ─── SECTION 7: WHAT YOU GET ─── */}
-          <section className="mx-auto max-w-7xl px-6 py-20 sm:px-8 lg:px-12 lg:py-28">
+          <section className="mx-auto max-w-7xl px-6 py-12 sm:px-8 sm:py-20 lg:px-12 lg:py-28">
             <div className="mb-12 text-center">
               <p className="section-label text-primary">{'/// INCLUDED FREE'}</p>
               <h2 className="mt-3 font-heading text-3xl uppercase tracking-tight text-foreground sm:text-4xl lg:text-5xl">
@@ -593,7 +593,7 @@ export default async function HomePage() {
           {/* ─── SECTION 8: FINAL CTA ─── */}
           <section className="relative">
             <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent" />
-            <div className="relative mx-auto max-w-3xl px-6 py-20 text-center sm:px-8 lg:py-28">
+            <div className="relative mx-auto max-w-3xl px-6 py-12 text-center sm:px-8 sm:py-20 lg:py-28">
               <h2 className="font-heading text-3xl uppercase tracking-tight text-foreground sm:text-4xl lg:text-5xl">
                 YOUR FIRST PLAN IS FREE<span className="text-primary">.</span>
               </h2>
@@ -616,18 +616,36 @@ export default async function HomePage() {
 
         {/* ─── SECTION 9: FOOTER ─── */}
         <footer className="border-t border-border">
-          <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-6 sm:px-8 lg:px-12">
-            <div className="flex items-center gap-2">
-              <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
-                <span className="text-[10px] font-bold text-white">ZS</span>
+          <div className="mx-auto max-w-7xl px-6 py-6 sm:px-8 lg:px-12">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="flex h-7 w-7 items-center justify-center rounded-md bg-primary">
+                  <span className="text-[10px] font-bold text-white">ZS</span>
+                </div>
+                <span className="text-sm font-bold uppercase tracking-wide text-foreground">
+                  ZS-<span className="text-primary">MAC</span>
+                </span>
               </div>
-              <span className="text-sm font-bold uppercase tracking-wide text-foreground">
-                ZS-<span className="text-primary">MAC</span>
-              </span>
+              <div className="flex items-center gap-4">
+                <Link
+                  href="/privacy"
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Privacy
+                </Link>
+                <Link
+                  href="/terms"
+                  className="text-xs text-muted-foreground transition-colors hover:text-foreground"
+                >
+                  Terms
+                </Link>
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground">
-              &copy; {new Date().getFullYear()} Zero Sum Nutrition
-            </p>
+            <div className="mt-4 border-t border-border pt-4 text-center">
+              <p className="text-xs text-muted-foreground">
+                &copy; {new Date().getFullYear()} Zero Sum Nutrition
+              </p>
+            </div>
           </div>
         </footer>
       </div>
