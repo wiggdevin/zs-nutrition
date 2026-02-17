@@ -5,7 +5,7 @@ import { useSearchParams } from 'next/navigation';
 import NavBar from '@/components/navigation/NavBar';
 import FoodSearch from '@/components/tracking/FoodSearch';
 import ManualEntryForm from '@/components/tracking/ManualEntryForm';
-import QuickAddForm from '@/components/tracking/QuickAddForm';
+
 import nextDynamic from 'next/dynamic';
 
 const FoodScan = nextDynamic(() => import('@/components/tracking/FoodScan'), {
@@ -21,7 +21,6 @@ function TrackingPageContent() {
   const searchParams = useSearchParams();
   const mode = searchParams.get('mode'); // 'plan', 'search', 'quick', or null (show all)
   const foodSearchRef = useRef<HTMLDivElement>(null);
-  const quickAddRef = useRef<HTMLDivElement>(null);
   const manualEntryRef = useRef<HTMLDivElement>(null);
 
   // Read from Zustand store (same state as dashboard)
@@ -40,12 +39,7 @@ function TrackingPageContent() {
         // Focus the first input in the food search section
         const input = foodSearchRef.current.querySelector('input') as HTMLInputElement;
         if (input) input.focus();
-      } else if (mode === 'quick' && quickAddRef.current) {
-        quickAddRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Focus the first input in the quick add section
-        const input = quickAddRef.current.querySelector('input') as HTMLInputElement;
-        if (input) input.focus();
-      } else if (mode === 'manual' && manualEntryRef.current) {
+      } else if ((mode === 'quick' || mode === 'manual') && manualEntryRef.current) {
         manualEntryRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         // Focus the first input in the manual entry section
         const input = manualEntryRef.current.querySelector('input') as HTMLInputElement;
@@ -163,16 +157,16 @@ function TrackingPageContent() {
               </div>
             ) : null}
 
-            {/* Quick Add - shown when mode is null, 'quick', or 'plan' (if no planId) */}
-            {!mode || mode === 'quick' || (mode === 'plan' && !planId) ? (
-              <div ref={mode === 'quick' || (mode === 'plan' && !planId) ? quickAddRef : null}>
-                <QuickAddForm />
-              </div>
-            ) : null}
-
-            {/* Manual Entry - shown when mode is null or 'manual' */}
-            {!mode || mode === 'manual' ? (
-              <div ref={mode === 'manual' ? manualEntryRef : null} className="mt-4">
+            {/* Custom Food Entry - shown when mode is null, 'quick', 'manual', or 'plan' (if no planId) */}
+            {!mode || mode === 'quick' || mode === 'manual' || (mode === 'plan' && !planId) ? (
+              <div
+                ref={
+                  mode === 'quick' || mode === 'manual' || (mode === 'plan' && !planId)
+                    ? manualEntryRef
+                    : null
+                }
+                className="mt-4"
+              >
                 <ManualEntryForm />
               </div>
             ) : null}

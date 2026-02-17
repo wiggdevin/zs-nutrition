@@ -139,9 +139,6 @@ export function useManualEntry({ onSuccess }: ManualEntryFormProps) {
     }
 
     const newFieldErrors: Record<string, string> = {};
-    if (!foodName.trim()) {
-      newFieldErrors.foodName = 'Food name is required';
-    }
     if (!calories || isNaN(Number(calories)) || Number(calories) < 0) {
       newFieldErrors.calories = 'Please enter a valid calorie amount (0 or more)';
     }
@@ -152,7 +149,7 @@ export function useManualEntry({ onSuccess }: ManualEntryFormProps) {
     setFieldErrors({});
 
     await submitEntry({
-      foodName: foodName.trim(),
+      foodName: foodName.trim() || 'Custom food',
       calories: Number(calories),
       protein: Number(protein) || 0,
       carbs: Number(carbs) || 0,

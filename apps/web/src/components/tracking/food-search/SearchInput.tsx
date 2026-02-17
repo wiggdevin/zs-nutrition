@@ -221,10 +221,12 @@ export function SearchInput({
               </svg>
               <p className="text-sm font-medium text-foreground">No results found</p>
               <p className="text-xs text-muted-foreground mt-1">
-                No foods matched &ldquo;{query.trim()}&rdquo;
+                No foods matched &ldquo;{query.trim()}&rdquo;.
+                {query.trim().length < 5 &&
+                  ' Try typing the full name (e.g. "Chicken" instead of "Chi").'}
               </p>
               <p className="text-xs text-muted-foreground mt-2">
-                Try a different spelling, a simpler term, or a more common food name
+                Try a different spelling or a more common food name
               </p>
             </div>
           </div>
