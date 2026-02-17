@@ -79,7 +79,8 @@ export function usePlanGeneration() {
         if (response.ok) {
           const data = await response.json();
           if (data.result && data.result.data) {
-            const jobStatus = data.result.data;
+            // tRPC with superjson wraps data in { json: {...}, meta: {...} }
+            const jobStatus = data.result.data.json ?? data.result.data;
             if (jobStatus.currentAgent !== undefined && jobStatus.currentAgent !== null) {
               setCurrentAgent(jobStatus.currentAgent);
             }

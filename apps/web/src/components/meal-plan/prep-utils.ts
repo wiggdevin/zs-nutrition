@@ -132,7 +132,10 @@ export function buildPrepTimeline(groups: PrepGroup[]): PrepStep[] {
     if (group.protein === 'Other') continue;
 
     const mealList = group.meals
-      .map((m) => `${DAY_NAMES[m.dayNumber] || `Day ${m.dayNumber}`} ${m.slot}`)
+      .map(
+        (m) =>
+          `${DAY_NAMES[m.dayNumber] || `Day ${m.dayNumber}`} ${m.slot.replace(/_\d+$/, '').replace(/^(\w)(.*)$/, (_, f: string, r: string) => f + r.toLowerCase())}`
+      )
       .join(', ');
 
     // Prep step

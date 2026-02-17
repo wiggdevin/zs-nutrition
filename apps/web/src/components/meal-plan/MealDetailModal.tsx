@@ -121,7 +121,9 @@ export default function MealDetailModal({
               {/* Slot badge */}
               <div className="flex items-center gap-2 mb-2">
                 <span className="inline-flex items-center rounded bg-primary/20 px-2 py-1 text-xs font-bold uppercase text-primary">
-                  {meal.slot}
+                  {meal.slot
+                    .replace(/_\d+$/, '')
+                    .replace(/^(\w)(.*)$/, (_, f: string, r: string) => f + r.toLowerCase())}
                 </span>
                 {meal.confidenceLevel && (
                   <span

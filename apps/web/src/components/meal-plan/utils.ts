@@ -103,6 +103,11 @@ export function formatGroceryAmount(amount: number, unit: string): string {
   return `${roundedUp} ${unitStr}`.trim();
 }
 
+/** Format a raw slot name (e.g. "SNACK_1", "BREAKFAST") for display */
+export function formatSlotName(slot: string): string {
+  return slot.replace(/_\d+$/, '').replace(/^(\w)(.*)$/, (_, f, r) => f + r.toLowerCase());
+}
+
 /** Category icon mapping for grocery list */
 export function getCategoryIcon(category: string): string {
   const lower = category.toLowerCase();

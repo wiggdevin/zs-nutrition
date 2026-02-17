@@ -167,7 +167,8 @@ export const planCrudRouter = router({
 
       return {
         status: job.status,
-        currentAgent: currentAgentName,
+        currentAgent: job.currentAgent || 0,
+        currentAgentName: currentAgentName,
         progress: parsedProgress,
         error: job.error,
         planId: parsedPlanId,
