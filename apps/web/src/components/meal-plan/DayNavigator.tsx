@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import { PageHeader } from '@/components/ui/PageHeader';
 import type { PlanData } from './types';
 
 interface DayNavigatorProps {
@@ -12,38 +13,32 @@ interface DayNavigatorProps {
 export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps) {
   return (
     <>
-      {/* Header */}
-      <div className="border-b border-border bg-background px-4 py-6">
-        <div className="mx-auto max-w-[1600px]">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                {'/// ZERO SUM NUTRITION'}
-              </p>
-              <h1 className="mt-1 text-2xl font-heading uppercase tracking-wider text-foreground">
-                Your Meal Plan
-              </h1>
-              {plan.profile && (
-                <p className="mt-1 text-sm text-muted-foreground">
-                  {plan.profile.name} &middot; {plan.profile.goalType} &middot; {plan.planDays}
-                  -day plan
-                </p>
-              )}
-              {plan.generatedAt && (
-                <p className="mt-1 text-xs text-muted-foreground" data-testid="plan-generated-date">
-                  Generated{' '}
-                  {new Date(plan.generatedAt).toLocaleDateString(undefined, {
-                    year: 'numeric',
-                    month: 'short',
-                    day: 'numeric',
-                  })}
-                </p>
-              )}
-            </div>
-            <PlanHeaderActions plan={plan} />
-          </div>
-        </div>
-      </div>
+      <PageHeader
+        label="ZERO SUM NUTRITION"
+        title="Your Meal Plan"
+        subtitle={
+          <>
+            {plan.profile && (
+              <span>
+                {plan.profile.name} &middot; {plan.profile.goalType} &middot; {plan.planDays}-day
+                plan
+              </span>
+            )}
+            {plan.generatedAt && (
+              <span className="block text-xs" data-testid="plan-generated-date">
+                Generated{' '}
+                {new Date(plan.generatedAt).toLocaleDateString(undefined, {
+                  year: 'numeric',
+                  month: 'short',
+                  day: 'numeric',
+                })}
+              </span>
+            )}
+          </>
+        }
+        maxWidth="full"
+        actions={<PlanHeaderActions plan={plan} />}
+      />
 
       {/* Tab Navigation */}
       <div className="mx-auto max-w-[1600px] px-4 pt-6">
