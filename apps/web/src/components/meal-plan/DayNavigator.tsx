@@ -13,33 +13,32 @@ interface DayNavigatorProps {
 }
 
 export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps) {
+  const subtitleParts: string[] = [];
+  if (plan.profile) {
+    subtitleParts.push(plan.profile.name);
+    subtitleParts.push(plan.profile.goalType);
+    subtitleParts.push(`${plan.planDays}-day plan`);
+  }
+  if (plan.generatedAt) {
+    subtitleParts.push(
+      `Generated ${new Date(plan.generatedAt).toLocaleDateString(undefined, {
+        year: 'numeric',
+        month: 'short',
+        day: 'numeric',
+      })}`
+    );
+  }
+
   return (
     <>
       <PageHeader
-        label="ZERO SUM NUTRITION"
+        showPrefix
+        sticky
         title="Your Meal Plan"
-        subtitle={
-          <>
-            {plan.profile && (
-              <span>
-                {plan.profile.name} &middot; {plan.profile.goalType} &middot; {plan.planDays}-day
-                plan
-              </span>
-            )}
-            {plan.generatedAt && (
-              <span className="block text-xs" data-testid="plan-generated-date">
-                Generated{' '}
-                {new Date(plan.generatedAt).toLocaleDateString(undefined, {
-                  year: 'numeric',
-                  month: 'short',
-                  day: 'numeric',
-                })}
-              </span>
-            )}
-          </>
-        }
+        subtitle={subtitleParts.length > 0 ? subtitleParts.join(' · ') : undefined}
         maxWidth="full"
         actions={<PlanHeaderActions plan={plan} />}
+        data-testid="plan-generated-date"
       />
 
       {/* Tab Navigation */}
@@ -56,7 +55,7 @@ export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps
             aria-label="View meal plan"
             aria-selected={activeTab === 'meal-plan'}
           >
-            📅 Meal Plan
+            Meal Plan
           </button>
           <button
             onClick={() => onTabChange('grocery-list')}
@@ -69,7 +68,7 @@ export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps
             aria-label="View grocery list"
             aria-selected={activeTab === 'grocery-list'}
           >
-            🛒 Grocery List
+            Grocery List
           </button>
           <button
             onClick={() => onTabChange('history')}
@@ -82,7 +81,7 @@ export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps
             aria-label="View plan version history"
             aria-selected={activeTab === 'history'}
           >
-            🕐 History
+            History
           </button>
         </div>
       </div>
@@ -90,87 +89,94 @@ export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps
   );
 }
 
+function QAColor(status: string) {
+  if (status === 'PASS')
+    return { bg: 'rgba(34, 197, 94, 0.1)', border: 'rgba(34, 197, 94, 0.4)', dot: 'bg-green-500' };
+  if (status === 'WARN')
+    return {
+      bg: 'rgba(245, 158, 11, 0.1)',
+      border: 'rgba(245, 158, 11, 0.4)',
+      dot: 'bg-yellow-500',
+    };
+  return { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.4)', dot: 'bg-red-500' };
+}
+
 function PlanHeaderActions({ plan }: { plan: PlanData }) {
+  const hasVersion = plan.version !== null && plan.version !== undefined;
+  const hasQA = !!plan.qaStatus;
+  const qaColors = hasQA ? QAColor(plan.qaStatus!) : null;
+
   return (
-    <div className="flex items-center gap-4">
-      {plan.version !== null && plan.version !== undefined && (
+    <div className="flex items-center gap-2">
+      {/* Version + QA merged pill */}
+      {(hasVersion || hasQA) && (
         <span
-          className="inline-flex items-center rounded-md border border-primary/30 bg-primary/10 px-2.5 py-1 text-xs font-bold text-primary"
+          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-xs font-semibold"
+          style={
+            qaColors
+              ? {
+                  backgroundColor: qaColors.bg,
+                  border: `1px solid ${qaColors.border}`,
+                }
+              : undefined
+          }
           data-testid="plan-version-badge"
-          title={`Plan version ${plan.version}`}
+          title={`Plan version ${plan.version ?? '?'}${hasQA ? ` · QA: ${plan.qaStatus} (${plan.qaScore ?? 'N/A'}%)` : ''}`}
         >
-          v{plan.version}
+          {hasVersion && <span>v{plan.version}</span>}
+          {hasVersion && hasQA && <span className="text-muted-foreground">/</span>}
+          {hasQA && (
+            <>
+              <span
+                className={`inline-block h-1.5 w-1.5 rounded-full ${qaColors!.dot}`}
+                data-testid="qa-score-badge"
+              />
+              <span>{plan.qaScore !== null ? `${plan.qaScore}%` : 'N/A'}</span>
+            </>
+          )}
         </span>
       )}
-      {plan.qaStatus && (
-        <div
-          className="rounded-lg border px-3 py-2 text-center"
-          style={{
-            backgroundColor:
-              plan.qaStatus === 'PASS'
-                ? 'rgba(34, 197, 94, 0.1)'
-                : plan.qaStatus === 'WARN'
-                  ? 'rgba(245, 158, 11, 0.1)'
-                  : 'rgba(239, 68, 68, 0.1)',
-            borderColor:
-              plan.qaStatus === 'PASS'
-                ? 'rgba(34, 197, 94, 0.3)'
-                : plan.qaStatus === 'WARN'
-                  ? 'rgba(245, 158, 11, 0.3)'
-                  : 'rgba(239, 68, 68, 0.3)',
-          }}
-          title={`QA Status: ${plan.qaStatus}${plan.qaScore !== null ? ` (${plan.qaScore}%)` : ''}`}
-          data-testid="qa-score-badge"
-        >
-          <p className="font-mono text-xs text-muted-foreground">QA Score</p>
-          <p
-            className="text-lg font-bold"
-            style={{
-              color:
-                plan.qaStatus === 'PASS'
-                  ? 'var(--color-success)'
-                  : plan.qaStatus === 'WARN'
-                    ? 'var(--color-warning)'
-                    : 'var(--destructive)',
-            }}
-          >
-            {plan.qaScore !== null ? `${plan.qaScore}%` : 'N/A'}
-          </p>
-        </div>
-      )}
+
+      {/* Inline macro strip */}
       {plan.dailyKcalTarget && (
-        <div className="rounded-lg border border-border bg-card px-4 py-2">
-          <p className="font-mono text-xs text-muted-foreground text-center mb-1">Daily Targets</p>
-          <div className="flex items-center gap-3">
-            <div className="text-center">
-              <p className="text-lg font-bold text-primary">{plan.dailyKcalTarget}</p>
-              <p className="text-[10px] text-muted-foreground">kcal</p>
-            </div>
-            {(plan.dailyProteinG || plan.dailyCarbsG || plan.dailyFatG) && (
-              <>
-                <div className="w-px h-8 bg-border"></div>
-                <div className="flex items-center gap-2 text-xs font-semibold">
-                  {plan.dailyProteinG && (
-                    <span className="text-chart-3" data-testid="daily-protein-target">
-                      P {plan.dailyProteinG}g
-                    </span>
-                  )}
-                  {plan.dailyCarbsG && (
-                    <span className="text-warning" data-testid="daily-carbs-target">
-                      C {plan.dailyCarbsG}g
-                    </span>
-                  )}
-                  {plan.dailyFatG && (
-                    <span className="text-destructive" data-testid="daily-fat-target">
-                      F {plan.dailyFatG}g
-                    </span>
-                  )}
-                </div>
-              </>
-            )}
-          </div>
-        </div>
+        <span
+          className="font-mono text-xs font-semibold text-muted-foreground"
+          data-testid="daily-kcal-target"
+        >
+          {plan.dailyKcalTarget}kcal
+          {(plan.dailyProteinG || plan.dailyCarbsG || plan.dailyFatG) && (
+            <span className="hidden md:inline">
+              <span className="mx-1">·</span>
+              {plan.dailyProteinG && (
+                <span className="text-chart-3" data-testid="daily-protein-target">
+                  P{plan.dailyProteinG}g
+                </span>
+              )}
+              {plan.dailyProteinG && plan.dailyCarbsG && (
+                <span className="text-muted-foreground"> / </span>
+              )}
+              {plan.dailyCarbsG && (
+                <span className="text-warning" data-testid="daily-carbs-target">
+                  C{plan.dailyCarbsG}g
+                </span>
+              )}
+              {plan.dailyCarbsG && plan.dailyFatG && (
+                <span className="text-muted-foreground"> / </span>
+              )}
+              {plan.dailyFatG && (
+                <span className="text-destructive" data-testid="daily-fat-target">
+                  F{plan.dailyFatG}g
+                </span>
+              )}
+            </span>
+          )}
+        </span>
       )}
+
+      {/* Separator */}
+      <div className="h-4 w-px bg-border" />
+
+      {/* Ghost icon buttons */}
       <PDFAndHistoryButtons pdfUrl={plan.pdfUrl} />
     </div>
   );
@@ -178,20 +184,20 @@ function PlanHeaderActions({ plan }: { plan: PlanData }) {
 
 function PDFAndHistoryButtons({ pdfUrl }: { pdfUrl?: string | null }) {
   return (
-    <>
+    <div className="flex items-center gap-1">
       {pdfUrl && (
         <a
           href={pdfUrl}
           target="_blank"
           rel="noopener noreferrer"
-          className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-primary/50 hover:bg-primary/10 hover:text-primary"
+          className="inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
           data-testid="download-pdf-button"
           aria-label="Download meal plan as PDF"
           title="Download PDF"
         >
           <svg
-            width="16"
-            height="16"
+            width="14"
+            height="14"
             viewBox="0 0 24 24"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
@@ -218,19 +224,19 @@ function PDFAndHistoryButtons({ pdfUrl }: { pdfUrl?: string | null }) {
               strokeLinejoin="round"
             />
           </svg>
-          <span>PDF</span>
+          <span className="sr-only">PDF</span>
         </a>
       )}
       <Link
         href="/meal-plan/history"
-        className="flex items-center gap-2 rounded-lg border border-border bg-card px-4 py-2 text-xs font-semibold text-muted-foreground transition-colors hover:border-chart-3/50 hover:bg-chart-3/10 hover:text-chart-3"
+        className="hidden md:inline-flex h-7 w-7 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-primary/10 hover:text-primary"
         data-testid="view-history-button"
         aria-label="View plan history"
         title="View plan history"
       >
         <svg
-          width="16"
-          height="16"
+          width="14"
+          height="14"
           viewBox="0 0 24 24"
           fill="none"
           xmlns="http://www.w3.org/2000/svg"
@@ -243,8 +249,8 @@ function PDFAndHistoryButtons({ pdfUrl }: { pdfUrl?: string | null }) {
             strokeLinejoin="round"
           />
         </svg>
-        <span>History</span>
+        <span className="sr-only">History</span>
       </Link>
-    </>
+    </div>
   );
 }
