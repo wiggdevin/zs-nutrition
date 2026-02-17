@@ -180,7 +180,12 @@ export const mealQueriesRouter = router({
           proteinG: m.proteinG,
           carbsG: m.carbsG,
           fatG: m.fatG,
-          source: m.source as 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual',
+          source: m.source as
+            | 'plan_meal'
+            | 'fatsecret_search'
+            | 'quick_add'
+            | 'manual'
+            | 'food_scan',
           createdAt: m.createdAt,
         })),
       };
