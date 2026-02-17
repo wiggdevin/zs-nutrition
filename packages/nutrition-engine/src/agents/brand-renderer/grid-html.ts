@@ -134,6 +134,74 @@ export function generateGridHtml(plan: MealPlanValidated): string {
       font-size: 11px;
       font-weight: 500;
     }
+    .protein-tag {
+      background: #fef3c7;
+      color: #92400e;
+      padding: 2px 8px;
+      border-radius: 4px;
+      font-size: 11px;
+      font-weight: 500;
+    }
+    .confidence-badge {
+      font-size: 10px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      font-weight: 600;
+      vertical-align: middle;
+      margin-left: 4px;
+    }
+    .confidence-badge.verified {
+      background: #dcfce7;
+      color: #166534;
+    }
+    .confidence-badge.estimated {
+      background: #fef9c3;
+      color: #854d0e;
+    }
+    .meal-time {
+      font-size: 12px;
+      color: #64748b;
+      margin-top: 8px;
+    }
+    .meal-ingredients {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    .ingredients-title, .instructions-title {
+      font-weight: 600;
+      color: #475569;
+      font-size: 12px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      margin-bottom: 4px;
+    }
+    .ingredients-list {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+    }
+    .ingredients-list li {
+      padding: 2px 0;
+      color: #334155;
+      font-size: 13px;
+    }
+    .ingredients-list li::before {
+      content: '• ';
+      color: #94a3b8;
+    }
+    .meal-instructions {
+      margin-top: 8px;
+      font-size: 13px;
+    }
+    .instructions-list {
+      padding-left: 20px;
+      margin: 0;
+    }
+    .instructions-list li {
+      padding: 2px 0;
+      color: #334155;
+      font-size: 13px;
+    }
     @media (max-width: 768px) {
       .days-grid {
         grid-template-columns: 1fr;

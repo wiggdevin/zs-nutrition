@@ -1,6 +1,7 @@
 import { z } from 'zod';
 import { protectedProcedure, router } from '../../trpc';
 import { ValidatedPlanSchema } from '@/lib/schemas/plan';
+import { decompressJson } from '@/lib/compression';
 
 /**
  * Meal Queries — read-only procedures for meal plans and daily logs.
@@ -41,8 +42,9 @@ export const mealQueriesRouter = router({
 
     if (!plan) return null;
 
-    const parsedPlan = ValidatedPlanSchema.safeParse(plan.validatedPlan).success
-      ? (plan.validatedPlan as z.infer<typeof ValidatedPlanSchema>)
+    const decompressedPlan = decompressJson(plan.validatedPlan);
+    const parsedPlan = ValidatedPlanSchema.safeParse(decompressedPlan).success
+      ? (decompressedPlan as z.infer<typeof ValidatedPlanSchema>)
       : { days: [] };
 
     return {

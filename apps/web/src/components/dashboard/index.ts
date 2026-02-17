@@ -6,6 +6,7 @@ export { TodaysPlanSection } from './TodaysPlanSection';
 export { TodaysLogSection } from './TodaysLogSection';
 export { QuickActionsSection } from './QuickActionsSection';
 export { ErrorBanner } from './ErrorBanner';
+export { PlanStaleBanner } from './PlanStaleBanner';
 export { EmptyState } from './EmptyState';
 export { useDashboardData } from './useDashboardData';
 export { useDashboardComputations } from './useDashboardComputations';

@@ -5,6 +5,7 @@ import { requireActiveUser } from '@/lib/auth';
 import { calculateAdherenceScore } from '@/lib/adherence';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay } from '@/lib/date-utils';
+import { decompressJson } from '@/lib/compression';
 
 export async function POST(request: NextRequest) {
   try {
@@ -51,8 +52,8 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Meal plan not found' }, { status: 404 });
     }
 
-    // validatedPlan is now a Prisma Json type - no parsing needed
-    const validatedPlan = mealPlan.validatedPlan as {
+    // Decompress validatedPlan (handles both compressed and legacy uncompressed data)
+    const validatedPlan = decompressJson<{
       days?: Array<{
         dayNumber: number;
         meals?: Array<{
@@ -68,7 +69,7 @@ export async function POST(request: NextRequest) {
           confidenceLevel?: string;
         }>;
       }>;
-    };
+    }>(mealPlan.validatedPlan);
     const day = validatedPlan?.days?.find((d) => d.dayNumber === dayNumber);
 
     if (!day) {

@@ -5,6 +5,7 @@ import {
   ValidatedPlanSchema,
   MetabolicProfileSchema as MetabolicProfileDbSchema,
 } from '@/lib/schemas/plan';
+import { decompressJson } from '@/lib/compression';
 
 /**
  * Plan CRUD sub-router — read-only plan queries and job status checks.
@@ -46,11 +47,15 @@ export const planCrudRouter = router({
 
     if (!plan) return null;
 
-    const parsedPlan = ValidatedPlanSchema.safeParse(plan.validatedPlan).success
-      ? (plan.validatedPlan as z.infer<typeof ValidatedPlanSchema>)
+    // Decompress before Zod validation (handles both compressed and legacy data)
+    const decompressedPlan = decompressJson(plan.validatedPlan);
+    const decompressedMetabolic = decompressJson(plan.metabolicProfile);
+
+    const parsedPlan = ValidatedPlanSchema.safeParse(decompressedPlan).success
+      ? (decompressedPlan as z.infer<typeof ValidatedPlanSchema>)
       : { days: [] };
-    const parsedMetabolic = MetabolicProfileDbSchema.safeParse(plan.metabolicProfile).success
-      ? (plan.metabolicProfile as z.infer<typeof MetabolicProfileDbSchema>)
+    const parsedMetabolic = MetabolicProfileDbSchema.safeParse(decompressedMetabolic).success
+      ? (decompressedMetabolic as z.infer<typeof MetabolicProfileDbSchema>)
       : {};
 
     return {
@@ -96,11 +101,15 @@ export const planCrudRouter = router({
         });
       }
 
-      const parsedPlan = ValidatedPlanSchema.safeParse(plan.validatedPlan).success
-        ? (plan.validatedPlan as z.infer<typeof ValidatedPlanSchema>)
+      // Decompress before Zod validation (handles both compressed and legacy data)
+      const decompressedPlan = decompressJson(plan.validatedPlan);
+      const decompressedMetabolic = decompressJson(plan.metabolicProfile);
+
+      const parsedPlan = ValidatedPlanSchema.safeParse(decompressedPlan).success
+        ? (decompressedPlan as z.infer<typeof ValidatedPlanSchema>)
         : { days: [] };
-      const parsedMetabolic = MetabolicProfileDbSchema.safeParse(plan.metabolicProfile).success
-        ? (plan.metabolicProfile as z.infer<typeof MetabolicProfileDbSchema>)
+      const parsedMetabolic = MetabolicProfileDbSchema.safeParse(decompressedMetabolic).success
+        ? (decompressedMetabolic as z.infer<typeof MetabolicProfileDbSchema>)
         : {};
 
       return {

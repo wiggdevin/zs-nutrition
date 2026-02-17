@@ -1,53 +1,129 @@
 import type { CompiledDay, CompiledMeal } from '../../types/schemas';
 
 export const KCAL_TOLERANCE = 0.03; // +/- 3%
-export const MACRO_TOLERANCE = 0.05; // +/- 5%
-export const MAX_ITERATIONS = 3;
+
+/** @deprecated Use PROTEIN_TOLERANCE, CARBS_TOLERANCE, FAT_TOLERANCE instead. Kept for backward compatibility. */
+export const MACRO_TOLERANCE = 0.05; // +/- 5% (legacy)
+
+// Per-macro differentiated tolerances (P2-T06)
+export const PROTEIN_TOLERANCE = 0.1; // +/- 10%
+export const CARBS_TOLERANCE = 0.15; // +/- 15%
+export const FAT_TOLERANCE = 0.15; // +/- 15%
+export const KCAL_ABS_FLOOR = 50; // 50 kcal absolute minimum variance threshold
+
+export const MAX_ITERATIONS = 3; // Legacy: kept for backward compat but single-pass is now used
+
+export interface Violation {
+  dayIndex: number;
+  type: 'kcal' | 'macro';
+  variancePercent: number;
+  /** Which specific macros are out of tolerance (only for macro violations) */
+  offendingMacros?: Array<'protein' | 'carbs' | 'fat'>;
+}
 
 /**
- * Find days that violate kcal or macro tolerances.
+ * Find days that violate kcal or per-macro tolerances.
+ *
+ * Kcal check uses max(KCAL_TOLERANCE, KCAL_ABS_FLOOR / targetKcal) as the
+ * effective tolerance so very low-calorie targets don't trigger on tiny
+ * absolute deviations.
+ *
+ * When `macroTargets` is present on a CompiledDay, each macro (proteinG,
+ * carbsG, fatG) is validated individually against its own tolerance:
+ * - Protein: +/- 10%
+ * - Carbs:   +/- 15%
+ * - Fat:     +/- 15%
  */
-export function findViolations(
-  days: CompiledDay[]
-): Array<{ dayIndex: number; type: 'kcal' | 'macro'; variancePercent: number }> {
-  const violations: Array<{
-    dayIndex: number;
-    type: 'kcal' | 'macro';
-    variancePercent: number;
-  }> = [];
+export function findViolations(days: CompiledDay[]): Violation[] {
+  const violations: Violation[] = [];
 
   for (let i = 0; i < days.length; i++) {
     const day = days[i];
     const absKcalVariance = Math.abs(day.variancePercent) / 100;
 
-    if (absKcalVariance > KCAL_TOLERANCE) {
+    // Effective kcal tolerance: max of percentage-based and absolute-floor-based
+    const effectiveKcalTolerance =
+      day.targetKcal > 0
+        ? Math.max(KCAL_TOLERANCE, KCAL_ABS_FLOOR / day.targetKcal)
+        : KCAL_TOLERANCE;
+
+    if (absKcalVariance > effectiveKcalTolerance) {
       violations.push({
         dayIndex: i,
         type: 'kcal',
         variancePercent: day.variancePercent,
       });
-      continue; // Don't double-count
+      continue; // Don't double-count kcal + macro on same day
     }
 
-    // Check macro tolerances (protein, carbs, fat)
-    if (day.targetKcal > 0) {
-      const totalMacroKcal =
-        day.dailyTotals.proteinG * 4 + day.dailyTotals.carbsG * 4 + day.dailyTotals.fatG * 9;
+    // Per-macro validation against day-level macro targets
+    if (day.macroTargets) {
+      const { proteinG: tP, carbsG: tC, fatG: tF } = day.macroTargets;
+      const { proteinG: aP, carbsG: aC, fatG: aF } = day.dailyTotals;
 
-      if (totalMacroKcal > 0) {
-        const macroVsKcal = Math.abs(totalMacroKcal - day.dailyTotals.kcal) / day.dailyTotals.kcal;
-        if (macroVsKcal > MACRO_TOLERANCE) {
-          violations.push({
-            dayIndex: i,
-            type: 'macro',
-            variancePercent: macroVsKcal * 100,
-          });
+      const proteinVar = tP > 0 ? Math.abs(aP - tP) / tP : 0;
+      const carbsVar = tC > 0 ? Math.abs(aC - tC) / tC : 0;
+      const fatVar = tF > 0 ? Math.abs(aF - tF) / tF : 0;
+
+      // Check each macro against its individual tolerance
+      const offendingMacros: Array<'protein' | 'carbs' | 'fat'> = [];
+      if (proteinVar > PROTEIN_TOLERANCE) offendingMacros.push('protein');
+      if (carbsVar > CARBS_TOLERANCE) offendingMacros.push('carbs');
+      if (fatVar > FAT_TOLERANCE) offendingMacros.push('fat');
+
+      if (offendingMacros.length > 0) {
+        const worstVar = Math.max(proteinVar, carbsVar, fatVar);
+        violations.push({
+          dayIndex: i,
+          type: 'macro',
+          variancePercent: Math.round(worstVar * 10000) / 100,
+          offendingMacros,
+        });
+      }
+    } else {
+      // Legacy fallback: arithmetic consistency check (no macro targets available)
+      if (day.targetKcal > 0) {
+        const totalMacroKcal =
+          day.dailyTotals.proteinG * 4 + day.dailyTotals.carbsG * 4 + day.dailyTotals.fatG * 9;
+
+        if (totalMacroKcal > 0) {
+          const macroVsKcal =
+            Math.abs(totalMacroKcal - day.dailyTotals.kcal) / day.dailyTotals.kcal;
+          if (macroVsKcal > MACRO_TOLERANCE) {
+            violations.push({
+              dayIndex: i,
+              type: 'macro',
+              variancePercent: macroVsKcal * 100,
+            });
+          }
         }
       }
     }
   }
 
   return violations;
+}
+
+/**
+ * Compute per-macro variance percentages for a compiled day.
+ * Returns the signed variance percentage for each macro relative to its target.
+ * Returns null if the day has no macroTargets.
+ */
+export function computeMacroVariances(
+  day: CompiledDay
+): { proteinPercent: number; carbsPercent: number; fatPercent: number } | null {
+  if (!day.macroTargets) {
+    return null;
+  }
+
+  const { proteinG: tP, carbsG: tC, fatG: tF } = day.macroTargets;
+  const { proteinG: aP, carbsG: aC, fatG: aF } = day.dailyTotals;
+
+  return {
+    proteinPercent: tP > 0 ? Math.round(((aP - tP) / tP) * 10000) / 100 : 0,
+    carbsPercent: tC > 0 ? Math.round(((aC - tC) / tC) * 10000) / 100 : 0,
+    fatPercent: tF > 0 ? Math.round(((aF - tF) / tF) * 10000) / 100 : 0,
+  };
 }
 
 /**

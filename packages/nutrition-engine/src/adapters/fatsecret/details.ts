@@ -4,6 +4,7 @@
 
 import { OAuthManager, apiRequest } from './oauth';
 import { FatSecretCache } from './cache';
+import { fatSecretCircuitBreaker } from './circuit-breaker';
 import { LocalFoodDatabase } from './local-fallback';
 import type { FoodDetails, RecipeDetails, FatSecretFoodResponse, FatSecretServing } from './types';
 
@@ -23,9 +24,11 @@ export async function getFood(
     return cached;
   }
 
-  const data = (await apiRequest(oauth, 'food.get.v4', {
-    food_id: foodId,
-  })) as FatSecretFoodResponse;
+  const data = (await fatSecretCircuitBreaker.execute(() =>
+    apiRequest(oauth, 'food.get.v4', {
+      food_id: foodId,
+    })
+  )) as FatSecretFoodResponse;
   const food = data?.food;
   if (!food) {
     throw new Error(`Food ${foodId} not found`);
@@ -71,7 +74,9 @@ export async function getFoodByBarcode(
   }
 
   try {
-    const data = await apiRequest(oauth, 'food.find_id_for_barcode', { barcode });
+    const data = await fatSecretCircuitBreaker.execute(() =>
+      apiRequest(oauth, 'food.find_id_for_barcode', { barcode })
+    );
     const foodId = data?.food_id?.value;
     if (!foodId) {
       return null;
@@ -84,6 +89,7 @@ export async function getFoodByBarcode(
 
 export async function getRecipe(
   oauth: OAuthManager,
+  cache: FatSecretCache,
   isConfigured: boolean,
   recipeId: string
 ): Promise<RecipeDetails> {
@@ -91,13 +97,21 @@ export async function getRecipe(
     throw new Error('Recipe lookup requires FatSecret API credentials');
   }
 
-  const data = await apiRequest(oauth, 'recipe.get.v2', { recipe_id: recipeId });
+  // Check cache first
+  const cached = cache.getRecipe(recipeId);
+  if (cached) {
+    return cached;
+  }
+
+  const data = await fatSecretCircuitBreaker.execute(() =>
+    apiRequest(oauth, 'recipe.get.v2', { recipe_id: recipeId })
+  );
   const r = data?.recipe;
   if (!r) {
     throw new Error(`Recipe ${recipeId} not found`);
   }
 
-  return {
+  const result: RecipeDetails = {
     recipeId: String(r.recipe_id),
     name: r.recipe_name,
     description: r.recipe_description || '',
@@ -123,4 +137,8 @@ export async function getRecipe(
       fiber: r.serving_sizes?.serving?.fiber ? Number(r.serving_sizes.serving.fiber) : undefined,
     },
   };
+
+  // Store in cache
+  cache.setRecipe(recipeId, result);
+  return result;
 }

@@ -47,6 +47,9 @@ export function useDashboardData() {
   const [needsOnboarding, setNeedsOnboarding] = useState(false);
   const [isTrainingDay, setIsTrainingDay] = useState(false);
   const [trainingBonusKcal, setTrainingBonusKcal] = useState(0);
+  const [isPlanStale, setIsPlanStale] = useState(false);
+  const [staleReason, setStaleReason] = useState<'plan_age' | 'profile_changed' | null>(null);
+  const [planGeneratedAt, setPlanGeneratedAt] = useState<string | null>(null);
   const router = useRouter();
 
   const abortControllerRef = useRef<AbortController | null>(null);
@@ -127,6 +130,9 @@ export function useDashboardData() {
         setTodayPlanMeals(json.todayPlanMeals || []);
         setIsTrainingDay(json.isTrainingDay ?? false);
         setTrainingBonusKcal(json.trainingBonusKcal ?? 0);
+        setIsPlanStale(json.isPlanStale ?? false);
+        setStaleReason(json.staleReason ?? null);
+        setPlanGeneratedAt(json.planGeneratedAt ?? null);
 
         setError(null);
       } catch (err) {
@@ -341,6 +347,9 @@ export function useDashboardData() {
     needsOnboarding,
     isTrainingDay,
     trainingBonusKcal,
+    isPlanStale,
+    staleReason,
+    planGeneratedAt,
     // Actions
     setLoading,
     setError,

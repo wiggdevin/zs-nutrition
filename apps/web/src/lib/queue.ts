@@ -24,7 +24,7 @@ class MockQueue {
     logger.debug(`[MockQueue] Job enqueued: ${jobName}`, {
       queueName: this.name,
       jobId: opts?.jobId || data.jobId,
-      intakeDataKeys: Object.keys(data.intakeData),
+      pipelinePath: data.pipelinePath,
     });
     return {
       id: opts?.jobId || data.jobId,

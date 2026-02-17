@@ -105,6 +105,7 @@ model MealPlan {
   profile           UserProfile @relation(fields: [profileId], references: [id])
   validatedPlan     Json? // Full MealPlanValidated - defaults handled at app level
   metabolicProfile  Json? // MetabolicProfile - defaults handled at app level
+  draftData         Json? // MealPlanDraft (Agent 3 output) for fast-path recalculation
   dailyKcalTarget   Int?
   dailyProteinG     Int?
   dailyCarbsG       Int?
@@ -116,6 +117,7 @@ model MealPlan {
   qaScore           Int? // 0-100
   qaStatus          String? // PASS | WARN | FAIL
   pdfUrl            String?
+  version           Int         @default(1)
   status            String      @default("active") // active | expired | replaced | deleted
   isActive          Boolean     @default(true)
   deletedAt         DateTime? // Soft delete timestamp - null means not deleted

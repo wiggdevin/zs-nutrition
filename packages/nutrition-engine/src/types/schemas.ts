@@ -101,6 +101,8 @@ export const ClientIntakeSchema = z.object({
   prepTimeMaxMin: z.number().int().min(10).max(120),
   macroStyle: MacroStyleEnum,
   planDurationDays: z.number().int().min(1).max(7),
+  constraintWarnings: z.array(z.string()).default([]),
+  constraintsCompatible: z.boolean().default(true),
 });
 
 export type ClientIntake = z.infer<typeof ClientIntakeSchema>;
@@ -123,6 +125,7 @@ export const MetabolicProfileSchema = z.object({
   bmrKcal: z.number().int(),
   tdeeKcal: z.number().int(),
   goalKcal: z.number().int(),
+  goalKcalFloorApplied: z.boolean(),
   proteinTargetG: z.number().int(),
   carbsTargetG: z.number().int(),
   fatTargetG: z.number().int(),
@@ -131,7 +134,15 @@ export const MetabolicProfileSchema = z.object({
   trainingDayBonusKcal: z.number().int(),
   restDayKcal: z.number().int(),
   trainingDayKcal: z.number().int(),
-  calculationMethod: z.literal('mifflin_st_jeor'),
+  trainingDayMacros: z
+    .object({
+      proteinG: z.number().int(),
+      carbsG: z.number().int(),
+      fatG: z.number().int(),
+    })
+    .optional(),
+  calculationMethod: z.enum(['mifflin_st_jeor', 'katch_mcardle']),
+  proteinMethod: z.enum(['g_per_kg', 'percentage']),
   macroSplit: z.object({
     proteinPercent: z.number(),
     carbsPercent: z.number(),
@@ -223,11 +234,18 @@ export const CompiledMealSchema = z.object({
   tags: z.array(z.string()),
 });
 
+export const MacroTargetsSchema = z.object({
+  proteinG: z.number(),
+  carbsG: z.number(),
+  fatG: z.number(),
+});
+
 export const CompiledDaySchema = z.object({
   dayNumber: z.number().int(),
   dayName: z.string(),
   isTrainingDay: z.boolean(),
   targetKcal: z.number(),
+  macroTargets: MacroTargetsSchema.optional(),
   meals: z.array(CompiledMealSchema),
   dailyTotals: VerifiedNutritionSchema,
   varianceKcal: z.number(),
@@ -268,6 +286,13 @@ export const DayQAResultSchema = z.object({
   dayNumber: z.number().int(),
   variancePercent: z.number(),
   status: QAStatusEnum,
+  macroVariances: z
+    .object({
+      proteinPercent: z.number(),
+      carbsPercent: z.number(),
+      fatPercent: z.number(),
+    })
+    .optional(),
 });
 
 export const QAResultSchema = z.object({
@@ -290,6 +315,10 @@ export const MealPlanValidatedSchema = z.object({
   }),
   generatedAt: z.string().datetime(),
   engineVersion: z.string(),
+  // Calculation metadata (populated by orchestrator, optional for backward compat)
+  calculationMethod: z.enum(['mifflin_st_jeor', 'katch_mcardle']).optional(),
+  proteinMethod: z.enum(['g_per_kg', 'percentage']).optional(),
+  goalKcalFloorApplied: z.boolean().optional(),
 });
 
 export type MealPlanValidated = z.infer<typeof MealPlanValidatedSchema>;
@@ -302,9 +331,10 @@ export type GroceryCategory = z.infer<typeof GroceryCategorySchema>;
 
 export const PipelineProgressSchema = z.object({
   status: z.enum(['running', 'completed', 'failed']),
-  agent: z.number().int().min(1).max(6),
+  agent: z.number().int().min(0).max(6),
   agentName: z.string(),
   message: z.string(),
+  subStep: z.string().optional(),
   planId: z.string().optional(),
   error: z.string().optional(),
 });

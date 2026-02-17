@@ -3,12 +3,14 @@
  * Provides typed interface for food and recipe search, autocomplete, and details.
  * Falls back to a comprehensive local food database when FatSecret credentials are unavailable.
  *
- * Performance optimization: Uses LRU caches for search and food details to avoid
- * redundant API calls for common queries (e.g., "chicken breast").
+ * Performance optimizations:
+ *   - LRU caches for food search, food details, recipe search, and recipe details
+ *   - Circuit breaker to fast-fail when the FatSecret API is unresponsive
  */
 
 import { OAuthManager } from './oauth';
 import { FatSecretCache } from './cache';
+import { fatSecretCircuitBreaker } from './circuit-breaker';
 import { searchFoods, searchRecipes } from './search';
 import { getFood, getFoodByBarcode, getRecipe } from './details';
 import { autocomplete } from './autocomplete';
@@ -24,6 +26,10 @@ export type {
   RecipeIngredient,
   RecipeDirection,
 } from './types';
+
+// Re-export circuit breaker for external monitoring
+export { fatSecretCircuitBreaker } from './circuit-breaker';
+export type { CircuitBreakerState } from './circuit-breaker';
 
 // Re-export fallback databases for direct use
 export { LocalFoodDatabase, LocalRecipeDatabase } from './local-fallback';
@@ -47,6 +53,11 @@ export class FatSecretAdapter {
 
   clearCaches() {
     this.cache.clear();
+  }
+
+  /** Returns the current circuit breaker state for health checks / monitoring */
+  getCircuitBreakerState() {
+    return fatSecretCircuitBreaker.getState();
   }
 
   private isConfigured(): boolean {
@@ -76,11 +87,11 @@ export class FatSecretAdapter {
   }
 
   async searchRecipes(query: string, maxResults: number = 10): Promise<RecipeSearchResult[]> {
-    return searchRecipes(this.oauth, this.isConfigured(), query, maxResults);
+    return searchRecipes(this.oauth, this.cache, this.isConfigured(), query, maxResults);
   }
 
   async getRecipe(recipeId: string): Promise<RecipeDetails> {
-    return getRecipe(this.oauth, this.isConfigured(), recipeId);
+    return getRecipe(this.oauth, this.cache, this.isConfigured(), recipeId);
   }
 
   async autocomplete(query: string): Promise<string[]> {

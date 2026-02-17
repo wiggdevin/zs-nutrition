@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
+import { decompressJson } from '@/lib/compression';
 
 /**
  * GET /api/plan/[id]
@@ -68,23 +69,25 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
       );
     }
 
-    // Parse JSON fields
+    // Decompress JSON fields (handles compressed, legacy string, and raw object formats)
     let validatedPlan = null;
     try {
-      validatedPlan =
+      const raw =
         typeof plan.validatedPlan === 'string'
           ? JSON.parse(plan.validatedPlan)
           : plan.validatedPlan;
+      validatedPlan = decompressJson(raw);
     } catch {
       // empty
     }
 
     let metabolicProfile = null;
     try {
-      metabolicProfile =
+      const raw =
         typeof plan.metabolicProfile === 'string'
           ? JSON.parse(plan.metabolicProfile)
           : plan.metabolicProfile;
+      metabolicProfile = decompressJson(raw);
     } catch {
       // empty
     }

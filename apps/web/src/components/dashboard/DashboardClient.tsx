@@ -8,6 +8,7 @@ import { useDashboardData } from './useDashboardData';
 import { useDashboardComputations } from './useDashboardComputations';
 import { DashboardHeader } from './DashboardHeader';
 import { ErrorBanner } from './ErrorBanner';
+import { PlanStaleBanner } from './PlanStaleBanner';
 import { EmptyState } from './EmptyState';
 import { MacroRingsSection } from './MacroRingsSection';
 import { AdherenceScoreSection } from './AdherenceScoreSection';
@@ -37,6 +38,8 @@ export default function DashboardClient() {
     needsOnboarding,
     isTrainingDay,
     trainingBonusKcal,
+    isPlanStale,
+    staleReason,
     setLoading,
     setError,
     fetchData,
@@ -149,6 +152,8 @@ export default function DashboardClient() {
 
         <AdaptiveNutritionBanner />
         <ActivitySyncStatus />
+
+        {isPlanStale && <PlanStaleBanner staleReason={staleReason} />}
 
         <MacroRingsSection
           macros={macros}

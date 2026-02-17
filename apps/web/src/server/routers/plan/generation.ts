@@ -92,8 +92,7 @@ export const planGenerationRouter = router({
 
     const bullmqJobData: PlanGenerationJobData = {
       jobId: job.id,
-      userId: dbUserId,
-      intakeData: input as Record<string, unknown>,
+      pipelinePath: 'full',
     };
 
     try {
@@ -309,8 +308,7 @@ export const planGenerationRouter = router({
 
     const bullmqJobData: PlanGenerationJobData = {
       jobId: job.id,
-      userId: dbUserId,
-      intakeData: intakeData as Record<string, unknown>,
+      pipelinePath: 'full',
     };
 
     try {

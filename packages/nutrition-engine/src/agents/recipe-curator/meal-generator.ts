@@ -10,8 +10,45 @@ import { MEAL_DATABASE, MealCandidate } from '../../data/meal-database';
 import { selectMealWithVariety, rotateMealInPool } from './variety-optimizer';
 
 /**
+ * Create a seeded pseudo-random number generator from a string seed.
+ * Uses a simple hash-to-integer conversion followed by the Mulberry32 PRNG
+ * algorithm, which provides good distribution and a full 2^32 period.
+ *
+ * This enables reproducible fallback meal plans: the same client profile
+ * always produces the same meal selections, making debugging and testing
+ * straightforward without external dependencies.
+ */
+export function createSeededRandom(seed: string): () => number {
+  let hash = 0;
+  for (let i = 0; i < seed.length; i++) {
+    const char = seed.charCodeAt(i);
+    hash = (hash << 5) - hash + char;
+    hash |= 0; // Convert to 32-bit integer
+  }
+
+  // Mulberry32 PRNG
+  return () => {
+    hash |= 0;
+    hash = (hash + 0x6d2b79f5) | 0;
+    let t = Math.imul(hash ^ (hash >>> 15), 1 | hash);
+    t = (t + Math.imul(t ^ (t >>> 7), 61 | t)) ^ t;
+    return ((t ^ (t >>> 14)) >>> 0) / 4294967296;
+  };
+}
+
+/**
+ * Generate a deterministic seed string from client intake data.
+ * Combines key profile attributes that affect meal selection so that
+ * identical profiles produce identical fallback plans.
+ */
+export function generateSeed(intake: ClientIntake): string {
+  return `${intake.sex}:${intake.age}:${intake.weightKg}:${intake.goalType}:${intake.dietaryStyle}`;
+}
+
+/**
  * Deterministic meal plan generator for dev/testing.
  * Produces realistic, varied meals that match the user's profile and targets.
+ * Uses a seeded PRNG derived from the client's profile for reproducible output.
  * @param startDate - Optional start date to calculate correct day names (defaults to today)
  */
 export function generateDeterministic(
@@ -19,6 +56,9 @@ export function generateDeterministic(
   intake: ClientIntake,
   startDate?: Date
 ): MealPlanDraft {
+  // Initialize seeded PRNG for reproducible meal selection
+  const randomFn = createSeededRandom(generateSeed(intake));
+
   // Use provided startDate or default to today (UTC to avoid timezone issues)
   const start = startDate ? new Date(startDate) : new Date();
   // Normalize to midnight UTC
@@ -84,7 +124,8 @@ export function generateDeterministic(
         slotData,
         recentMealNames,
         previousDayProteins,
-        mealsPerDay
+        mealsPerDay,
+        randomFn
       );
 
       if (!selected) {

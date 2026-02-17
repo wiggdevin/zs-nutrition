@@ -64,23 +64,71 @@ export const MEAL_LABELS: Record<number, string[]> = {
   6: ['breakfast', 'morning_snack', 'lunch', 'afternoon_snack', 'dinner', 'evening_snack'],
 };
 
+/**
+ * Safety-critical caloric floors (kcal/day) to prevent dangerously low intake.
+ * Based on established clinical nutrition guidelines.
+ */
+export const CALORIC_FLOOR_FEMALE = 1200;
+export const CALORIC_FLOOR_MALE = 1500;
+
+/**
+ * Maximum fraction of daily calories that can be allocated to snacks.
+ * Prevents excessive snack allocation (e.g., 4 snacks x 10% = 40%).
+ */
+export const SNACK_ALLOCATION_CAP = 0.25;
+
+/**
+ * Goal-based protein targets in grams per kilogram of bodyweight.
+ * Evidence-based values for body recomposition optimization:
+ * - Cut: higher protein preserves lean mass during caloric deficit
+ * - Maintain: moderate protein for tissue maintenance
+ * - Bulk: slightly lower g/kg since surplus supports anabolism
+ */
+export const PROTEIN_G_PER_KG: Record<string, number> = {
+  cut: 2.0,
+  maintain: 1.8,
+  bulk: 1.7,
+};
+
+/**
+ * Sex-specific daily fiber floor (grams/day).
+ * Based on USDA Dietary Guidelines for Americans adequate intake levels.
+ */
+export const FIBER_FLOOR_FEMALE = 25;
+export const FIBER_FLOOR_MALE = 38;
+
 // ============================================================================
 // Exported Functions - Canonical calculation utilities
 // ============================================================================
 
 /**
- * Calculate Basal Metabolic Rate using Mifflin-St Jeor equation
+ * Calculate Basal Metabolic Rate using dual-path approach:
+ * - Katch-McArdle when bodyFatPercent is available (more accurate with body composition data)
+ * - Mifflin-St Jeor as fallback (population-based estimate)
  */
 export function calculateBMR(input: {
   sex: string;
   weightKg: number;
   heightCm: number;
   age: number;
-}): number {
-  if (input.sex === 'male') {
-    return 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age + 5;
+  bodyFatPercent?: number;
+}): { bmr: number; method: 'katch_mcardle' | 'mifflin_st_jeor' } {
+  // Katch-McArdle path: requires valid body fat percentage (3-60% clinical range)
+  if (
+    input.bodyFatPercent !== null &&
+    input.bodyFatPercent !== undefined &&
+    input.bodyFatPercent >= 3 &&
+    input.bodyFatPercent <= 60
+  ) {
+    const leanMass = input.weightKg * (1 - input.bodyFatPercent / 100);
+    return { bmr: 370 + 21.6 * leanMass, method: 'katch_mcardle' };
   }
-  return 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161;
+  // Mifflin-St Jeor fallback
+  const bmr =
+    input.sex === 'male'
+      ? 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age + 5
+      : 10 * input.weightKg + 6.25 * input.heightCm - 5 * input.age - 161;
+  return { bmr, method: 'mifflin_st_jeor' };
 }
 
 /**
@@ -116,10 +164,26 @@ export function calculateMacroTargets(
 }
 
 /**
- * Get training day bonus calories for an activity level
+ * Calculate protein target in grams based on bodyweight and goal type.
+ * Uses evidence-based g/kg multipliers with a clinical safety cap of 2.5 g/kg
+ * to prevent excessive protein intake that could stress renal function.
  */
-export function getTrainingDayBonus(activityLevel: string): number {
-  return TRAINING_DAY_BONUS[activityLevel] ?? 200;
+export function calculateProteinG(weightKg: number, goalType: string): number {
+  const gPerKg = PROTEIN_G_PER_KG[goalType] ?? 1.8;
+  const rawProtein = Math.round(weightKg * gPerKg);
+  // Clinical safety cap: 2.5 g/kg
+  return Math.min(rawProtein, Math.round(weightKg * 2.5));
+}
+
+/**
+ * Calculate training day bonus calories based on TDEE and training duration.
+ * Formula: TDEE * 0.05 * (trainingTimeMinutes / 60), clamped to 150-400 kcal.
+ * This replaces the static lookup table with a formula that scales with
+ * the individual's energy expenditure and actual training volume.
+ */
+export function getTrainingDayBonus(tdee: number, trainingTimeMinutes: number = 60): number {
+  const rawBonus = Math.round(tdee * 0.05 * (trainingTimeMinutes / 60));
+  return Math.max(150, Math.min(400, rawBonus));
 }
 
 // ============================================================================
@@ -133,38 +197,59 @@ export function getTrainingDayBonus(activityLevel: string): number {
  */
 export class MetabolicCalculator {
   calculate(intake: ClientIntake): MetabolicProfile {
-    // BMR (Mifflin-St Jeor) - use exported function
-    const bmr = calculateBMR(intake);
+    // BMR - dual-path: Katch-McArdle (with body fat) or Mifflin-St Jeor (fallback)
+    const { bmr, method: bmrMethod } = calculateBMR({
+      ...intake,
+      bodyFatPercent: intake.bodyFatPercent,
+    });
     const bmrKcal = Math.round(bmr);
 
     // TDEE - use exported function
     const tdeeKcal = calculateTDEE(bmrKcal, intake.activityLevel);
 
     // Goal Calories - use exported function
-    const goalKcal = calculateGoalCalories(tdeeKcal, intake.goalType, intake.goalRate);
+    const goalKcalRaw = calculateGoalCalories(tdeeKcal, intake.goalType, intake.goalRate);
 
-    // Training day bonus - use exported function
-    const trainingDayBonusKcal = getTrainingDayBonus(intake.activityLevel);
+    // Safety: enforce sex-specific caloric floor to prevent dangerously low intake
+    const caloricFloor = intake.sex === 'male' ? CALORIC_FLOOR_MALE : CALORIC_FLOOR_FEMALE;
+    const goalKcalFloorApplied = goalKcalRaw < caloricFloor;
+    const goalKcal = Math.max(goalKcalRaw, caloricFloor);
+
+    // Training day bonus - formula-based on TDEE and training duration
+    // Map training time enum to minutes (conservative defaults)
+    const trainingTimeMinutes =
+      intake.trainingTime === 'morning'
+        ? 60
+        : intake.trainingTime === 'afternoon'
+          ? 75
+          : intake.trainingTime === 'evening'
+            ? 60
+            : 60; // default 60 min
+    const trainingDayBonusKcal = getTrainingDayBonus(tdeeKcal, trainingTimeMinutes);
     const restDayKcal = goalKcal;
 
-    // Macro splits - use exported function
-    const macros = calculateMacroTargets(goalKcal, intake.macroStyle);
-    const proteinTargetG = macros.proteinG;
-    const carbsTargetG = macros.carbsG;
-    const fatTargetG = macros.fatG;
+    // NEW: g/kg protein calculation (replaces percentage-based protein)
+    const proteinTargetG = calculateProteinG(intake.weightKg, intake.goalType);
+    const proteinKcal = proteinTargetG * 4;
+    // Remaining calories split between carbs and fat using macroStyle ratios
+    const remainingKcal = goalKcal - proteinKcal;
+    const split = MACRO_SPLITS[intake.macroStyle] || MACRO_SPLITS.balanced;
+    // Normalize carb/fat ratio from the split (excluding protein)
+    const carbFatTotal = split.carbs + split.fat;
+    const carbsTargetG = Math.round((remainingKcal * (split.carbs / carbFatTotal)) / 4);
+    const fatTargetG = Math.round((remainingKcal * (split.fat / carbFatTotal)) / 9);
 
-    // Fiber: 14g per 1000 kcal, minimum 25g
-    const fiberTargetG = Math.max(25, Math.round((goalKcal / 1000) * 14));
+    // Fiber: 14g per 1000 kcal with sex-specific floor (male: 38g, female: 25g)
+    const fiberFloor = intake.sex === 'male' ? FIBER_FLOOR_MALE : FIBER_FLOOR_FEMALE;
+    const fiberTargetG = Math.max(fiberFloor, Math.round((goalKcal / 1000) * 14));
 
     // Meal distribution - use exported constants
     const baseDist = MEAL_DISTRIBUTIONS[intake.mealsPerDay] ?? MEAL_DISTRIBUTIONS[3];
     const baseLabels = MEAL_LABELS[intake.mealsPerDay] ?? MEAL_LABELS[3];
 
-    // Get macro split for result
-    const split = MACRO_SPLITS[intake.macroStyle] || MACRO_SPLITS.balanced;
-
-    // Adjust for snacks: each snack takes 10%
-    const snackTotal = intake.snacksPerDay * 0.1;
+    // Adjust for snacks: each snack takes 10%, capped at 25% total
+    const snackTotal = Math.min(intake.snacksPerDay * 0.1, SNACK_ALLOCATION_CAP);
+    const snackPctEach = intake.snacksPerDay > 0 ? snackTotal / intake.snacksPerDay : 0;
     const mealScale = 1 - snackTotal;
 
     const mealTargets: MealTarget[] = [];
@@ -183,25 +268,42 @@ export class MetabolicCalculator {
       });
     }
 
-    // Add snack slots
+    // Add snack slots (using capped per-snack percentage)
     for (let i = 0; i < intake.snacksPerDay; i++) {
       mealTargets.push({
         slot: `snack_${i + 1}`,
         label: `snack_${i + 1}`,
-        kcal: Math.round(goalKcal * 0.1),
-        proteinG: Math.round(proteinTargetG * 0.1),
-        carbsG: Math.round(carbsTargetG * 0.1),
-        fatG: Math.round(fatTargetG * 0.1),
-        percentOfDaily: 10,
+        kcal: Math.round(goalKcal * snackPctEach),
+        proteinG: Math.round(proteinTargetG * snackPctEach),
+        carbsG: Math.round(carbsTargetG * snackPctEach),
+        fatG: Math.round(fatTargetG * snackPctEach),
+        percentOfDaily: Math.round(snackPctEach * 100),
       });
     }
 
     const trainingDayKcal = goalKcal + trainingDayBonusKcal;
 
+    // Training-day-specific macro targets: extra bonus calories go to carbs
+    const trainingDayMacros = {
+      proteinG: proteinTargetG, // protein stays same
+      carbsG: Math.round(carbsTargetG + trainingDayBonusKcal / 4), // extra carbs
+      fatG: fatTargetG, // fat stays same
+    };
+
+    // Compute actual macro percentages from resolved gram values
+    const totalMacroKcal = proteinTargetG * 4 + carbsTargetG * 4 + fatTargetG * 9;
+    const actualProteinPct =
+      totalMacroKcal > 0 ? Math.round(((proteinTargetG * 4) / totalMacroKcal) * 100) : 0;
+    const actualCarbsPct =
+      totalMacroKcal > 0 ? Math.round(((carbsTargetG * 4) / totalMacroKcal) * 100) : 0;
+    const actualFatPct =
+      totalMacroKcal > 0 ? Math.round(((fatTargetG * 9) / totalMacroKcal) * 100) : 0;
+
     const result = {
       bmrKcal,
       tdeeKcal,
       goalKcal,
+      goalKcalFloorApplied,
       proteinTargetG,
       carbsTargetG,
       fatTargetG,
@@ -210,11 +312,13 @@ export class MetabolicCalculator {
       trainingDayBonusKcal,
       restDayKcal,
       trainingDayKcal,
-      calculationMethod: 'mifflin_st_jeor' as const,
+      trainingDayMacros,
+      calculationMethod: bmrMethod,
+      proteinMethod: 'g_per_kg' as const,
       macroSplit: {
-        proteinPercent: split.protein * 100,
-        carbsPercent: split.carbs * 100,
-        fatPercent: split.fat * 100,
+        proteinPercent: actualProteinPct,
+        carbsPercent: actualCarbsPct,
+        fatPercent: actualFatPct,
       },
     };
 

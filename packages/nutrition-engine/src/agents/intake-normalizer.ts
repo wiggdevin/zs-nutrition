@@ -1,6 +1,32 @@
 import { RawIntakeForm, ClientIntake, ClientIntakeSchema } from '../types/schemas';
 
 /**
+ * Cross-validate dietaryStyle against macroStyle for constraint compatibility.
+ * Detects conflicting combinations before the pipeline proceeds, avoiding
+ * wasted computation on plans that cannot satisfy both constraints.
+ */
+export function crossValidateConstraints(
+  dietaryStyle: string,
+  macroStyle: string
+): { warnings: string[]; compatible: boolean } {
+  const warnings: string[] = [];
+  let compatible = true;
+
+  if (dietaryStyle === 'vegan' && macroStyle === 'keto') {
+    warnings.push(
+      'Vegan diet has limited compatibility with keto macros due to carb content of plant proteins'
+    );
+    compatible = false;
+  }
+
+  if (dietaryStyle === 'vegan' && macroStyle === 'low_carb') {
+    warnings.push('Vegan low-carb is challenging; consider pescatarian or increase carb allowance');
+  }
+
+  return { warnings, compatible };
+}
+
+/**
  * Agent 1: Intake Normalizer
  * Transforms raw user input into clean, validated, metric-normalized data.
  * No LLM required — pure deterministic logic.
@@ -34,6 +60,9 @@ export class IntakeNormalizer {
       return [...new Set(cleaned)];
     };
 
+    // Cross-validate dietary style against macro style
+    const { warnings, compatible } = crossValidateConstraints(input.dietaryStyle, input.macroStyle);
+
     const result = {
       name: input.name.trim(),
       sex: input.sex,
@@ -56,6 +85,8 @@ export class IntakeNormalizer {
       prepTimeMaxMin: input.prepTimeMaxMin,
       macroStyle: input.macroStyle,
       planDurationDays: input.planDurationDays ?? 7,
+      constraintWarnings: warnings,
+      constraintsCompatible: compatible,
     };
 
     // Validate output against schema

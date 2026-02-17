@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
+import { decompressJson } from '@/lib/compression';
 
 interface MealNutrition {
   kcal: number;
@@ -186,8 +187,8 @@ export async function POST(req: NextRequest) {
       Array.isArray(userProfile?.exclusions) ? userProfile.exclusions : []
     ) as string[];
 
-    // validatedPlan is now a Prisma Json type - cast through unknown for type safety
-    const validatedPlan = mealPlan.validatedPlan as unknown as { days: PlanDay[] };
+    // Decompress validatedPlan (handles both compressed and legacy uncompressed data)
+    const validatedPlan = decompressJson<{ days: PlanDay[] }>(mealPlan.validatedPlan);
     if (!validatedPlan?.days) {
       return NextResponse.json({ error: 'Invalid plan data' }, { status: 500 });
     }

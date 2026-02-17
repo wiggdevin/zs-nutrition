@@ -1,9 +1,11 @@
 import { prisma } from '@/lib/prisma';
+import type { Prisma } from '@prisma/client';
 import { generatePlanPdf } from '@/lib/generate-plan-pdf';
 import { uploadPlanPdf } from '@/lib/upload-pdf';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay, addDays } from '@/lib/date-utils';
 import { isUniqueConstraintError } from '@/lib/plan-utils';
+import { compressJson, jsonSizeBytes } from '@/lib/compression';
 
 /**
  * Saves a completed plan generation result to the MealPlan table.
@@ -70,6 +72,7 @@ export interface PlanCompletionData {
     fatTargetG?: number;
     trainingBonusKcal?: number;
   };
+  draftData?: Prisma.InputJsonValue;
 }
 
 export interface SavePlanResult {
@@ -79,7 +82,7 @@ export interface SavePlanResult {
 }
 
 export async function savePlanToDatabase(data: PlanCompletionData): Promise<SavePlanResult> {
-  const { jobId, planData, metabolicProfile } = data;
+  const { jobId, planData, metabolicProfile, draftData } = data;
 
   try {
     // 1. Look up the PlanGenerationJob to get userId and intake data
@@ -177,7 +180,30 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
     const planDays = planData.days?.length || 7;
     const endDate = addDays(startDate, planDays);
 
-    // 4. Deactivate old plans and create new plan atomically in a transaction
+    // 4. Determine the next version number for this user
+    const latestPlan = await prisma.mealPlan.findFirst({
+      where: { userId },
+      orderBy: { version: 'desc' },
+      select: { version: true },
+    });
+    const nextVersion = (latestPlan?.version ?? 0) + 1;
+
+    // 5. Compress large JSON fields before storage
+    const compressedPlan = compressJson(planData);
+    const compressedDraft = draftData ? compressJson(draftData) : undefined;
+
+    const planSizeRaw = jsonSizeBytes(planData);
+    const planSizeStored = compressedPlan.compressed
+      ? Buffer.byteLength(compressedPlan.data as string)
+      : planSizeRaw;
+    logger.info(
+      `[savePlanToDatabase] Storage: plan=${planSizeRaw}B->${planSizeStored}B (${compressedPlan.compressed ? 'compressed' : 'raw'})` +
+        (compressedDraft
+          ? `, draft=${jsonSizeBytes(draftData)}B->${compressedDraft.compressed ? Buffer.byteLength(compressedDraft.data as string) : jsonSizeBytes(draftData)}B (${compressedDraft.compressed ? 'compressed' : 'raw'})`
+          : '')
+    );
+
+    // 6. Deactivate old plans and create new plan atomically in a transaction
     // This prevents race conditions where plans could be left in an inconsistent state
     // The partial unique index (MealPlan_userId_active_unique) enforces only one active plan per user
     let mealPlan;
@@ -190,13 +216,14 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
         });
 
         // Step 2: Create the MealPlan record (atomic with step 1)
-        // validatedPlan and metabolicProfile are now Prisma Json types - pass objects directly
+        // validatedPlan and draftData are compressed if >10KB for storage optimization
         return tx.mealPlan.create({
           data: {
             userId,
             profileId: profile.id,
-            validatedPlan: planData,
+            validatedPlan: compressedPlan as unknown as Prisma.InputJsonValue,
             metabolicProfile: metabolicProfile || {},
+            draftData: (compressedDraft ?? undefined) as Prisma.InputJsonValue | undefined,
             dailyKcalTarget: dailyKcalTarget ? Math.round(dailyKcalTarget) : null,
             dailyProteinG: dailyProteinG ? Math.round(dailyProteinG) : null,
             dailyCarbsG: dailyCarbsG ? Math.round(dailyCarbsG) : null,
@@ -209,6 +236,7 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
             endDate,
             qaScore: qaScore ? Math.round(qaScore) : null,
             qaStatus: qaStatus || null,
+            version: nextVersion,
             status: 'active',
             isActive: true,
           },
@@ -232,8 +260,9 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
           data: {
             userId,
             profileId: profile.id,
-            validatedPlan: planData,
+            validatedPlan: compressedPlan as unknown as Prisma.InputJsonValue,
             metabolicProfile: metabolicProfile || {},
+            draftData: (compressedDraft ?? undefined) as Prisma.InputJsonValue | undefined,
             dailyKcalTarget: dailyKcalTarget ? Math.round(dailyKcalTarget) : null,
             dailyProteinG: dailyProteinG ? Math.round(dailyProteinG) : null,
             dailyCarbsG: dailyCarbsG ? Math.round(dailyCarbsG) : null,
@@ -246,6 +275,7 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
             endDate,
             qaScore: qaScore ? Math.round(qaScore) : null,
             qaStatus: qaStatus || null,
+            version: nextVersion,
             status: 'active',
             isActive: true,
           },
@@ -255,7 +285,7 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
       }
     }
 
-    // 6. Generate and upload PDF
+    // 7. Generate and upload PDF
     let pdfUrl: string | null = null;
     try {
       const pdfBuffer = generatePlanPdf(planData, {
@@ -287,7 +317,7 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
       logger.warn('[savePlanToDatabase] PDF generation error:', pdfError);
     }
 
-    // 7. Update the PlanGenerationJob with result and status
+    // 8. Update the PlanGenerationJob with result and status
     // result is now a Prisma Json type - pass object directly
     await prisma.planGenerationJob.update({
       where: { id: jobId },

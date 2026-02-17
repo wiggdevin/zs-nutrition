@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay } from '@/lib/date-utils';
+import { decompressJson } from '@/lib/compression';
 
 export async function GET(request: Request) {
   try {
@@ -109,10 +110,10 @@ export async function GET(request: Request) {
         fatG: activePlan.dailyFatG || 65,
       };
 
-      // validatedPlan is now a Prisma Json type - no parsing needed
-      const validatedPlan = activePlan.validatedPlan as {
+      // Decompress validatedPlan (handles both compressed and legacy uncompressed data)
+      const validatedPlan = decompressJson<{
         days?: Array<{ dayNumber: number; meals?: Array<any> }>;
-      } | null;
+      } | null>(activePlan.validatedPlan);
 
       // If validatedPlan is null or has no valid days, treat as no plan
       if (!validatedPlan?.days || validatedPlan.days.length === 0) {
@@ -258,10 +259,30 @@ export async function GET(request: Request) {
       });
     }
 
+    // Compute plan staleness
+    const SEVEN_DAYS_MS = 7 * 24 * 60 * 60 * 1000;
+    let isPlanStale = false;
+    let staleReason: 'plan_age' | 'profile_changed' | null = null;
+    const planGeneratedAt = activePlan?.generatedAt?.toISOString() ?? null;
+
+    if (activePlan && activeProfile) {
+      const generatedTime = activePlan.generatedAt?.getTime() ?? 0;
+      if (Date.now() - generatedTime > SEVEN_DAYS_MS) {
+        isPlanStale = true;
+        staleReason = 'plan_age';
+      } else if (activeProfile.updatedAt > (activePlan.generatedAt ?? new Date(0))) {
+        isPlanStale = true;
+        staleReason = 'profile_changed';
+      }
+    }
+
     return NextResponse.json({
       hasProfile,
       hasCompletedOnboarding,
       planId,
+      planGeneratedAt,
+      isPlanStale,
+      staleReason,
       todayPlanMeals,
       trackedMeals: trackedMeals.map((tm: any) => ({
         id: tm.id,

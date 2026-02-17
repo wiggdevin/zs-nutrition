@@ -94,8 +94,7 @@ export async function POST() {
 
       const bullmqJobData: PlanGenerationJobData = {
         jobId: job.id,
-        userId: user.id,
-        intakeData: intakeData as Record<string, unknown>,
+        pipelinePath: 'full',
       };
 
       try {

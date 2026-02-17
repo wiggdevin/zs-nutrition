@@ -299,8 +299,7 @@ export const nutritionAdjustmentsRouter = router({
 
         const bullmqJobData: PlanGenerationJobData = {
           jobId: job.id,
-          userId: dbUserId,
-          intakeData: intakeData as Record<string, unknown>,
+          pipelinePath: 'full',
         };
 
         try {
