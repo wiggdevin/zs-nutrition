@@ -51,12 +51,10 @@ export const planCrudRouter = router({
     const decompressedPlan = decompressJson(plan.validatedPlan);
     const decompressedMetabolic = decompressJson(plan.metabolicProfile);
 
-    const parsedPlan = ValidatedPlanSchema.safeParse(decompressedPlan).success
-      ? (decompressedPlan as z.infer<typeof ValidatedPlanSchema>)
-      : { days: [] };
-    const parsedMetabolic = MetabolicProfileDbSchema.safeParse(decompressedMetabolic).success
-      ? (decompressedMetabolic as z.infer<typeof MetabolicProfileDbSchema>)
-      : {};
+    const planResult = ValidatedPlanSchema.safeParse(decompressedPlan);
+    const parsedPlan = planResult.success ? planResult.data : { days: [] };
+    const metaResult = MetabolicProfileDbSchema.safeParse(decompressedMetabolic);
+    const parsedMetabolic = metaResult.success ? metaResult.data : {};
 
     return {
       id: plan.id,
@@ -105,12 +103,10 @@ export const planCrudRouter = router({
       const decompressedPlan = decompressJson(plan.validatedPlan);
       const decompressedMetabolic = decompressJson(plan.metabolicProfile);
 
-      const parsedPlan = ValidatedPlanSchema.safeParse(decompressedPlan).success
-        ? (decompressedPlan as z.infer<typeof ValidatedPlanSchema>)
-        : { days: [] };
-      const parsedMetabolic = MetabolicProfileDbSchema.safeParse(decompressedMetabolic).success
-        ? (decompressedMetabolic as z.infer<typeof MetabolicProfileDbSchema>)
-        : {};
+      const planResult = ValidatedPlanSchema.safeParse(decompressedPlan);
+      const parsedPlan = planResult.success ? planResult.data : { days: [] };
+      const metaResult = MetabolicProfileDbSchema.safeParse(decompressedMetabolic);
+      const parsedMetabolic = metaResult.success ? metaResult.data : {};
 
       return {
         id: plan.id,
@@ -157,9 +153,21 @@ export const planCrudRouter = router({
       const parsedResult = (job.result as { planId?: string } | null) || {};
       const parsedPlanId = parsedResult.planId;
 
+      const agentNames: Record<number, string> = {
+        1: 'intake',
+        2: 'metabolic',
+        3: 'recipe',
+        4: 'compiler',
+        5: 'qa',
+        6: 'renderer',
+      };
+      const currentAgentName = job.currentAgent
+        ? (agentNames[job.currentAgent] ?? `agent-${job.currentAgent}`)
+        : null;
+
       return {
         status: job.status,
-        currentAgent: job.currentAgent,
+        currentAgent: currentAgentName,
         progress: parsedProgress,
         error: job.error,
         planId: parsedPlanId,
