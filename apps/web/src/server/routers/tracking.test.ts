@@ -122,7 +122,7 @@ describe('tracking router', () => {
 
       await expect(
         caller.tracking.getWeeklyTrend({
-          startDate: futureDate.toISOString(),
+          startDate: futureDate.toISOString().split('T')[0],
         })
       ).rejects.toMatchObject({
         code: 'BAD_REQUEST',
@@ -170,7 +170,7 @@ describe('tracking router', () => {
       vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue([]);
 
       const result = await caller.tracking.getWeeklyTrend({
-        startDate: startDate.toISOString(),
+        startDate: '2026-02-01',
       });
 
       expect(result.days).toHaveLength(7);
