@@ -82,7 +82,7 @@ export const MacroRing = React.memo(function MacroRing({
             className="text-lg font-bold font-mono transition-all duration-500 ease-out"
             style={{ color }}
           >
-            {animatedCurrent}
+            {parseFloat(animatedCurrent.toFixed(1))}
           </span>
           <span className="text-[10px] text-muted-foreground font-mono">
             / {target}

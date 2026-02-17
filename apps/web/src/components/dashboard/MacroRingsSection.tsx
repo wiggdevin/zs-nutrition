@@ -99,18 +99,22 @@ export function MacroRingsSection({
         <p className="text-sm text-muted-foreground">
           {isOverProtein ? (
             <span className="text-destructive font-semibold">
-              {Math.abs(remaining.protein)}g protein over
+              {parseFloat(Math.abs(remaining.protein).toFixed(1))}g protein over
             </span>
           ) : (
-            <span className="text-chart-3 font-semibold">{remaining.protein}g protein</span>
+            <span className="text-chart-3 font-semibold">
+              {parseFloat(remaining.protein.toFixed(1))}g protein
+            </span>
           )}{' '}
           ·{' '}
           {isOverCalories ? (
             <span className="text-destructive font-semibold">
-              {Math.abs(remaining.calories)} kcal over
+              {parseFloat(Math.abs(remaining.calories).toFixed(1))} kcal over
             </span>
           ) : (
-            <span className="text-primary font-semibold">{remaining.calories} kcal</span>
+            <span className="text-primary font-semibold">
+              {parseFloat(remaining.calories.toFixed(1))} kcal
+            </span>
           )}{' '}
           {isOverCalories || isOverProtein ? '' : 'remaining'}
         </p>
