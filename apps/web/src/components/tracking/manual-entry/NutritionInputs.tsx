@@ -81,7 +81,8 @@ export default function NutritionInputs({
           htmlFor="manual-protein"
           className="block text-xs font-semibold text-blue-400 uppercase tracking-wider mb-1.5"
         >
-          Protein (g)
+          Protein (g){' '}
+          <span className="text-muted-foreground normal-case font-normal">(optional)</span>
         </label>
         <input
           id="manual-protein"
@@ -100,7 +101,8 @@ export default function NutritionInputs({
           htmlFor="manual-carbs"
           className="block text-xs font-semibold text-green-400 uppercase tracking-wider mb-1.5"
         >
-          Carbs (g)
+          Carbs (g){' '}
+          <span className="text-muted-foreground normal-case font-normal">(optional)</span>
         </label>
         <input
           id="manual-carbs"
@@ -119,7 +121,7 @@ export default function NutritionInputs({
           htmlFor="manual-fat"
           className="block text-xs font-semibold text-yellow-400 uppercase tracking-wider mb-1.5"
         >
-          Fat (g)
+          Fat (g) <span className="text-muted-foreground normal-case font-normal">(optional)</span>
         </label>
         <input
           id="manual-fat"

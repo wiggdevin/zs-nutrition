@@ -45,7 +45,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
           <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4v16m8-8H4" />
           </svg>
-          Add Food Manually
+          Add Custom Food
         </button>
       )}
 
@@ -57,7 +57,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
           data-testid="manual-entry-form"
         >
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-bold text-foreground">Manual Entry</h3>
+            <h3 className="text-lg font-bold text-foreground">Add Custom Food</h3>
             <button
               type="button"
               onClick={() => {
@@ -90,7 +90,8 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
               htmlFor="manual-food-name"
               className="block text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5"
             >
-              Food Name *
+              Food Name{' '}
+              <span className="text-muted-foreground normal-case font-normal">(optional)</span>
             </label>
             <input
               id="manual-food-name"
@@ -106,7 +107,7 @@ export default function ManualEntryForm({ onSuccess }: ManualEntryFormProps) {
                   });
                 }
               }}
-              placeholder="e.g. Grilled Chicken Breast"
+              placeholder="e.g. Protein shake, Grilled chicken..."
               aria-invalid={!!fieldErrors.foodName}
               aria-describedby={fieldErrors.foodName ? 'manual-food-name-error' : undefined}
               className={`w-full px-3 py-2.5 bg-background border rounded-lg text-foreground placeholder-muted-foreground focus:outline-none transition-colors ${

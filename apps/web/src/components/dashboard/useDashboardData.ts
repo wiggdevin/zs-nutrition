@@ -226,24 +226,25 @@ export function useDashboardData() {
         }
 
         const result = await res.json();
+        const payload = result.data ?? result;
 
-        if (result.success && result.trackedMeal) {
+        if (payload.success && payload.trackedMeal) {
           addTrackedMeal({
-            id: result.trackedMeal.id,
-            name: result.trackedMeal.name,
-            calories: result.trackedMeal.calories,
-            protein: result.trackedMeal.protein,
-            carbs: result.trackedMeal.carbs,
-            fat: result.trackedMeal.fat,
-            portion: result.trackedMeal.portion || portion,
-            source: result.trackedMeal.source || 'plan_meal',
-            mealSlot: result.trackedMeal.mealSlot || currentMealToLog.slot,
-            createdAt: result.trackedMeal.createdAt || new Date().toISOString(),
+            id: payload.trackedMeal.id,
+            name: payload.trackedMeal.name,
+            calories: payload.trackedMeal.calories,
+            protein: payload.trackedMeal.protein,
+            carbs: payload.trackedMeal.carbs,
+            fat: payload.trackedMeal.fat,
+            portion: payload.trackedMeal.portion || portion,
+            source: payload.trackedMeal.source || 'plan_meal',
+            mealSlot: payload.trackedMeal.mealSlot || currentMealToLog.slot,
+            createdAt: payload.trackedMeal.createdAt || new Date().toISOString(),
           });
 
           setMealToLog(null);
 
-          const mealName = result.trackedMeal.name || currentMealToLog.name;
+          const mealName = payload.trackedMeal.name || currentMealToLog.name;
           toast.success(`${mealName} logged successfully`);
         }
       } catch (err) {
@@ -257,6 +258,7 @@ export function useDashboardData() {
           : 'Something went wrong while logging your meal. Please try again.';
         setError(errorMsg);
         toast.error(errorMsg);
+        setMealToLog(null);
       } finally {
         setLoggingSlot(null);
         isLoggingRef.current = false;

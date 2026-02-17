@@ -17,23 +17,33 @@ export function WeightTrackingCard() {
   const [notes, setNotes] = useState('');
   const [useLbs, setUseLbs] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [successMessage, setSuccessMessage] = useState<string | null>(null);
 
   const { data: history, refetch: refetchHistory } =
     trpc.adaptiveNutrition.getWeightHistory.useQuery({ limit: 8 }, { enabled: true });
 
-  const { data: trend, isLoading: trendLoading } =
-    trpc.adaptiveNutrition.analyzeWeightTrend.useQuery(undefined, {
-      enabled: true,
-      refetchInterval: 30000,
-    });
+  const {
+    data: trend,
+    refetch: refetchTrend,
+    isLoading: trendLoading,
+  } = trpc.adaptiveNutrition.analyzeWeightTrend.useQuery(undefined, {
+    enabled: true,
+    refetchInterval: 30000,
+  });
 
   const logWeightMutation = trpc.adaptiveNutrition.logWeightEntry.useMutation({
-    onSuccess: () => {
-      toast.success('Weight logged successfully');
+    onSuccess: (data) => {
+      const msg = data.isUpdate
+        ? 'Weight updated for today (previous entry replaced)'
+        : 'Weight logged successfully';
+      toast.success(msg);
+      setSuccessMessage(msg);
+      setTimeout(() => setSuccessMessage(null), 3000);
       setWeightKg('');
       setWeightLbs('');
       setNotes('');
       refetchHistory();
+      refetchTrend();
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to log weight');
@@ -163,6 +173,21 @@ export function WeightTrackingCard() {
               )}
               Log Weight
             </Button>
+
+            {successMessage && (
+              <Alert className="mt-3 border-green-500/30 bg-green-500/10">
+                <AlertDescription className="text-green-600 text-sm flex items-center gap-2">
+                  <svg className="w-4 h-4 flex-shrink-0" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                  {successMessage}
+                </AlertDescription>
+              </Alert>
+            )}
           </form>
         </CardContent>
       </Card>
@@ -187,14 +212,14 @@ export function WeightTrackingCard() {
           <CardDescription>Your recent weight entries and trends</CardDescription>
         </CardHeader>
         <CardContent>
-          {trendLoading ? (
+          {trendLoading && !history ? (
             <div className="flex items-center justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
-          ) : !trend?.hasEnoughData ? (
+          ) : !history?.entries?.length ? (
             <Alert>
               <AlertDescription>
-                {trend?.message || 'Log at least 2 weights to see trends'}
+                No weight entries yet. Log your first weight to start tracking.
               </AlertDescription>
             </Alert>
           ) : (
@@ -235,8 +260,8 @@ export function WeightTrackingCard() {
                 </div>
               )}
 
-              {/* Trend Summary */}
-              {trend?.hasEnoughData && trend.overallTrend && (
+              {/* Trend Summary — only shown with enough data */}
+              {trend?.hasEnoughData && trend.overallTrend ? (
                 <div className="space-y-2">
                   <div className="flex justify-between text-sm">
                     <span className="text-muted-foreground">Overall Change:</span>
@@ -262,7 +287,11 @@ export function WeightTrackingCard() {
                     </span>
                   </div>
                 </div>
-              )}
+              ) : history.entries.length < 2 ? (
+                <p className="text-xs text-muted-foreground text-center py-1">
+                  Log weight on different days to see trends
+                </p>
+              ) : null}
 
               {/* Milestones */}
               {trend?.milestones && trend.milestones.length > 0 && (
@@ -278,12 +307,12 @@ export function WeightTrackingCard() {
                 </Alert>
               )}
 
-              {/* Recent Entries List */}
-              {history && history.entries.length > 1 && (
+              {/* Recent Entries List — always shown when entries exist */}
+              {history.entries.length > 0 && (
                 <div className="space-y-2">
                   <p className="text-sm font-medium text-muted-foreground">Recent Entries:</p>
                   <div className="space-y-1">
-                    {history.entries.slice(1).map((entry) => (
+                    {history.entries.map((entry) => (
                       <div key={entry.id} className="flex justify-between text-sm py-1 border-b">
                         <span>{entry.weightLbs} lbs</span>
                         <span className="text-muted-foreground">

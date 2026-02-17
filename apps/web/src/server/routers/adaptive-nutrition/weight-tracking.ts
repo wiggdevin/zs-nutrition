@@ -32,6 +32,15 @@ export const weightTrackingRouter = router({
 
       const weightLbs = Math.round(input.weightKg * 2.20462 * 10) / 10;
 
+      const existing = await prisma.weightEntry.findUnique({
+        where: {
+          userId_logDate: {
+            userId: dbUserId,
+            logDate: dateOnly,
+          },
+        },
+      });
+
       const weightEntry = await prisma.weightEntry.upsert({
         where: {
           userId_logDate: {
@@ -53,7 +62,7 @@ export const weightTrackingRouter = router({
         },
       });
 
-      return { weightEntry };
+      return { weightEntry, isUpdate: !!existing };
     }),
 
   /**
