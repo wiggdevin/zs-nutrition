@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import NavBar from '@/components/navigation/NavBar';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { logger } from '@/lib/safe-logger';
 
 interface PlanSummary {
@@ -147,20 +148,12 @@ export default function PlanHistoryPage() {
       <NavBar />
       <div className="md:pt-14 pb-20 md:pb-0">
         <div className="min-h-screen bg-background text-foreground">
-          {/* Header */}
-          <div className="border-b border-border bg-background px-4 py-6">
-            <div className="mx-auto max-w-4xl">
-              <p className="font-mono text-xs uppercase tracking-widest text-muted-foreground">
-                {'/// ZERO SUM NUTRITION'}
-              </p>
-              <h1 className="mt-1 text-2xl font-heading uppercase tracking-wider text-foreground">
-                Plan History
-              </h1>
-              <p className="mt-1 text-sm text-muted-foreground">
-                {plans.length} {plans.length === 1 ? 'plan' : 'plans'}
-              </p>
-            </div>
-          </div>
+          <PageHeader
+            label="ZERO SUM NUTRITION"
+            title="Plan History"
+            subtitle={`${plans.length} ${plans.length === 1 ? 'plan' : 'plans'}`}
+            maxWidth="4xl"
+          />
 
           {/* Plans List */}
           <div className="mx-auto max-w-4xl px-4 py-6">

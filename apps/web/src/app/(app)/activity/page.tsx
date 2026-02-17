@@ -3,6 +3,7 @@ import { Suspense } from 'react';
 import ActivityLog from '@/components/fitness/ActivityLog';
 import FitnessConnections from '@/components/fitness/FitnessConnections';
 import NavBar from '@/components/navigation/NavBar';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { ActivitySkeleton } from '@/components/loaders/ActivitySkeleton';
 
 export const metadata: Metadata = {
@@ -18,16 +19,11 @@ export default function ActivityPage() {
         <Suspense fallback={<ActivitySkeleton />}>
           <div className="min-h-screen bg-background text-foreground">
             <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
-              {/* Page Header */}
-              <div>
-                <h1 className="text-3xl font-heading uppercase tracking-wider">
-                  <span className="text-primary">{'///'}</span> Activity & Adjustments
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Connect fitness trackers and view synced activity data with automatic calorie
-                  adjustments
-                </p>
-              </div>
+              <PageHeader
+                title="Activity & Adjustments"
+                showPrefix
+                subtitle="Connect fitness trackers and view synced activity data with automatic calorie adjustments"
+              />
 
               {/* Fitness Connections Component */}
               <FitnessConnections />

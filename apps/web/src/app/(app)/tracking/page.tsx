@@ -12,6 +12,7 @@ const FoodScan = nextDynamic(() => import('@/components/tracking/FoodScan'), {
   loading: () => <div className="h-64 animate-pulse bg-muted rounded" />,
 });
 import { useTrackingStore } from '@/lib/stores/useTrackingStore';
+import { PageHeader } from '@/components/ui/PageHeader';
 import Link from 'next/link';
 
 export const dynamic = 'force-dynamic';
@@ -67,10 +68,10 @@ function TrackingPageContent() {
       <div className="md:pt-14 pb-20 md:pb-0">
         <div className="min-h-screen bg-background text-foreground p-6 md:p-8">
           <div className="max-w-2xl mx-auto">
-            <h1 className="text-2xl font-heading uppercase tracking-wider mb-2">Tracking</h1>
-            <p className="text-muted-foreground mb-6">
-              Search and log foods to track your daily macros.
-            </p>
+            <PageHeader
+              title="Tracking"
+              subtitle="Search and log foods to track your daily macros."
+            />
 
             {/* Daily Totals - shows same data as dashboard (from Zustand) */}
             <div

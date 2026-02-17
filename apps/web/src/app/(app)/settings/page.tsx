@@ -1,6 +1,7 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import NavBar from '@/components/navigation/NavBar';
+import { PageHeader } from '@/components/ui/PageHeader';
 import SettingsDemographics from '@/components/settings/SettingsDemographics';
 import SettingsGoals from '@/components/settings/SettingsGoals';
 import SettingsDietary from '@/components/settings/SettingsDietary';
@@ -24,15 +25,11 @@ export default function SettingsPage() {
         <Suspense fallback={<SettingsSkeleton />}>
           <div className="min-h-screen bg-background text-foreground">
             <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
-              {/* Page Header */}
-              <div>
-                <h1 className="text-3xl font-heading uppercase tracking-wider">
-                  <span className="text-primary">{'///'}</span> Settings
-                </h1>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Manage your profile and preferences
-                </p>
-              </div>
+              <PageHeader
+                title="Settings"
+                showPrefix
+                subtitle="Manage your profile and preferences"
+              />
 
               {/* Demographics Section (name, sex, age, height, weight) */}
               <SettingsDemographics />

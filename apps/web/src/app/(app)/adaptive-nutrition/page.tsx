@@ -1,6 +1,7 @@
 'use client';
 
 import NavBar from '@/components/navigation/NavBar';
+import { PageHeader } from '@/components/ui/PageHeader';
 import { WeightTrackingCard } from '@/components/tracking/WeightTrackingCard';
 import { AdaptiveCalorieCard } from '@/components/tracking/AdaptiveCalorieCard';
 
@@ -11,12 +12,10 @@ export default function AdaptiveNutritionPage() {
       <div className="md:pt-14 pb-20 md:pb-0">
         <div className="min-h-screen bg-background text-foreground p-6 md:p-8">
           <div className="max-w-4xl mx-auto">
-            <h1 className="text-2xl font-heading uppercase tracking-wider mb-2">
-              Adaptive Nutrition
-            </h1>
-            <p className="text-muted-foreground mb-6">
-              Track your weight weekly and get adaptive calorie adjustments based on your progress.
-            </p>
+            <PageHeader
+              title="Adaptive Nutrition"
+              subtitle="Track your weight weekly and get adaptive calorie adjustments based on your progress."
+            />
 
             {/* Weight Tracking Section */}
             <div className="mb-8">
