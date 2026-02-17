@@ -152,8 +152,51 @@ const config: PipelineConfig = {
   usdaApiKey: process.env.USDA_API_KEY || undefined,
 };
 
+function validateEnvVars() {
+  const isProduction = process.env.NODE_ENV === 'production';
+
+  const required: Array<{ name: string; present: boolean }> = [
+    { name: 'REDIS_URL', present: !!process.env.REDIS_URL },
+    { name: 'ANTHROPIC_API_KEY', present: !!process.env.ANTHROPIC_API_KEY },
+    { name: 'FATSECRET_CLIENT_ID', present: !!process.env.FATSECRET_CLIENT_ID },
+    { name: 'FATSECRET_CLIENT_SECRET', present: !!process.env.FATSECRET_CLIENT_SECRET },
+    { name: 'WEB_APP_URL', present: !!process.env.WEB_APP_URL },
+    { name: 'INTERNAL_API_SECRET', present: !!process.env.INTERNAL_API_SECRET },
+  ];
+
+  const missing = required.filter((v) => !v.present).map((v) => v.name);
+
+  if (missing.length > 0) {
+    console.error(`❌ Missing required env vars: ${missing.join(', ')}`);
+    if (isProduction) {
+      process.exit(1);
+    } else {
+      console.warn('⚠️  Continuing in dev mode despite missing vars');
+    }
+  }
+
+  // Warn if REDIS_URL doesn't use TLS
+  const redisUrl = process.env.REDIS_URL || '';
+  if (redisUrl && !redisUrl.startsWith('rediss://')) {
+    console.warn('⚠️  REDIS_URL does not use TLS (rediss://). Upstash requires TLS.');
+  }
+
+  // Warn if WEB_APP_URL points to localhost in production
+  const webAppUrl = process.env.WEB_APP_URL || '';
+  if (isProduction && webAppUrl.includes('localhost')) {
+    console.error('❌ WEB_APP_URL points to localhost in production — worker callbacks will fail');
+    process.exit(1);
+  }
+
+  console.log('✅ Environment variables validated');
+}
+
 async function startWorker() {
   console.log('🚀 Starting ZS-MAC Queue Processor...');
+
+  // Validate env vars before doing anything else
+  validateEnvVars();
+
   console.log(`📋 Listening on queue: ${QUEUE_NAMES.PLAN_GENERATION}`);
 
   const connection = createRedisConnection();

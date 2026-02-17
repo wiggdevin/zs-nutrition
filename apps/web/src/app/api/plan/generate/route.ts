@@ -4,6 +4,7 @@ import { isDevMode } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
 import { planGenerationQueue, type PlanGenerationJobData } from '@/lib/queue';
 import { prisma } from '@/lib/prisma';
+import { checkRedisHealth } from '@/lib/redis';
 import {
   authenticateAndRateLimit,
   findOrCreateUserWithProfile,
@@ -74,6 +75,23 @@ export async function POST() {
 
     // Production: enqueue to BullMQ for worker processing
     if (!isDevMode && !useMockQueue) {
+      // Pre-flight: verify Redis is reachable before attempting to enqueue
+      const redisOk = await checkRedisHealth();
+      if (!redisOk) {
+        logger.error('Pre-flight Redis check failed — cannot enqueue job');
+        await prisma.planGenerationJob.update({
+          where: { id: job.id },
+          data: { status: 'failed', error: 'Redis unavailable — could not enqueue job' },
+        });
+        return NextResponse.json(
+          {
+            success: false,
+            error: 'Plan generation service is temporarily unavailable. Please try again later.',
+          },
+          { status: 503 }
+        );
+      }
+
       const bullmqJobData: PlanGenerationJobData = {
         jobId: job.id,
         userId: user.id,
