@@ -403,7 +403,7 @@ describe('user router', () => {
 
       vi.mocked(prisma.user.findUnique).mockResolvedValue(null);
 
-      await expect(caller.user.deactivateAccount()).rejects.toMatchObject({
+      await expect(caller.account.deactivateAccount()).rejects.toMatchObject({
         code: 'NOT_FOUND',
         message: 'User not found',
       });
@@ -425,7 +425,7 @@ describe('user router', () => {
 
       vi.mocked(prisma.user.findUnique).mockResolvedValue(deactivatedUser);
 
-      await expect(caller.user.deactivateAccount()).rejects.toMatchObject({
+      await expect(caller.account.deactivateAccount()).rejects.toMatchObject({
         code: 'BAD_REQUEST',
         message: 'Account is already deactivated',
       });
@@ -453,7 +453,7 @@ describe('user router', () => {
       });
       vi.mocked(prisma.mealPlan.updateMany).mockResolvedValue({ count: 2 });
 
-      const result = await caller.user.deactivateAccount();
+      const result = await caller.account.deactivateAccount();
 
       expect(result.success).toBe(true);
       expect(result.message).toContain('Account deactivated successfully');
