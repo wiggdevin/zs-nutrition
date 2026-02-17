@@ -23,14 +23,15 @@ export default function SettingsPage() {
       <NavBar />
       <div className="md:pt-14 pb-20 md:pb-0">
         <Suspense fallback={<SettingsSkeleton />}>
+          <PageHeader
+            title="Settings"
+            showPrefix
+            sticky
+            maxWidth="screen-2xl"
+            subtitle="Manage your profile and preferences"
+          />
           <div className="min-h-screen bg-background text-foreground">
             <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
-              <PageHeader
-                title="Settings"
-                showPrefix
-                subtitle="Manage your profile and preferences"
-              />
-
               {/* Demographics Section (name, sex, age, height, weight) */}
               <SettingsDemographics />
 

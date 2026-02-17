@@ -10,13 +10,15 @@ export default function AdaptiveNutritionPage() {
     <>
       <NavBar />
       <div className="md:pt-14 pb-20 md:pb-0">
+        <PageHeader
+          title="Adaptive Nutrition"
+          showPrefix
+          sticky
+          maxWidth="screen-2xl"
+          subtitle="Track your weight weekly and get adaptive calorie adjustments based on your progress."
+        />
         <div className="min-h-screen bg-background text-foreground p-6 md:p-8">
           <div className="max-w-4xl mx-auto">
-            <PageHeader
-              title="Adaptive Nutrition"
-              subtitle="Track your weight weekly and get adaptive calorie adjustments based on your progress."
-            />
-
             {/* Weight Tracking Section */}
             <div className="mb-8">
               <WeightTrackingCard />

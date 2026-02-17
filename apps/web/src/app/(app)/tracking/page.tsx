@@ -66,13 +66,15 @@ function TrackingPageContent() {
     <>
       <NavBar />
       <div className="md:pt-14 pb-20 md:pb-0">
+        <PageHeader
+          title="Tracking"
+          showPrefix
+          sticky
+          maxWidth="screen-2xl"
+          subtitle="Search and log foods to track your daily macros."
+        />
         <div className="min-h-screen bg-background text-foreground p-6 md:p-8">
           <div className="max-w-2xl mx-auto">
-            <PageHeader
-              title="Tracking"
-              subtitle="Search and log foods to track your daily macros."
-            />
-
             {/* Daily Totals - shows same data as dashboard (from Zustand) */}
             <div
               data-testid="tracking-daily-totals"
