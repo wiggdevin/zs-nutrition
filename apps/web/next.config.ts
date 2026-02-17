@@ -94,22 +94,22 @@ const nextConfig: NextConfig = {
               "default-src 'self'",
 
               // Allow scripts from self, inline (needed for Next.js hydration), and Clerk
-              "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com",
+              "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com https://clerk.zerosumnutrition.com",
 
               // Allow styles from self and inline (needed for styled-components, Tailwind, etc.)
               "style-src 'self' 'unsafe-inline'",
 
               // Allow images from self, data URIs, blobs, and Clerk
-              "img-src 'self' blob: data: https://*.clerk.com https://img.clerk.com",
+              "img-src 'self' blob: data: https://*.clerk.com https://img.clerk.com https://clerk.zerosumnutrition.com",
 
               // Allow fonts from self, data URIs, and Google Fonts
               "font-src 'self' data: https://fonts.gstatic.com",
 
               // Allow connections to self, Clerk, Anthropic API, and Clerk telemetry
-              "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com wss://*.clerk.com https://api.anthropic.com https://clerk-telemetry.com",
+              "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com wss://*.clerk.com https://api.anthropic.com https://clerk-telemetry.com https://clerk.zerosumnutrition.com",
 
               // Allow frames from Clerk for OAuth
-              "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com",
+              "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://accounts.zerosumnutrition.com",
 
               // Allow workers from self and blob (needed for Clerk)
               "worker-src 'self' blob:",
