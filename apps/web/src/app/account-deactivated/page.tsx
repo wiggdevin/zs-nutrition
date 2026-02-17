@@ -9,13 +9,16 @@ import { ClerkSignOutHandler } from '@/hooks/useClerkSignOut';
 export default function AccountDeactivatedPage() {
   const router = useRouter();
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
+  const utils = trpc.useUtils();
 
   const statusQuery = trpc.account.getAccountStatus.useQuery(undefined, {
     retry: false,
   });
 
   const reactivateMutation = trpc.account.reactivateAccount.useMutation({
-    onSuccess: () => {
+    onSuccess: async () => {
+      // Invalidate cached status so AccountStatusGate on /dashboard sees isActive=true
+      await utils.account.getAccountStatus.invalidate();
       router.push('/dashboard');
     },
   });
