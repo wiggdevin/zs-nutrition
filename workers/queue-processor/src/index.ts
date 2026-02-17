@@ -280,6 +280,7 @@ async function startWorker() {
     {
       connection,
       concurrency: 2,
+      lockDuration: 300000, // 5 min — pipeline can take 75s+, default 30s causes stale lock errors
     }
   );
 
