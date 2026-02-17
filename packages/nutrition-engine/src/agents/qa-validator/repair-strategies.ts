@@ -1,98 +1,147 @@
 import type { CompiledDay, CompiledMeal, GroceryCategory } from '../../types/schemas';
-import { recalcDailyTotals } from './tolerance-checks';
+import { recalcDailyTotals, type Violation } from './tolerance-checks';
 
 /**
- * Attempt to optimize a day by scaling meals to meet target kcal.
- * Returns the adjusted day and a description of what changed.
+ * Attempt to optimize a day by proportionally scaling ALL meals.
+ *
+ * For kcal violations: scale factor is targetKcal / currentKcal.
+ * For macro violations: compute the scale factor that would bring the
+ * worst-offending macro into tolerance, then apply proportionally to all
+ * meals (since proportional scaling preserves macro ratios).
+ *
+ * Ingredient amounts are also scaled to keep the grocery list consistent.
+ *
+ * Guard range: 0.75x - 1.25x (slightly wider than old 0.8-1.2 to handle
+ * more edge cases while still rejecting unreasonable adjustments).
  */
 export function optimizeDay(
   day: CompiledDay,
-  violation: { type: 'kcal' | 'macro'; variancePercent: number }
+  violation: Violation
 ): { adjustedDay: CompiledDay; description: string } | null {
-  if (violation.type !== 'kcal' || day.dailyTotals.kcal === 0) {
+  if (day.dailyTotals.kcal === 0) {
     return null;
   }
 
-  const targetKcal = day.targetKcal;
-  const currentKcal = day.dailyTotals.kcal;
-  const scaleFactor = targetKcal / currentKcal;
+  let scaleFactor: number;
+  let descriptionContext: string;
 
-  // Only scale if it's a reasonable adjustment (0.8 to 1.2 range)
-  if (scaleFactor < 0.8 || scaleFactor > 1.2) {
-    return null;
-  }
+  if (violation.type === 'kcal') {
+    const targetKcal = day.targetKcal;
+    const currentKcal = day.dailyTotals.kcal;
+    scaleFactor = targetKcal / currentKcal;
+    descriptionContext = `kcal from ${currentKcal} toward ${targetKcal}`;
+  } else if (violation.type === 'macro' && day.macroTargets) {
+    // For macro violations, find the worst-offending macro and compute the
+    // scale factor that would bring it to its target. Proportional scaling
+    // moves all macros in the same direction, so fixing the worst one tends
+    // to improve the others.
+    const { proteinG: tP, carbsG: tC, fatG: tF } = day.macroTargets;
+    const { proteinG: aP, carbsG: aC, fatG: aF } = day.dailyTotals;
 
-  // Find the meal contributing most to the variance -- scale that one
-  const meals = [...day.meals];
-  let worstMealIdx = 0;
-  let maxKcal = 0;
-  for (let i = 0; i < meals.length; i++) {
-    if (meals[i].nutrition.kcal > maxKcal) {
-      maxKcal = meals[i].nutrition.kcal;
-      worstMealIdx = i;
+    const candidates: Array<{ name: string; target: number; actual: number; variance: number }> =
+      [];
+    if (tP > 0)
+      candidates.push({
+        name: 'protein',
+        target: tP,
+        actual: aP,
+        variance: Math.abs(aP - tP) / tP,
+      });
+    if (tC > 0)
+      candidates.push({ name: 'carbs', target: tC, actual: aC, variance: Math.abs(aC - tC) / tC });
+    if (tF > 0)
+      candidates.push({ name: 'fat', target: tF, actual: aF, variance: Math.abs(aF - tF) / tF });
+
+    if (candidates.length === 0) {
+      return null;
     }
-  }
 
-  // Scale the largest meal to bring the day closer to target
-  const worstMeal = meals[worstMealIdx];
-  const deficitOrExcess = targetKcal - currentKcal;
-  const adjustedKcal = worstMeal.nutrition.kcal + deficitOrExcess;
+    // Pick the macro with the worst variance
+    candidates.sort((a, b) => b.variance - a.variance);
+    const worst = candidates[0];
 
-  if (adjustedKcal <= 0) {
+    if (worst.actual === 0) {
+      return null;
+    }
+
+    scaleFactor = worst.target / worst.actual;
+    descriptionContext = `${worst.name} from ${worst.actual}g toward ${worst.target}g`;
+  } else {
     return null;
   }
 
-  const mealScale = adjustedKcal / worstMeal.nutrition.kcal;
-  const adjustedMeal: CompiledMeal = {
-    ...worstMeal,
+  // Only scale if it's a reasonable adjustment
+  if (scaleFactor < 0.75 || scaleFactor > 1.25) {
+    return null;
+  }
+
+  // Scale ALL meals proportionally
+  const scaledMeals: CompiledMeal[] = day.meals.map((meal) => ({
+    ...meal,
     nutrition: {
-      kcal: Math.round(worstMeal.nutrition.kcal * mealScale),
-      proteinG: Math.round(worstMeal.nutrition.proteinG * mealScale * 10) / 10,
-      carbsG: Math.round(worstMeal.nutrition.carbsG * mealScale * 10) / 10,
-      fatG: Math.round(worstMeal.nutrition.fatG * mealScale * 10) / 10,
-      fiberG: worstMeal.nutrition.fiberG
-        ? Math.round(worstMeal.nutrition.fiberG * mealScale * 10) / 10
+      kcal: Math.round(meal.nutrition.kcal * scaleFactor),
+      proteinG: Math.round(meal.nutrition.proteinG * scaleFactor * 10) / 10,
+      carbsG: Math.round(meal.nutrition.carbsG * scaleFactor * 10) / 10,
+      fatG: Math.round(meal.nutrition.fatG * scaleFactor * 10) / 10,
+      fiberG: meal.nutrition.fiberG
+        ? Math.round(meal.nutrition.fiberG * scaleFactor * 10) / 10
         : undefined,
     },
-  };
-
-  meals[worstMealIdx] = adjustedMeal;
+    ingredients: meal.ingredients.map((ing) => ({
+      ...ing,
+      amount: Math.round(ing.amount * scaleFactor * 100) / 100,
+    })),
+  }));
 
   // Recalculate daily totals
-  const newTotals = recalcDailyTotals(meals);
+  const targetKcal = day.targetKcal;
+  const newTotals = recalcDailyTotals(scaledMeals);
   const newVarianceKcal = newTotals.kcal - targetKcal;
   const newVariancePercent =
     targetKcal > 0 ? Math.round((newVarianceKcal / targetKcal) * 10000) / 100 : 0;
 
   const adjustedDay: CompiledDay = {
     ...day,
-    meals,
+    meals: scaledMeals,
     dailyTotals: newTotals,
     varianceKcal: Math.round(newVarianceKcal),
     variancePercent: newVariancePercent,
   };
 
-  const description = `Day ${day.dayNumber}: Scaled "${worstMeal.name}" (${worstMeal.slot}) by ${Math.round((mealScale - 1) * 100)}% to bring kcal from ${currentKcal} → ${newTotals.kcal} (target: ${targetKcal})`;
+  const pctChange = Math.round((scaleFactor - 1) * 100);
+  const description = `Day ${day.dayNumber}: Proportionally scaled all ${scaledMeals.length} meals by ${pctChange > 0 ? '+' : ''}${pctChange}% to fix ${descriptionContext}`;
 
   return { adjustedDay, description };
 }
 
 /**
  * Aggregate all ingredients from all days into categorized grocery list.
+ *
+ * Fixes applied:
+ * - Case-insensitive dedup: keys use lowercased name + unit to merge "Chicken Breast" with "chicken breast"
+ * - Filter "to taste" items: ingredients with unit "to taste" or amount 0 are excluded
+ * - Full-word category matching: prevents "bell pepper" from matching the pantry keyword "pepper"
  */
 export function aggregateGroceryList(days: CompiledDay[]): GroceryCategory[] {
-  // Collect all ingredients
-  const ingredientMap = new Map<string, { amount: number; unit: string }>();
+  // Collect all ingredients with case-insensitive dedup key
+  const ingredientMap = new Map<string, { displayName: string; amount: number; unit: string }>();
 
   for (const day of days) {
     for (const meal of day.meals) {
       for (const ing of meal.ingredients) {
-        const key = `${ing.name}|${ing.unit}`;
+        // Filter out "to taste" items and zero-amount items
+        if (ing.unit.toLowerCase().trim() === 'to taste' || ing.amount === 0) {
+          continue;
+        }
+
+        // Case-insensitive dedup key: lowercased name + lowercased unit
+        const key = `${ing.name.toLowerCase().trim()}|${ing.unit.toLowerCase().trim()}`;
         const existing = ingredientMap.get(key);
         if (existing) {
           existing.amount += ing.amount;
         } else {
-          ingredientMap.set(key, { amount: ing.amount, unit: ing.unit });
+          // Preserve the first-seen display name (original casing)
+          ingredientMap.set(key, { displayName: ing.name, amount: ing.amount, unit: ing.unit });
         }
       }
     }
@@ -101,13 +150,18 @@ export function aggregateGroceryList(days: CompiledDay[]): GroceryCategory[] {
   // Categorize ingredients
   const categoryMap = new Map<string, Array<{ name: string; amount: number; unit: string }>>();
 
+  // Category rules using full-word matching to prevent substring false positives.
+  // Multi-word keywords (e.g. "sweet potato", "olive oil", "garlic powder") are
+  // checked via includes() since they are specific enough to avoid ambiguity.
+  // Single-word keywords use word-boundary regex to prevent matches like
+  // "bell pepper" hitting the pantry keyword "pepper".
   const categoryRules: Array<{ keywords: string[]; category: string }> = [
     {
       keywords: [
         'spinach',
         'broccoli',
         'tomato',
-        'pepper',
+        'bell pepper',
         'lettuce',
         'salad',
         'carrot',
@@ -131,6 +185,26 @@ export function aggregateGroceryList(days: CompiledDay[]): GroceryCategory[] {
         'fruit',
         'lemon',
         'lime',
+        'jalapeno',
+        'poblano',
+        'habanero',
+        'serrano',
+        'celery',
+        'kale',
+        'cabbage',
+        'cauliflower',
+        'eggplant',
+        'beet',
+        'radish',
+        'squash',
+        'pumpkin',
+        'pear',
+        'peach',
+        'plum',
+        'grape',
+        'melon',
+        'pineapple',
+        'ginger root',
       ],
       category: 'Produce',
     },
@@ -198,13 +272,12 @@ export function aggregateGroceryList(days: CompiledDay[]): GroceryCategory[] {
     { keywords: ['frozen'], category: 'Frozen' },
   ];
 
-  for (const [key, { amount, unit }] of ingredientMap) {
-    const name = key.split('|')[0];
-    const nameLower = name.toLowerCase();
+  for (const [, { displayName, amount, unit }] of ingredientMap) {
+    const nameLower = displayName.toLowerCase().trim();
 
     let category = 'Other';
     for (const rule of categoryRules) {
-      if (rule.keywords.some((kw) => nameLower.includes(kw))) {
+      if (rule.keywords.some((kw) => matchesKeyword(nameLower, kw))) {
         category = rule.category;
         break;
       }
@@ -214,7 +287,7 @@ export function aggregateGroceryList(days: CompiledDay[]): GroceryCategory[] {
       categoryMap.set(category, []);
     }
     categoryMap.get(category)!.push({
-      name,
+      name: displayName,
       amount: roundUpForShopping(amount, unit),
       unit,
     });
@@ -251,6 +324,31 @@ export function aggregateGroceryList(days: CompiledDay[]): GroceryCategory[] {
       category,
       items: items.sort((a, b) => a.name.localeCompare(b.name)),
     }));
+}
+
+/**
+ * Match an ingredient name against a keyword using full-word boundaries.
+ *
+ * Multi-word keywords (e.g. "bell pepper", "sweet potato") use substring matching
+ * since they are specific enough to be unambiguous. Single-word keywords use
+ * word-boundary regex to prevent false positives like "bell pepper" matching
+ * the standalone keyword "pepper" in a different category.
+ */
+function matchesKeyword(nameLower: string, keyword: string): boolean {
+  if (keyword.includes(' ')) {
+    // Multi-word keywords: substring match is safe and expected
+    return nameLower.includes(keyword);
+  }
+  // Single-word keywords: use word-boundary regex
+  const pattern = new RegExp(`\\b${escapeRegExp(keyword)}`);
+  return pattern.test(nameLower);
+}
+
+/**
+ * Escape special regex characters in a string.
+ */
+function escapeRegExp(str: string): string {
+  return str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
 /**

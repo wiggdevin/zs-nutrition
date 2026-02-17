@@ -5,8 +5,22 @@
  * IP whitelisting issues (Vercel's dynamic IPs vs Railway's static IP).
  */
 
+import { timingSafeEqual } from 'crypto';
 import { Router, Request, Response, NextFunction } from 'express';
 import { FatSecretAdapter } from '@zero-sum/nutrition-engine';
+
+/**
+ * Compare two strings in constant time to prevent timing attacks.
+ * `crypto.timingSafeEqual` throws if buffer lengths differ, so we
+ * check length first and return `false` immediately for mismatches.
+ * The early-exit on length is safe because an attacker can already
+ * determine the secret's length via other means (e.g. response size),
+ * and it does not reveal any character-level information.
+ */
+function timingSafeCompare(a: string, b: string): boolean {
+  if (a.length !== b.length) return false;
+  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
+}
 
 // Singleton adapter instance
 let adapter: FatSecretAdapter | null = null;
@@ -40,7 +54,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   }
 
   const token = authHeader.slice(7); // Remove 'Bearer ' prefix
-  if (token !== expectedSecret) {
+  if (!timingSafeCompare(token, expectedSecret)) {
     res.status(403).json({ error: 'Invalid proxy secret' });
     return;
   }

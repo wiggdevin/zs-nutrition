@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { isDevMode, getClerkUserId } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
+import { decompressJson } from '@/lib/compression';
 
 /**
  * GET /api/plan/verify?planId=xxx
@@ -45,9 +46,11 @@ export async function GET(request: NextRequest) {
         return NextResponse.json({ error: 'MealPlan not found' }, { status: 404 });
       }
 
-      // validatedPlan and metabolicProfile are now Prisma Json types
-      const validatedPlanObj = plan.validatedPlan as { days?: unknown[] } | null;
-      const metabolicProfileObj = plan.metabolicProfile as Record<string, unknown> | null;
+      // Decompress before inspection (handles both compressed and legacy data)
+      const validatedPlanObj = decompressJson<{ days?: unknown[] } | null>(plan.validatedPlan);
+      const metabolicProfileObj = decompressJson<Record<string, unknown> | null>(
+        plan.metabolicProfile
+      );
       return NextResponse.json({
         id: plan.id,
         userId: plan.userId,

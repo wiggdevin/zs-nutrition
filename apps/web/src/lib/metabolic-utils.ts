@@ -17,10 +17,17 @@ import {
   TRAINING_DAY_BONUS,
   MEAL_DISTRIBUTIONS,
   MEAL_LABELS,
+  CALORIC_FLOOR_FEMALE,
+  CALORIC_FLOOR_MALE,
+  SNACK_ALLOCATION_CAP,
+  PROTEIN_G_PER_KG,
+  FIBER_FLOOR_FEMALE,
+  FIBER_FLOOR_MALE,
   calculateBMR,
   calculateTDEE,
   calculateGoalCalories,
   calculateMacroTargets,
+  calculateProteinG,
   getTrainingDayBonus,
 } from '@zero-sum/nutrition-engine';
 
@@ -31,10 +38,17 @@ export {
   TRAINING_DAY_BONUS,
   MEAL_DISTRIBUTIONS,
   MEAL_LABELS,
+  CALORIC_FLOOR_FEMALE,
+  CALORIC_FLOOR_MALE,
+  SNACK_ALLOCATION_CAP,
+  PROTEIN_G_PER_KG,
+  FIBER_FLOOR_FEMALE,
+  FIBER_FLOOR_MALE,
   calculateBMR,
   calculateTDEE,
   calculateGoalCalories,
   calculateMacroTargets,
+  calculateProteinG,
   getTrainingDayBonus,
 };
 
@@ -73,12 +87,12 @@ export interface MetabolicProfileResult {
  * @returns Complete metabolic profile with BMR, TDEE, goal calories, and macro targets
  */
 export function calculateMetabolicProfile(input: MetabolicProfileInput): MetabolicProfileResult {
-  const bmr = calculateBMR(input);
+  const { bmr } = calculateBMR(input);
   const bmrKcal = Math.round(bmr);
   const tdeeKcal = calculateTDEE(bmrKcal, input.activityLevel);
   const goalKcal = calculateGoalCalories(tdeeKcal, input.goalType, input.goalRate);
   const macros = calculateMacroTargets(goalKcal, input.macroStyle);
-  const trainingBonus = getTrainingDayBonus(input.activityLevel);
+  const trainingBonus = getTrainingDayBonus(tdeeKcal);
 
   return {
     bmrKcal,

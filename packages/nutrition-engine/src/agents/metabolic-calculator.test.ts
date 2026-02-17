@@ -5,12 +5,16 @@ import {
   calculateTDEE,
   calculateGoalCalories,
   calculateMacroTargets,
+  calculateProteinG,
   getTrainingDayBonus,
   ACTIVITY_MULTIPLIERS,
   MACRO_SPLITS,
   TRAINING_DAY_BONUS,
   MEAL_DISTRIBUTIONS,
   MEAL_LABELS,
+  PROTEIN_G_PER_KG,
+  FIBER_FLOOR_FEMALE,
+  FIBER_FLOOR_MALE,
 } from './metabolic-calculator';
 import { ClientIntake } from '../types/schemas';
 
@@ -37,11 +41,13 @@ describe('MetabolicCalculator', () => {
     prepTimeMaxMin: 30,
     macroStyle: 'balanced',
     planDurationDays: 7,
+    constraintWarnings: [],
+    constraintsCompatible: true,
     ...overrides,
   });
 
   describe('calculateBMR', () => {
-    it('calculates BMR correctly for male using Mifflin-St Jeor', () => {
+    it('calculates BMR correctly for male using Mifflin-St Jeor (no body fat)', () => {
       const input = {
         sex: 'male',
         weightKg: 80,
@@ -53,11 +59,12 @@ describe('MetabolicCalculator', () => {
       const expected = 10 * 80 + 6.25 * 180 - 5 * 30 + 5;
       const result = calculateBMR(input);
 
-      expect(result).toBe(expected);
-      expect(result).toBe(1780);
+      expect(result.bmr).toBe(expected);
+      expect(result.bmr).toBe(1780);
+      expect(result.method).toBe('mifflin_st_jeor');
     });
 
-    it('calculates BMR correctly for female using Mifflin-St Jeor', () => {
+    it('calculates BMR correctly for female using Mifflin-St Jeor (no body fat)', () => {
       const input = {
         sex: 'female',
         weightKg: 65,
@@ -66,24 +73,88 @@ describe('MetabolicCalculator', () => {
       };
 
       // Formula: 10 * weight + 6.25 * height - 5 * age - 161
-      // 10 * 65 = 650
-      // 6.25 * 165 = 1031.25
-      // 5 * 28 = 140
-      // 650 + 1031.25 - 140 - 161 = 1380.25
       const expected = 10 * 65 + 6.25 * 165 - 5 * 28 - 161;
       const result = calculateBMR(input);
 
-      expect(result).toBe(expected);
-      expect(result).toBe(1380.25);
+      expect(result.bmr).toBe(expected);
+      expect(result.bmr).toBe(1380.25);
+      expect(result.method).toBe('mifflin_st_jeor');
+    });
+
+    it('uses Katch-McArdle when bodyFatPercent is provided', () => {
+      const input = {
+        sex: 'male',
+        weightKg: 80,
+        heightCm: 180,
+        age: 30,
+        bodyFatPercent: 15,
+      };
+
+      // Katch-McArdle: 370 + 21.6 * leanMass
+      // leanMass = 80 * (1 - 0.15) = 68
+      // BMR = 370 + 21.6 * 68 = 370 + 1468.8 = 1838.8
+      const expectedLeanMass = 80 * (1 - 15 / 100);
+      const expectedBmr = 370 + 21.6 * expectedLeanMass;
+      const result = calculateBMR(input);
+
+      expect(result.bmr).toBe(expectedBmr);
+      expect(result.bmr).toBeCloseTo(1838.8, 1);
+      expect(result.method).toBe('katch_mcardle');
+    });
+
+    it('falls back to Mifflin-St Jeor when bodyFatPercent is below 3', () => {
+      const input = {
+        sex: 'male',
+        weightKg: 80,
+        heightCm: 180,
+        age: 30,
+        bodyFatPercent: 2,
+      };
+
+      const result = calculateBMR(input);
+      expect(result.method).toBe('mifflin_st_jeor');
+    });
+
+    it('falls back to Mifflin-St Jeor when bodyFatPercent is above 60', () => {
+      const input = {
+        sex: 'male',
+        weightKg: 80,
+        heightCm: 180,
+        age: 30,
+        bodyFatPercent: 61,
+      };
+
+      const result = calculateBMR(input);
+      expect(result.method).toBe('mifflin_st_jeor');
+    });
+
+    it('uses Katch-McArdle at boundary values (3% and 60%)', () => {
+      const inputLow = {
+        sex: 'male',
+        weightKg: 80,
+        heightCm: 180,
+        age: 30,
+        bodyFatPercent: 3,
+      };
+      const inputHigh = {
+        sex: 'female',
+        weightKg: 80,
+        heightCm: 165,
+        age: 30,
+        bodyFatPercent: 60,
+      };
+
+      expect(calculateBMR(inputLow).method).toBe('katch_mcardle');
+      expect(calculateBMR(inputHigh).method).toBe('katch_mcardle');
     });
 
     it('handles different ages correctly', () => {
       const younger = calculateBMR({ sex: 'male', weightKg: 80, heightCm: 180, age: 25 });
       const older = calculateBMR({ sex: 'male', weightKg: 80, heightCm: 180, age: 40 });
 
-      // Older age should have lower BMR
-      expect(younger).toBeGreaterThan(older);
-      expect(younger - older).toBe(75); // 15 years * 5
+      // Older age should have lower BMR (Mifflin-St Jeor path)
+      expect(younger.bmr).toBeGreaterThan(older.bmr);
+      expect(younger.bmr - older.bmr).toBe(75); // 15 years * 5
     });
   });
 
@@ -192,7 +263,7 @@ describe('MetabolicCalculator', () => {
 
       // Protein: 2000 * 0.3 / 4 = 150g
       // Carbs: 2000 * 0.4 / 4 = 200g
-      // Fat: 2000 * 0.3 / 9 = 66.67g ≈ 67g
+      // Fat: 2000 * 0.3 / 9 = 66.67g -> 67g
       expect(result.proteinG).toBe(150);
       expect(result.carbsG).toBe(200);
       expect(result.fatG).toBe(67);
@@ -203,7 +274,7 @@ describe('MetabolicCalculator', () => {
 
       // Protein: 2000 * 0.4 / 4 = 200g
       // Carbs: 2000 * 0.35 / 4 = 175g
-      // Fat: 2000 * 0.25 / 9 = 55.56g ≈ 56g
+      // Fat: 2000 * 0.25 / 9 = 55.56g -> 56g
       expect(result.proteinG).toBe(200);
       expect(result.carbsG).toBe(175);
       expect(result.fatG).toBe(56);
@@ -214,7 +285,7 @@ describe('MetabolicCalculator', () => {
 
       // Protein: 2000 * 0.35 / 4 = 175g
       // Carbs: 2000 * 0.25 / 4 = 125g
-      // Fat: 2000 * 0.4 / 9 = 88.89g ≈ 89g
+      // Fat: 2000 * 0.4 / 9 = 88.89g -> 89g
       expect(result.proteinG).toBe(175);
       expect(result.carbsG).toBe(125);
       expect(result.fatG).toBe(89);
@@ -225,7 +296,7 @@ describe('MetabolicCalculator', () => {
 
       // Protein: 2000 * 0.3 / 4 = 150g
       // Carbs: 2000 * 0.05 / 4 = 25g
-      // Fat: 2000 * 0.65 / 9 = 144.44g ≈ 144g
+      // Fat: 2000 * 0.65 / 9 = 144.44g -> 144g
       expect(result.proteinG).toBe(150);
       expect(result.carbsG).toBe(25);
       expect(result.fatG).toBe(144);
@@ -240,29 +311,70 @@ describe('MetabolicCalculator', () => {
     });
   });
 
+  describe('calculateProteinG', () => {
+    it('calculates protein for cutting (2.0 g/kg)', () => {
+      // 80kg * 2.0 = 160g
+      expect(calculateProteinG(80, 'cut')).toBe(160);
+    });
+
+    it('calculates protein for maintaining (1.8 g/kg)', () => {
+      // 80kg * 1.8 = 144g
+      expect(calculateProteinG(80, 'maintain')).toBe(144);
+    });
+
+    it('calculates protein for bulking (1.7 g/kg)', () => {
+      // 80kg * 1.7 = 136g
+      expect(calculateProteinG(80, 'bulk')).toBe(136);
+    });
+
+    it('defaults to 1.8 g/kg for unknown goal type', () => {
+      expect(calculateProteinG(80, 'unknown')).toBe(144);
+    });
+
+    it('applies clinical safety cap of 2.5 g/kg', () => {
+      // 150kg * 2.0 = 300g raw, but cap is 150 * 2.5 = 375g -> no cap needed
+      expect(calculateProteinG(150, 'cut')).toBe(300);
+
+      // For a very high g/kg scenario, the cap would kick in if someone
+      // modified PROTEIN_G_PER_KG, but with current values, 2.0 < 2.5 so
+      // the cap never triggers under normal conditions
+    });
+
+    it('rounds to nearest integer', () => {
+      // 75kg * 1.7 = 127.5 -> 128
+      expect(calculateProteinG(75, 'bulk')).toBe(128);
+    });
+  });
+
   describe('getTrainingDayBonus', () => {
-    it('returns correct bonus for sedentary (150 kcal)', () => {
-      expect(getTrainingDayBonus('sedentary')).toBe(150);
+    it('calculates bonus from TDEE formula (TDEE * 0.05 * hours)', () => {
+      // TDEE 2000 * 0.05 * (60/60) = 100, but clamped to min 150
+      expect(getTrainingDayBonus(2000, 60)).toBe(150);
     });
 
-    it('returns correct bonus for lightly_active (175 kcal)', () => {
-      expect(getTrainingDayBonus('lightly_active')).toBe(175);
+    it('scales with training time', () => {
+      // TDEE 3000 * 0.05 * (75/60) = 187.5 -> 188
+      expect(getTrainingDayBonus(3000, 75)).toBe(188);
     });
 
-    it('returns correct bonus for moderately_active (200 kcal)', () => {
-      expect(getTrainingDayBonus('moderately_active')).toBe(200);
+    it('clamps to minimum of 150 kcal', () => {
+      // TDEE 1500 * 0.05 * (60/60) = 75, clamped to 150
+      expect(getTrainingDayBonus(1500, 60)).toBe(150);
     });
 
-    it('returns correct bonus for very_active (250 kcal)', () => {
-      expect(getTrainingDayBonus('very_active')).toBe(250);
+    it('clamps to maximum of 400 kcal', () => {
+      // TDEE 5000 * 0.05 * (120/60) = 500, clamped to 400
+      expect(getTrainingDayBonus(5000, 120)).toBe(400);
     });
 
-    it('returns correct bonus for extremely_active (300 kcal)', () => {
-      expect(getTrainingDayBonus('extremely_active')).toBe(300);
+    it('defaults to 60 minutes when no training time provided', () => {
+      // TDEE 2759 * 0.05 * (60/60) = 137.95 -> 138, clamped to 150
+      expect(getTrainingDayBonus(2759)).toBe(150);
     });
 
-    it('returns default 200 kcal for unknown activity level', () => {
-      expect(getTrainingDayBonus('unknown')).toBe(200);
+    it('handles typical moderately_active TDEE', () => {
+      // TDEE 2759 * 0.05 * (60/60) = 137.95 -> 138, clamped to min 150
+      expect(getTrainingDayBonus(2759, 60)).toBe(150);
     });
   });
 
@@ -295,24 +407,45 @@ describe('MetabolicCalculator', () => {
       expect(result.goalKcal).toBe(2759);
       expect(result.restDayKcal).toBe(2759);
 
-      // Training day bonus: moderately_active = 200
-      expect(result.trainingDayBonusKcal).toBe(200);
-      expect(result.trainingDayKcal).toBe(2959);
+      // Training day bonus: formula-based, 2759 * 0.05 * 1 = 138 -> clamped to 150
+      expect(result.trainingDayBonusKcal).toBe(150);
+      expect(result.trainingDayKcal).toBe(2909);
 
-      // Macros (balanced: 30/40/30)
-      expect(result.proteinTargetG).toBeGreaterThan(0);
+      // Protein: g/kg method, 80kg * 1.8 = 144g
+      expect(result.proteinTargetG).toBe(144);
+      expect(result.proteinMethod).toBe('g_per_kg');
+
+      // Macros should be positive
       expect(result.carbsTargetG).toBeGreaterThan(0);
       expect(result.fatTargetG).toBeGreaterThan(0);
 
-      // Fiber: minimum 25g or 14g per 1000 kcal
-      expect(result.fiberTargetG).toBeGreaterThanOrEqual(25);
+      // Fiber: minimum 38g for male (sex-specific floor)
+      expect(result.fiberTargetG).toBeGreaterThanOrEqual(38);
 
       // Meal targets
       expect(result.mealTargets).toHaveLength(3);
       expect(result.calculationMethod).toBe('mifflin_st_jeor');
+
+      // Training day macros should exist
+      expect(result.trainingDayMacros).toBeDefined();
+      expect(result.trainingDayMacros!.proteinG).toBe(result.proteinTargetG);
+      expect(result.trainingDayMacros!.carbsG).toBeGreaterThan(result.carbsTargetG);
+      expect(result.trainingDayMacros!.fatG).toBe(result.fatTargetG);
     });
 
-    it('calculates correct macros for cutting goal', () => {
+    it('uses Katch-McArdle when bodyFatPercent is provided', () => {
+      const intake = createBaseIntake({
+        bodyFatPercent: 15,
+      });
+
+      const result = calculator.calculate(intake);
+
+      // Katch-McArdle: 370 + 21.6 * (80 * 0.85) = 370 + 21.6 * 68 = 1838.8 -> 1839
+      expect(result.bmrKcal).toBe(1839);
+      expect(result.calculationMethod).toBe('katch_mcardle');
+    });
+
+    it('calculates correct macros for cutting goal with g/kg protein', () => {
       const intake = createBaseIntake({
         goalType: 'cut',
         goalRate: 1,
@@ -324,10 +457,9 @@ describe('MetabolicCalculator', () => {
       // TDEE should be reduced by 500 kcal
       expect(result.goalKcal).toBe(result.tdeeKcal - 500);
 
-      // High protein split: 40/35/25
-      expect(result.macroSplit.proteinPercent).toBe(40);
-      expect(result.macroSplit.carbsPercent).toBe(35);
-      expect(result.macroSplit.fatPercent).toBe(25);
+      // Protein should be g/kg based: 80kg * 2.0 (cut) = 160g
+      expect(result.proteinTargetG).toBe(160);
+      expect(result.proteinMethod).toBe('g_per_kg');
     });
 
     it('calculates correct macros for bulking goal', () => {
@@ -340,6 +472,9 @@ describe('MetabolicCalculator', () => {
 
       // TDEE should be increased by 350 kcal (not 500!)
       expect(result.goalKcal).toBe(result.tdeeKcal + 350);
+
+      // Protein: 80kg * 1.7 (bulk) = 136g
+      expect(result.proteinTargetG).toBe(136);
     });
 
     it('distributes meals correctly for 3 meals per day', () => {
@@ -405,18 +540,42 @@ describe('MetabolicCalculator', () => {
       });
     });
 
-    it('calculates fiber target correctly', () => {
+    it('calculates fiber target with sex-specific floors', () => {
+      const maleIntake = createBaseIntake({ sex: 'male', goalType: 'cut', goalRate: 2 });
+      const femaleIntake = createBaseIntake({ sex: 'female', goalType: 'cut', goalRate: 2 });
+
+      const maleResult = calculator.calculate(maleIntake);
+      const femaleResult = calculator.calculate(femaleIntake);
+
+      // Male floor is 38g
+      expect(maleResult.fiberTargetG).toBeGreaterThanOrEqual(38);
+
+      // Female floor is 25g
+      expect(femaleResult.fiberTargetG).toBeGreaterThanOrEqual(25);
+    });
+
+    it('fiber scales with calories above the floor', () => {
       const lowCalIntake = createBaseIntake({ goalType: 'cut', goalRate: 2 });
       const highCalIntake = createBaseIntake({ goalType: 'bulk', goalRate: 2 });
 
       const lowResult = calculator.calculate(lowCalIntake);
       const highResult = calculator.calculate(highCalIntake);
 
-      // Low cal should have minimum 25g
-      expect(lowResult.fiberTargetG).toBeGreaterThanOrEqual(25);
-
       // High cal should have more fiber (14g per 1000 kcal)
       expect(highResult.fiberTargetG).toBeGreaterThan(lowResult.fiberTargetG);
+    });
+
+    it('training day bonus varies with afternoon training time', () => {
+      const morningIntake = createBaseIntake({ trainingTime: 'morning' });
+      const afternoonIntake = createBaseIntake({ trainingTime: 'afternoon' });
+
+      const morningResult = calculator.calculate(morningIntake);
+      const afternoonResult = calculator.calculate(afternoonIntake);
+
+      // Afternoon maps to 75 min vs morning 60 min, so afternoon bonus should be >= morning
+      expect(afternoonResult.trainingDayBonusKcal).toBeGreaterThanOrEqual(
+        morningResult.trainingDayBonusKcal
+      );
     });
 
     it('validates output against schema', () => {
@@ -433,6 +592,8 @@ describe('MetabolicCalculator', () => {
       expect(result.fiberTargetG).toBeDefined();
       expect(result.mealTargets).toBeDefined();
       expect(result.calculationMethod).toBe('mifflin_st_jeor');
+      expect(result.proteinMethod).toBe('g_per_kg');
+      expect(result.trainingDayMacros).toBeDefined();
     });
   });
 
@@ -454,7 +615,7 @@ describe('MetabolicCalculator', () => {
       expect(MACRO_SPLITS.keto).toEqual({ protein: 0.3, carbs: 0.05, fat: 0.65 });
     });
 
-    it('TRAINING_DAY_BONUS has correct values', () => {
+    it('TRAINING_DAY_BONUS has correct values (legacy constant preserved)', () => {
       expect(TRAINING_DAY_BONUS).toEqual({
         sedentary: 150,
         lightly_active: 175,
@@ -462,6 +623,19 @@ describe('MetabolicCalculator', () => {
         very_active: 250,
         extremely_active: 300,
       });
+    });
+
+    it('PROTEIN_G_PER_KG has correct values', () => {
+      expect(PROTEIN_G_PER_KG).toEqual({
+        cut: 2.0,
+        maintain: 1.8,
+        bulk: 1.7,
+      });
+    });
+
+    it('FIBER_FLOOR constants have correct sex-specific values', () => {
+      expect(FIBER_FLOOR_FEMALE).toBe(25);
+      expect(FIBER_FLOOR_MALE).toBe(38);
     });
 
     it('MEAL_DISTRIBUTIONS has correct values', () => {

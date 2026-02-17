@@ -20,9 +20,13 @@ export const DEFAULT_JOB_OPTIONS = {
 
 /**
  * Job data interface for plan generation jobs.
+ *
+ * P5-T05: Aligned with @zsn/shared-types (reference-based, no PII in Redis).
+ * The canonical type lives in @zsn/shared-types — this re-export exists
+ * for packages that depend on @zsn/queue-config but not shared-types.
  */
 export interface PlanGenerationJobData {
   jobId: string;
-  userId: string;
-  intakeData: Record<string, unknown>;
+  pipelinePath: 'full' | 'fast';
+  existingDraftId?: string;
 }

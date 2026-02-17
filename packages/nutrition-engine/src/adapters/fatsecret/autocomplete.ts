@@ -3,6 +3,7 @@
  */
 
 import { OAuthManager, apiRequest } from './oauth';
+import { fatSecretCircuitBreaker } from './circuit-breaker';
 import { LocalFoodDatabase } from './local-fallback';
 import type { FatSecretAutocompleteResponse } from './types';
 
@@ -15,9 +16,11 @@ export async function autocomplete(
     return LocalFoodDatabase.autocomplete(query);
   }
 
-  const data = (await apiRequest(oauth, 'foods.autocomplete', {
-    expression: query,
-  })) as FatSecretAutocompleteResponse;
+  const data = (await fatSecretCircuitBreaker.execute(() =>
+    apiRequest(oauth, 'foods.autocomplete', {
+      expression: query,
+    })
+  )) as FatSecretAutocompleteResponse;
 
   const suggestions = data?.suggestions?.suggestion;
   if (!suggestions) {

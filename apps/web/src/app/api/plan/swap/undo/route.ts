@@ -3,6 +3,7 @@ import { prisma } from '@/lib/prisma';
 import { Prisma } from '@prisma/client';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
+import { decompressJson, compressJson } from '@/lib/compression';
 
 interface MealNutrition {
   kcal: number;
@@ -94,8 +95,10 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'No swap found for this meal' }, { status: 404 });
     }
 
-    // validatedPlan is now a Prisma Json type - no parsing needed
-    const validatedPlan = mealPlan.validatedPlan as { days: PlanDay[]; [key: string]: unknown };
+    // Decompress validatedPlan (handles both compressed and legacy uncompressed data)
+    const validatedPlan = decompressJson<{ days: PlanDay[]; [key: string]: unknown }>(
+      mealPlan.validatedPlan
+    );
     if (!validatedPlan?.days) {
       return NextResponse.json({ error: 'Invalid plan data' }, { status: 500 });
     }
@@ -130,8 +133,8 @@ export async function POST(req: NextRequest) {
     };
 
     // Delete the swap record and update plan in a transaction
-    // validatedPlan is now a Prisma Json type - pass object directly
-    // Cast to Prisma.InputJsonValue to satisfy type checker
+    // Re-compress validatedPlan for storage optimization
+    const recompressedPlan = compressJson(validatedPlan);
     await prisma.$transaction([
       prisma.mealSwap.delete({
         where: { id: swapRecord.id },
@@ -139,7 +142,7 @@ export async function POST(req: NextRequest) {
       prisma.mealPlan.update({
         where: { id: planId },
         data: {
-          validatedPlan: validatedPlan as Prisma.InputJsonValue,
+          validatedPlan: recompressedPlan as unknown as Prisma.InputJsonValue,
         },
       }),
     ]);

@@ -90,7 +90,7 @@ export const userRouter = router({
       const dbUserId = ctx.dbUserId;
 
       // Calculate metabolic profile using canonical utilities
-      const bmr = calculateBMR({
+      const { bmr } = calculateBMR({
         sex: input.sex,
         weightKg: input.weightKg,
         heightCm: input.heightCm,
@@ -232,7 +232,7 @@ export const userRouter = router({
       }
 
       // Recalculate metabolic profile using canonical utilities
-      const bmr = calculateBMR({
+      const { bmr } = calculateBMR({
         sex: existing.sex,
         weightKg: input.weightKg,
         heightCm: input.heightCm,

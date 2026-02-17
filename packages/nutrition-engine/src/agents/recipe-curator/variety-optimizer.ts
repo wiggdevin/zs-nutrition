@@ -42,16 +42,20 @@ export function wasProteinUsedYesterday(protein: string, previousDayProteins: st
  * - No repeated primary protein on consecutive days (except exempt proteins)
  * - Prioritize preferred cuisines ~75% of the time
  *
+ * @param randomFn - Random number generator (0-1). Defaults to Math.random.
+ *   Pass a seeded PRNG for deterministic, reproducible results.
+ *
  * Returns the selected MealCandidate or null if nothing is found.
  */
 export function selectMealWithVariety(
   slotData: { preferred: MealCandidate[]; other: MealCandidate[] },
   recentMealNames: string[],
   previousDayProteins: string[],
-  mealsPerDay: number
+  mealsPerDay: number,
+  randomFn: () => number = Math.random
 ): MealCandidate | null {
   // Strategy: Try preferred cuisines 75% of the time
-  const usePreferred = slotData.preferred.length > 0 && Math.random() < 0.75;
+  const usePreferred = slotData.preferred.length > 0 && randomFn() < 0.75;
 
   let selected: MealCandidate | null = null;
 

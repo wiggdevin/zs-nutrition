@@ -4,7 +4,7 @@ import { createCaller, createAuthedTestContext } from '@/test/trpc-test-utils';
 
 // Mock metabolic utilities
 vi.mock('@/lib/metabolic-utils', () => ({
-  calculateBMR: vi.fn(() => 1800),
+  calculateBMR: vi.fn(() => ({ bmr: 1800, method: 'mifflin_st_jeor' })),
   calculateTDEE: vi.fn(() => 2500),
   calculateGoalCalories: vi.fn(() => 2000),
   calculateMacroTargets: vi.fn(() => ({

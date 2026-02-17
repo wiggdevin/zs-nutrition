@@ -15,7 +15,7 @@ export interface LogEntryProps {
   carbs: number;
   fat: number;
   portion: number;
-  source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual';
+  source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual' | 'food_scan';
   confidenceScore?: number | null;
   time: string;
   onAdjust: (id: string, newPortion: number) => void;
@@ -55,6 +55,9 @@ export const LogEntry = React.memo(function LogEntry({
     }
     if (source === 'quick_add') {
       return { label: 'Quick Add', color: 'bg-warning/10 text-warning' };
+    }
+    if (source === 'food_scan') {
+      return { label: 'Food Scan', color: 'bg-info/10 text-info' };
     }
     // manual
     return { label: 'Manual', color: 'bg-muted-foreground/10 text-muted-foreground' };

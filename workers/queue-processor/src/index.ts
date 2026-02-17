@@ -1,9 +1,16 @@
 import { Worker, Job } from 'bullmq';
-import { NutritionPipelineOrchestrator, PipelineConfig } from '@zero-sum/nutrition-engine';
+import {
+  NutritionPipelineOrchestrator,
+  PipelineConfig,
+  closeBrowserPool,
+  type PipelineProgress,
+} from '@zero-sum/nutrition-engine';
 import { createRedisConnection, QUEUE_NAMES, createDeadLetterQueue } from './queues.js';
 import IORedis from 'ioredis';
 import type { PlanGenerationJobData } from '@zsn/shared-types';
-import type { RawIntakeForm } from '@zero-sum/nutrition-engine';
+import type { RawIntakeForm, MealPlanDraft } from '@zero-sum/nutrition-engine';
+import { workerEnv } from './env.js';
+import { startDLQConsumer } from './dlq-consumer.js';
 
 /**
  * Redis publisher for SSE progress streaming.
@@ -59,6 +66,45 @@ async function publishProgress(jobId: string, progress: Record<string, unknown>)
   }
 }
 
+/**
+ * Fetch intakeData (and optionally draftData) from the web app's database via HTTP (P4-T06).
+ * Reference-based jobs: BullMQ job only has jobId, no PII in Redis.
+ */
+async function fetchIntakeData(
+  webAppUrl: string,
+  jobId: string,
+  secret: string,
+  existingDraftId?: string
+): Promise<{ intakeData: Record<string, unknown>; draftData?: Record<string, unknown> }> {
+  const url = new URL(`${webAppUrl}/api/plan/intake`);
+  url.searchParams.set('jobId', jobId);
+  if (existingDraftId) {
+    url.searchParams.set('draftId', existingDraftId);
+  }
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      Authorization: `Bearer ${secret}`,
+    },
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    throw new Error(`Failed to fetch intake data (status: ${response.status}): ${errorText}`);
+  }
+
+  const data = (await response.json()) as {
+    intakeData: Record<string, unknown>;
+    draftData?: Record<string, unknown>;
+  };
+  if (!data.intakeData) {
+    throw new Error(`No intake data found for job ${jobId}`);
+  }
+
+  return { intakeData: data.intakeData, draftData: data.draftData };
+}
+
 /** Extract safe error message without PII or stack traces */
 function safeError(err: unknown): string {
   if (err instanceof Error)
@@ -80,6 +126,7 @@ async function saveToWebApp(
   planData: unknown,
   metabolicProfile: unknown,
   secret: string,
+  draftData?: unknown,
   maxRetries = 3
 ): Promise<{ planId: string }> {
   let lastError: Error | undefined;
@@ -92,7 +139,7 @@ async function saveToWebApp(
           'Content-Type': 'application/json',
           Authorization: `Bearer ${secret}`,
         },
-        body: JSON.stringify({ jobId, planData, metabolicProfile }),
+        body: JSON.stringify({ jobId, planData, metabolicProfile, draftData }),
       });
 
       if (!response.ok) {
@@ -145,45 +192,28 @@ async function reportProgressToWebApp(
   }
 }
 
-const config: PipelineConfig = {
-  anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-  fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
-  fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || '',
-  usdaApiKey: process.env.USDA_API_KEY || undefined,
-};
+function buildPipelineConfig(): PipelineConfig {
+  const env = workerEnv();
+  return {
+    anthropicApiKey: env.ANTHROPIC_API_KEY,
+    fatsecretClientId: env.FATSECRET_CLIENT_ID,
+    fatsecretClientSecret: env.FATSECRET_CLIENT_SECRET,
+    usdaApiKey: env.USDA_API_KEY || undefined,
+  };
+}
 
 function validateEnvVars() {
-  const isProduction = process.env.NODE_ENV === 'production';
+  // P5-T05: Centralized validation via workerEnv() Zod schema
+  // Throws with descriptive errors if required vars are missing
+  const env = workerEnv();
 
-  const required: Array<{ name: string; present: boolean }> = [
-    { name: 'REDIS_URL', present: !!process.env.REDIS_URL },
-    { name: 'ANTHROPIC_API_KEY', present: !!process.env.ANTHROPIC_API_KEY },
-    { name: 'FATSECRET_CLIENT_ID', present: !!process.env.FATSECRET_CLIENT_ID },
-    { name: 'FATSECRET_CLIENT_SECRET', present: !!process.env.FATSECRET_CLIENT_SECRET },
-    { name: 'WEB_APP_URL', present: !!process.env.WEB_APP_URL },
-    { name: 'INTERNAL_API_SECRET', present: !!process.env.INTERNAL_API_SECRET },
-  ];
-
-  const missing = required.filter((v) => !v.present).map((v) => v.name);
-
-  if (missing.length > 0) {
-    console.error(`❌ Missing required env vars: ${missing.join(', ')}`);
-    if (isProduction) {
-      process.exit(1);
-    } else {
-      console.warn('⚠️  Continuing in dev mode despite missing vars');
-    }
-  }
-
-  // Warn if REDIS_URL doesn't use TLS
-  const redisUrl = process.env.REDIS_URL || '';
-  if (redisUrl && !redisUrl.startsWith('rediss://')) {
+  // Additional runtime warnings
+  if (env.REDIS_URL && !env.REDIS_URL.startsWith('rediss://')) {
     console.warn('⚠️  REDIS_URL does not use TLS (rediss://). Upstash requires TLS.');
   }
 
-  // Warn if WEB_APP_URL points to localhost in production
-  const webAppUrl = process.env.WEB_APP_URL || '';
-  if (isProduction && webAppUrl.includes('localhost')) {
+  const isProduction = process.env.NODE_ENV === 'production';
+  if (isProduction && env.WEB_APP_URL.includes('localhost')) {
     console.error('❌ WEB_APP_URL points to localhost in production — worker callbacks will fail');
     process.exit(1);
   }
@@ -210,25 +240,36 @@ async function startWorker() {
     process.exit(1);
   }
 
+  // P5-T04: Verify rate limiter / queue infrastructure on startup
+  try {
+    const infoRaw = await connection.info('clients');
+    const connectedClients = infoRaw.match(/connected_clients:(\d+)/)?.[1] || 'unknown';
+    console.log(`✅ Redis rate limiter check: ${connectedClients} connected client(s)`);
+  } catch (err) {
+    console.error(`🚨 CRITICAL: Rate limiter health check failed: ${safeError(err)}`);
+    console.error('🚨 Worker continuing in degraded mode — rate limiting may not function');
+    // Do not exit: allow worker to operate in degraded mode
+  }
+
   // Dead letter queue for jobs that exhaust all retry attempts
   const deadLetterQueue = createDeadLetterQueue(connection);
   console.log(`🪦 Dead letter queue ready: ${QUEUE_NAMES.DEAD_LETTER}`);
 
-  const orchestrator = new NutritionPipelineOrchestrator(config);
+  // P5-T02: Start DLQ consumer to process permanently failed jobs
+  const dlqWorker = startDLQConsumer(connection);
+
+  const orchestrator = new NutritionPipelineOrchestrator(buildPipelineConfig());
 
   const worker = new Worker(
     QUEUE_NAMES.PLAN_GENERATION,
     async (job: Job<PlanGenerationJobData>) => {
       console.log(`📦 Processing job ${job.id}: ${job.name}`);
 
-      const { intakeData, jobId } = job.data;
+      const { jobId, pipelinePath, existingDraftId } = job.data;
 
-      const webAppUrl = process.env.WEB_APP_URL || 'http://localhost:3456';
-      const secret = process.env.INTERNAL_API_SECRET;
-      if (!secret && process.env.NODE_ENV === 'production') {
-        throw new Error('INTERNAL_API_SECRET is required in production.');
-      }
-      const resolvedSecret = secret || 'dev-internal-secret';
+      const env = workerEnv();
+      const webAppUrl = env.WEB_APP_URL;
+      const resolvedSecret = env.INTERNAL_API_SECRET;
 
       try {
         // Update job progress and publish to Redis for real-time SSE streaming
@@ -242,20 +283,46 @@ async function startWorker() {
         await publishProgress(jobId, initialProgress);
         await reportProgressToWebApp(webAppUrl, jobId, initialProgress, resolvedSecret);
 
-        const result = await orchestrator.run(intakeData as RawIntakeForm, async (progress) => {
+        // Fetch intakeData (and draft for fast-path) from web app
+        const { intakeData, draftData } = await fetchIntakeData(
+          webAppUrl,
+          jobId,
+          resolvedSecret,
+          existingDraftId
+        );
+
+        const onProgress = async (progress: PipelineProgress) => {
           await job.updateProgress(progress);
-          // Spread progress first, then override status to ensure 'running' is set
-          const progressWithStatus = { ...progress, status: 'running' };
+          const progressWithStatus = { ...progress, status: 'running' as const };
           await publishProgress(jobId, progressWithStatus);
           await reportProgressToWebApp(webAppUrl, jobId, progressWithStatus, resolvedSecret);
-          console.log(`  Agent ${progress.agent} (${progress.agentName}): ${progress.message}`);
-        });
+          console.log(
+            `  Agent ${progress.agent} (${progress.agentName}): ${progress.message}${progress.subStep ? ` [${progress.subStep}]` : ''}`
+          );
+        };
+
+        // P5-T03: Run full or fast pipeline based on pipelinePath
+        let result;
+        if (pipelinePath === 'fast' && draftData) {
+          console.log(`⚡ Running fast pipeline (reusing draft from plan ${existingDraftId})`);
+          result = await orchestrator.runFast(
+            { rawInput: intakeData as RawIntakeForm, existingDraft: draftData as MealPlanDraft },
+            onProgress
+          );
+        } else {
+          if (pipelinePath === 'fast' && !draftData) {
+            console.warn(
+              '⚠️ Fast path requested but no draft available, falling back to full pipeline'
+            );
+          }
+          result = await orchestrator.run(intakeData as RawIntakeForm, onProgress);
+        }
 
         if (!result.success) {
           throw new Error(result.error || 'Pipeline failed');
         }
 
-        console.log(`✅ Job ${job.id} completed successfully`);
+        console.log(`✅ Job ${job.id} completed successfully (path: ${pipelinePath})`);
 
         // Save the completed plan to the database via the web app's API endpoint
         const savingProgress = { status: 'saving', message: 'Saving your meal plan...' };
@@ -267,7 +334,8 @@ async function startWorker() {
           jobId,
           result.plan,
           (result.deliverables as Record<string, unknown>)?.metabolicProfile || {},
-          resolvedSecret
+          resolvedSecret,
+          result.draft
         );
         console.log(`💾 Plan saved to database: ${saveData.planId}`);
 
@@ -320,9 +388,13 @@ async function startWorker() {
         await publishProgress(job.data.jobId, failureProgress);
 
         // Also report failure to DB so polling clients see it
-        const failWebAppUrl = process.env.WEB_APP_URL || 'http://localhost:3456';
-        const failSecret = process.env.INTERNAL_API_SECRET || 'dev-internal-secret';
-        await reportProgressToWebApp(failWebAppUrl, job.data.jobId, failureProgress, failSecret);
+        const failEnv = workerEnv();
+        await reportProgressToWebApp(
+          failEnv.WEB_APP_URL,
+          job.data.jobId,
+          failureProgress,
+          failEnv.INTERNAL_API_SECRET
+        );
       }
 
       try {
@@ -331,8 +403,8 @@ async function startWorker() {
           {
             originalJobId: job.id,
             originalQueue: QUEUE_NAMES.PLAN_GENERATION,
-            originalData: job.data,
-            failedReason: err.message,
+            jobId: job.data?.jobId,
+            failedReason: safeError(err),
             attemptsMade,
             failedAt: new Date().toISOString(),
           },
@@ -360,6 +432,7 @@ async function startWorker() {
   process.on('uncaughtException', async (error) => {
     console.error('Uncaught Exception:', safeError(error));
     await worker.close();
+    await dlqWorker.close();
     await deadLetterQueue.close();
     await publisher.quit();
     await connection.quit();
@@ -369,7 +442,9 @@ async function startWorker() {
   // Graceful shutdown
   const shutdown = async () => {
     console.log('\n🛑 Shutting down worker...');
+    await closeBrowserPool();
     await worker.close();
+    await dlqWorker.close();
     await deadLetterQueue.close();
     await publisher.quit();
     await connection.quit();

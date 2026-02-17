@@ -58,7 +58,7 @@ export function generateSimulatedPlan(
   exclusions: string[] = [],
   prepTimeMax: number = 30
 ) {
-  const bmr = calculateBMR({
+  const { bmr } = calculateBMR({
     sex: profile.sex,
     weightKg: profile.weightKg,
     heightCm: profile.heightCm,
@@ -181,7 +181,7 @@ export function calculateSimulatedMetabolicProfile(profile: {
   activityLevel: string;
   macroStyle?: string;
 }) {
-  const bmr = calculateBMR({
+  const { bmr } = calculateBMR({
     sex: profile.sex,
     weightKg: profile.weightKg,
     heightCm: profile.heightCm,
@@ -191,7 +191,7 @@ export function calculateSimulatedMetabolicProfile(profile: {
   const tdeeKcal = calculateTDEE(bmrKcal, profile.activityLevel);
   const goalKcal = calculateGoalCalories(tdeeKcal, profile.goalType, profile.goalRate);
   const macros = calculateMacroTargets(goalKcal, profile.macroStyle || 'balanced');
-  const trainingBonusKcal = getTrainingDayBonus(profile.activityLevel);
+  const trainingBonusKcal = getTrainingDayBonus(tdeeKcal);
 
   return {
     bmrKcal,

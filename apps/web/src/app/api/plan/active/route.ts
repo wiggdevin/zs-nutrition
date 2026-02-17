@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
+import { decompressJson } from '@/lib/compression';
 
 /**
  * GET /api/plan/active
@@ -58,23 +59,25 @@ export async function GET() {
       );
     }
 
-    // Parse the validated plan JSON
+    // Decompress JSON fields (handles compressed, legacy string, and raw object formats)
     let validatedPlan = null;
     try {
-      validatedPlan =
+      const raw =
         typeof activePlan.validatedPlan === 'string'
           ? JSON.parse(activePlan.validatedPlan)
           : activePlan.validatedPlan;
+      validatedPlan = decompressJson(raw);
     } catch {
       logger.error('Failed to parse validatedPlan');
     }
 
     let metabolicProfile = null;
     try {
-      metabolicProfile =
+      const raw =
         typeof activePlan.metabolicProfile === 'string'
           ? JSON.parse(activePlan.metabolicProfile)
           : activePlan.metabolicProfile;
+      metabolicProfile = decompressJson(raw);
     } catch {
       logger.error('Failed to parse metabolicProfile');
     }

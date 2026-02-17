@@ -1,4 +1,5 @@
 import type { MealPlanValidated } from '../../types/schemas';
+import { escapeHtml } from './formatters';
 
 /**
  * Generate executive summary HTML with targets, macro breakdown, and QA score
@@ -154,7 +155,7 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
       <div class="section">
         <div class="section-title">Quality Assurance Score</div>
         <div style="text-align: center; padding: 24px 0;">
-          <div class="qa-badge">${qa.status}</div>
+          <div class="qa-badge">${escapeHtml(qa.status)}</div>
           <div class="qa-score">${qa.score.toFixed(0)}%</div>
           <div class="qa-label">Overall Quality Score</div>
         </div>
@@ -165,29 +166,67 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
         <div class="section-title">Weekly Average Targets</div>
         <div class="macro-grid">
           <div class="macro-card">
-            <div class="macro-label">Calories</div>
+            <div class="macro-label">Daily Calories</div>
             <div class="macro-value">${Math.round(weeklyTotals.avgKcal)}</div>
             <div class="macro-unit">kcal/day</div>
           </div>
           <div class="macro-card">
-            <div class="macro-label">Protein</div>
+            <div class="macro-label">Protein Target</div>
             <div class="macro-value">${Math.round(weeklyTotals.avgProteinG)}</div>
             <div class="macro-unit">grams/day</div>
           </div>
           <div class="macro-card">
-            <div class="macro-label">Carbs</div>
+            <div class="macro-label">Carb Target</div>
             <div class="macro-value">${Math.round(weeklyTotals.avgCarbsG)}</div>
             <div class="macro-unit">grams/day</div>
           </div>
           <div class="macro-card">
-            <div class="macro-label">Fat</div>
+            <div class="macro-label">Fat Target</div>
             <div class="macro-value">${Math.round(weeklyTotals.avgFatG)}</div>
             <div class="macro-unit">grams/day</div>
           </div>
+          ${(() => {
+            const totalFiber = plan.days.reduce(
+              (sum, day) =>
+                sum + day.meals.reduce((mSum, meal) => mSum + (meal.nutrition.fiberG || 0), 0),
+              0
+            );
+            const avgFiber = plan.days.length > 0 ? Math.round(totalFiber / plan.days.length) : 0;
+            return avgFiber > 0
+              ? `<div class="macro-card">
+            <div class="macro-label">Fiber Target</div>
+            <div class="macro-value">${avgFiber}</div>
+            <div class="macro-unit">grams/day</div>
+          </div>`
+              : '';
+          })()}
         </div>
         <div class="daily-targets">
           <h4>✓ Daily Targets Met</h4>
           <p>Your meal plan provides an average of ${Math.round(weeklyTotals.avgKcal)} calories per day, optimized for your goals.</p>
+        </div>
+      </div>
+
+      ${
+        plan.goalKcalFloorApplied
+          ? `
+      <!-- Caloric Floor Warning -->
+      <div class="section">
+        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px;">
+          <h4 style="color: #92400e; margin-bottom: 4px;">Caloric Floor Applied</h4>
+          <p style="color: #78350f; font-size: 14px; margin: 0;">A minimum caloric floor was applied to meet safe daily intake guidelines. Your original calculated target was below recommended minimums.</p>
+        </div>
+      </div>
+      `
+          : ''
+      }
+
+      <!-- Calculation Methods -->
+      <div class="section">
+        <div class="section-title">Calculation Methods</div>
+        <div class="meta">
+          <p><strong>BMR Method:</strong> ${plan.calculationMethod === 'katch_mcardle' ? 'Katch-McArdle (body fat based)' : 'Mifflin-St Jeor (standard)'}</p>
+          <p><strong>Protein Targeting:</strong> ${plan.proteinMethod === 'g_per_kg' ? 'Goal-based g/kg bodyweight' : 'Percentage-based'}</p>
         </div>
       </div>
 
@@ -198,7 +237,7 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
           <p><strong>Generated:</strong> ${generatedDate}</p>
           <p><strong>Duration:</strong> ${plan.days.length} days</p>
           <p><strong>Total Meals:</strong> ${plan.days.reduce((sum, day) => sum + day.meals.length, 0)} meals</p>
-          <p><strong>Engine Version:</strong> ${engineVersion}</p>
+          <p><strong>Engine Version:</strong> ${escapeHtml(engineVersion)}</p>
           <p><strong>QA Iterations:</strong> ${qa.iterations}</p>
         </div>
       </div>

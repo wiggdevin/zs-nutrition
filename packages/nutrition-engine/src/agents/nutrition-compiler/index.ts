@@ -60,12 +60,28 @@ export class NutritionCompiler {
     private usdaAdapter?: USDAAdapter
   ) {}
 
-  async compile(draft: MealPlanDraft): Promise<MealPlanCompiled> {
+  async compile(
+    draft: MealPlanDraft,
+    onSubProgress?: (message: string) => void | Promise<void>
+  ): Promise<MealPlanCompiled> {
     const startTime = Date.now();
     engineLogger.info('[NutritionCompiler] Starting compilation with parallel processing');
 
+    const totalMeals = draft.days.reduce((sum, d) => sum + d.meals.length, 0);
+    let mealsProcessed = 0;
+
     // Process all days in parallel (each day's meals are processed concurrently with rate limiting)
-    const compiledDays = await Promise.all(draft.days.map((day) => this.compileDay(day)));
+    const compiledDays = await Promise.all(
+      draft.days.map(async (day) => {
+        const compiled = await this.compileDay(day);
+        mealsProcessed += day.meals.length;
+        // Emit sub-progress every 5 meals
+        if (mealsProcessed % 5 === 0 || mealsProcessed === totalMeals) {
+          await onSubProgress?.(`Verifying meal ${mealsProcessed} of ${totalMeals}...`);
+        }
+        return compiled;
+      })
+    );
 
     // Calculate weekly averages
     const weeklyAverages = this.calculateWeeklyAverages(compiledDays);
@@ -99,11 +115,19 @@ export class NutritionCompiler {
     const variancePercent =
       day.targetKcal > 0 ? Math.round((varianceKcal / day.targetKcal) * 10000) / 100 : 0;
 
+    // Derive per-day macro targets by summing each meal's target nutrition
+    const macroTargets = {
+      proteinG: Math.round(day.meals.reduce((sum, m) => sum + m.targetNutrition.proteinG, 0)),
+      carbsG: Math.round(day.meals.reduce((sum, m) => sum + m.targetNutrition.carbsG, 0)),
+      fatG: Math.round(day.meals.reduce((sum, m) => sum + m.targetNutrition.fatG, 0)),
+    };
+
     return {
       dayNumber: day.dayNumber,
       dayName: day.dayName,
       isTrainingDay: day.isTrainingDay,
       targetKcal: day.targetKcal,
+      macroTargets,
       meals: compiledMeals,
       dailyTotals,
       varianceKcal: Math.round(varianceKcal),

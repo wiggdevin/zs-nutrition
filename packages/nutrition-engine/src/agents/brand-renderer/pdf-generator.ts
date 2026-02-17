@@ -104,7 +104,7 @@ export async function generatePdf(
     // Create a combined HTML document with all sections
     const combinedHtml = generateCombinedPdfHtml(validated, summaryHtml, gridHtml, groceryHtml);
 
-    await page.setContent(combinedHtml, { waitUntil: 'networkidle0' });
+    await page.setContent(combinedHtml, { waitUntil: 'domcontentloaded' });
 
     // Generate PDF
     const pdfBuffer = await page.pdf({
