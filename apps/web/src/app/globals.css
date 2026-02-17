@@ -183,7 +183,7 @@ body {
   font-family: var(--font-jetbrains), 'JetBrains Mono', ui-monospace, SFMono-Regular, monospace;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  font-size: 0.75rem;
+  font-size: 0.8125rem;
 }
 
 /* Macro number style — monospace for data alignment */

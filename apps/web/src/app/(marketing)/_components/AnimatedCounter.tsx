@@ -19,18 +19,23 @@ export function AnimatedCounter({
   prefix = '',
   duration = 2000,
 }: AnimatedCounterProps) {
-  const [count, setCount] = useState(0);
+  const [count, setCount] = useState(target);
   const ref = useRef<HTMLSpanElement>(null);
-  const hasAnimated = useRef(false);
+  const animatedRef = useRef(false);
 
   useEffect(() => {
     const el = ref.current;
     if (!el) return;
 
+    // Reset to 0 only after hydration, right before observing
+    if (!animatedRef.current) {
+      setCount(0);
+    }
+
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting && !hasAnimated.current) {
-          hasAnimated.current = true;
+        if (entry.isIntersecting && !animatedRef.current) {
+          animatedRef.current = true;
           const start = performance.now();
 
           function tick(now: number) {
@@ -44,7 +49,7 @@ export function AnimatedCounter({
           requestAnimationFrame(tick);
         }
       },
-      { threshold: 0.3 }
+      { threshold: 0 }
     );
 
     observer.observe(el);
