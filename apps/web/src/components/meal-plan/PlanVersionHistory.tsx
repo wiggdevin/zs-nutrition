@@ -174,7 +174,9 @@ function DiffView({ diff, onClose }: { diff: DiffResponse; onClose: () => void }
                 >
                   <div className="flex items-center gap-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
-                      {meal.slot}
+                      {meal.slot
+                        .replace(/_\d+$/, '')
+                        .replace(/^(\w)(.*)$/, (_, f: string, r: string) => f + r.toLowerCase())}
                     </span>
                     <span
                       className={`text-[10px] font-bold uppercase px-1.5 py-0.5 rounded ${

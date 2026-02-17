@@ -342,6 +342,9 @@ async function startWorker() {
         return { planData: result.plan, deliverables: result.deliverables };
       } catch (error) {
         console.error(`❌ Job ${job.id} failed:`, safeError(error));
+        if (error instanceof Error) {
+          console.error(`❌ Raw error stack:`, error.stack);
+        }
         throw error;
       }
     },

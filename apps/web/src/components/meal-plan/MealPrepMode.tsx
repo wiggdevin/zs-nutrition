@@ -194,7 +194,11 @@ function PrepGroupCard({
               <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-bold uppercase text-primary border border-primary/20">
                 {DAY_NAMES[meal.dayNumber] || `D${meal.dayNumber}`}
               </span>
-              <span className="text-muted-foreground text-xs">{meal.slot}</span>
+              <span className="text-muted-foreground text-xs">
+                {meal.slot
+                  .replace(/_\d+$/, '')
+                  .replace(/^(\w)(.*)$/, (_, f: string, r: string) => f + r.toLowerCase())}
+              </span>
               <span className="text-foreground text-xs font-medium truncate">{meal.name}</span>
             </div>
           ))}

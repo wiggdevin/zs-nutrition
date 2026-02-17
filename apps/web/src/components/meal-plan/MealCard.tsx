@@ -2,6 +2,7 @@
 
 import { useCallback } from 'react';
 import type { PlanDay, Meal } from './types';
+import { formatSlotName } from './utils';
 
 /** Skeleton loader that replaces a meal card during swap */
 export function MealCardSkeleton() {
@@ -55,10 +56,12 @@ export function DayColumn({
     },
     [onMealClick]
   );
-  const dayTotalKcal = day.meals.reduce((sum, m) => sum + m.nutrition.kcal, 0);
-  const dayTotalProtein = day.meals.reduce((sum, m) => sum + m.nutrition.proteinG, 0);
-  const dayTotalCarbs = day.meals.reduce((sum, m) => sum + m.nutrition.carbsG, 0);
-  const dayTotalFat = day.meals.reduce((sum, m) => sum + m.nutrition.fatG, 0);
+  const dayTotalKcal = Math.round(day.meals.reduce((sum, m) => sum + m.nutrition.kcal, 0));
+  const dayTotalProtein =
+    Math.round(day.meals.reduce((sum, m) => sum + m.nutrition.proteinG, 0) * 10) / 10;
+  const dayTotalCarbs =
+    Math.round(day.meals.reduce((sum, m) => sum + m.nutrition.carbsG, 0) * 10) / 10;
+  const dayTotalFat = Math.round(day.meals.reduce((sum, m) => sum + m.nutrition.fatG, 0) * 10) / 10;
 
   return (
     <div
@@ -198,7 +201,7 @@ export function DayColumn({
               {/* Slot label + Confidence badge */}
               <div className="flex items-center gap-2 mb-2">
                 <span className="rounded-md bg-primary/20 px-2 py-1 text-[11px] font-black uppercase tracking-wide text-primary border border-primary/30">
-                  {meal.slot}
+                  {formatSlotName(meal.slot)}
                 </span>
                 <span
                   data-testid={`confidence-badge-${day.dayNumber}-${mealIdx}`}
@@ -245,16 +248,16 @@ export function DayColumn({
                 data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}
               >
                 <span className="inline-flex items-center rounded-full bg-primary/15 px-2 py-1 text-[11px] font-bold text-primary border border-primary/20">
-                  {meal.nutrition.kcal} kcal
+                  {Math.round(meal.nutrition.kcal)} kcal
                 </span>
                 <span className="inline-flex items-center rounded-full bg-chart-3/15 px-2 py-1 text-[11px] font-bold text-chart-3 border border-chart-3/20">
-                  P {meal.nutrition.proteinG}g
+                  P {Math.round(meal.nutrition.proteinG * 10) / 10}g
                 </span>
                 <span className="inline-flex items-center rounded-full bg-warning/15 px-2 py-1 text-[11px] font-bold text-warning border border-warning/20">
-                  C {meal.nutrition.carbsG}g
+                  C {Math.round(meal.nutrition.carbsG * 10) / 10}g
                 </span>
                 <span className="inline-flex items-center rounded-full bg-destructive/15 px-2 py-1 text-[11px] font-bold text-destructive border border-destructive/20">
-                  F {meal.nutrition.fatG}g
+                  F {Math.round(meal.nutrition.fatG * 10) / 10}g
                 </span>
               </div>
             </div>
