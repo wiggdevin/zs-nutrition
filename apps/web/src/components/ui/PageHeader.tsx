@@ -50,7 +50,8 @@ export function PageHeader({
   return (
     <div
       className={cn(
-        'border-b border-border bg-background px-4 py-6',
+        'border-b border-border bg-background px-4',
+        subtitle ? 'py-3' : 'py-6',
         sticky && 'sticky top-0 md:top-14 z-40 bg-background/80 backdrop-blur-sm',
         className
       )}
