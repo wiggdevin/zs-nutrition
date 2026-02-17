@@ -17,6 +17,11 @@ export type AuthedContext = Context & {
   dbUserId: string;
 };
 
+export type DeactivatedAuthContext = AuthedContext & {
+  isActive: boolean;
+  deactivatedAt: Date | null;
+};
+
 export async function createContext(): Promise<Context> {
   const userId = await getClerkUserId();
   const headersList = await headers();
@@ -108,3 +113,42 @@ const rateLimit = t.middleware(async ({ ctx, next }) => {
 });
 
 export const protectedProcedure = t.procedure.use(enforceAuth).use(rateLimit);
+
+// Middleware that authenticates the user but does NOT block deactivated accounts.
+// Used by account lifecycle procedures (reactivation, deletion, status check).
+const enforceAuthAllowDeactivated = t.middleware(async ({ ctx, next }) => {
+  const clerkUserId = ctx.userId;
+  if (!clerkUserId) {
+    throw new TRPCError({
+      code: 'UNAUTHORIZED',
+      message: 'You must be signed in to access this resource.',
+    });
+  }
+
+  let user = await prisma.user.findUnique({
+    where: { clerkUserId },
+    select: { id: true, isActive: true, deactivatedAt: true },
+  });
+
+  if (!user) {
+    user = await prisma.user.create({
+      data: {
+        clerkUserId,
+        email: `pending-${clerkUserId}@placeholder.com`,
+      },
+      select: { id: true, isActive: true, deactivatedAt: true },
+    });
+  }
+
+  return next({
+    ctx: {
+      ...ctx,
+      userId: clerkUserId,
+      dbUserId: user.id,
+      isActive: user.isActive,
+      deactivatedAt: user.deactivatedAt,
+    },
+  });
+});
+
+export const deactivatedUserProcedure = t.procedure.use(enforceAuthAllowDeactivated).use(rateLimit);
