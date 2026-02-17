@@ -4,6 +4,7 @@ import { fileURLToPath } from 'url';
 import bundleAnalyzer from '@next/bundle-analyzer';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const isDev = process.env.NODE_ENV !== 'production';
 
 const withBundleAnalyzer = bundleAnalyzer({
   enabled: process.env.ANALYZE === 'true',
@@ -86,41 +87,26 @@ const nextConfig: NextConfig = {
             value: 'camera=(), microphone=(), geolocation=()',
           },
 
-          // Content Security Policy
-          {
-            key: 'Content-Security-Policy',
-            value: [
-              // Default to self for anything not explicitly set
-              "default-src 'self'",
-
-              // Allow scripts from self, inline (needed for Next.js hydration), and Clerk
-              "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com https://clerk.zerosumnutrition.com",
-
-              // Allow styles from self and inline (needed for styled-components, Tailwind, etc.)
-              "style-src 'self' 'unsafe-inline'",
-
-              // Allow images from self, data URIs, blobs, and Clerk
-              "img-src 'self' blob: data: https://*.clerk.com https://img.clerk.com https://clerk.zerosumnutrition.com",
-
-              // Allow fonts from self, data URIs, and Google Fonts
-              "font-src 'self' data: https://fonts.gstatic.com",
-
-              // Allow connections to self, Clerk, Anthropic API, and Clerk telemetry
-              "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com wss://*.clerk.com https://api.anthropic.com https://clerk-telemetry.com https://clerk.zerosumnutrition.com",
-
-              // Allow frames from Clerk for OAuth
-              "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://accounts.zerosumnutrition.com",
-
-              // Allow workers from self and blob (needed for Clerk)
-              "worker-src 'self' blob:",
-
-              // Restrict form submissions to self
-              "form-action 'self'",
-
-              // Only load from self for base URI
-              "base-uri 'self'",
-            ].join('; '),
-          },
+          // Content Security Policy (relaxed in dev for hot reload)
+          ...(isDev
+            ? []
+            : [
+                {
+                  key: 'Content-Security-Policy',
+                  value: [
+                    "default-src 'self'",
+                    "script-src 'self' 'unsafe-inline' https://*.clerk.accounts.dev https://*.clerk.com https://clerk.zerosumnutrition.com",
+                    "style-src 'self' 'unsafe-inline'",
+                    "img-src 'self' blob: data: https://*.clerk.com https://img.clerk.com https://clerk.zerosumnutrition.com",
+                    "font-src 'self' data: https://fonts.gstatic.com",
+                    "connect-src 'self' https://*.clerk.accounts.dev https://*.clerk.com wss://*.clerk.com https://api.anthropic.com https://clerk-telemetry.com https://clerk.zerosumnutrition.com",
+                    "frame-src 'self' https://*.clerk.accounts.dev https://*.clerk.com https://accounts.zerosumnutrition.com",
+                    "worker-src 'self' blob:",
+                    "form-action 'self'",
+                    "base-uri 'self'",
+                  ].join('; '),
+                },
+              ]),
         ],
       },
     ];
