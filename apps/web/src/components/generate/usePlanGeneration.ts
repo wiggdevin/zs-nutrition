@@ -14,6 +14,7 @@ export function usePlanGeneration() {
   const [status, setStatus] = useState<GenerationStatus>('idle');
   const [currentAgent, setCurrentAgent] = useState(0);
   const [hasProfile, setHasProfile] = useState(false);
+  const [profileLoading, setProfileLoading] = useState(true);
   const [jobId, setJobId] = useState<string | null>(null);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [isReconnecting, setIsReconnecting] = useState(false);
@@ -33,6 +34,7 @@ export function usePlanGeneration() {
 
     if (profile && onboardingComplete === 'true') {
       setHasProfile(true);
+      setProfileLoading(false);
       return;
     }
 
@@ -48,6 +50,9 @@ export function usePlanGeneration() {
       })
       .catch(() => {
         // Network error — leave hasProfile false
+      })
+      .finally(() => {
+        setProfileLoading(false);
       });
   }, []);
 
@@ -68,11 +73,8 @@ export function usePlanGeneration() {
       }
 
       try {
-        const response = await fetch('/api/trpc/plan.getJobStatus', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ json: { jobId: pollJobId } }),
-        });
+        const input = encodeURIComponent(JSON.stringify({ json: { jobId: pollJobId } }));
+        const response = await fetch(`/api/trpc/plan.getJobStatus?input=${input}`);
 
         if (response.ok) {
           const data = await response.json();
@@ -289,6 +291,7 @@ export function usePlanGeneration() {
     status,
     currentAgent,
     hasProfile,
+    profileLoading,
     jobId,
     errorMessage,
     isReconnecting,
