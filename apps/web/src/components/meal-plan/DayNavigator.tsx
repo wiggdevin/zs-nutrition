@@ -89,54 +89,9 @@ export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps
   );
 }
 
-function QAColor(status: string) {
-  if (status === 'PASS')
-    return { bg: 'rgba(34, 197, 94, 0.1)', border: 'rgba(34, 197, 94, 0.4)', dot: 'bg-green-500' };
-  if (status === 'WARN')
-    return {
-      bg: 'rgba(245, 158, 11, 0.1)',
-      border: 'rgba(245, 158, 11, 0.4)',
-      dot: 'bg-yellow-500',
-    };
-  return { bg: 'rgba(239, 68, 68, 0.1)', border: 'rgba(239, 68, 68, 0.4)', dot: 'bg-red-500' };
-}
-
 function PlanHeaderActions({ plan }: { plan: PlanData }) {
-  const hasVersion = plan.version !== null && plan.version !== undefined;
-  const hasQA = !!plan.qaStatus;
-  const qaColors = hasQA ? QAColor(plan.qaStatus!) : null;
-
   return (
     <div className="flex items-center gap-2">
-      {/* Version + QA merged pill */}
-      {(hasVersion || hasQA) && (
-        <span
-          className="inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 font-mono text-xs font-semibold"
-          style={
-            qaColors
-              ? {
-                  backgroundColor: qaColors.bg,
-                  border: `1px solid ${qaColors.border}`,
-                }
-              : undefined
-          }
-          data-testid="plan-version-badge"
-          title={`Plan version ${plan.version ?? '?'}${hasQA ? ` · QA: ${plan.qaStatus} (${plan.qaScore ?? 'N/A'}%)` : ''}`}
-        >
-          {hasVersion && <span>v{plan.version}</span>}
-          {hasVersion && hasQA && <span className="text-muted-foreground">/</span>}
-          {hasQA && (
-            <>
-              <span
-                className={`inline-block h-1.5 w-1.5 rounded-full ${qaColors!.dot}`}
-                data-testid="qa-score-badge"
-              />
-              <span>{plan.qaScore !== null ? `${plan.qaScore}%` : 'N/A'}</span>
-            </>
-          )}
-        </span>
-      )}
-
       {/* Inline macro strip */}
       {plan.dailyKcalTarget && (
         <span

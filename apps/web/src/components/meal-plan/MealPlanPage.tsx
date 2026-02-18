@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState, useCallback } from 'react';
+import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import NavBar from '@/components/navigation/NavBar';
 import { useMealPlanData } from './useMealPlanData';
@@ -13,6 +13,7 @@ import { MealPlanSkeleton } from './MealPlanSkeleton';
 import { MealPlanEmptyState } from './MealPlanEmptyState';
 import { PlanReplacedBanner } from './PlanReplacedBanner';
 import { SwapErrorToast } from './SwapErrorToast';
+import { useSwipeNavigation } from './useSwipeNavigation';
 
 const MealDetailModal = dynamic(() => import('./MealDetailModal'), {
   ssr: false,
@@ -52,17 +53,9 @@ export default function MealPlanPage() {
     handleViewNewerPlan,
   } = useMealPlanData();
 
-  const scrollRef = useRef<HTMLDivElement>(null);
-  const [scrolledStart, setScrolledStart] = useState(false);
-  const [scrolledEnd, setScrolledEnd] = useState(false);
   const [prepMode, setPrepMode] = useState(false);
-
-  const handleScroll = useCallback(() => {
-    const el = scrollRef.current;
-    if (!el) return;
-    setScrolledStart(el.scrollLeft > 8);
-    setScrolledEnd(el.scrollLeft + el.clientWidth >= el.scrollWidth - 8);
-  }, []);
+  const days = plan?.validatedPlan?.days || [];
+  const swipe = useSwipeNavigation({ totalDays: days.length });
 
   if (loading) {
     return (
@@ -86,8 +79,6 @@ export default function MealPlanPage() {
     );
   }
 
-  const days = plan.validatedPlan?.days || [];
-
   return (
     <>
       <NavBar />
@@ -103,18 +94,24 @@ export default function MealPlanPage() {
 
           {/* Prep Mode Toggle */}
           {activeTab === 'meal-plan' && days.length > 0 && (
-            <div className="mx-auto max-w-[1600px] px-4 pt-4">
+            <div className="mx-auto max-w-[1600px] px-4 pt-4 flex items-center gap-3">
               <button
                 onClick={() => setPrepMode(!prepMode)}
-                className={`px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${
+                className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${
                   prepMode
                     ? 'bg-primary text-background'
                     : 'bg-card border border-border text-foreground hover:bg-muted'
                 }`}
                 data-testid="prep-mode-toggle"
               >
-                {prepMode ? 'Exit Prep Mode' : 'Prep Mode'}
+                <span>{prepMode ? '\u2715' : '\uD83C\uDF73'}</span>
+                <span>{prepMode ? 'Exit Prep Mode' : 'Prep Mode'}</span>
               </button>
+              {!prepMode && (
+                <span className="text-xs text-muted-foreground hidden sm:inline">
+                  Organize meals by protein for batch cooking
+                </span>
+              )}
             </div>
           )}
 
@@ -122,37 +119,56 @@ export default function MealPlanPage() {
           {activeTab === 'meal-plan' && !prepMode && (
             <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="meal-plan-view">
               <div
-                className={`scroll-fade-container ${scrolledStart ? 'scrolled-start' : ''} ${scrolledEnd ? 'scrolled-end' : ''}`}
+                ref={swipe.scrollRef}
+                onScroll={swipe.handleScroll}
+                onTouchStart={swipe.handleTouchStart}
+                onTouchMove={swipe.handleTouchMove}
+                onTouchEnd={swipe.handleTouchEnd}
+                className="
+                  flex overflow-x-auto snap-x snap-mandatory scrollbar-none
+                  md:grid md:grid-cols-3 md:gap-3 md:overflow-x-visible
+                  lg:grid-cols-4
+                  xl:grid-cols-5
+                  2xl:grid-cols-7
+                "
+                data-testid="seven-day-grid"
               >
-                <div
-                  ref={scrollRef}
-                  onScroll={handleScroll}
-                  className="
-                    flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory
-                    md:grid md:grid-cols-3 md:overflow-x-visible md:pb-0
-                    lg:grid-cols-4
-                    xl:grid-cols-5
-                    2xl:grid-cols-7
-                  "
-                  data-testid="seven-day-grid"
-                >
-                  {days.map((day) => (
-                    <div key={day.dayNumber} className="min-w-[280px] snap-start md:min-w-0">
-                      <DayColumn
-                        day={day}
-                        swappingMeal={swappingMeal}
-                        swapSuccess={swapSuccess}
-                        swapInProgress={swapLoading || swappingMeal !== null}
-                        onSwapClick={handleSwapClick}
-                        onMealClick={(dayNumber, mealIdx, meal) =>
-                          setSelectedMeal({ dayNumber, mealIdx, meal })
-                        }
-                        onUndoClick={handleUndoClick}
-                      />
-                    </div>
+                {days.map((day, dayIdx) => (
+                  <div
+                    key={day.dayNumber}
+                    className="w-full flex-shrink-0 snap-start snap-always px-2 md:w-auto md:flex-shrink-1 md:px-0"
+                    style={{ animationDelay: `${dayIdx * 50}ms` }}
+                  >
+                    <DayColumn
+                      day={day}
+                      swappingMeal={swappingMeal}
+                      swapSuccess={swapSuccess}
+                      swapInProgress={swapLoading || swappingMeal !== null}
+                      onSwapClick={handleSwapClick}
+                      onMealClick={(dayNumber, mealIdx, meal) =>
+                        setSelectedMeal({ dayNumber, mealIdx, meal })
+                      }
+                      onUndoClick={handleUndoClick}
+                    />
+                  </div>
+                ))}
+              </div>
+
+              {/* Mobile dot indicators */}
+              {days.length > 1 && (
+                <div className="flex justify-center gap-2 pt-3 pb-1 md:hidden">
+                  {days.map((_, i) => (
+                    <button
+                      key={i}
+                      onClick={() => swipe.setCurrentDay(i)}
+                      aria-label={`Go to day ${i + 1}`}
+                      className={`h-2 rounded-full transition-all duration-300 ${
+                        swipe.currentDay === i ? 'w-6 bg-primary' : 'w-2 bg-border'
+                      }`}
+                    />
                   ))}
                 </div>
-              </div>
+              )}
 
               {days.length === 0 && (
                 <div className="text-center py-12">

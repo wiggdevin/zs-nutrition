@@ -103,9 +103,12 @@ export function formatGroceryAmount(amount: number, unit: string): string {
   return `${roundedUp} ${unitStr}`.trim();
 }
 
-/** Format a raw slot name (e.g. "SNACK_1", "BREAKFAST") for display */
+/** Format a raw slot name (e.g. "SNACK_1", "EVENING_SNACK") for display */
 export function formatSlotName(slot: string): string {
-  return slot.replace(/_\d+$/, '').replace(/^(\w)(.*)$/, (_, f, r) => f + r.toLowerCase());
+  return slot
+    .replace(/_\d+$/, '') // "SNACK_1" -> "SNACK"
+    .replace(/_/g, ' ') // "EVENING_SNACK" -> "EVENING SNACK"
+    .replace(/\b(\w)(\w*)/g, (_, f, r) => f.toUpperCase() + r.toLowerCase());
 }
 
 /** Category icon mapping for grocery list */

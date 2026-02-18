@@ -1,4 +1,5 @@
 import type { PlanDay, Meal } from './types';
+import { formatSlotName } from './utils';
 
 // --- Types ---
 
@@ -132,10 +133,7 @@ export function buildPrepTimeline(groups: PrepGroup[]): PrepStep[] {
     if (group.protein === 'Other') continue;
 
     const mealList = group.meals
-      .map(
-        (m) =>
-          `${DAY_NAMES[m.dayNumber] || `Day ${m.dayNumber}`} ${m.slot.replace(/_\d+$/, '').replace(/^(\w)(.*)$/, (_, f: string, r: string) => f + r.toLowerCase())}`
-      )
+      .map((m) => `${DAY_NAMES[m.dayNumber] || `Day ${m.dayNumber}`} ${formatSlotName(m.slot)}`)
       .join(', ');
 
     // Prep step
