@@ -76,6 +76,12 @@ export async function GET() {
         cookingSkill: profile.cookingSkill,
         prepTimeMax: profile.prepTimeMax,
         macroStyle: profile.macroStyle,
+        goalKcal: profile.goalKcal,
+        bmrKcal: profile.bmrKcal,
+        tdeeKcal: profile.tdeeKcal,
+        proteinTargetG: profile.proteinTargetG,
+        carbsTargetG: profile.carbsTargetG,
+        fatTargetG: profile.fatTargetG,
       },
     });
   } catch (error) {
