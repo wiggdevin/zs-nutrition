@@ -1,6 +1,7 @@
 'use client';
 
 import { useModal } from '@/hooks/useModal';
+import { formatSlotName } from './utils';
 
 interface MealNutrition {
   kcal: number;
@@ -50,7 +51,8 @@ export default function MealDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm px-4 py-8"
+      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm px-0 sm:px-4 py-0 sm:py-8"
+      style={{ animation: 'modalBackdropIn 0.3s ease-out' }}
       data-testid="meal-detail-modal"
       role="dialog"
       aria-modal="true"
@@ -59,7 +61,8 @@ export default function MealDetailModal({
     >
       <div
         ref={modalRef}
-        className="relative w-full max-w-3xl max-w-[95vw] max-h-[90vh] overflow-hidden rounded-xl border border-border bg-card shadow-2xl flex flex-col"
+        className="relative w-full max-w-3xl max-h-[90vh] overflow-hidden rounded-t-2xl sm:rounded-xl border border-border bg-card shadow-2xl flex flex-col"
+        style={{ animation: 'modalSlideUp 0.4s cubic-bezier(0.22, 1, 0.36, 1)' }}
         data-testid="meal-detail-modal-content"
       >
         {/* Header - Fixed */}
@@ -103,7 +106,7 @@ export default function MealDetailModal({
                   aria-hidden="true"
                 >
                   <path
-                    d="M9 5L5 9M5 5L9 9M19 19L15 15M15 19L19 15"
+                    d="M9 18l6-6-6-6"
                     stroke="currentColor"
                     strokeWidth="2"
                     strokeLinecap="round"
@@ -118,23 +121,17 @@ export default function MealDetailModal({
                 </span>
               </nav>
 
-              {/* Slot badge */}
+              {/* Slot label + confidence badge (only for AI-estimated) */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="inline-flex items-center rounded bg-primary/20 px-2 py-1 text-xs font-bold uppercase text-primary">
-                  {meal.slot
-                    .replace(/_\d+$/, '')
-                    .replace(/^(\w)(.*)$/, (_, f: string, r: string) => f + r.toLowerCase())}
+                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                  {formatSlotName(meal.slot)}
                 </span>
-                {meal.confidenceLevel && (
+                {meal.confidenceLevel && meal.confidenceLevel !== 'verified' && (
                   <span
-                    className={`inline-flex items-center rounded px-2 py-1 text-xs font-semibold uppercase tracking-wide ${
-                      meal.confidenceLevel === 'verified'
-                        ? 'bg-success/20 text-success'
-                        : 'bg-warning/20 text-warning'
-                    }`}
+                    className="inline-flex items-center rounded px-1.5 py-0.5 text-[10px] font-bold uppercase tracking-wider bg-warning/20 text-warning border border-warning/30"
                     data-testid="meal-detail-confidence-badge"
                   >
-                    {meal.confidenceLevel === 'verified' ? '✓ Verified' : '⚡ AI-Estimated'}
+                    AI-Est.
                   </span>
                 )}
               </div>
@@ -233,43 +230,23 @@ export default function MealDetailModal({
                       amountDisplay = `${ingredient.amount}${ingredient.unit || ''}`;
                     }
 
-                    const isVerified = !!ingredient.fatsecretFoodId;
-
                     return (
                       <li
                         key={idx}
-                        className="flex items-start gap-3 text-sm text-foreground py-2 border-b border-border/50 last:border-0"
+                        className="flex items-center justify-between gap-3 text-sm text-foreground py-2 border-b border-border/50 last:border-0"
                         data-testid={`meal-detail-ingredient-${idx}`}
                       >
-                        <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary mt-0.5">
-                          {idx + 1}
-                        </span>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-2 flex-wrap">
-                            <span className="font-medium">{ingredient.name}</span>
-                            {isVerified && (
-                              <span
-                                className="inline-flex items-center rounded px-1.5 py-0.5 text-xs font-semibold uppercase tracking-wide bg-success/20 text-success"
-                                data-testid={`ingredient-verified-badge-${idx}`}
-                              >
-                                ✓ Verified
-                              </span>
-                            )}
-                          </div>
-                          <div className="flex items-center gap-2 mt-0.5 flex-wrap">
-                            {amountDisplay && (
-                              <span className="text-muted-foreground">({amountDisplay})</span>
-                            )}
-                            {ingredient.fatsecretFoodId && (
-                              <span
-                                className="text-xs text-muted-foreground bg-border px-1.5 py-0.5 rounded"
-                                data-testid={`ingredient-fatsecret-id-${idx}`}
-                              >
-                                FS: {ingredient.fatsecretFoodId}
-                              </span>
-                            )}
-                          </div>
+                        <div className="flex items-center gap-3 min-w-0">
+                          <span className="flex-shrink-0 w-5 h-5 rounded-full bg-primary/20 flex items-center justify-center text-xs font-bold text-primary">
+                            {idx + 1}
+                          </span>
+                          <span className="font-medium truncate">{ingredient.name}</span>
                         </div>
+                        {amountDisplay && (
+                          <span className="flex-shrink-0 text-muted-foreground text-xs font-mono">
+                            {amountDisplay}
+                          </span>
+                        )}
                       </li>
                     );
                   })}

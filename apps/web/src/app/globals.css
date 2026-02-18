@@ -503,3 +503,45 @@ body {
     transform: translateY(-8px);
   }
 }
+
+/* Modal slide-up animation (bottom sheet on mobile, centered on desktop) */
+@keyframes modalSlideUp {
+  0% {
+    opacity: 0;
+    transform: translateY(100%) scale(0.95);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(-2%) scale(1.01);
+  }
+  80% {
+    transform: translateY(1%) scale(0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes modalBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+/* Hide scrollbar utility */
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+
+/* Animate fade-in-up utility (reuses existing fadeInUp keyframe) */
+.animate-fade-in-up {
+  animation: fadeInUp 0.5s ease-out both;
+}
