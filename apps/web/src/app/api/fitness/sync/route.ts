@@ -44,8 +44,8 @@ export async function POST(req: NextRequest) {
 
     const syncDate = date ? new Date(date) : new Date();
 
-    // Use scheduler's syncUserActivity which fetches, normalizes, AND persists to DB
-    await syncUserActivity(userId, connections);
+    // Manual sync always forces (bypasses frequency check)
+    await syncUserActivity(userId, connections, { force: true });
 
     return NextResponse.json({
       success: true,

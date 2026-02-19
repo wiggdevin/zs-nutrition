@@ -90,7 +90,11 @@ export async function syncAllUserActivity(): Promise<{
 /**
  * Sync activity data for a specific user
  */
-export async function syncUserActivity(userId: string, connections?: any[]): Promise<void> {
+export async function syncUserActivity(
+  userId: string,
+  connections?: any[],
+  options?: { force?: boolean }
+): Promise<void> {
   // If connections not provided, fetch them
   if (!connections) {
     connections = await prisma.fitnessConnection.findMany({
@@ -111,8 +115,8 @@ export async function syncUserActivity(userId: string, connections?: any[]): Pro
 
   for (const connection of connections) {
     try {
-      // Check if sync is needed based on frequency
-      if (!shouldSync(connection, now)) {
+      // Check if sync is needed based on frequency (skip for manual/forced syncs)
+      if (!options?.force && !shouldSync(connection, now)) {
         continue;
       }
 
