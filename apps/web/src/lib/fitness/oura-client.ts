@@ -36,9 +36,9 @@ export class OuraApiClient {
   }
 
   /**
-   * Fetch all Oura data for a date range
+   * Fetch all Oura data for a date range, grouped by day
    */
-  async fetchDayData(startDate: string, endDate: string): Promise<OuraDaySyncData> {
+  async fetchDateRange(startDate: string, endDate: string): Promise<Map<string, OuraDaySyncData>> {
     const params = `start_date=${startDate}&end_date=${endDate}`;
 
     // Fetch all endpoints in parallel
@@ -52,19 +52,40 @@ export class OuraApiClient {
         this.get<OuraListResponse<OuraWorkout>>(`/usercollection/workout?${params}`),
       ]);
 
-    return {
-      activity: activity.status === 'fulfilled' ? (activity.value.data[0] ?? null) : null,
-      sleep:
-        activity.status === 'fulfilled'
-          ? sleep.status === 'fulfilled'
-            ? (sleep.value.data[0] ?? null)
-            : null
-          : null,
-      sleepPeriods: sleepPeriods.status === 'fulfilled' ? sleepPeriods.value.data : [],
-      readiness: readiness.status === 'fulfilled' ? (readiness.value.data[0] ?? null) : null,
-      heartRate: heartRate.status === 'fulfilled' ? heartRate.value.data : [],
-      workouts: workouts.status === 'fulfilled' ? workouts.value.data : [],
-    };
+    const activityList = activity.status === 'fulfilled' ? activity.value.data : [];
+    const sleepList = sleep.status === 'fulfilled' ? sleep.value.data : [];
+    const sleepPeriodList = sleepPeriods.status === 'fulfilled' ? sleepPeriods.value.data : [];
+    const readinessList = readiness.status === 'fulfilled' ? readiness.value.data : [];
+    const heartRateList = heartRate.status === 'fulfilled' ? heartRate.value.data : [];
+    const workoutList = workouts.status === 'fulfilled' ? workouts.value.data : [];
+
+    // Collect all unique days from every endpoint
+    const allDays = new Set<string>();
+    for (const item of activityList) allDays.add(item.day);
+    for (const item of sleepList) allDays.add(item.day);
+    for (const item of sleepPeriodList) allDays.add(item.day);
+    for (const item of readinessList) allDays.add(item.day);
+    for (const item of workoutList) allDays.add(item.day);
+
+    // Heart rate samples use timestamp, extract day from it
+    for (const sample of heartRateList) {
+      allDays.add(sample.timestamp.split('T')[0]);
+    }
+
+    // Group data by day
+    const result = new Map<string, OuraDaySyncData>();
+    for (const day of allDays) {
+      result.set(day, {
+        activity: activityList.find((a) => a.day === day) ?? null,
+        sleep: sleepList.find((s) => s.day === day) ?? null,
+        sleepPeriods: sleepPeriodList.filter((s) => s.day === day),
+        readiness: readinessList.find((r) => r.day === day) ?? null,
+        heartRate: heartRateList.filter((h) => h.timestamp.startsWith(day)),
+        workouts: workoutList.filter((w) => w.day === day),
+      });
+    }
+
+    return result;
   }
 
   /**
