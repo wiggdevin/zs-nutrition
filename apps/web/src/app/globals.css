@@ -467,6 +467,13 @@ body {
 }
 .cl-userProfile-root .cl-pageScrollBox {
   padding: 0;
+  min-height: auto !important;
+  height: auto !important;
+  overflow: visible !important;
+}
+.cl-userProfile-root .cl-page {
+  min-height: auto !important;
+  gap: 0.75rem;
 }
 .cl-userProfile-root .cl-profileSection {
   border-color: var(--border);
