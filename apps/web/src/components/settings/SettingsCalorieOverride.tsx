@@ -26,6 +26,7 @@ interface ProfileData {
 }
 
 export default function SettingsCalorieOverride() {
+  const utils = trpc.useUtils();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
   const [customKcal, setCustomKcal] = useState('');
@@ -58,6 +59,8 @@ export default function SettingsCalorieOverride() {
       if (profile) {
         setProfile({ ...profile, goalKcal: Number(customKcal) });
       }
+      // Invalidate daily targets so all pages update
+      utils.user.getDailyTargets.invalidate();
     },
     onError: (err) => {
       setShowConfirm(false);

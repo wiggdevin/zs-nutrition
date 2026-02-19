@@ -31,6 +31,11 @@ export function MealCardSkeleton() {
 
 interface DayColumnProps {
   day: PlanDay;
+  currentTargets?: {
+    baseKcal: number;
+    trainingBonusKcal: number;
+    trainingDays: string[];
+  } | null;
   isToday?: boolean;
   swappingMeal: { dayNumber: number; mealIdx: number } | null;
   swapSuccess: { dayNumber: number; mealIdx: number } | null;
@@ -42,6 +47,7 @@ interface DayColumnProps {
 
 export function DayColumn({
   day,
+  currentTargets,
   isToday,
   swappingMeal,
   swapSuccess,
@@ -88,7 +94,15 @@ export function DayColumn({
           )}
         </h3>
         <p className="mt-1 font-mono text-xs font-semibold text-muted-foreground">
-          {day.targetKcal} kcal target
+          {(() => {
+            if (!currentTargets) return `${day.targetKcal} kcal target`;
+            const isDayTraining = currentTargets.trainingDays.includes(day.dayName.toLowerCase());
+            if (isDayTraining) {
+              const total = currentTargets.baseKcal + currentTargets.trainingBonusKcal;
+              return `${currentTargets.baseKcal.toLocaleString()} + ${currentTargets.trainingBonusKcal} bonus = ${total.toLocaleString()} kcal`;
+            }
+            return `${currentTargets.baseKcal.toLocaleString()} kcal target`;
+          })()}
         </p>
       </div>
 

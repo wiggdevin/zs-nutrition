@@ -15,6 +15,7 @@ import { PlanReplacedBanner } from './PlanReplacedBanner';
 import { SwapErrorToast } from './SwapErrorToast';
 import { useSwipeNavigation } from './useSwipeNavigation';
 import { cn } from '@/lib/utils';
+import { useDailyTargets } from '@/hooks/useDailyTargets';
 
 const MealDetailModal = dynamic(() => import('./MealDetailModal'), {
   ssr: false,
@@ -55,6 +56,7 @@ export default function MealPlanPage() {
     todayIndex,
   } = useMealPlanData();
 
+  const { data: currentTargets } = useDailyTargets();
   const [prepMode, setPrepMode] = useState(false);
   const days = plan?.validatedPlan?.days || [];
   const swipe = useSwipeNavigation({ totalDays: days.length, initialDay: todayIndex ?? 0 });
@@ -149,6 +151,7 @@ export default function MealPlanPage() {
                   >
                     <DayColumn
                       day={day}
+                      currentTargets={currentTargets}
                       isToday={dayIdx === todayIndex}
                       swappingMeal={swappingMeal}
                       swapSuccess={swapSuccess}

@@ -3,15 +3,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter } from 'next/navigation';
 import { toast } from '@/lib/toast-store';
-import { useTrackingStore, MacroTargets, MacroCurrent } from '@/lib/stores/useTrackingStore';
+import { useTrackingStore, MacroCurrent } from '@/lib/stores/useTrackingStore';
+import { useDailyTargets } from '@/hooks/useDailyTargets';
 import type { PlanMeal } from './types';
-
-const defaultTargets: MacroTargets = {
-  calories: 2000,
-  protein: 150,
-  carbs: 200,
-  fat: 65,
-};
 
 const defaultCurrent: MacroCurrent = {
   calories: 0,
@@ -21,6 +15,9 @@ const defaultCurrent: MacroCurrent = {
 };
 
 export function useDashboardData() {
+  // useDailyTargets is the single source of truth for targets — it syncs to the tracking store
+  useDailyTargets();
+
   const trackedMeals = useTrackingStore((state) => state.trackedMeals);
   const targets = useTrackingStore((state) => state.targets);
   const current = useTrackingStore((state) => state.current);
@@ -31,7 +28,6 @@ export function useDashboardData() {
 
   const setTrackedMeals = useTrackingStore((state) => state.setTrackedMeals);
   const setCurrent = useTrackingStore((state) => state.setCurrent);
-  const setTargets = useTrackingStore((state) => state.setTargets);
   const setAdherenceScore = useTrackingStore((state) => state.setAdherenceScore);
   const setWeeklyAverageAdherence = useTrackingStore((state) => state.setWeeklyAverageAdherence);
   const setPlanId = useTrackingStore((state) => state.setPlanId);
@@ -99,16 +95,8 @@ export function useDashboardData() {
           return;
         }
 
-        setTargets(
-          json.macros.calories
-            ? {
-                calories: json.macros.calories.target,
-                protein: json.macros.protein.target,
-                carbs: json.macros.carbs.target,
-                fat: json.macros.fat.target,
-              }
-            : defaultTargets
-        );
+        // Targets are set by useDailyTargets hook (single source of truth)
+        // Only set current (actuals) from the API response
 
         setCurrent(
           json.macros.calories
@@ -160,7 +148,6 @@ export function useDashboardData() {
     },
     [
       router,
-      setTargets,
       setCurrent,
       setTrackedMeals,
       setAdherenceScore,

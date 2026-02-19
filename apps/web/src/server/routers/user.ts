@@ -7,6 +7,7 @@ import {
   calculateTDEE,
   calculateGoalCalories,
   calculateMacroTargets,
+  getTrainingDayBonus,
 } from '@/lib/metabolic-utils';
 
 export const userRouter = router({
@@ -276,5 +277,49 @@ export const userRouter = router({
       });
 
       return { profile: updated };
+    }),
+
+  getDailyTargets: protectedProcedure
+    .input(z.object({ dayOfWeek: z.number().min(0).max(6).optional() }).optional())
+    .query(async ({ ctx, input }) => {
+      const profile = await ctx.prisma.userProfile.findFirst({
+        where: { userId: ctx.dbUserId, isActive: true },
+      });
+      if (!profile) return null;
+
+      const DAY_NAMES = [
+        'sunday',
+        'monday',
+        'tuesday',
+        'wednesday',
+        'thursday',
+        'friday',
+        'saturday',
+      ];
+      const dow = input?.dayOfWeek ?? new Date().getDay();
+      const todayDayName = DAY_NAMES[dow];
+      const trainingDays = (
+        Array.isArray(profile.trainingDays) ? profile.trainingDays : []
+      ) as string[];
+      const normalized = trainingDays.map((d: string) => d.toLowerCase().trim());
+      const isTrainingDay = normalized.some(
+        (d: string) =>
+          d === todayDayName || d === todayDayName.substring(0, 3) || todayDayName.startsWith(d)
+      );
+
+      const trainingBonusKcal = profile.tdeeKcal ? getTrainingDayBonus(profile.tdeeKcal) : 200;
+
+      const baseKcal = profile.goalKcal ?? 2000;
+
+      return {
+        baseKcal,
+        proteinG: profile.proteinTargetG ?? 150,
+        carbsG: profile.carbsTargetG ?? 200,
+        fatG: profile.fatTargetG ?? 65,
+        isTrainingDay,
+        trainingBonusKcal,
+        effectiveKcal: isTrainingDay ? baseKcal + trainingBonusKcal : baseKcal,
+        trainingDays: normalized,
+      };
     }),
 });
