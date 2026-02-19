@@ -13,6 +13,7 @@ export function useSwipeNavigation({ totalDays, initialDay }: UseSwipeNavigation
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
+  const hasInitialScrolled = useRef(false);
 
   // Sync currentDay from scroll position on snap settle
   const handleScroll = useCallback(() => {
@@ -74,12 +75,33 @@ export function useSwipeNavigation({ totalDays, initialDay }: UseSwipeNavigation
     return () => window.removeEventListener('resize', handler);
   }, [handleScroll]);
 
-  // Scroll to initialDay on mount (container needs to be sized first)
+  // Scroll to initialDay when data loads (watches initialDay to handle async data)
   useEffect(() => {
-    if (initialDay !== undefined && initialDay > 0) {
-      requestAnimationFrame(() => scrollToDay(initialDay));
+    if (initialDay === undefined || initialDay <= 0 || hasInitialScrolled.current) {
+      return;
     }
-  }, []); // intentionally run once on mount
+
+    // useState(initialDay) only works on first render — sync state now
+    setCurrentDay(initialDay);
+    hasInitialScrolled.current = true;
+
+    const el = scrollRef.current;
+    if (!el) return;
+
+    // Double rAF ensures browser has completed layout before scrolling
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => {
+        const child = el.children[initialDay] as HTMLElement | undefined;
+        if (child) {
+          child.scrollIntoView({
+            behavior: 'instant' as ScrollBehavior,
+            block: 'nearest',
+            inline: 'start',
+          });
+        }
+      });
+    });
+  }, [initialDay]);
 
   return {
     scrollRef,
