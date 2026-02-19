@@ -88,8 +88,8 @@ export default function SettingsAccountConsolidated() {
                       card: 'bg-transparent shadow-none border-none w-full',
                       navbar: 'hidden',
                       navbarMobileMenuButton: 'hidden',
-                      pageScrollBox: 'p-0',
-                      page: 'gap-4',
+                      pageScrollBox: 'p-0 !min-h-0 !h-auto overflow-visible',
+                      page: 'gap-3 !min-h-0',
                       profileSection: 'border-border py-2',
                       profileSectionContent: 'gap-2',
                       profileSectionTitleText:
