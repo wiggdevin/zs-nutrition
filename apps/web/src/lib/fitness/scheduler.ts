@@ -3,7 +3,10 @@
 // ============================================================
 
 import { prisma } from '@/lib/db';
+import { decrypt } from '@/lib/encryption';
 import { logger } from '@/lib/safe-logger';
+import { OuraApiClient } from './oura-client';
+import type { OuraDaySyncData } from './oura-types';
 
 /**
  * Sync frequencies in milliseconds
@@ -166,17 +169,20 @@ async function syncFromPlatform(
   error?: string;
 }> {
   const platform = connection.platform;
-  const accessToken = connection.accessToken;
 
   switch (platform) {
-    case 'fitbit':
+    case 'fitbit': {
+      const accessToken = decrypt(connection.accessToken);
       return await syncFitbitData(accessToken, syncDate);
+    }
 
     case 'oura':
-      return await syncOuraData(accessToken, syncDate);
+      return await syncOuraDataV2(connection, syncDate);
 
-    case 'google_fit':
+    case 'google_fit': {
+      const accessToken = decrypt(connection.accessToken);
       return await syncGoogleFitData(accessToken, syncDate);
+    }
 
     default:
       return {
@@ -236,49 +242,24 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
 }
 
 /**
- * Sync data from Oura
+ * Sync data from Oura using the typed API client (v2)
  */
-async function syncOuraData(accessToken: string, syncDate: Date) {
+async function syncOuraDataV2(connection: any, syncDate: Date) {
   const dateStr = syncDate.toISOString().split('T')[0];
 
-  // Fetch activity data
-  const activityResponse = await fetch(
-    `https://api.ouraring.com/v2/usercollection/daily_activity?start_date=${dateStr}&end_date=${dateStr}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
+  const client = new OuraApiClient({
+    connectionId: connection.id,
+    encryptedAccessToken: connection.accessToken,
+    encryptedRefreshToken: connection.refreshToken,
+  });
 
-  if (!activityResponse.ok) {
-    throw new Error(`Oura API error: ${activityResponse.statusText}`);
-  }
-
-  const activityData = await activityResponse.json();
-
-  // Fetch sleep data
-  const sleepResponse = await fetch(
-    `https://api.ouraring.com/v2/usercollection/daily_sleep?start_date=${dateStr}&end_date=${dateStr}`,
-    {
-      headers: {
-        Authorization: `Bearer ${accessToken}`,
-      },
-    }
-  );
-
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let sleepData: any = null;
-  if (sleepResponse.ok) {
-    sleepData = await sleepResponse.json();
-  }
+  const dayData: OuraDaySyncData = await client.fetchDayData(dateStr, dateStr);
 
   return {
     success: true,
     data: {
-      platform: 'oura',
-      activity: activityData.data?.[0] || null,
-      sleep: sleepData?.data?.[0] || null,
+      platform: 'oura' as const,
+      ...dayData,
     },
   };
 }
@@ -398,21 +379,83 @@ function normalizeSyncData(syncData: any): any {
     case 'oura': {
       const ouraActivity = syncData.activity;
       const ouraSleep = syncData.sleep;
+      const sleepPeriods = syncData.sleepPeriods || [];
+      const readiness = syncData.readiness;
+      const heartRateSamples = syncData.heartRate || [];
+
+      // Find the main (longest) sleep period for detailed data
+      const mainSleep = sleepPeriods
+        .filter((s: any) => s.type === 'long_sleep')
+        .sort((a: any, b: any) => (b.duration || 0) - (a.duration || 0))[0];
+
+      // Calculate average resting heart rate from sleep/rest samples
+      const restingSamples = heartRateSamples.filter(
+        (s: any) => s.source === 'rest' || s.source === 'sleep'
+      );
+      const restingHR =
+        restingSamples.length > 0
+          ? restingSamples.reduce((sum: number, s: any) => sum + s.bpm, 0) / restingSamples.length
+          : null;
+
       return {
         ...base,
         steps: ouraActivity?.steps,
         activeCalories: ouraActivity?.active_calories,
         totalCalories: ouraActivity?.total_calories,
-        distanceKm: ouraActivity?.distance_km,
-        distanceMiles: ouraActivity?.distance_km * 0.621371,
+        distanceKm: ouraActivity?.equivalent_walking_distance
+          ? ouraActivity.equivalent_walking_distance / 1000
+          : null,
+        distanceMiles: ouraActivity?.equivalent_walking_distance
+          ? (ouraActivity.equivalent_walking_distance / 1000) * 0.621371
+          : null,
         activeMinutes:
-          ouraActivity?.medium_activity_met_minutes && ouraActivity?.high_activity_met_minutes
+          ouraActivity?.medium_activity_met_minutes !== null &&
+          ouraActivity?.medium_activity_met_minutes !== undefined &&
+          ouraActivity?.high_activity_met_minutes !== null &&
+          ouraActivity?.high_activity_met_minutes !== undefined
             ? Math.round(
                 ouraActivity.medium_activity_met_minutes + ouraActivity.high_activity_met_minutes
               )
             : null,
-        sleepMinutes: ouraSleep?.duration,
+        sleepMinutes: mainSleep ? Math.round(mainSleep.total_sleep_duration / 60) : null,
         sleepScore: ouraSleep?.score,
+        heartRateResting: restingHR ? Math.round(restingHR * 10) / 10 : null,
+
+        // Readiness
+        readinessScore: readiness?.score ?? null,
+        readinessTemperature: readiness?.temperature_deviation ?? null,
+        readinessHrvBalance: readiness?.contributors?.hrv_balance ?? null,
+
+        // HRV
+        hrvAvg: mainSleep?.average_hrv ?? null,
+
+        // Sleep stages (convert seconds to minutes)
+        sleepDeepMinutes: mainSleep ? Math.round(mainSleep.deep_sleep_duration / 60) : null,
+        sleepRemMinutes: mainSleep ? Math.round(mainSleep.rem_sleep_duration / 60) : null,
+        sleepLightMinutes: mainSleep ? Math.round(mainSleep.light_sleep_duration / 60) : null,
+        sleepAwakeMinutes: mainSleep ? Math.round(mainSleep.awake_time / 60) : null,
+        sleepEfficiency: mainSleep?.efficiency ?? null,
+        sleepLatency: mainSleep?.latency ?? null,
+
+        // Sleep timing
+        bedtimeStart: mainSleep?.bedtime_start ? new Date(mainSleep.bedtime_start) : null,
+        bedtimeEnd: mainSleep?.bedtime_end ? new Date(mainSleep.bedtime_end) : null,
+
+        // Body temperature
+        bodyTemperatureDelta: readiness?.temperature_deviation ?? null,
+
+        // Workouts
+        workoutCount: syncData.workouts?.length || 0,
+        workouts: JSON.stringify(
+          (syncData.workouts || []).map((w: any) => ({
+            type: w.activity,
+            startTime: w.start_datetime,
+            endTime: w.end_datetime,
+            calories: w.calories,
+            distance: w.distance,
+            intensity: w.intensity,
+          }))
+        ),
       };
     }
 

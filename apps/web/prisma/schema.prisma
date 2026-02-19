@@ -338,6 +338,31 @@ model ActivitySync {
   sleepScore     Int? // 0-100 sleep quality score
   heartRateAvg   Float?
   heartRateMax   Int?
+  heartRateResting Float? // resting heart rate
+
+  // Readiness data (Oura)
+  readinessScore      Int? // 0-100
+  readinessTemperature Float? // body temp deviation from baseline
+  readinessHrvBalance Int? // HRV balance contributor score
+
+  // HRV data
+  hrvAvg              Float? // average HRV in ms
+
+  // Sleep stage breakdown (minutes)
+  sleepDeepMinutes    Int?
+  sleepRemMinutes     Int?
+  sleepLightMinutes   Int?
+  sleepAwakeMinutes   Int?
+  sleepEfficiency     Float? // 0-100 percentage
+  sleepLatency        Int? // seconds to fall asleep
+
+  // Sleep timing
+  bedtimeStart        DateTime?
+  bedtimeEnd          DateTime?
+
+  // Body temperature
+  bodyTemperatureDelta Float? // deviation from personal baseline
+
   rawSyncData    Json? // Full platform response for debugging - defaults handled at app level
   syncedAt       DateTime          @default(now())
   processed      Boolean           @default(false) // whether calorie adjustment was applied

@@ -15,18 +15,16 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function GET(req: NextRequest) {
   try {
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
       return NextResponse.json({ error: message }, { status });
     }
 
-    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId;
+    const userId = dbUserId;
 
     const searchParams = req.nextUrl.searchParams;
     const dateParam = searchParams.get('date');
@@ -137,18 +135,16 @@ export async function GET(req: NextRequest) {
  */
 export async function POST(req: NextRequest) {
   try {
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
       return NextResponse.json({ error: message }, { status });
     }
 
-    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId;
+    const userId = dbUserId;
 
     const body = await req.json();
     const { platform, syncDate, activityData } = body;

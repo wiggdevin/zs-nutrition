@@ -4,3 +4,4 @@
 
 // Re-export all schemas and types from schemas.ts
 export * from './schemas';
+export * from './biometric-context';

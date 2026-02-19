@@ -5,6 +5,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { toast } from 'sonner';
 import { logger } from '@/lib/safe-logger';
 
@@ -56,11 +57,37 @@ const PLATFORMS: PlatformInfo[] = [
   },
 ];
 
+const ERROR_MESSAGES: Record<string, string> = {
+  access_denied: 'You denied access to your fitness data. You can try again anytime.',
+  token_exchange_failed: 'Failed to connect your account. Please try again.',
+  invalid_state: 'Connection expired. Please try connecting again.',
+  server_error: 'Something went wrong on our end. Please try again later.',
+  missing_credentials: 'This integration is not yet available. Check back soon.',
+};
+
+const STALENESS_THRESHOLD_HOURS = 48;
+
 export default function FitnessConnections() {
   const [connections, setConnections] = useState<FitnessConnection[]>([]);
   const [loading, setLoading] = useState(true);
   const [connecting, setConnecting] = useState<string | null>(null);
   const [syncing, setSyncing] = useState(false);
+  const searchParams = useSearchParams();
+
+  // Handle OAuth callback query params
+  useEffect(() => {
+    const status = searchParams.get('status');
+    const error = searchParams.get('error');
+    const fitness = searchParams.get('fitness');
+
+    if (status === 'connected' && fitness) {
+      toast.success(
+        `${fitness.charAt(0).toUpperCase() + fitness.slice(1)} connected successfully!`
+      );
+    } else if (error) {
+      toast.error(ERROR_MESSAGES[error] || 'An unexpected error occurred. Please try again.');
+    }
+  }, [searchParams]);
 
   useEffect(() => {
     loadConnections();
@@ -90,13 +117,17 @@ export default function FitnessConnections() {
         body: JSON.stringify({ platform }),
       });
 
-      if (!response.ok) {
-        throw new Error('Failed to initiate connection');
-      }
-
       const data = await response.json();
 
-      // Redirect to OAuth URL
+      if (!response.ok) {
+        if (response.status === 503) {
+          toast.error(data.error || 'This integration is not yet available.');
+        } else {
+          toast.error(data.error || 'Failed to initiate connection');
+        }
+        return;
+      }
+
       if (data.oauthUrl) {
         window.location.href = data.oauthUrl;
       } else {
@@ -270,6 +301,19 @@ export default function FitnessConnections() {
                     <span className="text-muted-foreground">Sync frequency:</span>
                     <span className="text-white capitalize">{connection.syncFrequency}</span>
                   </div>
+                  {connection.lastSyncAt &&
+                    (() => {
+                      const hoursSince =
+                        (Date.now() - new Date(connection.lastSyncAt).getTime()) / (1000 * 60 * 60);
+                      return hoursSince > STALENESS_THRESHOLD_HOURS ? (
+                        <div className="mt-2 p-2 rounded bg-orange-500/10 border border-orange-500/20">
+                          <p className="text-[11px] text-orange-400">
+                            Data is stale ({Math.round(hoursSince)}h since last sync). Try syncing
+                            manually.
+                          </p>
+                        </div>
+                      ) : null;
+                    })()}
                 </div>
               )}
             </div>

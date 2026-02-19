@@ -6,6 +6,7 @@ import { trackingRouter } from './tracking';
 import { userRouter } from './user';
 import { accountRouter } from './account';
 import { adaptiveNutritionRouter } from './adaptive-nutrition';
+import { fitnessRouter } from './fitness';
 
 export const appRouter = router({
   plan: planRouter,
@@ -15,6 +16,7 @@ export const appRouter = router({
   user: userRouter,
   account: accountRouter,
   adaptiveNutrition: adaptiveNutritionRouter,
+  fitness: fitnessRouter,
 });
 
 export type AppRouter = typeof appRouter;

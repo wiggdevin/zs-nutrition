@@ -14,18 +14,16 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function GET(_req: NextRequest) {
   try {
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
       return NextResponse.json({ error: message }, { status });
     }
 
-    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId;
+    const userId = dbUserId;
 
     const connections = await prisma.fitnessConnection.findMany({
       where: {
@@ -63,18 +61,16 @@ export async function GET(_req: NextRequest) {
  */
 export async function DELETE(req: NextRequest) {
   try {
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
       return NextResponse.json({ error: message }, { status });
     }
 
-    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId;
+    const userId = dbUserId;
 
     const body = await req.json();
     const { platform } = body;
@@ -112,18 +108,16 @@ export async function DELETE(req: NextRequest) {
  */
 export async function PATCH(req: NextRequest) {
   try {
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
       return NextResponse.json({ error: message }, { status });
     }
 
-    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId;
+    const userId = dbUserId;
 
     const body = await req.json();
     const { platform, syncFrequency, settings } = body;

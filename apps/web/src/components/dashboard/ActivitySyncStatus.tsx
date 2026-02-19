@@ -4,6 +4,12 @@ import Link from 'next/link';
 import { trpc } from '@/lib/trpc';
 import { cn } from '@/lib/utils';
 
+function ReadinessBadge({ score }: { score: number }) {
+  const color =
+    score >= 80 ? 'text-green-400' : score >= 60 ? 'text-yellow-400' : 'text-orange-400';
+  return <span className={cn('text-xs font-mono', color)}>Readiness: {score}</span>;
+}
+
 /**
  * Platform display names and icons for activity sync sources.
  */
@@ -27,21 +33,18 @@ export function ActivitySyncStatus() {
   const { data, isLoading, error } = trpc.adaptiveNutrition.getActivitySyncStatus.useQuery(
     undefined,
     {
-      // Refetch every 5 minutes to pick up new activity syncs
       refetchInterval: 5 * 60 * 1000,
-      // Stale time of 2 minutes - don't refetch if data is fresh
       staleTime: 2 * 60 * 1000,
     }
   );
 
-  // Don't show anything while loading
+  const { data: ouraInsights } = trpc.fitness.getOuraInsights.useQuery(undefined, {
+    staleTime: 5 * 60 * 1000,
+  });
+
   if (isLoading) return null;
-
-  // Don't show anything if there's an error or no data
   if (error || !data) return null;
-
-  // Don't show anything if user has no activity syncs today
-  if (data.todaysSyncs.total === 0) return null;
+  if (data.todaysSyncs.total === 0 && !ouraInsights?.readinessScore) return null;
 
   const hasBonusApplied = data.bonusApplied > 0;
   const hasUnprocessed = data.hasUnprocessed;
@@ -118,10 +121,17 @@ export function ActivitySyncStatus() {
           </p>
         )}
 
-        {platformNames.length > 0 && (
-          <p className="text-[10px] text-muted-foreground mt-0.5">
-            From: {platformNames.join(', ')}
-          </p>
+        {(platformNames.length > 0 || ouraInsights?.readinessScore !== null) && (
+          <div className="flex items-center gap-3 mt-0.5">
+            {platformNames.length > 0 && (
+              <span className="text-[10px] text-muted-foreground">
+                From: {platformNames.join(', ')}
+              </span>
+            )}
+            {ouraInsights?.readinessScore !== null && (
+              <ReadinessBadge score={ouraInsights.readinessScore} />
+            )}
+          </div>
         )}
       </div>
 

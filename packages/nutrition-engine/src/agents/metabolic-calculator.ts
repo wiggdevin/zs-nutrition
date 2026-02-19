@@ -4,6 +4,7 @@ import {
   MetabolicProfileSchema,
   MealTarget,
 } from '../types/schemas';
+import type { BiometricContext } from '../types/biometric-context';
 
 // ============================================================================
 // Exported Constants - Canonical values for metabolic calculations
@@ -196,7 +197,7 @@ export function getTrainingDayBonus(tdee: number, trainingTimeMinutes: number = 
  * Uses Mifflin-St Jeor equation. No LLM required.
  */
 export class MetabolicCalculator {
-  calculate(intake: ClientIntake): MetabolicProfile {
+  calculate(intake: ClientIntake, biometricContext?: BiometricContext): MetabolicProfile {
     // BMR - dual-path: Katch-McArdle (with body fat) or Mifflin-St Jeor (fallback)
     const { bmr, method: bmrMethod } = calculateBMR({
       ...intake,
@@ -225,14 +226,57 @@ export class MetabolicCalculator {
           : intake.trainingTime === 'evening'
             ? 60
             : 60; // default 60 min
-    const trainingDayBonusKcal = getTrainingDayBonus(tdeeKcal, trainingTimeMinutes);
-    const restDayKcal = goalKcal;
+    let trainingDayBonusKcal = getTrainingDayBonus(tdeeKcal, trainingTimeMinutes);
+    let baseCalorieAdjustment = 0;
+    let proteinAdjustmentG = 0;
+    let biometricTrainingBonusModifier = 1.0;
+    let biometricReason = '';
+
+    // Biometric adjustments: modify training bonus and base calories based on recovery state
+    if (
+      biometricContext &&
+      biometricContext.dataAvailable &&
+      biometricContext.historicalDays >= 7
+    ) {
+      const recovery = biometricContext.recoveryState;
+      if (recovery === 'compromised') {
+        biometricTrainingBonusModifier = 0.5;
+        trainingDayBonusKcal = Math.round(trainingDayBonusKcal * 0.5);
+        biometricReason = 'Compromised recovery: training bonus reduced by 50%';
+      } else if (recovery === 'depleted') {
+        biometricTrainingBonusModifier = 0;
+        trainingDayBonusKcal = 0;
+        // +3% base calories for recovery, capped at +75 kcal
+        baseCalorieAdjustment = Math.min(75, Math.round(goalKcal * 0.03));
+        biometricReason =
+          'Depleted recovery: training bonus cancelled, +' +
+          baseCalorieAdjustment +
+          ' kcal for recovery';
+      }
+    }
+
+    const adjustedGoalKcal = goalKcal + baseCalorieAdjustment;
+    const restDayKcal = adjustedGoalKcal;
 
     // NEW: g/kg protein calculation (replaces percentage-based protein)
-    const proteinTargetG = calculateProteinG(intake.weightKg, intake.goalType);
+    let proteinTargetG = calculateProteinG(intake.weightKg, intake.goalType);
+    // Macro redistribution on low recovery: +10% protein (cap 2.5g/kg), shift 5% carb→fat
+    if (
+      biometricContext &&
+      biometricContext.dataAvailable &&
+      biometricContext.historicalDays >= 7 &&
+      (biometricContext.recoveryState === 'compromised' ||
+        biometricContext.recoveryState === 'depleted')
+    ) {
+      const boostedProtein = Math.round(proteinTargetG * 1.1);
+      const proteinCap = Math.round(intake.weightKg * 2.5);
+      proteinAdjustmentG = Math.min(boostedProtein, proteinCap) - proteinTargetG;
+      proteinTargetG = Math.min(boostedProtein, proteinCap);
+    }
+
     const proteinKcal = proteinTargetG * 4;
     // Remaining calories split between carbs and fat using macroStyle ratios
-    const remainingKcal = goalKcal - proteinKcal;
+    const remainingKcal = adjustedGoalKcal - proteinKcal;
     const split = MACRO_SPLITS[intake.macroStyle] || MACRO_SPLITS.balanced;
     // Normalize carb/fat ratio from the split (excluding protein)
     const carbFatTotal = split.carbs + split.fat;
@@ -241,7 +285,7 @@ export class MetabolicCalculator {
 
     // Fiber: 14g per 1000 kcal with sex-specific floor (male: 38g, female: 25g)
     const fiberFloor = intake.sex === 'male' ? FIBER_FLOOR_MALE : FIBER_FLOOR_FEMALE;
-    const fiberTargetG = Math.max(fiberFloor, Math.round((goalKcal / 1000) * 14));
+    const fiberTargetG = Math.max(fiberFloor, Math.round((adjustedGoalKcal / 1000) * 14));
 
     // Meal distribution - use exported constants
     const baseDist = MEAL_DISTRIBUTIONS[intake.mealsPerDay] ?? MEAL_DISTRIBUTIONS[3];
@@ -260,7 +304,7 @@ export class MetabolicCalculator {
       mealTargets.push({
         slot: `meal_${i + 1}`,
         label: baseLabels[i],
-        kcal: Math.round(goalKcal * pct),
+        kcal: Math.round(adjustedGoalKcal * pct),
         proteinG: Math.round(proteinTargetG * pct),
         carbsG: Math.round(carbsTargetG * pct),
         fatG: Math.round(fatTargetG * pct),
@@ -273,7 +317,7 @@ export class MetabolicCalculator {
       mealTargets.push({
         slot: `snack_${i + 1}`,
         label: `snack_${i + 1}`,
-        kcal: Math.round(goalKcal * snackPctEach),
+        kcal: Math.round(adjustedGoalKcal * snackPctEach),
         proteinG: Math.round(proteinTargetG * snackPctEach),
         carbsG: Math.round(carbsTargetG * snackPctEach),
         fatG: Math.round(fatTargetG * snackPctEach),
@@ -281,7 +325,7 @@ export class MetabolicCalculator {
       });
     }
 
-    const trainingDayKcal = goalKcal + trainingDayBonusKcal;
+    const trainingDayKcal = adjustedGoalKcal + trainingDayBonusKcal;
 
     // Training-day-specific macro targets: extra bonus calories go to carbs
     const trainingDayMacros = {
@@ -299,10 +343,22 @@ export class MetabolicCalculator {
     const actualFatPct =
       totalMacroKcal > 0 ? Math.round(((fatTargetG * 9) / totalMacroKcal) * 100) : 0;
 
+    const biometricAdjustment =
+      biometricContext && biometricContext.dataAvailable && biometricContext.historicalDays >= 7
+        ? {
+            applied: biometricTrainingBonusModifier !== 1.0 || baseCalorieAdjustment !== 0,
+            recoveryState: biometricContext.recoveryState,
+            trainingBonusModifier: biometricTrainingBonusModifier,
+            baseCalorieAdjustment,
+            proteinAdjustmentG,
+            reason: biometricReason || 'No adjustment needed',
+          }
+        : undefined;
+
     const result = {
       bmrKcal,
       tdeeKcal,
-      goalKcal,
+      goalKcal: adjustedGoalKcal,
       goalKcalFloorApplied,
       proteinTargetG,
       carbsTargetG,
@@ -320,6 +376,7 @@ export class MetabolicCalculator {
         carbsPercent: actualCarbsPct,
         fatPercent: actualFatPct,
       },
+      biometricAdjustment,
     };
 
     return MetabolicProfileSchema.parse(result);

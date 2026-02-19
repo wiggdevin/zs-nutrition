@@ -2,6 +2,7 @@ import type { Metadata } from 'next';
 import { Suspense } from 'react';
 import ActivityLog from '@/components/fitness/ActivityLog';
 import FitnessConnections from '@/components/fitness/FitnessConnections';
+import { OuraInsightsPanel } from '@/components/fitness/OuraInsightsPanel';
 import NavBar from '@/components/navigation/NavBar';
 import { PageHeader } from '@/components/ui/PageHeader';
 import { ActivitySkeleton } from '@/components/loaders/ActivitySkeleton';
@@ -28,6 +29,9 @@ export default function ActivityPage() {
             <div className="max-w-4xl mx-auto px-4 py-8 space-y-8">
               {/* Fitness Connections Component */}
               <FitnessConnections />
+
+              {/* Oura Ring Insights (shown when connected) */}
+              <OuraInsightsPanel />
 
               {/* Activity Log Component */}
               <ActivityLog />
