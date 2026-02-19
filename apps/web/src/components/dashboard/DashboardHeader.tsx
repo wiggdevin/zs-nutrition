@@ -1,4 +1,5 @@
 import { PageHeader } from '@/components/ui/PageHeader';
+import { ActivitySyncIndicator } from './ActivitySyncStatus';
 
 interface DashboardHeaderProps {
   calorieTarget: number;
@@ -13,6 +14,7 @@ export function DashboardHeader({ calorieTarget }: DashboardHeaderProps) {
       maxWidth="screen-2xl"
       actions={
         <>
+          <ActivitySyncIndicator />
           <div className="flex flex-col items-end">
             <span className="text-[10px] font-mono uppercase tracking-wider text-muted-foreground">
               Daily Target

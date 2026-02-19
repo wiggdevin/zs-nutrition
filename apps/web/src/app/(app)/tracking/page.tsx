@@ -40,10 +40,7 @@ function TrackingPageContent() {
   });
 
   // Read from Zustand store (same state as dashboard)
-  const targets = useTrackingStore((state) => state.targets);
-  const current = useTrackingStore((state) => state.current);
   const trackedMeals = useTrackingStore((state) => state.trackedMeals);
-  const _isLoading = useTrackingStore((state) => state.isLoading);
   const planId = useTrackingStore((state) => state.planId);
 
   // Sync activeTab from URL params
@@ -78,7 +75,7 @@ function TrackingPageContent() {
   return (
     <>
       <NavBar />
-      <div className="md:pt-14 pb-32 md:pb-0">
+      <div className="md:pt-14 pb-36 md:pb-14">
         <PageHeader
           title="Tracking"
           showPrefix
@@ -101,62 +98,14 @@ function TrackingPageContent() {
               />
             </div>
 
-            {/* Daily Totals — desktop only (mobile uses sticky bar) */}
-            <div
+            {/* Compact daily summary */}
+            <p
               data-testid="tracking-daily-totals"
-              className="hidden md:block bg-card border border-border rounded-xl p-4 mb-6"
+              className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-6"
             >
-              <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
-                {'/// Daily Totals'}
-              </p>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-primary" />
-                  <span className="text-sm text-muted-foreground">Calories</span>
-                  <span
-                    data-testid="tracking-calories"
-                    className="text-sm font-bold text-foreground ml-auto"
-                  >
-                    {parseFloat(current.calories.toFixed(1))} / {targets.calories}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-chart-3" />
-                  <span className="text-sm text-muted-foreground">Protein</span>
-                  <span
-                    data-testid="tracking-protein"
-                    className="text-sm font-bold text-foreground ml-auto"
-                  >
-                    {parseFloat(current.protein.toFixed(1))}g / {targets.protein}g
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-success" />
-                  <span className="text-sm text-muted-foreground">Carbs</span>
-                  <span
-                    data-testid="tracking-carbs"
-                    className="text-sm font-bold text-foreground ml-auto"
-                  >
-                    {parseFloat(current.carbs.toFixed(1))}g / {targets.carbs}g
-                  </span>
-                </div>
-                <div className="flex items-center gap-2">
-                  <span className="w-2 h-2 rounded-full bg-warning" />
-                  <span className="text-sm text-muted-foreground">Fat</span>
-                  <span
-                    data-testid="tracking-fat"
-                    className="text-sm font-bold text-foreground ml-auto"
-                  >
-                    {parseFloat(current.fat.toFixed(1))}g / {targets.fat}g
-                  </span>
-                </div>
-              </div>
-              <div className="mt-3 pt-3 border-t border-border text-center">
-                <p className="text-xs text-muted-foreground">
-                  {trackedMeals.length} item{trackedMeals.length !== 1 ? 's' : ''} logged today
-                </p>
-              </div>
-            </div>
+              {'/// Today'} &mdash; {trackedMeals.length} item{trackedMeals.length !== 1 ? 's' : ''}{' '}
+              logged
+            </p>
 
             {/* Mode-specific message */}
             {mode === 'plan' && !planId && (
@@ -174,7 +123,10 @@ function TrackingPageContent() {
               </div>
             )}
 
-            {/* Secondary methods: pill tab switcher */}
+            {/* Secondary methods */}
+            <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
+              {'/// Other Ways to Log'}
+            </p>
             <TrackingMethodTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
             {/* Tab panels */}

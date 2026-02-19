@@ -29,6 +29,59 @@ const PLATFORM_CONFIG: Record<string, { label: string; icon: string }> = {
  * Only renders if the user has connected fitness platforms and has activity data.
  * Uses green/success coloring to indicate positive activity bonuses.
  */
+/**
+ * Compact pill indicator for the dashboard header.
+ * Shows "+120 kcal" (green) when bonus applied, or "345 kcal" (muted) otherwise.
+ * Returns null if no sync data.
+ */
+export function ActivitySyncIndicator() {
+  const { data, isLoading, error } = trpc.adaptiveNutrition.getActivitySyncStatus.useQuery(
+    undefined,
+    {
+      refetchInterval: 5 * 60 * 1000,
+      staleTime: 2 * 60 * 1000,
+    }
+  );
+
+  if (isLoading || error || !data) return null;
+  if (data.todaysSyncs.total === 0 && data.totalActiveCalories === 0) return null;
+
+  const hasBonusApplied = data.bonusApplied > 0;
+
+  return (
+    <Link
+      href="/activity"
+      aria-label={
+        hasBonusApplied
+          ? `Activity bonus: +${data.bonusApplied} calories applied`
+          : `${data.totalActiveCalories} active calories burned`
+      }
+      className={cn(
+        'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold tabular-nums transition-colors',
+        hasBonusApplied
+          ? 'bg-success/15 text-success hover:bg-success/25'
+          : 'bg-muted text-muted-foreground hover:bg-muted/80'
+      )}
+    >
+      <svg
+        className="w-3.5 h-3.5"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M13 10V3L4 14h7v7l9-11h-7z"
+        />
+      </svg>
+      {hasBonusApplied ? `+${data.bonusApplied}` : data.totalActiveCalories}
+    </Link>
+  );
+}
+
 export function ActivitySyncStatus() {
   const { data, isLoading, error } = trpc.adaptiveNutrition.getActivitySyncStatus.useQuery(
     undefined,
