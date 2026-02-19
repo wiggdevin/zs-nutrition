@@ -1,5 +1,6 @@
 import type { MealPlanValidated, GroceryCategory } from '../../types/schemas';
 import { generateGroceryCategory, escapeHtml, formatAmount } from './formatters';
+import { BRAND, FONTS, GOOGLE_FONTS_LINK, sectionLabel } from './brand-constants';
 
 /**
  * Items commonly already in a home pantry. Matched case-insensitively.
@@ -55,7 +56,7 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
   const pantryHtml =
     pantryItems.length > 0
       ? `<div class="category pantry-staples">
-        <div class="category-header" style="background: linear-gradient(135deg, #94a3b8 0%, #64748b 100%);">
+        <div class="category-header" style="background: ${BRAND.muted};">
           <span>🏠 Pantry Staples (likely on hand)</span>
           <span class="category-count">${pantryItems.length} items</span>
         </div>
@@ -65,7 +66,7 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
               (item) => `
           <div class="item pantry-item">
             <div style="display: flex; align-items: center; flex: 1;">
-              <input type="checkbox" class="checkbox" checked disabled />
+              <span class="checkbox-print" style="opacity:0.5;"></span>
               <span class="item-name" style="color: #94a3b8;">${escapeHtml(item.name)}</span>
             </div>
             <span class="item-quantity" style="background: #f1f5f9; color: #94a3b8;">${formatAmount(item.amount)} ${escapeHtml(item.unit)}</span>
@@ -85,14 +86,16 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  ${GOOGLE_FONTS_LINK}
   <title>Grocery List</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-family: ${FONTS.body};
       background: #f8fafc;
       padding: 20px;
       line-height: 1.6;
+      color: ${BRAND.foreground};
     }
     .container {
       max-width: 900px;
@@ -103,12 +106,17 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
       margin-bottom: 32px;
     }
     .header h1 {
-      font-size: 32px;
-      color: #1e293b;
-      margin-bottom: 8px;
+      font-family: ${FONTS.heading};
+      font-size: 28px;
+      color: ${BRAND.foreground};
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      margin: 8px 0 0;
     }
     .header p {
-      color: #64748b;
+      color: ${BRAND.muted};
+      font-family: ${FONTS.body};
+      font-size: 14px;
     }
     .summary {
       background: white;
@@ -124,15 +132,17 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
       flex: 1;
     }
     .summary-value {
+      font-family: ${FONTS.mono};
       font-size: 36px;
       font-weight: 700;
-      color: #667eea;
+      color: ${BRAND.primary};
     }
     .summary-label {
-      font-size: 14px;
-      color: #64748b;
+      font-family: ${FONTS.mono};
+      font-size: 11px;
+      color: ${BRAND.muted};
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
     }
     .categories {
       display: flex;
@@ -146,11 +156,13 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
       overflow: hidden;
     }
     .category-header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      background: ${BRAND.foreground};
       color: white;
       padding: 16px 20px;
-      font-size: 18px;
-      font-weight: 600;
+      font-family: ${FONTS.heading};
+      font-size: 16px;
+      text-transform: uppercase;
+      letter-spacing: 1px;
       display: flex;
       justify-content: space-between;
       align-items: center;
@@ -159,7 +171,11 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
       background: rgba(255,255,255,0.2);
       padding: 4px 12px;
       border-radius: 12px;
-      font-size: 14px;
+      font-family: ${FONTS.mono};
+      font-size: 12px;
+      font-weight: 400;
+      text-transform: none;
+      letter-spacing: 0;
     }
     .items-list {
       padding: 16px 20px;
@@ -175,25 +191,29 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
       border-bottom: none;
     }
     .item-name {
+      font-family: ${FONTS.body};
       font-size: 15px;
-      color: #1e293b;
+      color: ${BRAND.foreground};
       font-weight: 500;
     }
     .item-quantity {
-      font-size: 14px;
-      color: #667eea;
+      font-family: ${FONTS.mono};
+      font-size: 13px;
+      color: ${BRAND.primary};
       font-weight: 600;
-      background: #eef2ff;
+      background: ${BRAND.primaryLightBg};
       padding: 6px 12px;
       border-radius: 6px;
     }
-    .checkbox {
-      width: 20px;
-      height: 20px;
-      border: 2px solid #cbd5e1;
-      border-radius: 4px;
+    .checkbox-print {
+      display: inline-block;
+      width: 16px;
+      height: 16px;
+      border: 2px solid ${BRAND.border};
+      border-radius: 3px;
       margin-right: 12px;
       flex-shrink: 0;
+      vertical-align: middle;
     }
     @media print {
       body {
@@ -209,7 +229,8 @@ export function generateGroceryHtml(plan: MealPlanValidated): string {
 <body>
   <div class="container">
     <div class="header">
-      <h1>🛒 Weekly Grocery List</h1>
+      ${sectionLabel('WEEKLY GROCERY LIST')}
+      <h1>Shopping List</h1>
       <p>Everything you need for your 7-day meal plan</p>
     </div>
 

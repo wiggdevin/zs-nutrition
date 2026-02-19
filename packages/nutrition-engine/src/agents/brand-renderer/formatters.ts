@@ -1,4 +1,5 @@
 import type { CompiledDay, GroceryCategory } from '../../types/schemas';
+import { BRAND, FONTS } from './brand-constants';
 
 /**
  * Escape HTML special characters to prevent XSS in rendered output.
@@ -109,11 +110,18 @@ export function getCategoryEmoji(category: string): string {
 }
 
 /**
+ * Format a macro value with its brand color (monospace).
+ */
+function colorMacro(value: number, unit: string, color: string): string {
+  return `<span style="font-family:${FONTS.mono};color:${color};font-weight:600;font-size:12px;">${Math.round(value)}${unit}</span>`;
+}
+
+/**
  * Generate a single day card HTML
  */
 export function generateDayCard(day: CompiledDay): string {
   const trainingClass = day.isTrainingDay ? 'training-day' : '';
-  const trainingBadge = day.isTrainingDay ? '💪 Training Day' : '🧘 Rest Day';
+  const trainingBadge = day.isTrainingDay ? 'Training Day' : 'Rest Day';
   const variancePercent = Math.abs(day.variancePercent);
   const varianceColor =
     variancePercent < 5 ? '#22c55e' : variancePercent < 10 ? '#f59e0b' : '#ef4444';
@@ -127,7 +135,7 @@ export function generateDayCard(day: CompiledDay): string {
 
       const timeHtml =
         meal.prepTimeMin > 0 || meal.cookTimeMin > 0
-          ? `<div class="meal-time">⏱️ Prep: ${meal.prepTimeMin}min • Cook: ${meal.cookTimeMin}min</div>`
+          ? `<div class="meal-time">Prep: ${meal.prepTimeMin}min &bull; Cook: ${meal.cookTimeMin}min</div>`
           : '';
 
       const primaryProteinLower = meal.primaryProtein.toLowerCase();
@@ -165,10 +173,10 @@ export function generateDayCard(day: CompiledDay): string {
         <div class="meal-slot">${escapeHtml(meal.slot)}</div>
         <div class="meal-name">${escapeHtml(meal.name)} ${confidenceBadge}</div>
         <div class="meal-meta">
-          <span>🔥 ${Math.round(meal.nutrition.kcal)} kcal</span>
-          <span>💪 ${Math.round(meal.nutrition.proteinG)}g protein</span>
-          <span>🍞 ${Math.round(meal.nutrition.carbsG)}g carbs</span>
-          <span>🥑 ${Math.round(meal.nutrition.fatG)}g fat</span>
+          ${colorMacro(meal.nutrition.kcal, ' kcal', BRAND.calories)}
+          ${colorMacro(meal.nutrition.proteinG, 'g P', BRAND.protein)}
+          ${colorMacro(meal.nutrition.carbsG, 'g C', BRAND.carbs)}
+          ${colorMacro(meal.nutrition.fatG, 'g F', BRAND.fat)}
           <span class="protein-tag">${escapeHtml(meal.primaryProtein)}</span>
           <span class="cuisine-tag">${escapeHtml(meal.cuisine)}</span>
         </div>
@@ -213,7 +221,7 @@ export function generateGroceryCategory(category: GroceryCategory): string {
       (item) => `
       <div class="item">
         <div style="display: flex; align-items: center; flex: 1;">
-          <input type="checkbox" class="checkbox" />
+          <span class="checkbox-print"></span>
           <span class="item-name">${escapeHtml(item.name)}</span>
         </div>
         <span class="item-quantity">${formatAmount(item.amount)} ${escapeHtml(item.unit)}</span>
