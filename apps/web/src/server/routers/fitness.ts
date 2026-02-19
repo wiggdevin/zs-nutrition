@@ -10,8 +10,9 @@ export const fitnessRouter = router({
 
     if (!connection) return null;
 
+    // Find the latest record that has readiness data (today's record is often empty)
     const latestSync = await ctx.prisma.activitySync.findFirst({
-      where: { userId: ctx.dbUserId, platform: 'oura' },
+      where: { userId: ctx.dbUserId, platform: 'oura', readinessScore: { not: null } },
       orderBy: { syncDate: 'desc' },
     });
 
