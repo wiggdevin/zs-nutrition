@@ -89,23 +89,23 @@ function getOAuthConfig(platform: string) {
   switch (platform) {
     case 'fitbit':
       return {
-        clientId: process.env.FITBIT_CLIENT_ID,
-        clientSecret: process.env.FITBIT_CLIENT_SECRET,
-        redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456'}/api/fitness/callback/fitbit`,
+        clientId: (process.env.FITBIT_CLIENT_ID || '').trim(),
+        clientSecret: (process.env.FITBIT_CLIENT_SECRET || '').trim(),
+        redirectUri: `${(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456').trim()}/api/fitness/callback/fitbit`,
         scopes: ['activity', 'sleep', 'heartrate', 'profile'],
       };
     case 'oura':
       return {
-        clientId: process.env.OURA_CLIENT_ID,
-        clientSecret: process.env.OURA_CLIENT_SECRET,
-        redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456'}/api/fitness/callback/oura`,
+        clientId: (process.env.OURA_CLIENT_ID || '').trim(),
+        clientSecret: (process.env.OURA_CLIENT_SECRET || '').trim(),
+        redirectUri: `${(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456').trim()}/api/fitness/callback/oura`,
         scopes: ['personal', 'daily', 'heartrate', 'workout', 'session'],
       };
     case 'google_fit':
       return {
-        clientId: process.env.GOOGLE_FIT_CLIENT_ID,
-        clientSecret: process.env.GOOGLE_FIT_CLIENT_SECRET,
-        redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456'}/api/fitness/callback/google-fit`,
+        clientId: (process.env.GOOGLE_FIT_CLIENT_ID || '').trim(),
+        clientSecret: (process.env.GOOGLE_FIT_CLIENT_SECRET || '').trim(),
+        redirectUri: `${(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456').trim()}/api/fitness/callback/google-fit`,
         scopes: [
           'https://www.googleapis.com/auth/fitness.activity.read',
           'https://www.googleapis.com/auth/fitness.sleep.read',
