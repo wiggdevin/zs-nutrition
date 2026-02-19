@@ -243,6 +243,8 @@ export default function MealPlanPage() {
           meal={selectedMeal.meal}
           dayNumber={selectedMeal.dayNumber}
           mealIdx={selectedMeal.mealIdx}
+          planId={plan.id}
+          onSwapClick={handleSwapClick}
           onClose={() => setSelectedMeal(null)}
         />
       )}
