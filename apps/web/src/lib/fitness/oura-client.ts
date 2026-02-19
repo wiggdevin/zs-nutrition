@@ -52,6 +52,23 @@ export class OuraApiClient {
         this.get<OuraListResponse<OuraWorkout>>(`/usercollection/workout?${params}`),
       ]);
 
+    // Log which endpoints succeeded/failed for debugging
+    const endpoints = [
+      { name: 'daily_activity', result: activity },
+      { name: 'daily_sleep', result: sleep },
+      { name: 'sleep_periods', result: sleepPeriods },
+      { name: 'daily_readiness', result: readiness },
+      { name: 'heartrate', result: heartRate },
+      { name: 'workouts', result: workouts },
+    ];
+    for (const ep of endpoints) {
+      if (ep.result.status === 'rejected') {
+        logger.error(`Oura ${ep.name} FAILED:`, ep.result.reason);
+      } else {
+        logger.warn(`Oura ${ep.name}: ${ep.result.value.data.length} records`);
+      }
+    }
+
     const activityList = activity.status === 'fulfilled' ? activity.value.data : [];
     const sleepList = sleep.status === 'fulfilled' ? sleep.value.data : [];
     const sleepPeriodList = sleepPeriods.status === 'fulfilled' ? sleepPeriods.value.data : [];
@@ -84,6 +101,8 @@ export class OuraApiClient {
         workouts: workoutList.filter((w) => w.day === day),
       });
     }
+
+    logger.warn(`Oura fetchDateRange ${startDate}→${endDate}: ${result.size} unique days`);
 
     return result;
   }

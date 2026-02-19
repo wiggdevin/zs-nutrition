@@ -137,7 +137,7 @@ export async function syncUserActivity(
         data: { lastSyncAt: now },
       });
 
-      logger.info(`Successfully synced ${connection.platform} for user ${userId}`);
+      logger.warn(`Successfully synced ${connection.platform} for user ${userId}`);
     } catch (error) {
       logger.error(`Error syncing ${connection.platform} for user ${userId}:`, error);
       throw error;
@@ -273,7 +273,7 @@ async function syncOuraDateRange(connection: any, endDate: Date): Promise<void> 
   const startStr = startDate.toISOString().split('T')[0];
   const endStr = endDate.toISOString().split('T')[0];
 
-  logger.info(`Oura sync range: ${startStr} to ${endStr}`);
+  logger.warn(`Oura sync range: ${startStr} to ${endStr}`);
 
   const client = new OuraApiClient({
     connectionId: connection.id,
@@ -289,7 +289,7 @@ async function syncOuraDateRange(connection: any, endDate: Date): Promise<void> 
     await storeActivitySync(connection, { platform: 'oura' as const, ...dayData }, syncDate);
   }
 
-  logger.info(`Oura: stored ${dayDataMap.size} days of data`);
+  logger.warn(`Oura: stored ${dayDataMap.size} days of data`);
 }
 
 /**
