@@ -122,7 +122,7 @@ export async function syncUserActivity(
 
       if (connection.platform === 'oura') {
         // Oura: fetch a date range (data lags by ~1 day)
-        await syncOuraDateRange(connection, yesterday);
+        await syncOuraDateRange(connection, yesterday, options?.force);
       } else {
         // Other platforms: sync single day
         const syncResult = await syncFromPlatform(connection, yesterday);
@@ -248,17 +248,17 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
  * Sync Oura data for a date range and store each day separately.
  * First sync: 14 days back. Subsequent syncs: from lastSyncAt to endDate.
  */
-async function syncOuraDateRange(connection: any, endDate: Date): Promise<void> {
+async function syncOuraDateRange(connection: any, endDate: Date, force?: boolean): Promise<void> {
   const BACKFILL_DAYS = 14;
 
   // Calculate start date
   let startDate: Date;
-  if (connection.lastSyncAt) {
+  if (connection.lastSyncAt && !force) {
     // Subsequent sync: from last sync date
     const lastSync = new Date(connection.lastSyncAt);
     startDate = new Date(lastSync.getFullYear(), lastSync.getMonth(), lastSync.getDate() - 1);
   } else {
-    // First sync: backfill 14 days
+    // First sync or forced: backfill 14 days
     startDate = new Date(endDate);
     startDate.setDate(startDate.getDate() - BACKFILL_DAYS);
   }
