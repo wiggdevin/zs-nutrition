@@ -148,6 +148,16 @@ export const MetabolicProfileSchema = z.object({
     carbsPercent: z.number(),
     fatPercent: z.number(),
   }),
+  biometricAdjustment: z
+    .object({
+      applied: z.boolean(),
+      recoveryState: z.string(),
+      trainingBonusModifier: z.number(),
+      baseCalorieAdjustment: z.number().int(),
+      proteinAdjustmentG: z.number().int(),
+      reason: z.string(),
+    })
+    .optional(),
 });
 
 export type MetabolicProfile = z.infer<typeof MetabolicProfileSchema>;

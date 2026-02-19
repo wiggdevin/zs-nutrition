@@ -24,7 +24,10 @@
       "maxDuration": 30
     }
   },
-  "crons": [{ "path": "/api/cron/expire-plans", "schedule": "0 3 * * *" }],
+  "crons": [
+    { "path": "/api/cron/expire-plans", "schedule": "0 3 * * *" },
+    { "path": "/api/cron/sync-fitness", "schedule": "0 10,15 * * *" }
+  ],
   "headers": [
     {
       "source": "/api/plan-stream/:jobId",

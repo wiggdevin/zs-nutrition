@@ -4,6 +4,7 @@ import {
   MealPlanDraft,
   MealPlanDraftSchema,
 } from '../../types/schemas';
+import type { BiometricContext } from '../../types/biometric-context';
 import { withRetry } from '../../utils/retry';
 import { estimateTokens, MAX_PROMPT_TOKENS } from '../../utils/token-estimate';
 import { engineLogger } from '../../utils/logger';
@@ -115,7 +116,8 @@ export class RecipeCurator {
   async generate(
     metabolicProfile: MetabolicProfile,
     intake: ClientIntake,
-    onSubProgress?: (message: string) => void | Promise<void>
+    onSubProgress?: (message: string) => void | Promise<void>,
+    biometricContext?: BiometricContext
   ): Promise<MealPlanDraft> {
     // Attempt Claude-based generation if API key is available
     if (
@@ -125,11 +127,14 @@ export class RecipeCurator {
     ) {
       try {
         await onSubProgress?.('Calling Claude API...');
-        const draft = await withRetry(() => this.generateWithClaude(metabolicProfile, intake), {
-          maxRetries: 3,
-          baseDelay: 2000,
-          maxDelay: 15000,
-        });
+        const draft = await withRetry(
+          () => this.generateWithClaude(metabolicProfile, intake, biometricContext),
+          {
+            maxRetries: 3,
+            baseDelay: 2000,
+            maxDelay: 15000,
+          }
+        );
         await onSubProgress?.('Parsing AI response...');
         return draft;
       } catch (error) {
@@ -152,9 +157,10 @@ export class RecipeCurator {
    */
   private async generateWithClaude(
     metabolicProfile: MetabolicProfile,
-    intake: ClientIntake
+    intake: ClientIntake,
+    biometricContext?: BiometricContext
   ): Promise<MealPlanDraft> {
-    let prompt = this.buildPrompt(metabolicProfile, intake);
+    let prompt = this.buildPrompt(metabolicProfile, intake, biometricContext);
 
     const estimatedTokens = estimateTokens(prompt);
     if (estimatedTokens > MAX_PROMPT_TOKENS) {
@@ -211,7 +217,11 @@ export class RecipeCurator {
    * Since tool_use handles the output structure, the prompt focuses on
    * nutritional requirements and variety rules rather than JSON formatting.
    */
-  private buildPrompt(metabolicProfile: MetabolicProfile, intake: ClientIntake): string {
+  private buildPrompt(
+    metabolicProfile: MetabolicProfile,
+    intake: ClientIntake,
+    biometricContext?: BiometricContext
+  ): string {
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const trainingDaysSet = new Set(intake.trainingDays);
 
@@ -254,7 +264,47 @@ ${metabolicProfile.mealTargets.map((t) => `- ${t.label}: ${t.kcal} kcal (P: ${t.
 - Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonusKcal} kcal
 - Each meal's estimatedNutrition should closely match its targetNutrition
 - fatsecretSearchQuery should be a concise search string for finding the meal on FatSecret
-- Include a varietyReport summarizing all proteins and cuisines used`;
+- Include a varietyReport summarizing all proteins and cuisines used
+${this.buildBiometricPromptSection(biometricContext)}`;
+  }
+
+  private buildBiometricPromptSection(ctx?: BiometricContext): string {
+    if (!ctx || !ctx.dataAvailable || ctx.historicalDays < 7) return '';
+
+    const sections: string[] = ['\n## Biometric-Aware Food Guidance'];
+
+    // Sleep-aware recommendations
+    if (ctx.sleep.quality === 'poor' || ctx.sleep.quality === 'fair') {
+      sections.push(`### Sleep Support (sleep quality: ${ctx.sleep.quality})
+- Include melatonin-precursor foods at dinner: tart cherry, kiwi, walnuts
+- Prioritize tryptophan-rich proteins: turkey, chicken, eggs, dairy
+- Add magnesium-rich foods: dark leafy greens, pumpkin seeds, dark chocolate
+- Include complex carbs at dinner to support serotonin production
+- Avoid high-caffeine or high-sugar ingredients in evening meals`);
+    }
+
+    // Stress-aware recommendations
+    if (ctx.hrv.stressLevel === 'high' || ctx.hrv.stressLevel === 'very_high') {
+      sections.push(`### Stress Reduction (stress level: ${ctx.hrv.stressLevel})
+- Prioritize anti-inflammatory foods: fatty fish (salmon, mackerel), turmeric, berries
+- Include omega-3-rich options in at least 2 meals per day
+- Add magnesium-rich sides: spinach, almonds, avocado
+- Favor whole grains over refined carbohydrates
+- Include probiotic-containing foods: yogurt, kefir, fermented vegetables`);
+    }
+
+    // Recovery-aware recommendations
+    if (ctx.recoveryState === 'compromised' || ctx.recoveryState === 'depleted') {
+      sections.push(`### Recovery Support (recovery: ${ctx.recoveryState})
+- Maximize high-quality protein sources for tissue repair
+- Include anti-inflammatory fats: olive oil, avocado, nuts
+- Add vitamin C-rich foods: citrus, bell peppers, broccoli
+- Include zinc-rich foods: lean beef, pumpkin seeds, lentils
+- Favor easy-to-digest meal preparations (stews, soups, baked)
+- Avoid heavy fried or highly processed meals`);
+    }
+
+    return sections.length > 1 ? sections.join('\n\n') : '';
   }
 
   /**

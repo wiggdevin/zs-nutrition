@@ -1,0 +1,15 @@
+-- AlterTable
+ALTER TABLE "ActivitySync" ADD COLUMN     "bedtimeEnd" TIMESTAMP(3),
+ADD COLUMN     "bedtimeStart" TIMESTAMP(3),
+ADD COLUMN     "bodyTemperatureDelta" DOUBLE PRECISION,
+ADD COLUMN     "heartRateResting" DOUBLE PRECISION,
+ADD COLUMN     "hrvAvg" DOUBLE PRECISION,
+ADD COLUMN     "readinessHrvBalance" INTEGER,
+ADD COLUMN     "readinessScore" INTEGER,
+ADD COLUMN     "readinessTemperature" DOUBLE PRECISION,
+ADD COLUMN     "sleepAwakeMinutes" INTEGER,
+ADD COLUMN     "sleepDeepMinutes" INTEGER,
+ADD COLUMN     "sleepEfficiency" DOUBLE PRECISION,
+ADD COLUMN     "sleepLatency" INTEGER,
+ADD COLUMN     "sleepLightMinutes" INTEGER,
+ADD COLUMN     "sleepRemMinutes" INTEGER;

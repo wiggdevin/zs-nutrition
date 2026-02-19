@@ -41,6 +41,16 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Platform not supported' }, { status: 400 });
     }
 
+    // Guard: ensure OAuth credentials are configured
+    if (!config.clientId) {
+      return NextResponse.json(
+        {
+          error: `${platform} integration is not configured. Please set the OAuth credentials in environment variables.`,
+        },
+        { status: 503 }
+      );
+    }
+
     // Generate cryptographically secure state ID for CSRF protection
     const stateId = crypto.randomUUID();
 
@@ -89,7 +99,7 @@ function getOAuthConfig(platform: string) {
         clientId: process.env.OURA_CLIENT_ID,
         clientSecret: process.env.OURA_CLIENT_SECRET,
         redirectUri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456'}/api/fitness/callback/oura`,
-        scopes: ['personal', 'daily', 'heartrate', 'workout'],
+        scopes: ['personal', 'daily', 'heartrate', 'workout', 'session'],
       };
     case 'google_fit':
       return {

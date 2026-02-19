@@ -77,6 +77,16 @@ const serverEnvSchema = z.object({
 
   WEB_APP_URL: z.string().optional().default('http://localhost:3456'),
 
+  // Token encryption (required when fitness integrations are active)
+  TOKEN_ENCRYPTION_KEY: isProduction
+    ? z
+        .string()
+        .length(
+          64,
+          'TOKEN_ENCRYPTION_KEY must be a 64-character hex string (32 bytes). Generate with: openssl rand -hex 32'
+        )
+    : z.string().optional().default(''),
+
   // Fitness platform integrations (opt-in)
   FITBIT_CLIENT_ID: z.string().optional().default(''),
   FITBIT_CLIENT_SECRET: z.string().optional().default(''),

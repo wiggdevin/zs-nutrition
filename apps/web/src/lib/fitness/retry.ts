@@ -143,7 +143,7 @@ export async function fetchWithRetry(
 export async function refreshAccessToken(
   platform: string,
   refreshToken: string
-): Promise<{ accessToken: string; expiresIn?: number }> {
+): Promise<{ accessToken: string; refreshToken?: string; expiresIn?: number }> {
   switch (platform) {
     case 'fitbit':
       return await refreshFitbitToken(refreshToken);
@@ -197,6 +197,7 @@ async function refreshFitbitToken(refreshToken: string): Promise<{
  */
 async function refreshOuraToken(refreshToken: string): Promise<{
   accessToken: string;
+  refreshToken?: string;
   expiresIn?: number;
 }> {
   const response = await fetch('https://api.ouraring.com/oauth/token', {
@@ -219,6 +220,8 @@ async function refreshOuraToken(refreshToken: string): Promise<{
   const data = await response.json();
   return {
     accessToken: data.access_token,
+    // Oura refresh tokens are single-use: a new one is returned on each refresh
+    refreshToken: data.refresh_token,
     expiresIn: data.expires_in,
   };
 }

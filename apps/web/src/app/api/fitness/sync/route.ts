@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveUser } from '@/lib/auth';
 import { prisma } from '@/lib/db';
+import { decrypt } from '@/lib/encryption';
 import { logger } from '@/lib/safe-logger';
 
 /**
@@ -14,18 +15,16 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function POST(req: NextRequest) {
   try {
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
       return NextResponse.json({ error: message }, { status });
     }
 
-    // Use clerkUserId as userId for fitness queries (fitness tables store Clerk user IDs)
-    const userId = clerkUserId;
+    const userId = dbUserId;
 
     const body = await req.json();
     const { platform, date } = body;
@@ -85,7 +84,8 @@ async function syncFromPlatform(
   error?: string;
 }> {
   const platform = connection.platform;
-  const accessToken = connection.accessToken;
+  // Decrypt the stored encrypted token before using it
+  const accessToken = decrypt(connection.accessToken);
 
   switch (platform) {
     case 'fitbit':
