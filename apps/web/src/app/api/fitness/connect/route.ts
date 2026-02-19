@@ -139,14 +139,17 @@ function generateOAuthUrl(platform: string, config: any, stateId: string): strin
     }
 
     case 'oura': {
-      const ouraParams = new URLSearchParams({
-        response_type: 'code',
-        client_id: config.clientId,
-        redirect_uri: config.redirectUri,
-        scope: config.scopes.join(' '),
-        state: stateId,
-      });
-      return `https://cloud.ouraring.com/oauth/authorize?${ouraParams.toString()}`;
+      // Build URL manually — Oura's OAuth server requires %20 for scope separators
+      // (URLSearchParams uses + which Oura doesn't accept)
+      const ouraScope = config.scopes.join(' ');
+      return (
+        `https://cloud.ouraring.com/oauth/authorize` +
+        `?response_type=code` +
+        `&client_id=${encodeURIComponent(config.clientId)}` +
+        `&redirect_uri=${encodeURIComponent(config.redirectUri)}` +
+        `&scope=${encodeURIComponent(ouraScope)}` +
+        `&state=${encodeURIComponent(stateId)}`
+      );
     }
 
     case 'google_fit': {
