@@ -3,7 +3,6 @@
 import dynamic from 'next/dynamic';
 import { DashboardSkeleton } from '@/components/loaders/DashboardSkeleton';
 import { AdaptiveNutritionBanner } from './AdaptiveNutritionBanner';
-import { ActivitySyncStatus } from './ActivitySyncStatus';
 import { useDashboardData } from './useDashboardData';
 import { useDashboardComputations } from './useDashboardComputations';
 import { DashboardHeader } from './DashboardHeader';
@@ -15,6 +14,12 @@ import { AdherenceScoreSection } from './AdherenceScoreSection';
 import { TodaysPlanSection } from './TodaysPlanSection';
 import { TodaysLogSection } from './TodaysLogSection';
 import { QuickActionsSection } from './QuickActionsSection';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 
 const LogConfirmModal = dynamic(() => import('./LogConfirmModal'), {
   ssr: false,
@@ -158,10 +163,9 @@ export default function DashboardClient() {
           <p className="text-muted-foreground">Your nutrition protocol is ready.</p>
         </div>
 
-        <AdaptiveNutritionBanner />
-        <ActivitySyncStatus />
-
         {isPlanStale && <PlanStaleBanner staleReason={staleReason} />}
+
+        <AdaptiveNutritionBanner />
 
         <MacroRingsSection
           macros={macros}
@@ -172,32 +176,40 @@ export default function DashboardClient() {
           trainingBonusKcal={trainingBonusKcal}
         />
 
-        <WaterTrackingSection />
-
-        <AdherenceScoreSection
-          adherenceScore={adherenceScore}
-          weeklyAverageAdherence={weeklyAverageAdherence}
+        <TodaysPlanSection
+          todayPlanMeals={todayPlanMeals}
+          loggedSlots={loggedSlots}
+          loggingSlot={loggingSlot}
+          onLogMeal={openLogModal}
         />
 
-        <MonthlyAdherenceSection />
-
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <TodaysPlanSection
-            todayPlanMeals={todayPlanMeals}
-            loggedSlots={loggedSlots}
-            loggingSlot={loggingSlot}
-            onLogMeal={openLogModal}
-          />
-          <TodaysLogSection
-            trackedMeals={trackedMeals}
-            todayPlanMealsCount={todayPlanMeals.length}
-            formatTime={formatTime}
-            onAdjustPortion={handleAdjustPortion}
-            adjustingMealId={adjustingMealId}
-          />
-        </div>
+        <TodaysLogSection
+          trackedMeals={trackedMeals}
+          todayPlanMealsCount={todayPlanMeals.length}
+          formatTime={formatTime}
+          onAdjustPortion={handleAdjustPortion}
+          adjustingMealId={adjustingMealId}
+        />
 
         <QuickActionsSection />
+
+        <Accordion type="single" collapsible>
+          <AccordionItem value="insights">
+            <AccordionTrigger>
+              <span className="text-xs font-mono tracking-[0.2em] uppercase text-muted-foreground">
+                {'/// Insights & Activity'}
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="space-y-6">
+              <AdherenceScoreSection
+                adherenceScore={adherenceScore}
+                weeklyAverageAdherence={weeklyAverageAdherence}
+              />
+              <WaterTrackingSection />
+              <MonthlyAdherenceSection />
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
       </main>
 
       {mealToLog && (

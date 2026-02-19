@@ -145,22 +145,10 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
     setError('');
   };
 
-  // Idle state - show capture button
+  // Idle state - hero gradient CTA
   if (state === 'idle') {
     return (
-      <div className="bg-card border border-border rounded-xl p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div>
-            <h3 className="text-lg font-heading uppercase tracking-wider flex items-center gap-2">
-              <Camera className="w-5 h-5 text-primary" aria-hidden="true" />
-              Photo Analysis
-            </h3>
-            <p className="text-sm text-muted-foreground mt-1">
-              Snap a photo to instantly estimate calories and macros
-            </p>
-          </div>
-        </div>
-
+      <div className="mb-6">
         <input
           ref={fileInputRef}
           type="file"
@@ -173,21 +161,26 @@ export default function FoodScan({ onMealLogged }: FoodScanProps) {
         <button
           onClick={() => fileInputRef.current?.click()}
           aria-label="Take or upload a food photo for nutritional analysis"
-          className="w-full bg-primary hover:bg-primary/90 text-white font-semibold py-4 px-6 rounded-lg flex items-center justify-center gap-3 transition-colors"
+          className="w-full bg-gradient-to-br from-primary to-primary/80 hover:from-primary/95 hover:to-primary/75 text-white rounded-2xl p-6 shadow-lg shadow-primary/20 transition-all active:scale-[0.98] flex flex-col items-center gap-3"
         >
-          <Camera className="w-5 h-5" aria-hidden="true" />
-          Take or Upload Photo
+          <div className="w-16 h-16 rounded-full bg-white/20 flex items-center justify-center">
+            <Camera className="w-8 h-8" aria-hidden="true" />
+          </div>
+          <span className="text-lg font-heading uppercase tracking-wider">Snap Your Meal</span>
+          <span className="text-sm text-white/80">AI-powered instant calorie estimation</span>
         </button>
 
-        <div className="mt-4 text-xs text-muted-foreground space-y-1">
-          <p>💡 Tips for best results:</p>
-          <ul className="list-disc list-inside space-y-1 ml-2">
+        <details className="mt-3 text-xs text-muted-foreground">
+          <summary className="cursor-pointer hover:text-foreground transition-colors">
+            Tips for best results
+          </summary>
+          <ul className="list-disc list-inside space-y-1 ml-2 mt-2">
             <li>Use good lighting (natural light works best)</li>
             <li>Capture the entire meal in frame</li>
             <li>Include a reference object (fork, plate) for portion size</li>
             <li>Avoid blurry or dark photos</li>
           </ul>
-        </div>
+        </details>
       </div>
     );
   }

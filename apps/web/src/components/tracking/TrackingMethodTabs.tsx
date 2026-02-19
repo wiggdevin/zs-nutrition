@@ -13,9 +13,6 @@ const tabs = [
 export function TrackingMethodTabs({ activeTab, onTabChange }: TrackingMethodTabsProps) {
   return (
     <div className="mb-4">
-      <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
-        {'/// Other Methods'}
-      </p>
       <div role="tablist" aria-label="Food logging methods" className="flex gap-2">
         {tabs.map((tab) => {
           const isActive = activeTab === tab.id;
