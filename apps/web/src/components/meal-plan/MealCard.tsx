@@ -248,7 +248,7 @@ export function DayColumn({
 
                 {/* Meal name - primary visual element in card */}
                 <h4
-                  className="text-[15px] font-bold text-foreground leading-snug pr-7 line-clamp-2"
+                  className="text-[15px] font-bold text-foreground leading-snug pr-6 line-clamp-2"
                   data-testid={`meal-name-${day.dayNumber}-${mealIdx}`}
                   title={meal.name}
                 >

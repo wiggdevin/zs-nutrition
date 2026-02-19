@@ -1,4 +1,4 @@
-import type { Metadata } from 'next';
+import type { Metadata, Viewport } from 'next';
 import { Inter, JetBrains_Mono, Archivo_Black } from 'next/font/google';
 import { Providers } from '@/components/providers/Providers';
 import { RouteAnnouncer } from '@/components/accessibility/RouteAnnouncer';
@@ -22,6 +22,10 @@ const jetbrainsMono = JetBrains_Mono({
   variable: '--font-jetbrains',
   display: 'swap',
 });
+
+export const viewport: Viewport = {
+  viewportFit: 'cover',
+};
 
 export const metadata: Metadata = {
   title: {

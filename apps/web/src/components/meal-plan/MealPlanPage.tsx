@@ -136,7 +136,8 @@ export default function MealPlanPage() {
                   md:grid md:grid-cols-3 md:gap-3 md:overflow-x-visible
                   lg:grid-cols-4
                   xl:grid-cols-5 xl:gap-4
-                  2xl:grid-cols-7 2xl:gap-4
+                  min-[1440px]:grid-cols-7 min-[1440px]:gap-3
+                  2xl:gap-4
                 "
                 data-testid="seven-day-grid"
               >

@@ -185,7 +185,7 @@ export default function MealDetailModal({
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm px-0 sm:px-4 py-0 sm:py-8"
+      className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center bg-black/80 backdrop-blur-sm px-0 sm:px-4 py-0 sm:py-8"
       style={{ animation: 'modalBackdropIn 0.3s ease-out' }}
       data-testid="meal-detail-modal"
       role="dialog"
@@ -422,8 +422,8 @@ export default function MealDetailModal({
           </div>
         </div>
 
-        {/* Mobile-only footer with action buttons */}
-        <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-background md:hidden">
+        {/* Mobile-only sticky footer with action buttons */}
+        <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-background md:hidden safe-area-bottom">
           {actionButtons}
         </div>
       </div>
