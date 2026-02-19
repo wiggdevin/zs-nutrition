@@ -63,6 +63,22 @@ const navItems = [
     ),
   },
   {
+    label: 'Chat',
+    href: '/chat',
+    icon: (active: boolean) => (
+      <svg
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 24 24"
+        fill={active ? 'currentColor' : 'none'}
+        stroke="currentColor"
+        strokeWidth={active ? 0 : 1.5}
+        className="h-5 w-5"
+      >
+        <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v10z" />
+      </svg>
+    ),
+  },
+  {
     label: 'Activity',
     href: '/activity',
     icon: (active: boolean) => (

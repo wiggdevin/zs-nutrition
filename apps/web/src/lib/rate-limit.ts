@@ -62,6 +62,16 @@ export const mealSwapLimiter = redis
     })
   : null;
 
+// Chat messages: 30 per hour
+export const chatLimiter = redis
+  ? new Ratelimit({
+      redis,
+      limiter: Ratelimit.slidingWindow(30, '1 h'),
+      analytics: true,
+      prefix: 'ratelimit:chat',
+    })
+  : null;
+
 export async function checkRateLimit(
   limiter: Ratelimit | null,
   identifier: string
