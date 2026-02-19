@@ -45,6 +45,12 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Plan not found' }, { status: 404 });
     }
 
+    // Fetch active profile for targets (single source of truth)
+    const activeProfile = await prisma.userProfile.findFirst({
+      where: { userId: user.id, isActive: true },
+      select: { goalKcal: true, proteinTargetG: true, carbsTargetG: true, fatTargetG: true },
+    });
+
     const today = new Date();
     const dateOnly = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
@@ -86,10 +92,10 @@ export async function POST(request: Request) {
         data: {
           userId: user.id,
           date: dateOnly,
-          targetKcal: plan.dailyKcalTarget || 2290,
-          targetProteinG: plan.dailyProteinG || 172,
-          targetCarbsG: plan.dailyCarbsG || 229,
-          targetFatG: plan.dailyFatG || 76,
+          targetKcal: activeProfile?.goalKcal || plan.dailyKcalTarget || 2290,
+          targetProteinG: activeProfile?.proteinTargetG || plan.dailyProteinG || 172,
+          targetCarbsG: activeProfile?.carbsTargetG || plan.dailyCarbsG || 229,
+          targetFatG: activeProfile?.fatTargetG || plan.dailyFatG || 76,
           actualKcal: kcal,
           actualProteinG: Math.round(proteinG),
           actualCarbsG: Math.round(carbsG),

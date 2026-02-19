@@ -4,6 +4,7 @@ import { requireActiveUser } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay } from '@/lib/date-utils';
 import { decompressJson } from '@/lib/compression';
+import { getTrainingDayBonus } from '@/lib/metabolic-utils';
 
 export async function GET(request: Request) {
   try {
@@ -85,11 +86,15 @@ export async function GET(request: Request) {
     }> = [];
 
     let planId: string | null = null;
-    // Default targets from profile if available, else reasonable defaults
-    const profileBaseKcal = activeProfile?.goalKcal || 2100;
-    const profileBonusKcal = isTrainingDay ? 200 : 0;
-    let dailyTargets = {
-      kcal: profileBaseKcal + profileBonusKcal,
+    // Use UserProfile as the single source of truth for targets
+    const baseKcal = activeProfile?.goalKcal || 2100;
+    const trainingBonusKcal =
+      activePlan?.trainingBonusKcal ||
+      (activeProfile?.tdeeKcal ? getTrainingDayBonus(activeProfile.tdeeKcal) : 200);
+    const bonus = isTrainingDay ? trainingBonusKcal : 0;
+
+    const dailyTargets = {
+      kcal: baseKcal + bonus,
       proteinG: activeProfile?.proteinTargetG || 160,
       carbsG: activeProfile?.carbsTargetG || 230,
       fatG: activeProfile?.fatTargetG || 65,
@@ -97,18 +102,6 @@ export async function GET(request: Request) {
 
     if (activePlan) {
       planId = activePlan.id;
-      // The plan's dailyKcalTarget might already include the training bonus
-      // So we calculate the true base by subtracting the training bonus
-      const planBonusKcal = activePlan.trainingBonusKcal || 200;
-      const baseKcal =
-        (activePlan.dailyKcalTarget || activeProfile?.goalKcal || 2100) - planBonusKcal;
-      const bonus = isTrainingDay ? planBonusKcal : 0;
-      dailyTargets = {
-        kcal: baseKcal + bonus,
-        proteinG: activePlan.dailyProteinG || 160,
-        carbsG: activePlan.dailyCarbsG || 230,
-        fatG: activePlan.dailyFatG || 65,
-      };
 
       // Decompress validatedPlan (handles both compressed and legacy uncompressed data)
       const validatedPlan = decompressJson<{
@@ -316,13 +309,8 @@ export async function GET(request: Request) {
       weeklyAverageAdherence,
       isTrainingDay,
       trainingDays: normalizedTrainingDays,
-      trainingBonusKcal: isTrainingDay ? activePlan?.trainingBonusKcal || 200 : 0,
-      // Calculate true base goal by subtracting the training bonus from the plan's target
-      // The plan's dailyKcalTarget might already include the training bonus, so we subtract it to get the base
-      // We use the plan's bonus value since that's what was used during plan generation
-      baseGoalKcal: activePlan
-        ? (activePlan.dailyKcalTarget || 2100) - (activePlan.trainingBonusKcal || 200)
-        : activeProfile?.goalKcal || 2100,
+      trainingBonusKcal: isTrainingDay ? trainingBonusKcal : 0,
+      baseGoalKcal: activeProfile?.goalKcal || 2100,
     });
   } catch (error) {
     logger.error('Dashboard data error:', error);

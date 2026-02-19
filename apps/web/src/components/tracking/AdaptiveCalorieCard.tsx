@@ -24,6 +24,7 @@ import {
 } from '@/components/ui/alert-dialog';
 
 export function AdaptiveCalorieCard() {
+  const utils = trpc.useUtils();
   const [showConfirmDialog, setShowConfirmDialog] = useState(false);
   const [pendingKcal, setPendingKcal] = useState<number | null>(null);
 
@@ -42,6 +43,8 @@ export function AdaptiveCalorieCard() {
       setShowConfirmDialog(false);
       setPendingKcal(null);
       refetch();
+      // Invalidate daily targets so all pages update
+      utils.user.getDailyTargets.invalidate();
     },
     onError: (error) => {
       toast.error(error.message || 'Failed to apply adjustment');
