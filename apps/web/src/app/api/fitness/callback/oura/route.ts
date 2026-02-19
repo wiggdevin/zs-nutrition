@@ -8,6 +8,7 @@ import { prisma } from '@/lib/db';
 import { redis } from '@/lib/redis';
 import { encrypt } from '@/lib/encryption';
 import { logger } from '@/lib/safe-logger';
+import { syncUserActivity } from '@/lib/fitness/scheduler';
 
 interface StoredOAuthState {
   userId: string;
@@ -154,6 +155,11 @@ export async function GET(req: NextRequest) {
         platformUserId,
         isActive: true,
       },
+    });
+
+    // Fire-and-forget initial sync so data is available immediately
+    syncUserActivity(dbUserId).catch((err) => {
+      logger.error('Initial Oura sync failed (non-blocking):', err);
     });
 
     // Redirect back to settings with success
