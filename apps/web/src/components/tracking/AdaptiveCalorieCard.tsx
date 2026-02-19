@@ -3,9 +3,14 @@
 import { useState } from 'react';
 import { trpc } from '@/lib/trpc';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import {
+  Accordion,
+  AccordionItem,
+  AccordionTrigger,
+  AccordionContent,
+} from '@/components/ui/accordion';
 import { Loader2, TrendingUp, AlertTriangle, CheckCircle2, Info } from 'lucide-react';
+import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -28,7 +33,7 @@ export function AdaptiveCalorieCard() {
     refetch,
   } = trpc.adaptiveNutrition.suggestCalorieAdjustment.useQuery(undefined, {
     enabled: true,
-    refetchInterval: 60000, // Check every minute
+    refetchInterval: 60000,
   });
 
   const applyAdjustmentMutation = trpc.adaptiveNutrition.applyCalorieAdjustment.useMutation({
@@ -45,157 +50,98 @@ export function AdaptiveCalorieCard() {
 
   const handleApplyAdjustment = () => {
     if (!suggestion?.hasSuggestion || !suggestion.suggestedGoalKcal) return;
-
     setPendingKcal(suggestion.suggestedGoalKcal);
     setShowConfirmDialog(true);
   };
 
   const confirmAdjustment = () => {
     if (!pendingKcal) return;
-
     applyAdjustmentMutation.mutate({
       newGoalKcal: pendingKcal,
       confirmed: true,
     });
   };
 
-  if (isLoading) {
-    return (
-      <Card>
-        <CardContent className="flex items-center justify-center py-8">
-          <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
-        </CardContent>
-      </Card>
-    );
-  }
-
-  if (!suggestion?.hasSuggestion) {
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <CheckCircle2 className="h-5 w-5 text-green-600" />
-            Adaptive Calories
-          </CardTitle>
-          <CardDescription>
-            Your calorie targets are optimized for your current progress
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <Alert>
-            <Info className="h-4 w-4" />
-            <AlertDescription>
-              <div className="space-y-2">
-                <p className="font-medium">
-                  Current Target: {suggestion?.currentGoalKcal} calories/day
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Keep logging your weight weekly. The system will automatically suggest adjustments
-                  if your progress deviates from your goal rate.
-                </p>
-                {suggestion?.trendData && (
-                  <p className="text-xs text-muted-foreground mt-2">
-                    Current rate: {suggestion.trendData.weeklyRateLbs} lbs/week over{' '}
-                    {suggestion.trendData.timeSpanDays} days
-                  </p>
-                )}
-              </div>
-            </AlertDescription>
-          </Alert>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  const isIncrease = (suggestion.calorieDifference ?? 0) > 0;
-  const difference = Math.abs(suggestion.calorieDifference ?? 0);
+  const isIncrease = (suggestion?.calorieDifference ?? 0) > 0;
+  const difference = Math.abs(suggestion?.calorieDifference ?? 0);
 
   return (
     <>
-      <Card
-        className={isIncrease ? 'border-blue-200 bg-blue-50/50' : 'border-primary/30 bg-primary/5'}
+      <section
+        className={cn(
+          'bg-card border border-border rounded-2xl p-6 space-y-4',
+          suggestion?.hasSuggestion &&
+            (isIncrease ? 'border-blue-200 bg-blue-50/50' : 'border-primary/30 bg-primary/5')
+        )}
       >
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {isIncrease ? (
-              <TrendingUp className="h-5 w-5 text-blue-600" />
-            ) : (
-              <AlertTriangle className="h-5 w-5 text-primary/90" />
-            )}
-            Adaptive Calorie Suggestion
-          </CardTitle>
-          <CardDescription>
-            {isIncrease
-              ? 'Consider increasing calories to optimize progress'
-              : 'Consider decreasing calories to get back on track'}
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {/* Adjustment Summary */}
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle className="mb-2">Recommended Adjustment</AlertTitle>
-              <AlertDescription>
-                <div className="space-y-3">
-                  <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-bold">{suggestion.currentGoalKcal}</span>
-                    <span className="text-muted-foreground">→</span>
-                    <span
-                      className={`text-2xl font-bold ${isIncrease ? 'text-blue-600' : 'text-primary/90'}`}
-                    >
-                      {suggestion.suggestedGoalKcal}
-                    </span>
-                    <span className="text-sm text-muted-foreground">calories/day</span>
-                  </div>
+        {/* Section label */}
+        <p className="text-xs font-mono uppercase tracking-wider text-muted-foreground">
+          {'/// Adaptive Calories'}
+        </p>
 
-                  <div className="flex items-center gap-2">
-                    {isIncrease ? (
-                      <TrendingUp className="h-4 w-4 text-blue-600" />
-                    ) : (
-                      <TrendingUp className="h-4 w-4 text-primary/90 rotate-180" />
-                    )}
-                    <span
-                      className={`font-medium ${isIncrease ? 'text-blue-600' : 'text-primary/90'}`}
-                    >
-                      {isIncrease ? '+' : '-'}
-                      {difference} calories/day
-                    </span>
-                  </div>
+        {/* Loading state */}
+        {isLoading && (
+          <div className="flex items-center gap-2 py-2">
+            <Loader2 className="h-4 w-4 animate-spin text-muted-foreground" />
+            <span className="text-sm text-muted-foreground">Analyzing...</span>
+          </div>
+        )}
 
-                  <p className="text-sm mt-2">{suggestion.adjustmentReason}</p>
-                </div>
-              </AlertDescription>
-            </Alert>
-
-            {/* Trend Context */}
-            {suggestion.trendData && (
-              <div className="space-y-2 text-sm">
-                <p className="font-medium">Progress Analysis:</p>
-                <div className="grid grid-cols-2 gap-2 text-muted-foreground">
-                  <div>Weekly Rate: {suggestion.trendData.weeklyRateLbs} lbs/week</div>
-                  <div>Total Change: {suggestion.trendData.weightChangeLbs} lbs</div>
-                  <div>Tracking Period: {suggestion.trendData.timeSpanDays} days</div>
-                </div>
-              </div>
-            )}
-
-            {/* Safe Bounds Info */}
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription className="text-sm">
-                <p className="font-medium mb-1">Safe Bounds:</p>
-                <p>
-                  Your calories will stay within a healthy range ({suggestion.safeBounds?.min} -{' '}
-                  {suggestion.safeBounds?.max}) based on your BMR of{' '}
-                  {(suggestion.currentGoalKcal ?? 0) - 200}.
+        {/* No suggestion — on track */}
+        {!isLoading && !suggestion?.hasSuggestion && (
+          <div className="flex items-center gap-3">
+            <CheckCircle2 className="h-5 w-5 text-green-600 flex-shrink-0" />
+            <div>
+              <p className="font-medium">
+                {suggestion?.currentGoalKcal} kcal/day
+                <span className="ml-2 text-sm font-normal text-green-600">On track</span>
+              </p>
+              {suggestion?.trendData && (
+                <p className="text-xs text-muted-foreground">
+                  Current rate: {suggestion.trendData.weeklyRateLbs} lbs/week over{' '}
+                  {suggestion.trendData.timeSpanDays} days
                 </p>
-              </AlertDescription>
-            </Alert>
+              )}
+            </div>
+          </div>
+        )}
 
-            {/* Action Buttons */}
+        {/* Active suggestion */}
+        {!isLoading && suggestion?.hasSuggestion && (
+          <div className="space-y-3">
+            <div className="flex items-center gap-2 flex-wrap">
+              {isIncrease ? (
+                <TrendingUp className="h-5 w-5 text-blue-600 flex-shrink-0" />
+              ) : (
+                <AlertTriangle className="h-5 w-5 text-primary/90 flex-shrink-0" />
+              )}
+              <span className="text-2xl font-bold">{suggestion.currentGoalKcal}</span>
+              <span className="text-muted-foreground">→</span>
+              <span
+                className={cn(
+                  'text-2xl font-bold',
+                  isIncrease ? 'text-blue-600' : 'text-primary/90'
+                )}
+              >
+                {suggestion.suggestedGoalKcal}
+              </span>
+              <span className="text-sm text-muted-foreground">kcal/day</span>
+              <span
+                className={cn(
+                  'text-sm font-medium',
+                  isIncrease ? 'text-blue-600' : 'text-primary/90'
+                )}
+              >
+                ({isIncrease ? '+' : '-'}
+                {difference})
+              </span>
+            </div>
+
+            <p className="text-sm text-muted-foreground">{suggestion.adjustmentReason}</p>
+
             <div className="flex gap-2">
               <Button
+                size="sm"
                 onClick={handleApplyAdjustment}
                 className={
                   isIncrease ? 'bg-blue-600 hover:bg-blue-700' : 'bg-primary hover:bg-primary/80'
@@ -211,18 +157,87 @@ export function AdaptiveCalorieCard() {
                 )}
                 Apply {isIncrease ? 'Increase' : 'Decrease'}
               </Button>
-              <Button variant="outline" onClick={() => refetch()}>
-                Refresh Analysis
+              <Button variant="outline" size="sm" onClick={() => refetch()}>
+                Refresh
               </Button>
             </div>
-
-            <p className="text-xs text-muted-foreground">
-              Applying this adjustment will update your daily calorie targets and macro goals. Your
-              meal plan can be regenerated with the new targets.
-            </p>
           </div>
-        </CardContent>
-      </Card>
+        )}
+
+        {/* How It Works accordion */}
+        <Accordion type="single" collapsible>
+          <AccordionItem value="how-it-works" className="border-0 rounded-none bg-transparent">
+            <AccordionTrigger className="px-0 py-3 text-sm font-medium text-muted-foreground hover:text-foreground">
+              <span className="flex items-center gap-2">
+                <Info className="h-4 w-4" />
+                How It Works
+              </span>
+            </AccordionTrigger>
+            <AccordionContent className="px-0 pb-0">
+              <div className="space-y-4">
+                {/* Progress Analysis (only when suggestion exists) */}
+                {suggestion?.hasSuggestion && suggestion.trendData && (
+                  <div className="space-y-2 text-sm">
+                    <p className="font-medium text-foreground">Progress Analysis:</p>
+                    <div className="grid grid-cols-2 gap-2 text-muted-foreground">
+                      <div>Weekly Rate: {suggestion.trendData.weeklyRateLbs} lbs/week</div>
+                      <div>Total Change: {suggestion.trendData.weightChangeLbs} lbs</div>
+                      <div>Tracking Period: {suggestion.trendData.timeSpanDays} days</div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Safe Bounds (only when suggestion exists) */}
+                {suggestion?.hasSuggestion && suggestion.safeBounds && (
+                  <div className="text-sm">
+                    <p className="font-medium text-foreground mb-1">Safe Bounds:</p>
+                    <p className="text-muted-foreground">
+                      Your calories will stay within a healthy range ({suggestion.safeBounds.min} -{' '}
+                      {suggestion.safeBounds.max}) based on your BMR of{' '}
+                      {(suggestion.currentGoalKcal ?? 0) - 200}.
+                    </p>
+                  </div>
+                )}
+
+                {/* 5-step educational content */}
+                <div className="space-y-3 text-sm text-muted-foreground">
+                  <p>
+                    <strong className="text-foreground">1. Log Weekly:</strong> Record your weight
+                    at least once per week, ideally at the same time of day (e.g., Monday mornings,
+                    fasted).
+                  </p>
+                  <p>
+                    <strong className="text-foreground">2. Track Progress:</strong> The system
+                    analyzes your weight trend and compares it to your goal rate (e.g., 0.5-1
+                    lb/week for cutting).
+                  </p>
+                  <p>
+                    <strong className="text-foreground">3. Get Suggestions:</strong> If you deviate
+                    from your target rate, the system will suggest calorie adjustments to get you
+                    back on track.
+                  </p>
+                  <p>
+                    <strong className="text-foreground">4. Stay Safe:</strong> All adjustments are
+                    kept within safe bounds (BMR + 200 to BMR + 1500) to ensure healthy metabolic
+                    function.
+                  </p>
+                  <p>
+                    <strong className="text-foreground">5. Prevent Plateaus:</strong> Gradual
+                    calorie adjustments help prevent metabolic adaptation and keep progress steady
+                    toward your goal.
+                  </p>
+                </div>
+
+                {/* Disclaimer */}
+                <p className="text-xs text-muted-foreground">
+                  Applying an adjustment will update your daily calorie targets and macro goals.
+                  Your meal plan can be regenerated with the new targets.
+                </p>
+              </div>
+            </AccordionContent>
+          </AccordionItem>
+        </Accordion>
+      </section>
 
       {/* Confirmation Dialog */}
       <AlertDialog open={showConfirmDialog} onOpenChange={setShowConfirmDialog}>
@@ -231,7 +246,7 @@ export function AdaptiveCalorieCard() {
             <AlertDialogTitle>Confirm Calorie Adjustment</AlertDialogTitle>
             <AlertDialogDescription>
               Are you sure you want to adjust your daily calorie target from{' '}
-              <strong>{suggestion.currentGoalKcal}</strong> to <strong>{pendingKcal}</strong>{' '}
+              <strong>{suggestion?.currentGoalKcal}</strong> to <strong>{pendingKcal}</strong>{' '}
               calories?
               <br />
               <br />
