@@ -14,6 +14,7 @@ import { MealPlanEmptyState } from './MealPlanEmptyState';
 import { PlanReplacedBanner } from './PlanReplacedBanner';
 import { SwapErrorToast } from './SwapErrorToast';
 import { useSwipeNavigation } from './useSwipeNavigation';
+import { cn } from '@/lib/utils';
 
 const MealDetailModal = dynamic(() => import('./MealDetailModal'), {
   ssr: false,
@@ -51,11 +52,12 @@ export default function MealPlanPage() {
     handleUndoClick,
     handleDismissReplacedBanner,
     handleViewNewerPlan,
+    todayIndex,
   } = useMealPlanData();
 
   const [prepMode, setPrepMode] = useState(false);
   const days = plan?.validatedPlan?.days || [];
-  const swipe = useSwipeNavigation({ totalDays: days.length });
+  const swipe = useSwipeNavigation({ totalDays: days.length, initialDay: todayIndex ?? 0 });
 
   if (loading) {
     return (
@@ -136,11 +138,15 @@ export default function MealPlanPage() {
                 {days.map((day, dayIdx) => (
                   <div
                     key={day.dayNumber}
-                    className="w-full flex-shrink-0 snap-start snap-always px-2 md:w-auto md:flex-shrink-1 md:px-0"
+                    className={cn(
+                      'w-full flex-shrink-0 snap-start snap-always px-2 md:w-auto md:flex-shrink-1 md:px-0',
+                      dayIdx === todayIndex && 'md:ring-2 md:ring-primary/40 md:rounded-lg'
+                    )}
                     style={{ animationDelay: `${dayIdx * 50}ms` }}
                   >
                     <DayColumn
                       day={day}
+                      isToday={dayIdx === todayIndex}
                       swappingMeal={swappingMeal}
                       swapSuccess={swapSuccess}
                       swapInProgress={swapLoading || swappingMeal !== null}

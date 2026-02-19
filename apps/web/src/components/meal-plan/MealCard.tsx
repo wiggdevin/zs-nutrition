@@ -31,6 +31,7 @@ export function MealCardSkeleton() {
 
 interface DayColumnProps {
   day: PlanDay;
+  isToday?: boolean;
   swappingMeal: { dayNumber: number; mealIdx: number } | null;
   swapSuccess: { dayNumber: number; mealIdx: number } | null;
   swapInProgress: boolean;
@@ -41,6 +42,7 @@ interface DayColumnProps {
 
 export function DayColumn({
   day,
+  isToday,
   swappingMeal,
   swapSuccess,
   swapInProgress,
@@ -77,6 +79,11 @@ export function DayColumn({
           {day.isTrainingDay && (
             <span className="ml-2 text-xs" title="Training Day">
               &#x1F4AA;
+            </span>
+          )}
+          {isToday && (
+            <span className="ml-1.5 text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full">
+              TODAY
             </span>
           )}
         </h3>

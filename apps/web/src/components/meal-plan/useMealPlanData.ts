@@ -1,10 +1,19 @@
 'use client';
 
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { logger } from '@/lib/safe-logger';
+import { toLocalDay, diffDays } from '@/lib/date-utils';
 import type { PlanData, Meal } from './types';
 import type { MealPlanTab } from './DayNavigator';
 import { useSwapMeal } from './useSwapMeal';
+
+function getTodayIndex(plan: PlanData): number | null {
+  const today = toLocalDay(new Date());
+  const start = new Date(plan.startDate);
+  const offset = diffDays(start, today);
+  if (offset < 0 || offset >= plan.planDays) return null;
+  return offset;
+}
 
 export function useMealPlanData() {
   const [plan, setPlan] = useState<PlanData | null>(null);
@@ -124,6 +133,8 @@ export function useMealPlanData() {
     };
   }, [plan, planReplaced, checkPlanStatus]);
 
+  const todayIndex = useMemo(() => (plan ? getTodayIndex(plan) : null), [plan]);
+
   // Swap meal functionality (extracted hook)
   const swap = useSwapMeal(plan, setPlan, planReplaced, checkPlanStatus);
 
@@ -147,6 +158,7 @@ export function useMealPlanData() {
     selectedMeal,
     setSelectedMeal,
     planReplaced,
+    todayIndex,
     fetchPlan,
     handleDismissReplacedBanner,
     handleViewNewerPlan,

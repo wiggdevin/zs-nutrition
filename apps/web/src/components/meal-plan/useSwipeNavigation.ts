@@ -4,11 +4,12 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 
 interface UseSwipeNavigationOptions {
   totalDays: number;
+  initialDay?: number;
 }
 
-export function useSwipeNavigation({ totalDays }: UseSwipeNavigationOptions) {
+export function useSwipeNavigation({ totalDays, initialDay }: UseSwipeNavigationOptions) {
   const scrollRef = useRef<HTMLDivElement>(null);
-  const [currentDay, setCurrentDay] = useState(0);
+  const [currentDay, setCurrentDay] = useState(initialDay ?? 0);
   const touchStartX = useRef(0);
   const touchStartY = useRef(0);
   const isSwiping = useRef(false);
@@ -72,6 +73,13 @@ export function useSwipeNavigation({ totalDays }: UseSwipeNavigationOptions) {
     window.addEventListener('resize', handler);
     return () => window.removeEventListener('resize', handler);
   }, [handleScroll]);
+
+  // Scroll to initialDay on mount (container needs to be sized first)
+  useEffect(() => {
+    if (initialDay !== undefined && initialDay > 0) {
+      requestAnimationFrame(() => scrollToDay(initialDay));
+    }
+  }, []); // intentionally run once on mount
 
   return {
     scrollRef,
