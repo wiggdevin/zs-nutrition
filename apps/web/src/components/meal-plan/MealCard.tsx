@@ -2,7 +2,7 @@
 
 import { useCallback } from 'react';
 import type { PlanDay, Meal } from './types';
-import { formatSlotName } from './utils';
+import { formatSlotName, formatPrepTimeCompact } from './utils';
 import { ScrollReveal } from '@/app/(marketing)/_components/ScrollReveal';
 import { AnimatedMacro } from './AnimatedMacro';
 
@@ -19,11 +19,8 @@ export function MealCardSkeleton() {
       </div>
       <div className="h-4 w-3/4 rounded skeleton-shimmer mt-1" />
       <div className="h-3 w-1/2 rounded skeleton-shimmer mt-2" />
-      <div className="mt-2.5 flex gap-1.5">
-        <div className="h-5 w-14 rounded-full skeleton-shimmer" />
-        <div className="h-5 w-10 rounded-full skeleton-shimmer" />
-        <div className="h-5 w-10 rounded-full skeleton-shimmer" />
-        <div className="h-5 w-10 rounded-full skeleton-shimmer" />
+      <div className="mt-2.5">
+        <div className="h-4 w-16 rounded skeleton-shimmer" />
       </div>
     </div>
   );
@@ -258,12 +255,6 @@ export function DayColumn({
                   {meal.name}
                 </h4>
 
-                {meal.cuisine && (
-                  <p className="mt-1 text-[11px] font-medium text-muted-foreground">
-                    {meal.cuisine}
-                  </p>
-                )}
-
                 {/* Prep time indicator */}
                 <div
                   className="mt-2 flex items-center gap-1.5 text-[11px] text-muted-foreground"
@@ -271,28 +262,19 @@ export function DayColumn({
                 >
                   <span className="text-[12px]">🕒</span>
                   <span className="font-medium">
-                    {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ''}
-                    {meal.prepTimeMin && meal.cookTimeMin ? ' + ' : ''}
-                    {meal.cookTimeMin ? `${meal.cookTimeMin}m cook` : ''}
-                    {!meal.prepTimeMin && !meal.cookTimeMin ? 'Time N/A' : ''}
+                    {formatPrepTimeCompact(meal.prepTimeMin, meal.cookTimeMin)}
                   </span>
                 </div>
 
-                {/* Macro line */}
+                {/* Calorie display (full P/C/F shown in detail modal) */}
                 <div
-                  className="mt-2 flex items-center gap-2 text-[11px] font-medium text-muted-foreground font-mono tabular-nums"
+                  className="mt-2 text-[11px] font-medium font-mono tabular-nums"
                   data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}
                 >
                   <span className="font-semibold text-foreground">
                     {Math.round(meal.nutrition.kcal)}
                   </span>
-                  <span>kcal</span>
-                  <span className="text-border">|</span>
-                  <span>P {Math.round(meal.nutrition.proteinG * 10) / 10}g</span>
-                  <span className="text-border">|</span>
-                  <span>C {Math.round(meal.nutrition.carbsG * 10) / 10}g</span>
-                  <span className="text-border">|</span>
-                  <span>F {Math.round(meal.nutrition.fatG * 10) / 10}g</span>
+                  <span className="text-muted-foreground"> kcal</span>
                 </div>
               </div>
             </ScrollReveal>

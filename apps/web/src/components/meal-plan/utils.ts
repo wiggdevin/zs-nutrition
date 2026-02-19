@@ -103,12 +103,75 @@ export function formatGroceryAmount(amount: number, unit: string): string {
   return `${roundedUp} ${unitStr}`.trim();
 }
 
+/** Format prep/cook time for display. Returns null if both are 0/undefined. */
+export function formatPrepTime(
+  prepTimeMin?: number,
+  cookTimeMin?: number
+): { total: string; breakdown: string | null } | null {
+  const prep = prepTimeMin || 0;
+  const cook = cookTimeMin || 0;
+  const total = prep + cook;
+  if (total === 0) return null;
+
+  let breakdown: string | null = null;
+  if (prep > 0 && cook > 0) {
+    breakdown = `${prep}m prep + ${cook}m cook`;
+  }
+
+  return { total: `${total} min`, breakdown };
+}
+
+/** Format prep/cook time as a compact string for cards. */
+export function formatPrepTimeCompact(prepTimeMin?: number, cookTimeMin?: number): string {
+  const prep = prepTimeMin || 0;
+  const cook = cookTimeMin || 0;
+  if (prep > 0 && cook > 0) return `${prep}m prep + ${cook}m cook`;
+  if (prep > 0) return `${prep}m prep`;
+  if (cook > 0) return `${cook}m cook`;
+  return 'Time N/A';
+}
+
 /** Format a raw slot name (e.g. "SNACK_1", "EVENING_SNACK") for display */
 export function formatSlotName(slot: string): string {
   return slot
     .replace(/_\d+$/, '') // "SNACK_1" -> "SNACK"
     .replace(/_/g, ' ') // "EVENING_SNACK" -> "EVENING SNACK"
     .replace(/\b(\w)(\w*)/g, (_, f, r) => f.toUpperCase() + r.toLowerCase());
+}
+
+/**
+ * Detect generic placeholder instructions that provide no real recipe value.
+ * Returns true if the instructions are templated filler (e.g. "Prepare ingredients, combine, serve").
+ * Used to hide useless instructions in the meal detail modal (Issue #09).
+ */
+export function isGenericInstruction(instructions: string[]): boolean {
+  if (!instructions || instructions.length === 0) return true;
+
+  const combined = instructions.join(' ').toLowerCase();
+
+  // Known generic template patterns
+  const GENERIC_PATTERNS = [
+    /prepare all ingredients[:.]?\s*(wash|measure|portion)/i,
+    /combine ingredients in a (bowl|container)/i,
+    /mix well and serve/i,
+    /prepare all ingredients[\s\S]*combine[\s\S]*serve/i,
+    /^prepare[.\s]*combine[.\s]*serve\.?$/i,
+    /wash[,\s]+measure[,\s]+and portion/i,
+    /season to taste and serve/i,
+    /plate and enjoy/i,
+  ];
+
+  for (const pattern of GENERIC_PATTERNS) {
+    if (pattern.test(combined)) return true;
+  }
+
+  // Heuristic: 3 or fewer very short steps with low word count is likely a template
+  if (instructions.length <= 3) {
+    const totalWords = combined.split(/\s+/).length;
+    if (totalWords < 20) return true;
+  }
+
+  return false;
 }
 
 /** Category icon mapping for grocery list */
