@@ -1,5 +1,57 @@
 import type { MealPlanValidated } from '../../types/schemas';
 import { escapeHtml } from './formatters';
+import { BRAND, FONTS, GOOGLE_FONTS_LINK, logoHtml, sectionLabel } from './brand-constants';
+
+/**
+ * Generate an inline SVG donut chart showing protein/carbs/fat proportions.
+ */
+function macroDonutSvg(proteinPct: number, carbsPct: number, fatPct: number): string {
+  const r = 54;
+  const circumference = 2 * Math.PI * r;
+  const gap = 4; // gap in degrees between arcs
+
+  const total = proteinPct + carbsPct + fatPct;
+  if (total === 0) return '';
+
+  // Normalize to 360 degrees minus gaps
+  const gapDeg = gap * 3;
+  const available = 360 - gapDeg;
+  const proteinDeg = (proteinPct / total) * available;
+  const carbsDeg = (carbsPct / total) * available;
+  const fatDeg = (fatPct / total) * available;
+
+  const proteinDash = (proteinDeg / 360) * circumference;
+  const carbsDash = (carbsDeg / 360) * circumference;
+  const fatDash = (fatDeg / 360) * circumference;
+
+  const gapDash = (gap / 360) * circumference;
+
+  // Offsets: each arc starts after the previous arc + gap
+  const proteinOffset = 0;
+  const carbsOffset = -(proteinDash + gapDash);
+  const fatOffset = -(proteinDash + gapDash + carbsDash + gapDash);
+
+  return `
+  <div style="text-align:center;margin:24px 0;">
+    <svg width="160" height="160" viewBox="0 0 120 120">
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="#f1f5f9" stroke-width="10"/>
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="${BRAND.protein}" stroke-width="10"
+        stroke-dasharray="${proteinDash} ${circumference}" stroke-dashoffset="${proteinOffset}"
+        transform="rotate(-90 60 60)" stroke-linecap="round"/>
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="${BRAND.carbs}" stroke-width="10"
+        stroke-dasharray="${carbsDash} ${circumference}" stroke-dashoffset="${carbsOffset}"
+        transform="rotate(-90 60 60)" stroke-linecap="round"/>
+      <circle cx="60" cy="60" r="${r}" fill="none" stroke="${BRAND.fat}" stroke-width="10"
+        stroke-dasharray="${fatDash} ${circumference}" stroke-dashoffset="${fatOffset}"
+        transform="rotate(-90 60 60)" stroke-linecap="round"/>
+    </svg>
+    <div style="display:flex;justify-content:center;gap:20px;margin-top:12px;font-family:${FONTS.body};font-size:12px;color:${BRAND.muted};">
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${BRAND.protein};margin-right:4px;vertical-align:middle;"></span>Protein ${proteinPct}%</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${BRAND.carbs};margin-right:4px;vertical-align:middle;"></span>Carbs ${carbsPct}%</span>
+      <span><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:${BRAND.fat};margin-right:4px;vertical-align:middle;"></span>Fat ${fatPct}%</span>
+    </div>
+  </div>`;
+}
 
 /**
  * Generate executive summary HTML with targets, macro breakdown, and QA score
@@ -7,7 +59,8 @@ import { escapeHtml } from './formatters';
 export function generateSummaryHtml(plan: MealPlanValidated): string {
   const { qa, weeklyTotals, generatedAt, engineVersion } = plan;
 
-  const qaBadgeColor = qa.status === 'PASS' ? 'green' : qa.status === 'WARN' ? 'orange' : 'red';
+  const qaBadgeColor =
+    qa.status === 'PASS' ? '#22c55e' : qa.status === 'WARN' ? '#f59e0b' : '#ef4444';
   const generatedDate = new Date(generatedAt).toLocaleDateString('en-US', {
     year: 'numeric',
     month: 'long',
@@ -75,14 +128,16 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  ${GOOGLE_FONTS_LINK}
   <title>Meal Plan Summary</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body {
-      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+      font-family: ${FONTS.body};
       background: #f8fafc;
       padding: 20px;
       line-height: 1.6;
+      color: ${BRAND.foreground};
     }
     .container {
       max-width: 800px;
@@ -93,18 +148,33 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
       overflow: hidden;
     }
     .header {
-      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-      color: white;
+      background: white;
       padding: 32px;
-      text-align: center;
+      border-bottom: 3px solid ${BRAND.primary};
+    }
+    .header-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+    }
+    .header-date {
+      font-family: ${FONTS.mono};
+      font-size: 12px;
+      color: ${BRAND.muted};
     }
     .header h1 {
+      font-family: ${FONTS.heading};
       font-size: 28px;
-      margin-bottom: 8px;
+      text-transform: uppercase;
+      color: ${BRAND.foreground};
+      margin: 8px 0 4px;
+      letter-spacing: 1px;
     }
     .header .subtitle {
-      opacity: 0.9;
-      font-size: 14px;
+      font-family: ${FONTS.mono};
+      font-size: 13px;
+      color: ${BRAND.muted};
     }
     .content {
       padding: 32px;
@@ -113,12 +183,14 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
       margin-bottom: 32px;
     }
     .section-title {
-      font-size: 18px;
-      font-weight: 600;
-      color: #1e293b;
+      font-family: ${FONTS.heading};
+      font-size: 14px;
+      text-transform: uppercase;
+      color: ${BRAND.foreground};
       margin-bottom: 16px;
       padding-bottom: 8px;
-      border-bottom: 2px solid #e2e8f0;
+      border-bottom: 2px solid ${BRAND.border};
+      letter-spacing: 1px;
     }
     .qa-badge {
       display: inline-block;
@@ -126,20 +198,23 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
       color: white;
       padding: 8px 16px;
       border-radius: 20px;
-      font-weight: 600;
-      font-size: 24px;
+      font-family: ${FONTS.heading};
+      font-size: 14px;
+      text-transform: uppercase;
       margin-bottom: 16px;
     }
     .qa-score {
+      font-family: ${FONTS.mono};
       font-size: 48px;
       font-weight: 700;
       color: ${qaBadgeColor};
     }
     .qa-label {
-      font-size: 14px;
-      color: #64748b;
+      font-size: 12px;
+      color: ${BRAND.muted};
       text-transform: uppercase;
-      letter-spacing: 1px;
+      letter-spacing: 2px;
+      font-family: ${FONTS.mono};
     }
     .macro-grid {
       display: grid;
@@ -148,57 +223,71 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
       margin-top: 16px;
     }
     .macro-card {
-      background: #f8fafc;
+      background: ${BRAND.cardBg};
       padding: 20px;
       border-radius: 8px;
       text-align: center;
-      border: 1px solid #e2e8f0;
+      border: 1px solid ${BRAND.border};
     }
+    .macro-card.cal { border-top: 3px solid ${BRAND.calories}; }
+    .macro-card.protein { border-top: 3px solid ${BRAND.protein}; }
+    .macro-card.carbs { border-top: 3px solid ${BRAND.carbs}; }
+    .macro-card.fat { border-top: 3px solid ${BRAND.fat}; }
+    .macro-card.fiber { border-top: 3px solid ${BRAND.muted}; }
     .macro-label {
-      font-size: 12px;
-      color: #64748b;
+      font-family: ${FONTS.mono};
+      font-size: 11px;
+      color: ${BRAND.muted};
       text-transform: uppercase;
       letter-spacing: 1px;
       margin-bottom: 8px;
     }
     .macro-value {
+      font-family: ${FONTS.mono};
       font-size: 24px;
       font-weight: 700;
-      color: #1e293b;
+      color: ${BRAND.foreground};
     }
     .macro-unit {
+      font-family: ${FONTS.mono};
       font-size: 14px;
-      color: #64748b;
+      color: ${BRAND.muted};
       font-weight: 400;
     }
     .daily-targets {
-      background: #f0fdf4;
-      border-left: 4px solid #22c55e;
+      background: ${BRAND.primaryLightBg};
+      border-left: 4px solid ${BRAND.primary};
       padding: 16px;
       border-radius: 4px;
       margin-top: 16px;
     }
     .daily-targets h4 {
-      color: #15803d;
+      color: ${BRAND.primaryDark};
       margin-bottom: 8px;
+      font-family: ${FONTS.body};
     }
     .daily-targets p {
-      color: #166534;
+      color: ${BRAND.primaryDark};
       font-size: 14px;
     }
     .meta {
-      background: #f1f5f9;
+      background: ${BRAND.cardBg};
       padding: 16px;
       border-radius: 8px;
       font-size: 12px;
-      color: #64748b;
+      color: ${BRAND.muted};
+      font-family: ${FONTS.body};
     }
     .meta p {
       margin-bottom: 4px;
     }
+    .meta strong {
+      color: ${BRAND.foreground};
+    }
     .macro-percent {
-      font-size: 13px;
-      color: #64748b;
+      font-family: ${FONTS.mono};
+      font-size: 12px;
+      color: ${BRAND.muted};
       font-weight: 400;
     }
     .differential-grid {
@@ -208,46 +297,54 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
       margin-top: 16px;
     }
     .differential-card {
-      background: #f8fafc;
+      background: ${BRAND.cardBg};
       border-radius: 8px;
       padding: 20px;
-      border: 1px solid #e2e8f0;
+      border: 1px solid ${BRAND.border};
     }
     .differential-card.training {
-      border-left: 4px solid #f59e0b;
+      border-left: 4px solid ${BRAND.trainingDay};
     }
     .differential-card.rest {
-      border-left: 4px solid #667eea;
+      border-left: 4px solid ${BRAND.restDay};
     }
     .differential-title {
+      font-family: ${FONTS.body};
       font-size: 14px;
       font-weight: 600;
-      color: #1e293b;
+      color: ${BRAND.foreground};
       margin-bottom: 12px;
     }
     .differential-row {
       display: flex;
       justify-content: space-between;
       font-size: 13px;
-      color: #475569;
+      color: ${BRAND.muted};
       padding: 4px 0;
+      font-family: ${FONTS.body};
     }
     .differential-row strong {
-      color: #1e293b;
+      color: ${BRAND.foreground};
+      font-family: ${FONTS.mono};
     }
   </style>
 </head>
 <body>
   <div class="container">
     <div class="header">
-      <h1>🍽️ Your Personalized Meal Plan</h1>
-      <p class="subtitle">7-Day Nutrition Plan • Generated ${generatedDate}</p>
+      <div class="header-top">
+        ${logoHtml('md')}
+        <span class="header-date">${generatedDate}</span>
+      </div>
+      ${sectionLabel('YOUR NUTRITION PLAN')}
+      <h1>7-Day Meal Plan</h1>
+      <p class="subtitle">${Math.round(weeklyTotals.avgKcal)} kcal/day avg</p>
     </div>
 
     <div class="content">
       <!-- QA Score Section -->
       <div class="section">
-        <div class="section-title">Quality Assurance Score</div>
+        <div class="section-title">${sectionLabel('QUALITY ASSURANCE')}</div>
         <div style="text-align: center; padding: 24px 0;">
           <div class="qa-badge">${escapeHtml(qa.status)}</div>
           <div class="qa-score">${qa.score.toFixed(0)}%</div>
@@ -257,24 +354,24 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
 
       <!-- Weekly Targets Section -->
       <div class="section">
-        <div class="section-title">Weekly Average Targets</div>
+        <div class="section-title">${sectionLabel('WEEKLY TARGETS')}</div>
         <div class="macro-grid">
-          <div class="macro-card">
+          <div class="macro-card cal">
             <div class="macro-label">Daily Calories</div>
             <div class="macro-value">${Math.round(weeklyTotals.avgKcal)}</div>
             <div class="macro-unit">kcal/day</div>
           </div>
-          <div class="macro-card">
+          <div class="macro-card protein">
             <div class="macro-label">Protein Target</div>
             <div class="macro-value">${Math.round(weeklyTotals.avgProteinG)}<span class="macro-unit">g</span></div>
             <div class="macro-percent">${proteinPercent}% of calories</div>
           </div>
-          <div class="macro-card">
+          <div class="macro-card carbs">
             <div class="macro-label">Carb Target</div>
             <div class="macro-value">${Math.round(weeklyTotals.avgCarbsG)}<span class="macro-unit">g</span></div>
             <div class="macro-percent">${carbsPercent}% of calories</div>
           </div>
-          <div class="macro-card">
+          <div class="macro-card fat">
             <div class="macro-label">Fat Target</div>
             <div class="macro-value">${Math.round(weeklyTotals.avgFatG)}<span class="macro-unit">g</span></div>
             <div class="macro-percent">${fatPercent}% of calories</div>
@@ -287,7 +384,7 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
             );
             const avgFiber = plan.days.length > 0 ? Math.round(totalFiber / plan.days.length) : 0;
             return avgFiber > 0
-              ? `<div class="macro-card">
+              ? `<div class="macro-card fiber">
             <div class="macro-label">Fiber Target</div>
             <div class="macro-value">${avgFiber}</div>
             <div class="macro-unit">grams/day</div>
@@ -295,8 +392,11 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
               : '';
           })()}
         </div>
+
+        ${macroDonutSvg(proteinPercent, carbsPercent, fatPercent)}
+
         <div class="daily-targets">
-          <h4>✓ Daily Targets Met</h4>
+          <h4>Daily Targets Met</h4>
           <p>Your meal plan provides an average of ${Math.round(weeklyTotals.avgKcal)} calories per day, optimized for your goals.</p>
         </div>
 
@@ -304,10 +404,10 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
           trainingDays.length > 0 && restDays.length > 0
             ? `
         <div style="margin-top: 24px;">
-          <div class="section-title">Training vs Rest Day Targets</div>
+          <div class="section-title">${sectionLabel('TRAINING VS REST')}</div>
           <div class="differential-grid">
             <div class="differential-card training">
-              <div class="differential-title">💪 Training Days (${trainingDays.length})</div>
+              <div class="differential-title">Training Days (${trainingDays.length})</div>
               <div class="differential-row"><span>Calories</span><strong>${avgTrainingKcal} kcal</strong></div>
               ${
                 avgTrainingMacros
@@ -320,7 +420,7 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
               }
             </div>
             <div class="differential-card rest">
-              <div class="differential-title">🧘 Rest Days (${restDays.length})</div>
+              <div class="differential-title">Rest Days (${restDays.length})</div>
               <div class="differential-row"><span>Calories</span><strong>${avgRestKcal} kcal</strong></div>
               ${
                 avgRestMacros
@@ -344,8 +444,8 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
           ? `
       <!-- Caloric Floor Warning -->
       <div class="section">
-        <div style="background: #fef3c7; border-left: 4px solid #f59e0b; padding: 16px; border-radius: 4px;">
-          <h4 style="color: #92400e; margin-bottom: 4px;">Caloric Floor Applied</h4>
+        <div style="background: #fef3c7; border-left: 4px solid ${BRAND.trainingDay}; padding: 16px; border-radius: 4px;">
+          <h4 style="color: #92400e; margin-bottom: 4px; font-family: ${FONTS.body};">Caloric Floor Applied</h4>
           <p style="color: #78350f; font-size: 14px; margin: 0;">A minimum caloric floor was applied to meet safe daily intake guidelines. Your original calculated target was below recommended minimums.</p>
         </div>
       </div>
@@ -355,7 +455,7 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
 
       <!-- Calculation Methods -->
       <div class="section">
-        <div class="section-title">Calculation Methods</div>
+        <div class="section-title">${sectionLabel('CALCULATION METHODS')}</div>
         <div class="meta">
           <p><strong>BMR Method:</strong> ${plan.calculationMethod === 'katch_mcardle' ? 'Katch-McArdle (body fat based)' : 'Mifflin-St Jeor (standard)'}</p>
           <p><strong>Protein Targeting:</strong> ${plan.proteinMethod === 'g_per_kg' ? 'Goal-based g/kg bodyweight' : 'Percentage-based'}</p>
@@ -364,7 +464,7 @@ export function generateSummaryHtml(plan: MealPlanValidated): string {
 
       <!-- Plan Meta -->
       <div class="section">
-        <div class="section-title">Plan Details</div>
+        <div class="section-title">${sectionLabel('PLAN DETAILS')}</div>
         <div class="meta">
           <p><strong>Generated:</strong> ${generatedDate}</p>
           <p><strong>Duration:</strong> ${plan.days.length} days</p>
