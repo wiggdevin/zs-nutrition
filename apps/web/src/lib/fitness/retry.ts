@@ -171,7 +171,7 @@ async function refreshFitbitToken(refreshToken: string): Promise<{
     headers: {
       'Content-Type': 'application/x-www-form-urlencoded',
       Authorization: `Basic ${Buffer.from(
-        `${process.env.FITBIT_CLIENT_ID}:${process.env.FITBIT_CLIENT_SECRET}`
+        `${(process.env.FITBIT_CLIENT_ID || '').trim()}:${(process.env.FITBIT_CLIENT_SECRET || '').trim()}`
       ).toString('base64')}`,
     },
     body: new URLSearchParams({
@@ -208,8 +208,8 @@ async function refreshOuraToken(refreshToken: string): Promise<{
     body: new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-      client_id: process.env.OURA_CLIENT_ID!,
-      client_secret: process.env.OURA_CLIENT_SECRET!,
+      client_id: (process.env.OURA_CLIENT_ID || '').trim(),
+      client_secret: (process.env.OURA_CLIENT_SECRET || '').trim(),
     }).toString(),
   });
 
@@ -241,8 +241,8 @@ async function refreshGoogleFitToken(refreshToken: string): Promise<{
     body: new URLSearchParams({
       grant_type: 'refresh_token',
       refresh_token: refreshToken,
-      client_id: process.env.GOOGLE_FIT_CLIENT_ID!,
-      client_secret: process.env.GOOGLE_FIT_CLIENT_SECRET!,
+      client_id: (process.env.GOOGLE_FIT_CLIENT_ID || '').trim(),
+      client_secret: (process.env.GOOGLE_FIT_CLIENT_SECRET || '').trim(),
     }).toString(),
   });
 

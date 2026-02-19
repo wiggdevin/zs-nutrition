@@ -173,9 +173,9 @@ async function exchangeCodeForToken(code: string) {
     body: new URLSearchParams({
       code,
       grant_type: 'authorization_code',
-      redirect_uri: `${process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456'}/api/fitness/callback/oura`,
-      client_id: process.env.OURA_CLIENT_ID!,
-      client_secret: process.env.OURA_CLIENT_SECRET!,
+      redirect_uri: `${(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3456').trim()}/api/fitness/callback/oura`,
+      client_id: (process.env.OURA_CLIENT_ID || '').trim(),
+      client_secret: (process.env.OURA_CLIENT_SECRET || '').trim(),
     }).toString(),
   });
 
