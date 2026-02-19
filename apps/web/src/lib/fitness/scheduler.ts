@@ -284,12 +284,18 @@ async function syncOuraDateRange(connection: any, endDate: Date): Promise<void> 
   const dayDataMap = await client.fetchDateRange(startStr, endStr);
 
   // Store each day
+  let storedCount = 0;
   for (const [dayStr, dayData] of dayDataMap.entries()) {
-    const syncDate = new Date(dayStr + 'T00:00:00Z');
-    await storeActivitySync(connection, { platform: 'oura' as const, ...dayData }, syncDate);
+    try {
+      const syncDate = new Date(dayStr + 'T00:00:00Z');
+      await storeActivitySync(connection, { platform: 'oura' as const, ...dayData }, syncDate);
+      storedCount++;
+    } catch (error) {
+      logger.error(`Failed to store Oura data for ${dayStr}:`, error);
+    }
   }
 
-  logger.warn(`Oura: stored ${dayDataMap.size} days of data`);
+  logger.warn(`Oura: stored ${storedCount}/${dayDataMap.size} days of data`);
 }
 
 /**
@@ -374,7 +380,7 @@ async function storeActivitySync(connection: any, syncData: any, syncDate: Date)
  */
 function normalizeSyncData(syncData: any): any {
   const base = {
-    rawSyncData: JSON.stringify(syncData),
+    rawSyncData: syncData,
     processed: false,
   };
 
@@ -391,14 +397,13 @@ function normalizeSyncData(syncData: any): any {
         distanceMiles: activity?.distances?.find((d: any) => d.activity === 'total')?.distance,
         activeMinutes: activity?.veryActiveMinutes + activity?.fairlyActiveMinutes,
         workoutCount: syncData.activities?.length || 0,
-        workouts: JSON.stringify(
+        workouts:
           syncData.activities?.map((a: any) => ({
             type: a.activityName,
             startTime: a.startTime,
             durationMinutes: Math.round(a.duration / 60000),
             caloriesBurned: a.calories,
-          })) || []
-        ),
+          })) || [],
         sleepMinutes: sleep?.totalSleepTime ? Math.round(sleep.totalSleepTime / 60000) : null,
         sleepScore: sleep?.efficiency || null,
       };
@@ -445,7 +450,10 @@ function normalizeSyncData(syncData: any): any {
                 ouraActivity.medium_activity_met_minutes + ouraActivity.high_activity_met_minutes
               )
             : null,
-        sleepMinutes: mainSleep ? Math.round(mainSleep.total_sleep_duration / 60) : null,
+        sleepMinutes:
+          mainSleep?.total_sleep_duration !== null && mainSleep?.total_sleep_duration !== undefined
+            ? Math.round(mainSleep.total_sleep_duration / 60)
+            : null,
         sleepScore: ouraSleep?.score,
         heartRateResting: restingHR ? Math.round(restingHR * 10) / 10 : null,
 
@@ -458,10 +466,22 @@ function normalizeSyncData(syncData: any): any {
         hrvAvg: mainSleep?.average_hrv ?? null,
 
         // Sleep stages (convert seconds to minutes)
-        sleepDeepMinutes: mainSleep ? Math.round(mainSleep.deep_sleep_duration / 60) : null,
-        sleepRemMinutes: mainSleep ? Math.round(mainSleep.rem_sleep_duration / 60) : null,
-        sleepLightMinutes: mainSleep ? Math.round(mainSleep.light_sleep_duration / 60) : null,
-        sleepAwakeMinutes: mainSleep ? Math.round(mainSleep.awake_time / 60) : null,
+        sleepDeepMinutes:
+          mainSleep?.deep_sleep_duration !== null && mainSleep?.deep_sleep_duration !== undefined
+            ? Math.round(mainSleep.deep_sleep_duration / 60)
+            : null,
+        sleepRemMinutes:
+          mainSleep?.rem_sleep_duration !== null && mainSleep?.rem_sleep_duration !== undefined
+            ? Math.round(mainSleep.rem_sleep_duration / 60)
+            : null,
+        sleepLightMinutes:
+          mainSleep?.light_sleep_duration !== null && mainSleep?.light_sleep_duration !== undefined
+            ? Math.round(mainSleep.light_sleep_duration / 60)
+            : null,
+        sleepAwakeMinutes:
+          mainSleep?.awake_time !== null && mainSleep?.awake_time !== undefined
+            ? Math.round(mainSleep.awake_time / 60)
+            : null,
         sleepEfficiency: mainSleep?.efficiency ?? null,
         sleepLatency: mainSleep?.latency ?? null,
 
@@ -474,16 +494,14 @@ function normalizeSyncData(syncData: any): any {
 
         // Workouts
         workoutCount: syncData.workouts?.length || 0,
-        workouts: JSON.stringify(
-          (syncData.workouts || []).map((w: any) => ({
-            type: w.activity,
-            startTime: w.start_datetime,
-            endTime: w.end_datetime,
-            calories: w.calories,
-            distance: w.distance,
-            intensity: w.intensity,
-          }))
-        ),
+        workouts: (syncData.workouts || []).map((w: any) => ({
+          type: w.activity,
+          startTime: w.start_datetime,
+          endTime: w.end_datetime,
+          calories: w.calories,
+          distance: w.distance,
+          intensity: w.intensity,
+        })),
       };
     }
 

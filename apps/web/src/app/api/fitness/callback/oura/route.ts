@@ -154,6 +154,7 @@ export async function GET(req: NextRequest) {
           : null,
         platformUserId,
         isActive: true,
+        lastSyncAt: null, // Reset so reconnections get full 14-day backfill
       },
     });
 

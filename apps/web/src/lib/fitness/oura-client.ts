@@ -28,6 +28,7 @@ export class OuraApiClient {
   private accessToken: string;
   private connectionId: string;
   private encryptedRefreshToken: string | null;
+  private refreshPromise: Promise<boolean> | null = null;
 
   constructor(options: OuraClientOptions) {
     this.accessToken = decrypt(options.encryptedAccessToken);
@@ -117,7 +118,7 @@ export class OuraApiClient {
 
     // If 401, try to refresh the token once
     if (response.status === 401 && this.encryptedRefreshToken) {
-      const refreshed = await this.refreshToken();
+      const refreshed = await this.refreshTokenOnce();
       if (refreshed) {
         response = await fetch(`${OURA_API_BASE}${path}`, {
           headers: { Authorization: `Bearer ${this.accessToken}` },
@@ -131,6 +132,20 @@ export class OuraApiClient {
     }
 
     return response.json();
+  }
+
+  /**
+   * Deduplicate concurrent refresh calls — only one inflight at a time.
+   * Subsequent callers await the same promise instead of issuing a new refresh.
+   */
+  private async refreshTokenOnce(): Promise<boolean> {
+    if (this.refreshPromise) return this.refreshPromise;
+    this.refreshPromise = this.refreshToken();
+    try {
+      return await this.refreshPromise;
+    } finally {
+      this.refreshPromise = null;
+    }
   }
 
   /**
