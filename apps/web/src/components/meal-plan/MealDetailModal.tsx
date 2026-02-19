@@ -1,6 +1,9 @@
 'use client';
 
+import { useState } from 'react';
 import { useModal } from '@/hooks/useModal';
+import { trpc } from '@/lib/trpc';
+import { toast } from '@/lib/toast-store';
 import { formatSlotName, formatPrepTime, isGenericInstruction } from './utils';
 
 interface MealNutrition {
@@ -32,16 +35,36 @@ interface MealDetailModalProps {
   meal: Meal | null;
   dayNumber?: number;
   mealIdx?: number;
+  planId?: string;
+  onSwapClick?: (dayNumber: number, mealIdx: number, meal: Meal) => void;
   onClose: () => void;
 }
 
 export default function MealDetailModal({
   meal,
-  dayNumber: _dayNumber,
-  mealIdx: _mealIdx,
+  dayNumber,
+  mealIdx,
+  planId,
+  onSwapClick,
   onClose,
 }: MealDetailModalProps) {
   const { modalRef, handleBackdropClick } = useModal(onClose);
+  const [isLogging, setIsLogging] = useState(false);
+  const [isLogged, setIsLogged] = useState(false);
+  const [isFavorite, setIsFavorite] = useState(false);
+
+  const logMealMutation = trpc.meal.logMealFromPlan.useMutation({
+    onSuccess: (data) => {
+      setIsLogging(false);
+      setIsLogged(true);
+      const dupNote = data.duplicate ? ' (already logged)' : '';
+      toast.success(`${meal!.name} logged — ${data.trackedMeal.kcal} kcal${dupNote}`);
+    },
+    onError: (err) => {
+      setIsLogging(false);
+      toast.error(err.message || 'Failed to log meal');
+    },
+  });
 
   if (!meal) return null;
 
@@ -49,6 +72,36 @@ export default function MealDetailModal({
   const hasInstructions = meal.instructions && meal.instructions.length > 0;
   const hasRealInstructions = hasInstructions && !isGenericInstruction(meal.instructions!);
   const timeInfo = formatPrepTime(meal.prepTimeMin, meal.cookTimeMin);
+
+  const canSwap = onSwapClick && dayNumber !== undefined && mealIdx !== undefined;
+  const canLog = planId && dayNumber !== undefined;
+
+  const handleSwap = () => {
+    if (!canSwap) return;
+    onClose();
+    onSwapClick(dayNumber, mealIdx, meal);
+  };
+
+  const handleLog = () => {
+    if (!canLog || isLogging || isLogged) return;
+    setIsLogging(true);
+    logMealMutation.mutate({
+      planId: planId!,
+      dayNumber: dayNumber!,
+      slot: meal.slot,
+      mealName: meal.name,
+      calories: meal.nutrition.kcal,
+      protein: meal.nutrition.proteinG,
+      carbs: meal.nutrition.carbsG,
+      fat: meal.nutrition.fatG,
+      fiber: meal.nutrition.fiberG,
+    });
+  };
+
+  const handleFavorite = () => {
+    setIsFavorite((prev) => !prev);
+    toast.info(!isFavorite ? 'Saved to favorites' : 'Removed from favorites');
+  };
 
   return (
     <div
@@ -252,15 +305,71 @@ export default function MealDetailModal({
           </div>
         </div>
 
-        {/* Footer - Fixed at bottom */}
+        {/* Footer - Action Buttons */}
         <div className="flex-shrink-0 border-t border-border px-6 py-4 bg-background">
-          <button
-            onClick={onClose}
-            className="w-full rounded-lg bg-primary px-6 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
-            data-testid="meal-detail-close-button"
-          >
-            Close
-          </button>
+          <div className="flex items-center gap-3">
+            {canSwap && (
+              <button
+                onClick={handleSwap}
+                className="flex-1 rounded-lg border border-border bg-card px-4 py-3 text-sm font-bold uppercase tracking-wide text-foreground transition-colors hover:bg-muted"
+                data-testid="meal-detail-swap-button"
+                aria-label="Swap this meal for an alternative"
+              >
+                Swap Meal
+              </button>
+            )}
+
+            {canLog ? (
+              <button
+                onClick={handleLog}
+                disabled={isLogging || isLogged}
+                className={`flex-1 rounded-lg px-4 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
+                  isLogged
+                    ? 'bg-chart-3/20 text-chart-3 cursor-default'
+                    : isLogging
+                      ? 'bg-primary/70 text-background cursor-wait'
+                      : 'bg-primary text-background hover:bg-primary/90'
+                }`}
+                data-testid="meal-detail-log-button"
+                aria-label={isLogged ? 'Meal already logged' : 'Log this meal as eaten'}
+              >
+                {isLogged ? '\u2713 Logged' : isLogging ? 'Logging...' : 'Log This Meal'}
+              </button>
+            ) : (
+              <button
+                onClick={onClose}
+                className="flex-1 rounded-lg bg-primary px-4 py-3 text-sm font-bold uppercase tracking-wide text-background transition-colors hover:bg-primary/90"
+                data-testid="meal-detail-close-button"
+              >
+                Close
+              </button>
+            )}
+
+            <button
+              onClick={handleFavorite}
+              className={`flex-shrink-0 flex h-12 w-12 items-center justify-center rounded-lg border transition-colors ${
+                isFavorite
+                  ? 'border-destructive/30 bg-destructive/10 text-destructive'
+                  : 'border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground'
+              }`}
+              data-testid="meal-detail-favorite-button"
+              aria-label={isFavorite ? 'Remove from favorites' : 'Save to favorites'}
+              aria-pressed={isFavorite}
+            >
+              <svg
+                width="18"
+                height="18"
+                viewBox="0 0 24 24"
+                fill={isFavorite ? 'currentColor' : 'none'}
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              >
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z" />
+              </svg>
+            </button>
+          </div>
         </div>
       </div>
     </div>
