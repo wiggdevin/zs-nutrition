@@ -128,9 +128,10 @@ export function ActivitySyncStatus() {
                 From: {platformNames.join(', ')}
               </span>
             )}
-            {ouraInsights?.readinessScore !== null && (
-              <ReadinessBadge score={ouraInsights.readinessScore} />
-            )}
+            {ouraInsights?.readinessScore !== null &&
+              ouraInsights?.readinessScore !== undefined && (
+                <ReadinessBadge score={ouraInsights.readinessScore} />
+              )}
           </div>
         )}
       </div>
