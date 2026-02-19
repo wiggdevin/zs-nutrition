@@ -174,6 +174,101 @@ export function isGenericInstruction(instructions: string[]): boolean {
   return false;
 }
 
+/** Calculate macro calorie percentages for proportional display */
+export function calculateMacroPercentages(
+  proteinG: number,
+  carbsG: number,
+  fatG: number
+): { protein: number; carbs: number; fat: number } {
+  const proteinCal = proteinG * 4;
+  const carbsCal = carbsG * 4;
+  const fatCal = fatG * 9;
+  const total = proteinCal + carbsCal + fatCal;
+  if (total === 0) return { protein: 0, carbs: 0, fat: 0 };
+  const protein = Math.round((proteinCal / total) * 100);
+  const carbs = Math.round((carbsCal / total) * 100);
+  const fat = 100 - protein - carbs; // ensure they sum to 100
+  return { protein, carbs, fat };
+}
+
+/**
+ * Clean raw FatSecret ingredient names for user-friendly display.
+ * Strips all-caps brand prefixes, converts to title case, removes
+ * redundant descriptors, and cleans database-style formatting artifacts.
+ */
+export function cleanIngredientName(rawName: string): string {
+  if (!rawName || rawName.trim().length === 0) return 'Unknown ingredient';
+
+  let name = rawName.trim();
+
+  // Step 1: Remove parenthetical portion/serving info first (before comma-based brand detection)
+  // Handles "(1 slice, 28g)", "(per 100g)" — prevents internal commas from confusing brand logic
+  name = name.replace(/\s*\(\s*(?:\d|per\s)\s*[^)]*\)\s*/gi, ' ').trim();
+
+  // Step 2: Remove brand-name prefix — "BRAND'S, Product", "HOT POCKETS, ..."
+  // Split on first comma and check if prefix is brand-like (predominantly uppercase)
+  const commaIdx = name.indexOf(',');
+  if (commaIdx > 0 && commaIdx < name.length - 1) {
+    const prefix = name.slice(0, commaIdx).trim();
+    const rest = name.slice(commaIdx + 1).trim();
+    const upperCount = (prefix.match(/[A-Z]/g) || []).length;
+    const letterCount = (prefix.match(/[A-Za-z]/g) || []).length;
+    if (letterCount > 1 && upperCount / letterCount > 0.6 && rest.length > 0) {
+      name = rest;
+    }
+  }
+
+  // Step 3: Remove redundant descriptors that add noise
+  const redundant = ['skinless', 'boneless', 'raw', 'peeled', 'trimmed', 'unprepared'];
+  for (const word of redundant) {
+    name = name.replace(new RegExp(`\\b${word}\\b[,\\s]*`, 'gi'), '');
+  }
+
+  // Step 4: Convert to title case if predominantly uppercase OR all lowercase
+  const upperLetters = (name.match(/[A-Z]/g) || []).length;
+  const allLetters = (name.match(/[A-Za-z]/g) || []).length;
+  if (allLetters > 1 && (upperLetters / allLetters > 0.6 || upperLetters === 0)) {
+    name = toTitleCase(name);
+  }
+
+  // Step 5: Collapse multiple spaces/commas and trim
+  name = name
+    .replace(/,\s*,/g, ',')
+    .replace(/\s{2,}/g, ' ')
+    .replace(/,\s*$/, '')
+    .trim();
+
+  return name || 'Unknown ingredient';
+}
+
+function toTitleCase(str: string): string {
+  const minorWords = new Set([
+    'and',
+    'or',
+    'the',
+    'a',
+    'an',
+    'of',
+    'in',
+    'on',
+    'at',
+    'for',
+    'to',
+    'with',
+  ]);
+  return str
+    .split(/\s+/)
+    .map((word, idx) => {
+      // Preserve special product tokens like 'n' in "Fruit 'n Yogurt"
+      if (/^['']n['']?$/i.test(word)) return "'n";
+      const lower = word.toLowerCase();
+      if (idx > 0 && minorWords.has(lower)) return lower;
+      // Handle words with internal apostrophes (McDonald's)
+      return lower.replace(/(^|['-])(\w)/g, (_, sep, ch) => sep + ch.toUpperCase());
+    })
+    .join(' ');
+}
+
 /** Category icon mapping for grocery list */
 export function getCategoryIcon(category: string): string {
   const lower = category.toLowerCase();
