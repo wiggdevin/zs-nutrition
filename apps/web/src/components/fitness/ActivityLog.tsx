@@ -117,7 +117,7 @@ export default function ActivityLog() {
     });
   };
 
-  const formatNumber = (num?: number) => {
+  const formatNumber = (num?: number | null) => {
     return num?.toLocaleString() || '0';
   };
 
@@ -252,25 +252,25 @@ export default function ActivityLog() {
 
                   {/* Metrics */}
                   <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
-                    {activity.steps !== undefined && (
+                    {activity.steps !== undefined && activity.steps !== null && (
                       <div>
                         <span className="text-muted-foreground">Steps:</span>{' '}
                         <span className="text-white">{formatNumber(activity.steps)}</span>
                       </div>
                     )}
-                    {activity.activeCalories !== undefined && (
+                    {activity.activeCalories !== undefined && activity.activeCalories !== null && (
                       <div>
                         <span className="text-muted-foreground">Active Cals:</span>{' '}
                         <span className="text-white">{formatNumber(activity.activeCalories)}</span>
                       </div>
                     )}
-                    {activity.distanceKm !== undefined && (
+                    {activity.distanceKm !== undefined && activity.distanceKm !== null && (
                       <div>
                         <span className="text-muted-foreground">Distance:</span>{' '}
                         <span className="text-white">{activity.distanceKm.toFixed(1)} km</span>
                       </div>
                     )}
-                    {activity.sleepScore !== undefined && (
+                    {activity.sleepScore !== undefined && activity.sleepScore !== null && (
                       <div>
                         <span className="text-muted-foreground">Sleep Score:</span>{' '}
                         <span className="text-white">{activity.sleepScore}/100</span>
