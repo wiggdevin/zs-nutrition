@@ -36,13 +36,13 @@ export function DayNavigator({ activeTab, onTabChange, plan }: DayNavigatorProps
         sticky
         title="Your Meal Plan"
         subtitle={subtitleParts.length > 0 ? subtitleParts.join(' · ') : undefined}
-        maxWidth="full"
+        maxWidth="max"
         actions={<PlanHeaderActions plan={plan} />}
         data-testid="plan-generated-date"
       />
 
       {/* Tab Navigation */}
-      <div className="mx-auto max-w-[1600px] px-4 pt-6">
+      <div className="mx-auto max-w-[2400px] px-4 md:px-6 xl:px-8 2xl:px-10 pt-6">
         <div className="flex gap-2 border-b border-border" data-testid="meal-plan-tabs">
           <button
             onClick={() => onTabChange('meal-plan')}

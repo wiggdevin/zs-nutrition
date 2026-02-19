@@ -64,7 +64,7 @@ export function GroceryList({ groceryList }: GroceryListProps) {
   }, [formatGroceryListText]);
 
   return (
-    <div className="mx-auto max-w-[1600px] pb-8" data-testid="grocery-list-section">
+    <div className="mx-auto max-w-[2400px] pb-8" data-testid="grocery-list-section">
       {/* Section header */}
       <div className="rounded-lg border border-border bg-card">
         <div className="flex items-center justify-between px-5 py-4">

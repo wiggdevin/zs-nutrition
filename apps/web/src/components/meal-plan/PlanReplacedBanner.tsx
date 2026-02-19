@@ -13,7 +13,7 @@ export function PlanReplacedBanner({ onViewNewer, onDismiss }: PlanReplacedBanne
       aria-live="polite"
       data-testid="plan-replaced-banner"
     >
-      <div className="mx-auto max-w-[1600px]">
+      <div className="mx-auto max-w-[2400px]">
         <div className="flex items-center justify-between gap-4">
           <div className="flex items-center gap-3">
             <div className="flex h-8 w-8 flex-shrink-0 items-center justify-center rounded-full bg-primary/20">
