@@ -1,7 +1,7 @@
 'use client';
 
 import { useModal } from '@/hooks/useModal';
-import { formatSlotName } from './utils';
+import { formatSlotName, formatPrepTime, isGenericInstruction } from './utils';
 
 interface MealNutrition {
   kcal: number;
@@ -47,7 +47,8 @@ export default function MealDetailModal({
 
   const hasIngredients = meal.ingredients && meal.ingredients.length > 0;
   const hasInstructions = meal.instructions && meal.instructions.length > 0;
-  const totalMinutes = (meal.prepTimeMin || 0) + (meal.cookTimeMin || 0);
+  const hasRealInstructions = hasInstructions && !isGenericInstruction(meal.instructions!);
+  const timeInfo = formatPrepTime(meal.prepTimeMin, meal.cookTimeMin);
 
   return (
     <div
@@ -69,61 +70,20 @@ export default function MealDetailModal({
         <div className="flex-shrink-0 border-b border-border px-6 py-5">
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
-              {/* Breadcrumb navigation */}
-              <nav
-                className="flex items-center gap-2 mb-3"
-                aria-label="Breadcrumb"
-                data-testid="meal-detail-breadcrumb"
-              >
-                <button
-                  onClick={onClose}
-                  className="flex items-center gap-1 text-xs font-medium text-muted-foreground hover:text-primary transition-colors focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-1 rounded"
-                  data-testid="breadcrumb-back"
-                >
-                  <svg
-                    width="12"
-                    height="12"
-                    viewBox="0 0 24 24"
-                    fill="none"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M19 12H5M12 19L5 12L12 5"
-                      stroke="currentColor"
-                      strokeWidth="2"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                  <span>Meal Plan</span>
-                </button>
-                <svg
-                  width="12"
-                  height="12"
-                  viewBox="0 0 24 24"
-                  fill="none"
-                  className="text-muted-foreground"
-                  aria-hidden="true"
-                >
-                  <path
-                    d="M9 18l6-6-6-6"
-                    stroke="currentColor"
-                    strokeWidth="2"
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                  />
-                </svg>
-                <span
-                  className="text-xs font-medium text-foreground truncate max-w-[200px]"
-                  data-testid="breadcrumb-current"
-                >
-                  {meal.name}
-                </span>
-              </nav>
-
-              {/* Slot label + confidence badge (only for AI-estimated) */}
+              {/* Slot label chip + confidence badge */}
               <div className="flex items-center gap-2 mb-2">
-                <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                <span
+                  className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wider ${
+                    meal.slot === 'breakfast'
+                      ? 'bg-warning/20 text-warning'
+                      : meal.slot === 'lunch'
+                        ? 'bg-chart-3/20 text-chart-3'
+                        : meal.slot === 'dinner'
+                          ? 'bg-primary/20 text-primary'
+                          : 'bg-chart-4/20 text-chart-4'
+                  }`}
+                  data-testid="meal-detail-slot-chip"
+                >
                   {formatSlotName(meal.slot)}
                 </span>
                 {meal.confidenceLevel && meal.confidenceLevel !== 'verified' && (
@@ -139,7 +99,7 @@ export default function MealDetailModal({
               {/* Meal name */}
               <h2
                 id="meal-detail-title"
-                className="text-xl sm:text-2xl font-heading font-bold uppercase tracking-wider text-foreground leading-tight"
+                className="text-xl font-heading font-bold text-foreground leading-tight"
                 data-testid="meal-detail-name"
               >
                 {meal.name}
@@ -148,15 +108,11 @@ export default function MealDetailModal({
               {/* Cuisine and time */}
               <div className="mt-2 flex flex-wrap items-center gap-3 text-sm text-muted-foreground">
                 {meal.cuisine && <span data-testid="meal-detail-cuisine">{meal.cuisine}</span>}
-                {totalMinutes > 0 && (
+                {timeInfo && (
                   <span className="flex items-center gap-1" data-testid="meal-detail-time">
                     <span>🕒</span>
-                    <span>{totalMinutes} minutes</span>
-                    {meal.prepTimeMin && meal.cookTimeMin && (
-                      <span className="text-xs">
-                        ({meal.prepTimeMin}m prep + {meal.cookTimeMin}m cook)
-                      </span>
-                    )}
+                    <span>{timeInfo.total}</span>
+                    {timeInfo.breakdown && <span className="text-xs">({timeInfo.breakdown})</span>}
                   </span>
                 )}
               </div>
@@ -254,8 +210,8 @@ export default function MealDetailModal({
               </div>
             )}
 
-            {/* Instructions section */}
-            {hasInstructions && (
+            {/* Instructions section — hide generic templates, show real recipes */}
+            {hasRealInstructions ? (
               <div data-testid="meal-detail-instructions-section">
                 <h3 className="text-sm font-bold uppercase tracking-wider text-foreground mb-3 flex items-center gap-2">
                   <span>📝</span>
@@ -276,7 +232,14 @@ export default function MealDetailModal({
                   ))}
                 </ol>
               </div>
-            )}
+            ) : hasInstructions ? (
+              <div data-testid="meal-detail-quick-prep-tag">
+                <span className="inline-flex items-center gap-1.5 rounded-full bg-muted px-3 py-1.5 text-xs font-medium text-muted-foreground">
+                  <span>⚡</span>
+                  <span>Quick prep — no recipe needed</span>
+                </span>
+              </div>
+            ) : null}
 
             {/* No details available message */}
             {!hasIngredients && !hasInstructions && (
