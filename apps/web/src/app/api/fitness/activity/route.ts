@@ -50,12 +50,17 @@ export async function GET(req: NextRequest) {
     const baseTarget = profile.goalKcal;
 
     // Get activity syncs for the date
+    const startOfDay = new Date(targetDate);
+    startOfDay.setHours(0, 0, 0, 0);
+    const endOfDay = new Date(targetDate);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const activitySyncs = await prisma.activitySync.findMany({
       where: {
         userId,
         syncDate: {
-          gte: new Date(targetDate.setHours(0, 0, 0, 0)),
-          lte: new Date(targetDate.setHours(23, 59, 59, 999)),
+          gte: startOfDay,
+          lte: endOfDay,
         },
       },
       include: {
