@@ -6,7 +6,6 @@ import { prisma } from '@/lib/db';
 import { decrypt } from '@/lib/encryption';
 import { logger } from '@/lib/safe-logger';
 import { OuraApiClient } from './oura-client';
-import type { OuraDaySyncData } from './oura-types';
 
 /**
  * Sync frequencies in milliseconds
@@ -108,7 +107,7 @@ export async function syncUserActivity(userId: string, connections?: any[]): Pro
   }
 
   const now = new Date();
-  const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+  const yesterday = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 1);
 
   for (const connection of connections) {
     try {
@@ -117,21 +116,24 @@ export async function syncUserActivity(userId: string, connections?: any[]): Pro
         continue;
       }
 
-      // Sync from platform
-      const syncResult = await syncFromPlatform(connection, today);
-
-      if (syncResult.success && syncResult.data) {
-        // Store normalized activity data
-        await storeActivitySync(connection, syncResult.data, today);
-
-        // Update lastSyncAt
-        await prisma.fitnessConnection.update({
-          where: { id: connection.id },
-          data: { lastSyncAt: now },
-        });
-
-        logger.info(`Successfully synced ${connection.platform} for user ${userId}`);
+      if (connection.platform === 'oura') {
+        // Oura: fetch a date range (data lags by ~1 day)
+        await syncOuraDateRange(connection, yesterday);
+      } else {
+        // Other platforms: sync single day
+        const syncResult = await syncFromPlatform(connection, yesterday);
+        if (syncResult.success && syncResult.data) {
+          await storeActivitySync(connection, syncResult.data, yesterday);
+        }
       }
+
+      // Update lastSyncAt
+      await prisma.fitnessConnection.update({
+        where: { id: connection.id },
+        data: { lastSyncAt: now },
+      });
+
+      logger.info(`Successfully synced ${connection.platform} for user ${userId}`);
     } catch (error) {
       logger.error(`Error syncing ${connection.platform} for user ${userId}:`, error);
       throw error;
@@ -175,9 +177,6 @@ async function syncFromPlatform(
       const accessToken = decrypt(connection.accessToken);
       return await syncFitbitData(accessToken, syncDate);
     }
-
-    case 'oura':
-      return await syncOuraDataV2(connection, syncDate);
 
     case 'google_fit': {
       const accessToken = decrypt(connection.accessToken);
@@ -242,10 +241,35 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
 }
 
 /**
- * Sync data from Oura using the typed API client (v2)
+ * Sync Oura data for a date range and store each day separately.
+ * First sync: 14 days back. Subsequent syncs: from lastSyncAt to endDate.
  */
-async function syncOuraDataV2(connection: any, syncDate: Date) {
-  const dateStr = syncDate.toISOString().split('T')[0];
+async function syncOuraDateRange(connection: any, endDate: Date): Promise<void> {
+  const BACKFILL_DAYS = 14;
+
+  // Calculate start date
+  let startDate: Date;
+  if (connection.lastSyncAt) {
+    // Subsequent sync: from last sync date
+    const lastSync = new Date(connection.lastSyncAt);
+    startDate = new Date(lastSync.getFullYear(), lastSync.getMonth(), lastSync.getDate() - 1);
+  } else {
+    // First sync: backfill 14 days
+    startDate = new Date(endDate);
+    startDate.setDate(startDate.getDate() - BACKFILL_DAYS);
+  }
+
+  // Don't go further back than 14 days (Oura API limit for some endpoints)
+  const maxBackfill = new Date(endDate);
+  maxBackfill.setDate(maxBackfill.getDate() - BACKFILL_DAYS);
+  if (startDate < maxBackfill) {
+    startDate = maxBackfill;
+  }
+
+  const startStr = startDate.toISOString().split('T')[0];
+  const endStr = endDate.toISOString().split('T')[0];
+
+  logger.info(`Oura sync range: ${startStr} to ${endStr}`);
 
   const client = new OuraApiClient({
     connectionId: connection.id,
@@ -253,15 +277,15 @@ async function syncOuraDataV2(connection: any, syncDate: Date) {
     encryptedRefreshToken: connection.refreshToken,
   });
 
-  const dayData: OuraDaySyncData = await client.fetchDayData(dateStr, dateStr);
+  const dayDataMap = await client.fetchDateRange(startStr, endStr);
 
-  return {
-    success: true,
-    data: {
-      platform: 'oura' as const,
-      ...dayData,
-    },
-  };
+  // Store each day
+  for (const [dayStr, dayData] of dayDataMap.entries()) {
+    const syncDate = new Date(dayStr + 'T00:00:00Z');
+    await storeActivitySync(connection, { platform: 'oura' as const, ...dayData }, syncDate);
+  }
+
+  logger.info(`Oura: stored ${dayDataMap.size} days of data`);
 }
 
 /**
