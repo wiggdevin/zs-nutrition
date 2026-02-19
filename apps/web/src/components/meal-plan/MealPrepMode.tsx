@@ -54,7 +54,7 @@ export default function MealPrepMode({ days }: MealPrepModeProps) {
 
   if (groups.length === 0) {
     return (
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      <div className="mx-auto max-w-[2400px] px-4 md:px-6 xl:px-8 2xl:px-10 py-6">
         <div className="text-center py-12">
           <p className="text-muted-foreground">No meals to organize for prep.</p>
         </div>
@@ -63,7 +63,10 @@ export default function MealPrepMode({ days }: MealPrepModeProps) {
   }
 
   return (
-    <div className="mx-auto max-w-[1600px] px-4 py-6 space-y-8" data-testid="meal-prep-mode">
+    <div
+      className="mx-auto max-w-[2400px] px-4 md:px-6 xl:px-8 2xl:px-10 py-6 space-y-8"
+      data-testid="meal-prep-mode"
+    >
       {/* Total Time Banner */}
       <div className="rounded-2xl border border-border bg-card p-6">
         <div className="flex items-center justify-between">

@@ -7,7 +7,7 @@ interface PageHeaderProps {
   showPrefix?: boolean;
   actions?: React.ReactNode;
   sticky?: boolean;
-  maxWidth?: '2xl' | '4xl' | '7xl' | 'screen-2xl' | 'full';
+  maxWidth?: '2xl' | '4xl' | '7xl' | 'screen-2xl' | 'full' | 'max';
   className?: string;
   'data-testid'?: string;
 }
@@ -18,6 +18,7 @@ const maxWidthMap = {
   '7xl': 'max-w-7xl',
   'screen-2xl': 'max-w-7xl xl:max-w-screen-2xl',
   full: 'max-w-[1600px]',
+  max: 'max-w-[2400px]',
 } as const;
 
 export function PageHeader({

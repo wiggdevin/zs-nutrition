@@ -7,7 +7,7 @@ export function MealPlanSkeleton() {
     <div className="min-h-screen bg-background text-foreground">
       {/* Skeleton Header */}
       <div className="border-b border-border bg-background px-4 py-6">
-        <div className="mx-auto max-w-[1600px]">
+        <div className="mx-auto max-w-[2400px]">
           <div className="flex items-center justify-between">
             <div>
               <SkeletonBlock className="h-3 w-40" />
@@ -23,7 +23,7 @@ export function MealPlanSkeleton() {
       </div>
 
       {/* Skeleton 7-day grid */}
-      <div className="mx-auto max-w-[1600px] px-4 py-6">
+      <div className="mx-auto max-w-[2400px] px-4 md:px-6 xl:px-8 2xl:px-10 py-6">
         <div
           className="
             flex gap-3 overflow-x-auto pb-4 snap-x snap-mandatory

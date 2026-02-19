@@ -96,7 +96,7 @@ export default function MealPlanPage() {
 
           {/* Prep Mode Toggle */}
           {activeTab === 'meal-plan' && days.length > 0 && (
-            <div className="mx-auto max-w-[1600px] px-4 pt-4 flex items-center gap-3">
+            <div className="mx-auto max-w-[2400px] px-4 md:px-6 xl:px-8 2xl:px-10 pt-4 flex items-center gap-3">
               <button
                 onClick={() => setPrepMode(!prepMode)}
                 className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-bold uppercase tracking-wide transition-colors ${
@@ -119,7 +119,10 @@ export default function MealPlanPage() {
 
           {/* 7-day grid - Responsive layout */}
           {activeTab === 'meal-plan' && !prepMode && (
-            <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="meal-plan-view">
+            <div
+              className="mx-auto max-w-[2400px] px-4 md:px-6 xl:px-8 2xl:px-10 py-6"
+              data-testid="meal-plan-view"
+            >
               <div
                 ref={swipe.scrollRef}
                 onScroll={swipe.handleScroll}
@@ -130,8 +133,8 @@ export default function MealPlanPage() {
                   flex overflow-x-auto snap-x snap-mandatory scrollbar-none
                   md:grid md:grid-cols-3 md:gap-3 md:overflow-x-visible
                   lg:grid-cols-4
-                  xl:grid-cols-5
-                  2xl:grid-cols-7
+                  xl:grid-cols-5 xl:gap-4
+                  2xl:grid-cols-7 2xl:gap-4
                 "
                 data-testid="seven-day-grid"
               >
@@ -189,7 +192,10 @@ export default function MealPlanPage() {
 
           {/* Grocery List View */}
           {activeTab === 'grocery-list' && (
-            <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="grocery-list-view">
+            <div
+              className="mx-auto max-w-[2400px] px-4 md:px-6 xl:px-8 2xl:px-10 py-6"
+              data-testid="grocery-list-view"
+            >
               {plan.validatedPlan?.groceryList && plan.validatedPlan.groceryList.length > 0 ? (
                 <GroceryList
                   groceryList={normalizeGroceryList(plan.validatedPlan.groceryList as unknown[])}
@@ -204,7 +210,10 @@ export default function MealPlanPage() {
 
           {/* Version History View */}
           {activeTab === 'history' && (
-            <div className="mx-auto max-w-[1600px] px-4 py-6" data-testid="history-view">
+            <div
+              className="mx-auto max-w-[2400px] px-4 md:px-6 xl:px-8 2xl:px-10 py-6"
+              data-testid="history-view"
+            >
               <PlanVersionHistory />
             </div>
           )}
