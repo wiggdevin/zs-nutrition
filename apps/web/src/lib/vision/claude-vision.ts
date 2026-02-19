@@ -56,7 +56,7 @@ function clampNutrition(value: number, field: keyof typeof VISION_NUTRITION_BOUN
  */
 export class ClaudeVisionClient {
   private client: Anthropic | null = null;
-  private readonly model = 'claude-3-5-sonnet-20241022'; // Use Sonnet for vision
+  private readonly model = 'claude-sonnet-4-20250514'; // Use Sonnet for vision
 
   constructor() {
     this.initializeClient();
