@@ -1,15 +1,25 @@
 'use client';
 
-import { useEffect, useRef, Suspense } from 'react';
+import { useEffect, useRef, useState, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import NavBar from '@/components/navigation/NavBar';
 import FoodSearch from '@/components/tracking/FoodSearch';
 import ManualEntryForm from '@/components/tracking/ManualEntryForm';
+import { TrackingMethodTabs } from '@/components/tracking/TrackingMethodTabs';
+import { StickyCalorieBar } from '@/components/tracking/StickyCalorieBar';
 
 import nextDynamic from 'next/dynamic';
 
 const FoodScan = nextDynamic(() => import('@/components/tracking/FoodScan'), {
-  loading: () => <div className="h-64 animate-pulse bg-muted rounded" />,
+  loading: () => (
+    <div className="relative mb-8">
+      <div
+        className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/0 via-primary to-primary/0 rounded-t-xl"
+        aria-hidden="true"
+      />
+      <div className="h-64 animate-pulse bg-muted rounded-xl" />
+    </div>
+  ),
 });
 import { useTrackingStore } from '@/lib/stores/useTrackingStore';
 import { PageHeader } from '@/components/ui/PageHeader';
@@ -19,9 +29,15 @@ export const dynamic = 'force-dynamic';
 
 function TrackingPageContent() {
   const searchParams = useSearchParams();
-  const mode = searchParams.get('mode'); // 'plan', 'search', 'quick', or null (show all)
+  const mode = searchParams.get('mode'); // 'plan', 'search', 'quick', 'manual', 'scan', or null
+  const foodScanRef = useRef<HTMLDivElement>(null);
   const foodSearchRef = useRef<HTMLDivElement>(null);
   const manualEntryRef = useRef<HTMLDivElement>(null);
+
+  const [activeTab, setActiveTab] = useState<'search' | 'manual'>(() => {
+    if (mode === 'quick' || mode === 'manual') return 'manual';
+    return 'search';
+  });
 
   // Read from Zustand store (same state as dashboard)
   const targets = useTrackingStore((state) => state.targets);
@@ -30,23 +46,26 @@ function TrackingPageContent() {
   const _isLoading = useTrackingStore((state) => state.isLoading);
   const planId = useTrackingStore((state) => state.planId);
 
+  // Sync activeTab from URL params
+  useEffect(() => {
+    if (mode === 'search') setActiveTab('search');
+    else if (mode === 'quick' || mode === 'manual') setActiveTab('manual');
+  }, [mode]);
+
   // Scroll to and focus the relevant section based on mode
   useEffect(() => {
-    // Small delay to ensure DOM is rendered
     const timer = setTimeout(() => {
-      if (mode === 'search' && foodSearchRef.current) {
+      if (mode === 'scan' && foodScanRef.current) {
+        foodScanRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      } else if (mode === 'search' && foodSearchRef.current) {
         foodSearchRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Focus the first input in the food search section
         const input = foodSearchRef.current.querySelector('input') as HTMLInputElement;
         if (input) input.focus();
       } else if ((mode === 'quick' || mode === 'manual') && manualEntryRef.current) {
         manualEntryRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
-        // Focus the first input in the manual entry section
         const input = manualEntryRef.current.querySelector('input') as HTMLInputElement;
         if (input) input.focus();
       } else if (mode === 'plan') {
-        // For plan mode, redirect to meal plan page if they have a plan
-        // Otherwise, show food search with a message
         if (!planId && foodSearchRef.current) {
           foodSearchRef.current.scrollIntoView({ behavior: 'smooth', block: 'start' });
         }
@@ -59,7 +78,7 @@ function TrackingPageContent() {
   return (
     <>
       <NavBar />
-      <div className="md:pt-14 pb-20 md:pb-0">
+      <div className="md:pt-14 pb-32 md:pb-0">
         <PageHeader
           title="Tracking"
           showPrefix
@@ -69,10 +88,23 @@ function TrackingPageContent() {
         />
         <div className="min-h-screen bg-background text-foreground p-6 md:p-8">
           <div className="max-w-2xl mx-auto">
-            {/* Daily Totals - shows same data as dashboard (from Zustand) */}
+            {/* Hero: AI-Powered Food Scan */}
+            <div ref={foodScanRef} className="relative mb-8">
+              <div
+                className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-primary/0 via-primary to-primary/0 rounded-t-xl"
+                aria-hidden="true"
+              />
+              <FoodScan
+                onMealLogged={() => {
+                  window.location.reload();
+                }}
+              />
+            </div>
+
+            {/* Daily Totals — desktop only (mobile uses sticky bar) */}
             <div
               data-testid="tracking-daily-totals"
-              className="bg-card border border-border rounded-xl p-4 mb-6"
+              className="hidden md:block bg-card border border-border rounded-xl p-4 mb-6"
             >
               <p className="text-xs font-mono tracking-wider uppercase text-muted-foreground mb-3">
                 {'/// Daily Totals'}
@@ -142,57 +174,32 @@ function TrackingPageContent() {
               </div>
             )}
 
-            {/* AI-Powered Food Scan - always shown */}
-            <FoodScan
-              onMealLogged={() => {
-                // Refresh tracking data when meal is logged
-                window.location.reload();
-              }}
-            />
+            {/* Secondary methods: pill tab switcher */}
+            <TrackingMethodTabs activeTab={activeTab} onTabChange={setActiveTab} />
 
-            {/* Food Search - shown when mode is null, 'search', or 'plan' (if no planId) */}
-            {!mode || mode === 'search' || (mode === 'plan' && !planId) ? (
-              <div ref={mode === 'search' || (mode === 'plan' && !planId) ? foodSearchRef : null}>
+            {/* Tab panels */}
+            {activeTab === 'search' && (
+              <div ref={foodSearchRef} role="tabpanel" id="tabpanel-search" aria-label="Search">
                 <FoodSearch />
               </div>
-            ) : null}
+            )}
 
-            {/* Custom Food Entry - shown when mode is null, 'quick', 'manual', or 'plan' (if no planId) */}
-            {!mode || mode === 'quick' || mode === 'manual' || (mode === 'plan' && !planId) ? (
+            {activeTab === 'manual' && (
               <div
-                ref={
-                  mode === 'quick' || mode === 'manual' || (mode === 'plan' && !planId)
-                    ? manualEntryRef
-                    : null
-                }
-                className="mt-4"
+                ref={manualEntryRef}
+                role="tabpanel"
+                id="tabpanel-manual"
+                aria-label="Manual Entry"
               >
                 <ManualEntryForm />
-              </div>
-            ) : null}
-
-            {/* Show all sections backlink when in specific mode */}
-            {mode && (
-              <div className="mt-8 pt-6 border-t border-border text-center">
-                <Link
-                  href="/tracking"
-                  className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-primary transition-colors"
-                >
-                  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth={2}
-                      d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                    />
-                  </svg>
-                  Show all logging options
-                </Link>
               </div>
             )}
           </div>
         </div>
       </div>
+
+      {/* Sticky calorie bar — mobile only */}
+      <StickyCalorieBar />
     </>
   );
 }

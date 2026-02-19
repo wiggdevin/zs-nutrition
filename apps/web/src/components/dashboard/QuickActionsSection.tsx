@@ -10,6 +10,7 @@ export function QuickActionsSection() {
         {'/// Quick Actions'}
       </p>
       <div className="flex flex-wrap gap-3">
+        <QuickAction icon="📸" label="Scan Meal" href="/tracking?mode=scan" variant="primary" />
         <QuickAction icon="📋" label="Log from Plan" href="/dashboard#todays-plan" />
         <QuickAction icon="🔍" label="Search Food" href="/tracking?mode=search" />
         <QuickAction icon="⚡" label="Quick Add" href="/tracking?mode=quick" />
