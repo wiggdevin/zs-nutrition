@@ -8,6 +8,7 @@ import { accountRouter } from './account';
 import { adaptiveNutritionRouter } from './adaptive-nutrition';
 import { fitnessRouter } from './fitness';
 import { chatRouter } from './chat';
+import { insightsRouter } from './insights';
 
 export const appRouter = router({
   plan: planRouter,
@@ -19,6 +20,7 @@ export const appRouter = router({
   adaptiveNutrition: adaptiveNutritionRouter,
   fitness: fitnessRouter,
   chat: chatRouter,
+  insights: insightsRouter,
 });
 
 export type AppRouter = typeof appRouter;

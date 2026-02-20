@@ -35,6 +35,7 @@ model User {
   activitySyncs      ActivitySync[]
   waterLogs          WaterLog[]
   chatSessions       ChatSession[]
+  aiInsights         AiInsight[]
 }
 
 // ============================================================
@@ -418,4 +419,22 @@ model ChatMessage {
   createdAt DateTime    @default(now())
 
   @@index([sessionId, createdAt])
+}
+
+// ============================================================
+// AI Insight (cached Claude-generated nutrition recommendations)
+// ============================================================
+model AiInsight {
+  id             String   @id @default(uuid())
+  userId         String
+  user           User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  analysisWindow Int      @default(14)
+  insights       Json     // Array<InsightItem>
+  inputHash      String   // SHA-256 of aggregated data — skip Claude if unchanged
+  tokenUsage     Json?    // { inputTokens, outputTokens }
+  generatedAt    DateTime @default(now())
+  expiresAt      DateTime // generatedAt + 24h
+
+  @@index([userId, expiresAt])
+  @@index([userId, generatedAt])
 }
