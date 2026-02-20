@@ -52,6 +52,21 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       upsert: vi.fn(),
     },
+    aiInsight: {
+      findFirst: vi.fn(),
+      findMany: vi.fn(),
+      create: vi.fn(),
+      count: vi.fn(),
+    },
+    mealSwap: {
+      findMany: vi.fn(),
+    },
+    activitySync: {
+      findMany: vi.fn(),
+    },
+    calorieAdjustment: {
+      findMany: vi.fn(),
+    },
     $transaction: vi.fn((fn) =>
       fn({
         user: { findUnique: vi.fn(), create: vi.fn(), update: vi.fn() },

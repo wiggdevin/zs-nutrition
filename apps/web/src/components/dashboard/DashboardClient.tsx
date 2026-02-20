@@ -32,6 +32,10 @@ const MonthlyAdherenceSection = dynamic(
   () => import('./MonthlyAdherenceSection').then((m) => ({ default: m.MonthlyAdherenceSection })),
   { ssr: false }
 );
+const InsightsSection = dynamic(
+  () => import('./InsightsSection').then((m) => ({ default: m.InsightsSection })),
+  { ssr: false }
+);
 
 export default function DashboardClient() {
   const {
@@ -192,6 +196,8 @@ export default function DashboardClient() {
         />
 
         <QuickActionsSection />
+
+        <InsightsSection />
 
         <Accordion type="single" collapsible>
           <AccordionItem value="insights">
