@@ -272,6 +272,10 @@ export class RecipeCurator {
 - Snacks per day: ${intake.snacksPerDay}
 - Training days: ${intake.trainingDays.join(', ')}
 
+## Macro Style: ${intake.macroStyle.toUpperCase().replace('_', ' ')}
+${this.getMacroStyleGuidance(intake.macroStyle)}
+Each meal's estimatedNutrition MUST be within 15% of its targetNutrition for protein, carbs, AND fat. Limit each meal to at most 2 concentrated fat sources (oils, butter, nuts, avocado, cheese).
+
 ## Meal Slot Targets
 ${metabolicProfile.mealTargets.map((t) => `- ${t.label}: ${t.kcal} kcal (P: ${t.proteinG}g, C: ${t.carbsG}g, F: ${t.fatG}g)`).join('\n')}
 
@@ -347,6 +351,19 @@ ${this.buildBiometricPromptSection(biometricContext)}`;
     }
 
     return sections.length > 1 ? sections.join('\n\n') : '';
+  }
+
+  private getMacroStyleGuidance(macroStyle: string): string {
+    switch (macroStyle) {
+      case 'high_protein':
+        return 'Prioritize lean proteins (chicken breast, fish, egg whites, Greek yogurt). Minimize added oils and fatty sauces. Use protein-rich sides like legumes and quinoa.';
+      case 'low_carb':
+        return 'Minimize grains, bread, pasta, rice, and starchy sides. Use leafy greens and non-starchy vegetables. Keep fat sources modest — proteins can include fattier cuts but do not add extra oils or butter.';
+      case 'keto':
+        return 'Eliminate grains, bread, most fruits, and starchy vegetables. Emphasize healthy fats (avocado, coconut oil, butter, nuts) and moderate protein. Vegetables should be leafy greens and low-carb only.';
+      default:
+        return 'Use a mix of lean proteins, whole grains, fruits, vegetables, and moderate healthy fats. No single macro should dominate ingredient selection.';
+    }
   }
 
   /**

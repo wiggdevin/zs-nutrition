@@ -18,7 +18,7 @@ import {
   generateEstimatedIngredients,
   generateInstructions,
 } from './ingredient-builder';
-import type { FoodServing, FoodDetails } from '../../adapters/fatsecret';
+import type { FoodServing, FoodDetails, FoodSearchResult } from '../../adapters/fatsecret';
 
 /** Nutrition data after scaling to target kcal */
 interface ScaledNutrition {
@@ -101,6 +101,162 @@ function convertToGrams(quantity: number, unit: string): number {
 }
 
 /**
+ * Map of common generic ingredient names to more specific FatSecret search terms.
+ * Fixes the ~30 most common unmatched ingredients from validation runs.
+ */
+const INGREDIENT_NAME_MAP: Record<string, string> = {
+  // Proteins
+  eggs: 'egg whole raw',
+  egg: 'egg whole raw',
+  'egg whites': 'egg white raw',
+  chicken: 'chicken breast raw',
+  'chicken breast': 'chicken breast skinless raw',
+  salmon: 'atlantic salmon raw',
+  tuna: 'tuna canned in water drained',
+  shrimp: 'shrimp raw',
+  'ground beef': 'ground beef 90 lean raw',
+  'ground turkey': 'ground turkey raw',
+  tofu: 'tofu firm raw',
+  tempeh: 'tempeh',
+  // Grains & starches
+  rice: 'white rice cooked',
+  'brown rice': 'brown rice cooked',
+  'sweet potato': 'sweet potato baked',
+  'sweet potatoes': 'sweet potato baked',
+  potato: 'potato baked flesh and skin',
+  potatoes: 'potato baked flesh and skin',
+  oats: 'oats rolled dry',
+  oatmeal: 'oats rolled dry',
+  quinoa: 'quinoa cooked',
+  pasta: 'pasta cooked',
+  bread: 'whole wheat bread',
+  // Vegetables
+  broccoli: 'broccoli raw',
+  spinach: 'spinach raw',
+  kale: 'kale raw',
+  'mixed greens': 'mixed salad greens raw',
+  tomato: 'tomato raw',
+  tomatoes: 'tomato raw',
+  onion: 'onion raw',
+  // Fruits
+  banana: 'banana raw',
+  apple: 'apple raw with skin',
+  berries: 'mixed berries raw',
+  blueberries: 'blueberries raw',
+  strawberries: 'strawberries raw',
+  avocado: 'avocado raw',
+  // Dairy & fats
+  'greek yogurt': 'greek yogurt plain nonfat',
+  yogurt: 'yogurt plain low fat',
+  cheese: 'cheddar cheese',
+  butter: 'butter salted',
+  'olive oil': 'olive oil',
+  'coconut oil': 'coconut oil',
+  milk: 'milk whole',
+  // Nuts & seeds
+  almonds: 'almonds raw',
+  walnuts: 'walnuts raw',
+  'peanut butter': 'peanut butter smooth',
+  'almond butter': 'almond butter',
+  // Legumes
+  'black beans': 'black beans cooked',
+  chickpeas: 'chickpeas cooked',
+  lentils: 'lentils cooked',
+};
+
+/**
+ * Density map for converting ml-based FatSecret servings to gram equivalents.
+ * Used when metricServingUnit is 'ml' (common for oils, butter, syrups, liquids).
+ */
+const ML_TO_GRAM_DENSITY: { keywords: string[]; density: number }[] = [
+  {
+    keywords: [
+      'oil',
+      'olive oil',
+      'sesame oil',
+      'coconut oil',
+      'vegetable oil',
+      'canola oil',
+      'avocado oil',
+      'sunflower oil',
+      'peanut oil',
+    ],
+    density: 0.92,
+  },
+  { keywords: ['butter', 'ghee', 'clarified butter'], density: 0.91 },
+  { keywords: ['honey', 'maple syrup', 'corn syrup', 'agave', 'molasses', 'syrup'], density: 1.42 },
+  { keywords: ['milk', 'cream', 'half and half', 'yogurt', 'kefir', 'buttermilk'], density: 1.03 },
+  {
+    keywords: [
+      'water',
+      'vinegar',
+      'broth',
+      'stock',
+      'lemon juice',
+      'lime juice',
+      'soy sauce',
+      'fish sauce',
+      'worcestershire',
+      'hot sauce',
+      'juice',
+      'wine',
+      'mirin',
+      'sake',
+    ],
+    density: 1.0,
+  },
+];
+
+function estimateDensityForFood(foodName: string): number {
+  const lower = foodName.toLowerCase();
+  for (const entry of ML_TO_GRAM_DENSITY) {
+    for (const kw of entry.keywords) {
+      if (lower.includes(kw)) return entry.density;
+    }
+  }
+  return 1.0; // safe default
+}
+
+/**
+ * Normalize an ingredient name to improve FatSecret search hit rate.
+ * Returns an array (usually 1 item; multiple for compound names like "Apple + Peanut Butter").
+ */
+function normalizeIngredientName(name: string): string[] {
+  const trimmed = name.trim().toLowerCase();
+
+  // Check exact match in map
+  if (INGREDIENT_NAME_MAP[trimmed]) {
+    return [INGREDIENT_NAME_MAP[trimmed]];
+  }
+
+  // Remove commas (fixes "tuna, canned in water" → "tuna canned in water")
+  let cleaned = trimmed.replace(/,/g, '');
+
+  // Strip leading quantities/units leaked into name (e.g. "2 cups spinach" → "spinach")
+  cleaned = cleaned.replace(
+    /^\d+(\.\d+)?\s*(g|oz|cups?|tbsp|tsp|ml|lbs?|kg|pieces?|slices?|large|medium|small)\s+/i,
+    ''
+  );
+
+  // Split compound names on " + " or " and " (e.g. "Apple + Peanut Butter" → ["apple", "peanut butter"])
+  if (/\s\+\s|\sand\s/i.test(cleaned)) {
+    const parts = cleaned
+      .split(/\s\+\s|\sand\s/i)
+      .map((p) => p.trim())
+      .filter(Boolean);
+    // Recursively normalize each part
+    return parts.flatMap((part) => normalizeIngredientName(part));
+  }
+
+  // Check map again after cleaning
+  if (INGREDIENT_NAME_MAP[cleaned]) {
+    return [INGREDIENT_NAME_MAP[cleaned]];
+  }
+
+  return [cleaned];
+}
+
+/**
  * Agent 4: Nutrition Compiler
  * Verifies nutrition via FatSecret API, gets full recipes, scales portions.
  * Tags meals as "verified" or "ai_estimated" based on FatSecret match.
@@ -161,7 +317,7 @@ export class NutritionCompiler {
   private async compileDay(day: DraftDay): Promise<CompiledDay> {
     // Process all meals in this day concurrently, limited by p-limit
     const compiledMeals = await Promise.all(
-      day.meals.map((meal) => this.limit(() => this.compileMeal(meal)))
+      day.meals.map((meal) => this.limit(() => this.compileMeal(meal, day.targetKcal)))
     );
 
     // Calculate daily totals
@@ -222,6 +378,81 @@ export class NutritionCompiler {
     }
 
     return best;
+  }
+
+  /**
+   * Select the best serving for gram-based scaling (ingredient-level path).
+   * Only considers servings with valid gram metadata to avoid the `|| 100` fallback bug.
+   * Returns null if no serving has usable gram data, forcing a fallback.
+   */
+  private selectBestServingForGrams(
+    servings: FoodServing[],
+    gramsNeeded: number,
+    foodName?: string
+  ): { serving: FoodServing; servingGrams: number } | null {
+    // Gram-based servings (existing)
+    const withGrams = servings.filter(
+      (s) => s.metricServingAmount && s.metricServingAmount > 0 && s.metricServingUnit === 'g'
+    );
+
+    // ml-based servings converted to gram equivalents
+    const density = foodName ? estimateDensityForFood(foodName) : 1.0;
+    const mlConverted = servings
+      .filter(
+        (s) => s.metricServingAmount && s.metricServingAmount > 0 && s.metricServingUnit === 'ml'
+      )
+      .map((s) => ({ serving: s, servingGrams: s.metricServingAmount! * density }));
+
+    // Combined candidate pool
+    const candidates: { serving: FoodServing; servingGrams: number }[] = [
+      ...withGrams.map((s) => ({ serving: s, servingGrams: s.metricServingAmount! })),
+      ...mlConverted,
+    ];
+
+    if (candidates.length > 0) {
+      let best = candidates[0];
+      let bestScore = -Infinity;
+      for (const c of candidates) {
+        const score = -Math.abs(Math.log(gramsNeeded / c.servingGrams));
+        if (score > bestScore) {
+          bestScore = score;
+          best = c;
+        }
+      }
+      return { serving: best.serving, servingGrams: best.servingGrams };
+    }
+
+    // No gram metadata — try to find a "per 100g" by description
+    const per100gByDesc = servings.find(
+      (s) =>
+        s.servingDescription.toLowerCase().includes('100g') ||
+        s.servingDescription.toLowerCase().includes('100 g')
+    );
+    if (per100gByDesc) {
+      return { serving: per100gByDesc, servingGrams: 100 };
+    }
+
+    // No usable gram data at all
+    return null;
+  }
+
+  /**
+   * Reorder search results to prefer generic/whole foods over branded/processed ones.
+   * Items without brandName are sorted first; branded items are pushed to the end.
+   */
+  private preferGenericFoods(results: FoodSearchResult[]): FoodSearchResult[] {
+    const generic: FoodSearchResult[] = [];
+    const branded: FoodSearchResult[] = [];
+
+    for (const r of results) {
+      if (r.brandName) {
+        branded.push(r);
+      } else {
+        generic.push(r);
+      }
+    }
+
+    return [...generic, ...branded];
   }
 
   /**
@@ -324,7 +555,10 @@ export class NutritionCompiler {
    * Each ingredient is looked up individually in FatSecret (then USDA fallback),
    * and nutrition is summed for accurate meal totals.
    */
-  private async compileMealFromIngredients(meal: DraftMeal): Promise<{
+  private async compileMealFromIngredients(
+    meal: DraftMeal,
+    dailyTargetKcal?: number
+  ): Promise<{
     nutrition: ScaledNutrition;
     ingredients: Ingredient[];
     confidenceLevel: 'verified' | 'ai_estimated';
@@ -343,83 +577,149 @@ export class NutritionCompiler {
       meal.draftIngredients.map((ing) =>
         ingredientLimit(async () => {
           const gramsNeeded = convertToGrams(ing.quantity, ing.unit);
+          const normalizedNames = normalizeIngredientName(ing.name);
 
-          // Try FatSecret first
-          try {
-            const searchResults = await this.fatSecretAdapter.searchFoods(ing.name, 5);
-            if (searchResults.length > 0) {
-              const foodDetails = await this.fatSecretAdapter.getFood(searchResults[0].foodId);
-              if (foodDetails.servings.length > 0) {
-                // Find per-100g serving or best available
-                const per100g = foodDetails.servings.find(
-                  (s) => s.metricServingAmount === 100 && s.metricServingUnit === 'g'
-                );
-                const serving = per100g || foodDetails.servings[0];
-                const servingGrams = serving.metricServingAmount || 100;
-                const scale = gramsNeeded / servingGrams;
-
-                return {
-                  ingredient: {
-                    name: ing.name,
-                    amount: Math.round(gramsNeeded),
-                    unit: 'g',
-                    fatsecretFoodId: searchResults[0].foodId,
-                  } as Ingredient,
-                  kcal: serving.calories * scale,
-                  proteinG: serving.protein * scale,
-                  carbsG: serving.carbohydrate * scale,
-                  fatG: serving.fat * scale,
-                  fiberG: serving.fiber !== undefined ? serving.fiber * scale : undefined,
-                  verified: true,
-                };
-              }
-            }
-          } catch (err) {
-            engineLogger.warn(
-              `[NutritionCompiler] FatSecret lookup failed for ingredient "${ing.name}":`,
-              err instanceof Error ? err.message : err
-            );
-          }
-
-          // Try USDA fallback
-          if (this.usdaAdapter) {
+          // Try each normalized name variant
+          for (const searchName of normalizedNames) {
+            // --- FatSecret ---
             try {
-              const usdaResults = await this.usdaAdapter.searchFoods(ing.name, 5);
-              if (usdaResults.length > 0) {
-                const foodDetails = await this.usdaAdapter.getFood(usdaResults[0].foodId);
-                if (foodDetails.servings.length > 0) {
-                  const per100g = foodDetails.servings.find(
-                    (s) => s.metricServingAmount === 100 && s.metricServingUnit === 'g'
+              const searchResults = await this.fatSecretAdapter.searchFoods(searchName, 5);
+              if (searchResults.length > 0) {
+                const orderedResults = this.preferGenericFoods(searchResults);
+
+                // Try multiple search results, not just the first
+                for (const result of orderedResults) {
+                  const foodDetails = await this.fatSecretAdapter.getFood(result.foodId);
+                  if (foodDetails.servings.length === 0) continue;
+
+                  const bestServing = this.selectBestServingForGrams(
+                    foodDetails.servings,
+                    gramsNeeded,
+                    foodDetails.name
                   );
-                  const serving = per100g || foodDetails.servings[0];
-                  const servingGrams = serving.metricServingAmount || 100;
-                  const scale = gramsNeeded / servingGrams;
+                  if (!bestServing) continue;
+
+                  const scale = gramsNeeded / bestServing.servingGrams;
+
+                  // Sanity check: reject absurd scale factors
+                  if (scale < 0.01 || scale > 20) {
+                    engineLogger.warn(
+                      `[NutritionCompiler] Rejecting "${foodDetails.name}" for "${ing.name}": scale ${scale.toFixed(2)}x out of range`
+                    );
+                    continue;
+                  }
+
+                  // Per-ingredient calorie cap for low-calorie plans
+                  const ingredientKcal = bestServing.serving.calories * scale;
+                  if (dailyTargetKcal && dailyTargetKcal < 1500) {
+                    const maxIngredientKcal = dailyTargetKcal * 0.4;
+                    if (ingredientKcal > maxIngredientKcal) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Rejecting "${foodDetails.name}" for "${ing.name}": ` +
+                          `${Math.round(ingredientKcal)} kcal exceeds ${Math.round(maxIngredientKcal)} kcal cap ` +
+                          `(40% of ${dailyTargetKcal} daily target)`
+                      );
+                      continue;
+                    }
+                  }
 
                   return {
                     ingredient: {
                       name: ing.name,
                       amount: Math.round(gramsNeeded),
                       unit: 'g',
-                      fatsecretFoodId: `usda-${usdaResults[0].foodId}`,
+                      fatsecretFoodId: result.foodId,
                     } as Ingredient,
-                    kcal: serving.calories * scale,
-                    proteinG: serving.protein * scale,
-                    carbsG: serving.carbohydrate * scale,
-                    fatG: serving.fat * scale,
-                    fiberG: serving.fiber !== undefined ? serving.fiber * scale : undefined,
+                    kcal: ingredientKcal,
+                    proteinG: bestServing.serving.protein * scale,
+                    carbsG: bestServing.serving.carbohydrate * scale,
+                    fatG: bestServing.serving.fat * scale,
+                    fiberG:
+                      bestServing.serving.fiber !== undefined
+                        ? bestServing.serving.fiber * scale
+                        : undefined,
                     verified: true,
                   };
                 }
               }
             } catch (err) {
               engineLogger.warn(
-                `[NutritionCompiler] USDA lookup failed for ingredient "${ing.name}":`,
+                `[NutritionCompiler] FatSecret lookup failed for ingredient "${searchName}":`,
                 err instanceof Error ? err.message : err
               );
             }
+
+            // --- USDA fallback ---
+            if (this.usdaAdapter) {
+              try {
+                const usdaResults = await this.usdaAdapter.searchFoods(searchName, 5);
+                if (usdaResults.length > 0) {
+                  for (const result of usdaResults) {
+                    const foodDetails = await this.usdaAdapter.getFood(result.foodId);
+                    if (foodDetails.servings.length === 0) continue;
+
+                    const bestServing = this.selectBestServingForGrams(
+                      foodDetails.servings,
+                      gramsNeeded,
+                      foodDetails.name
+                    );
+                    if (!bestServing) continue;
+
+                    const scale = gramsNeeded / bestServing.servingGrams;
+
+                    if (scale < 0.01 || scale > 20) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Rejecting USDA "${foodDetails.name}" for "${ing.name}": scale ${scale.toFixed(2)}x out of range`
+                      );
+                      continue;
+                    }
+
+                    // Per-ingredient calorie cap for low-calorie plans
+                    const ingredientKcal = bestServing.serving.calories * scale;
+                    if (dailyTargetKcal && dailyTargetKcal < 1500) {
+                      const maxIngredientKcal = dailyTargetKcal * 0.4;
+                      if (ingredientKcal > maxIngredientKcal) {
+                        engineLogger.warn(
+                          `[NutritionCompiler] Rejecting USDA "${foodDetails.name}" for "${ing.name}": ` +
+                            `${Math.round(ingredientKcal)} kcal exceeds ${Math.round(maxIngredientKcal)} kcal cap ` +
+                            `(40% of ${dailyTargetKcal} daily target)`
+                        );
+                        continue;
+                      }
+                    }
+
+                    return {
+                      ingredient: {
+                        name: ing.name,
+                        amount: Math.round(gramsNeeded),
+                        unit: 'g',
+                        fatsecretFoodId: `usda-${result.foodId}`,
+                      } as Ingredient,
+                      kcal: ingredientKcal,
+                      proteinG: bestServing.serving.protein * scale,
+                      carbsG: bestServing.serving.carbohydrate * scale,
+                      fatG: bestServing.serving.fat * scale,
+                      fiberG:
+                        bestServing.serving.fiber !== undefined
+                          ? bestServing.serving.fiber * scale
+                          : undefined,
+                      verified: true,
+                    };
+                  }
+                }
+              } catch (err) {
+                engineLogger.warn(
+                  `[NutritionCompiler] USDA lookup failed for ingredient "${searchName}":`,
+                  err instanceof Error ? err.message : err
+                );
+              }
+            }
           }
 
-          // Both failed — ingredient stays unverified
+          // All names/sources failed — ingredient stays unverified
+          engineLogger.warn(
+            `[NutritionCompiler] No match found for ingredient "${ing.name}" (tried: ${normalizedNames.join(', ')})`
+          );
           return {
             ingredient: {
               name: ing.name,
@@ -478,7 +778,7 @@ export class NutritionCompiler {
    *   Strategy 2 (FALLBACK): Single-food FatSecret/USDA lookup (for old drafts)
    *   Strategy 3 (FINAL): AI estimates from draft
    */
-  private async compileMeal(meal: DraftMeal): Promise<CompiledMeal> {
+  private async compileMeal(meal: DraftMeal, dailyTargetKcal?: number): Promise<CompiledMeal> {
     let confidenceLevel: 'verified' | 'ai_estimated' = 'ai_estimated';
     let nutrition = {
       kcal: meal.estimatedNutrition.kcal,
@@ -492,7 +792,7 @@ export class NutritionCompiler {
     try {
       // Strategy 1: Ingredient-level lookups (new primary path)
       if (meal.draftIngredients && meal.draftIngredients.length > 0) {
-        const result = await this.compileMealFromIngredients(meal);
+        const result = await this.compileMealFromIngredients(meal, dailyTargetKcal);
         nutrition = result.nutrition;
         ingredients = result.ingredients;
         confidenceLevel = result.confidenceLevel;
