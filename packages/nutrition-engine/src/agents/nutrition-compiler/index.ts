@@ -8,6 +8,7 @@ import {
   DraftMeal,
   DraftDay,
   Ingredient,
+  ClientIntake,
 } from '../../types/schemas';
 import { FatSecretAdapter } from '../../adapters/fatsecret';
 import { USDAAdapter } from '../../adapters/usda';
@@ -44,6 +45,61 @@ const MAX_SCALE_FACTOR = 8.0;
  */
 const MIN_SCALE_FACTOR = 0.25;
 
+/** Concurrency limit for ingredient-level lookups (higher than meal-level) */
+const INGREDIENT_CONCURRENCY_LIMIT = 8;
+
+/**
+ * Convert a quantity + unit to grams for per-100g scaling.
+ */
+function convertToGrams(quantity: number, unit: string): number {
+  const u = unit.toLowerCase().trim();
+  switch (u) {
+    case 'g':
+    case 'grams':
+    case 'gram':
+      return quantity;
+    case 'oz':
+    case 'ounce':
+    case 'ounces':
+      return quantity * 28.35;
+    case 'lb':
+    case 'lbs':
+    case 'pound':
+    case 'pounds':
+      return quantity * 453.6;
+    case 'kg':
+    case 'kilogram':
+    case 'kilograms':
+      return quantity * 1000;
+    case 'cup':
+    case 'cups':
+      return quantity * 240;
+    case 'tbsp':
+    case 'tablespoon':
+    case 'tablespoons':
+      return quantity * 15;
+    case 'tsp':
+    case 'teaspoon':
+    case 'teaspoons':
+      return quantity * 5;
+    case 'ml':
+    case 'milliliter':
+    case 'milliliters':
+      return quantity;
+    case 'pieces':
+    case 'piece':
+    case 'count':
+    case 'large':
+    case 'medium':
+    case 'small':
+    case 'slices':
+    case 'slice':
+      return quantity * 50;
+    default:
+      return quantity * 100;
+  }
+}
+
 /**
  * Agent 4: Nutrition Compiler
  * Verifies nutrition via FatSecret API, gets full recipes, scales portions.
@@ -62,6 +118,7 @@ export class NutritionCompiler {
 
   async compile(
     draft: MealPlanDraft,
+    clientIntake?: ClientIntake,
     onSubProgress?: (message: string) => void | Promise<void>
   ): Promise<MealPlanCompiled> {
     const startTime = Date.now();
@@ -263,12 +320,163 @@ export class NutritionCompiler {
   }
 
   /**
-   * Compile a single meal by searching FatSecret for verification.
-   * Strategy:
-   *   1. Search FatSecret recipes (full meals with realistic nutrition)
-   *   2. Search FatSecret foods, pick best serving, scale to target
-   *   3. USDA fallback with same logic
-   *   4. Fall back to AI estimates if nothing works
+   * Compile a meal using per-ingredient food database lookups.
+   * Each ingredient is looked up individually in FatSecret (then USDA fallback),
+   * and nutrition is summed for accurate meal totals.
+   */
+  private async compileMealFromIngredients(meal: DraftMeal): Promise<{
+    nutrition: ScaledNutrition;
+    ingredients: Ingredient[];
+    confidenceLevel: 'verified' | 'ai_estimated';
+  }> {
+    const ingredientLimit = pLimit(INGREDIENT_CONCURRENCY_LIMIT);
+    let verifiedCount = 0;
+    let totalKcal = 0;
+    let totalProtein = 0;
+    let totalCarbs = 0;
+    let totalFat = 0;
+    let totalFiber = 0;
+    let hasFiber = false;
+    const compiledIngredients: Ingredient[] = [];
+
+    const results = await Promise.all(
+      meal.draftIngredients.map((ing) =>
+        ingredientLimit(async () => {
+          const gramsNeeded = convertToGrams(ing.quantity, ing.unit);
+
+          // Try FatSecret first
+          try {
+            const searchResults = await this.fatSecretAdapter.searchFoods(ing.name, 5);
+            if (searchResults.length > 0) {
+              const foodDetails = await this.fatSecretAdapter.getFood(searchResults[0].foodId);
+              if (foodDetails.servings.length > 0) {
+                // Find per-100g serving or best available
+                const per100g = foodDetails.servings.find(
+                  (s) => s.metricServingAmount === 100 && s.metricServingUnit === 'g'
+                );
+                const serving = per100g || foodDetails.servings[0];
+                const servingGrams = serving.metricServingAmount || 100;
+                const scale = gramsNeeded / servingGrams;
+
+                return {
+                  ingredient: {
+                    name: ing.name,
+                    amount: Math.round(gramsNeeded),
+                    unit: 'g',
+                    fatsecretFoodId: searchResults[0].foodId,
+                  } as Ingredient,
+                  kcal: serving.calories * scale,
+                  proteinG: serving.protein * scale,
+                  carbsG: serving.carbohydrate * scale,
+                  fatG: serving.fat * scale,
+                  fiberG: serving.fiber !== undefined ? serving.fiber * scale : undefined,
+                  verified: true,
+                };
+              }
+            }
+          } catch (err) {
+            engineLogger.warn(
+              `[NutritionCompiler] FatSecret lookup failed for ingredient "${ing.name}":`,
+              err instanceof Error ? err.message : err
+            );
+          }
+
+          // Try USDA fallback
+          if (this.usdaAdapter) {
+            try {
+              const usdaResults = await this.usdaAdapter.searchFoods(ing.name, 5);
+              if (usdaResults.length > 0) {
+                const foodDetails = await this.usdaAdapter.getFood(usdaResults[0].foodId);
+                if (foodDetails.servings.length > 0) {
+                  const per100g = foodDetails.servings.find(
+                    (s) => s.metricServingAmount === 100 && s.metricServingUnit === 'g'
+                  );
+                  const serving = per100g || foodDetails.servings[0];
+                  const servingGrams = serving.metricServingAmount || 100;
+                  const scale = gramsNeeded / servingGrams;
+
+                  return {
+                    ingredient: {
+                      name: ing.name,
+                      amount: Math.round(gramsNeeded),
+                      unit: 'g',
+                      fatsecretFoodId: `usda-${usdaResults[0].foodId}`,
+                    } as Ingredient,
+                    kcal: serving.calories * scale,
+                    proteinG: serving.protein * scale,
+                    carbsG: serving.carbohydrate * scale,
+                    fatG: serving.fat * scale,
+                    fiberG: serving.fiber !== undefined ? serving.fiber * scale : undefined,
+                    verified: true,
+                  };
+                }
+              }
+            } catch (err) {
+              engineLogger.warn(
+                `[NutritionCompiler] USDA lookup failed for ingredient "${ing.name}":`,
+                err instanceof Error ? err.message : err
+              );
+            }
+          }
+
+          // Both failed — ingredient stays unverified
+          return {
+            ingredient: {
+              name: ing.name,
+              amount: Math.round(gramsNeeded),
+              unit: 'g',
+            } as Ingredient,
+            kcal: 0,
+            proteinG: 0,
+            carbsG: 0,
+            fatG: 0,
+            fiberG: undefined as number | undefined,
+            verified: false,
+          };
+        })
+      )
+    );
+
+    // Sum all ingredient nutrition
+    for (const r of results) {
+      compiledIngredients.push(r.ingredient);
+      totalKcal += r.kcal;
+      totalProtein += r.proteinG;
+      totalCarbs += r.carbsG;
+      totalFat += r.fatG;
+      if (r.fiberG !== undefined) {
+        totalFiber += r.fiberG;
+        hasFiber = true;
+      }
+      if (r.verified) verifiedCount++;
+    }
+
+    const totalIngredients = meal.draftIngredients.length;
+    const verifiedRatio = totalIngredients > 0 ? verifiedCount / totalIngredients : 0;
+    const confidenceLevel = verifiedRatio >= 0.7 ? 'verified' : 'ai_estimated';
+
+    engineLogger.info(
+      `[NutritionCompiler] Ingredient-level: "${meal.name}" — ${verifiedCount}/${totalIngredients} verified (${Math.round(verifiedRatio * 100)}%) → ${confidenceLevel}, ${Math.round(totalKcal)} kcal`
+    );
+
+    return {
+      nutrition: {
+        kcal: Math.round(totalKcal),
+        proteinG: Math.round(totalProtein * 10) / 10,
+        carbsG: Math.round(totalCarbs * 10) / 10,
+        fatG: Math.round(totalFat * 10) / 10,
+        fiberG: hasFiber ? Math.round(totalFiber * 10) / 10 : undefined,
+      },
+      ingredients: compiledIngredients,
+      confidenceLevel,
+    };
+  }
+
+  /**
+   * Compile a single meal. 3-strategy approach:
+   *   Strategy 1 (PRIMARY): Ingredient-level lookups (if draftIngredients available)
+   *   Strategy 2 (FALLBACK): Single-food FatSecret/USDA lookup (for old drafts)
+   *   Strategy 3 (FINAL): AI estimates from draft
    */
   private async compileMeal(meal: DraftMeal): Promise<CompiledMeal> {
     let confidenceLevel: 'verified' | 'ai_estimated' = 'ai_estimated';
@@ -280,112 +488,60 @@ export class NutritionCompiler {
       fiberG: undefined as number | undefined,
     };
     let ingredients: Ingredient[] = [];
-    let fatsecretRecipeId: string | undefined;
 
     try {
-      // Strategy 1: Try FatSecret recipe search (returns full meals)
-      let verified = false;
-      try {
-        const recipeResults = await this.fatSecretAdapter.searchRecipes(
-          meal.fatsecretSearchQuery,
-          3
-        );
-        if (recipeResults.length > 0) {
-          const recipe = await this.fatSecretAdapter.getRecipe(recipeResults[0].recipeId);
-          engineLogger.warn(
-            `[NutritionCompiler] Recipe found for "${meal.name}": "${recipe.name}" ` +
-              `(calories=${recipe.nutrition.calories}, protein=${recipe.nutrition.protein})`
-          );
-          if (recipe.nutrition.calories > 0) {
-            const targetKcal = meal.targetNutrition.kcal;
-            const baseKcal = recipe.nutrition.calories;
-            const scaleFactor = targetKcal / baseKcal;
+      // Strategy 1: Ingredient-level lookups (new primary path)
+      if (meal.draftIngredients && meal.draftIngredients.length > 0) {
+        const result = await this.compileMealFromIngredients(meal);
+        nutrition = result.nutrition;
+        ingredients = result.ingredients;
+        confidenceLevel = result.confidenceLevel;
+      } else {
+        // Strategy 2: Single-food FatSecret lookup (fallback for old drafts)
+        let verified = false;
 
-            if (scaleFactor >= MIN_SCALE_FACTOR && scaleFactor <= MAX_SCALE_FACTOR) {
-              nutrition = {
-                kcal: Math.round(baseKcal * scaleFactor),
-                proteinG: Math.round(recipe.nutrition.protein * scaleFactor * 10) / 10,
-                carbsG: Math.round(recipe.nutrition.carbohydrate * scaleFactor * 10) / 10,
-                fatG: Math.round(recipe.nutrition.fat * scaleFactor * 10) / 10,
-                fiberG:
-                  recipe.nutrition.fiber !== undefined
-                    ? Math.round(recipe.nutrition.fiber * scaleFactor * 10) / 10
-                    : undefined,
-              };
-              confidenceLevel = 'verified';
-              fatsecretRecipeId = recipeResults[0].recipeId;
-              verified = true;
-
-              engineLogger.warn(
-                `[NutritionCompiler] Recipe SCALED: target=${targetKcal} base=${baseKcal} factor=${scaleFactor.toFixed(2)} → ${nutrition.kcal} kcal`
-              );
-
-              // Build ingredients from recipe
-              if (recipe.ingredients.length > 0) {
-                ingredients = recipe.ingredients.map((ing) => ({
-                  name: ing.name,
-                  amount: parseFloat(ing.amount) || 1,
-                  unit: ing.amount.replace(/[\d.]+\s*/, '').trim() || 'serving',
-                  fatsecretFoodId: ing.foodId,
-                }));
-              }
-            }
-          }
-        }
-      } catch (recipeError) {
-        // Recipe search failed, continue to food search
-        engineLogger.warn(
-          `[NutritionCompiler] Recipe search failed for "${meal.fatsecretSearchQuery}":`,
-          recipeError instanceof Error ? recipeError.message : recipeError
-        );
-      }
-
-      // Strategy 2: Try FatSecret food search with best-serving selection
-      if (!verified) {
-        const result = await this.tryVerifyFromFoodDB(
+        const fatsecretResult = await this.tryVerifyFromFoodDB(
           (q, max) => this.fatSecretAdapter.searchFoods(q, max),
           (id) => this.fatSecretAdapter.getFood(id),
           meal,
           'FatSecret'
         );
 
-        if (result) {
-          nutrition = result.nutrition;
-          ingredients = result.ingredients;
-          fatsecretRecipeId = result.foodId;
+        if (fatsecretResult) {
+          nutrition = fatsecretResult.nutrition;
+          ingredients = fatsecretResult.ingredients;
           confidenceLevel = 'verified';
           verified = true;
         }
-      }
 
-      // Strategy 3: USDA fallback
-      if (!verified && this.usdaAdapter) {
-        try {
-          const usdaRef = this.usdaAdapter;
-          const result = await this.tryVerifyFromFoodDB(
-            (q, max) => usdaRef.searchFoods(q, max),
-            (id) => usdaRef.getFood(id),
-            meal,
-            'USDA'
-          );
+        // USDA fallback for Strategy 2
+        if (!verified && this.usdaAdapter) {
+          try {
+            const usdaRef = this.usdaAdapter;
+            const usdaResult = await this.tryVerifyFromFoodDB(
+              (q, max) => usdaRef.searchFoods(q, max),
+              (id) => usdaRef.getFood(id),
+              meal,
+              'USDA'
+            );
 
-          if (result) {
-            nutrition = result.nutrition;
-            ingredients = result.ingredients;
-            fatsecretRecipeId = `usda-${result.foodId}`;
-            confidenceLevel = 'verified';
+            if (usdaResult) {
+              nutrition = usdaResult.nutrition;
+              ingredients = usdaResult.ingredients;
+              confidenceLevel = 'verified';
+            }
+          } catch (usdaError) {
+            engineLogger.warn(
+              `[NutritionCompiler] USDA fallback failed for "${meal.fatsecretSearchQuery}":`,
+              usdaError instanceof Error ? usdaError.message : usdaError
+            );
           }
-        } catch (usdaError) {
-          engineLogger.warn(
-            `[NutritionCompiler] USDA fallback failed for "${meal.fatsecretSearchQuery}":`,
-            usdaError instanceof Error ? usdaError.message : usdaError
-          );
         }
       }
     } catch (error) {
-      // FatSecret search failed -- fall back to AI estimates
+      // Strategy 3: AI estimates (already set as defaults)
       engineLogger.warn(
-        `[NutritionCompiler] FatSecret search failed for "${meal.fatsecretSearchQuery}":`,
+        `[NutritionCompiler] All strategies failed for "${meal.name}":`,
         error instanceof Error ? error.message : error
       );
     }
@@ -406,7 +562,7 @@ export class NutritionCompiler {
       cookTimeMin: meal.cookTimeMin,
       servings: meal.suggestedServings || 1,
       nutrition,
-      fatsecretRecipeId,
+      fatsecretRecipeId: undefined,
       confidenceLevel,
       ingredients,
       instructions,

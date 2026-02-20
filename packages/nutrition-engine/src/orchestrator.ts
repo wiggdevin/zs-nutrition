@@ -174,7 +174,7 @@ export class NutritionPipelineOrchestrator {
       // Agent 4: Nutrition Compiler (FatSecret verification)
       await emit(4, 'Nutrition Compiler', 'Verifying nutrition data via FatSecret...');
       start = Date.now();
-      const compiled = await this.nutritionCompiler.compile(draft, (sub) => {
+      const compiled = await this.nutritionCompiler.compile(draft, clientIntake, (sub) => {
         emit(4, 'Nutrition Compiler', 'Verifying nutrition data via FatSecret...', sub);
       });
       timings['nutritionCompiler'] = Date.now() - start;
@@ -325,9 +325,13 @@ export class NutritionPipelineOrchestrator {
       // Stage 2: Skip Agent 3, re-compile with updated targets
       await emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...');
       start = Date.now();
-      const compiled = await this.nutritionCompiler.compile(input.existingDraft, (sub) => {
-        emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...', sub);
-      });
+      const compiled = await this.nutritionCompiler.compile(
+        input.existingDraft,
+        clientIntake,
+        (sub) => {
+          emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...', sub);
+        }
+      );
       timings['nutritionCompiler'] = Date.now() - start;
 
       // Stage 3: QA + Rendering
