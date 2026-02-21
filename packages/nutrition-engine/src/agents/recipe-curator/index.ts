@@ -273,8 +273,7 @@ export class RecipeCurator {
 - Training days: ${intake.trainingDays.join(', ')}
 
 ## Macro Style: ${intake.macroStyle.toUpperCase().replace('_', ' ')}
-${this.getMacroStyleGuidance(intake.macroStyle)}
-Each meal's estimatedNutrition MUST be within 15% of its targetNutrition for protein, carbs, AND fat. Limit each meal to at most 2 concentrated fat sources (oils, butter, nuts, avocado, cheese).
+${this.getMacroStyleGuidance(intake.macroStyle, metabolicProfile, intake.mealsPerDay + intake.snacksPerDay)}
 
 ## Meal Slot Targets
 ${metabolicProfile.mealTargets.map((t) => `- ${t.label}: ${t.kcal} kcal (P: ${t.proteinG}g, C: ${t.carbsG}g, F: ${t.fatG}g)`).join('\n')}
@@ -353,16 +352,93 @@ ${this.buildBiometricPromptSection(biometricContext)}`;
     return sections.length > 1 ? sections.join('\n\n') : '';
   }
 
-  private getMacroStyleGuidance(macroStyle: string): string {
+  private getMacroStyleGuidance(
+    macroStyle: string,
+    profile: MetabolicProfile,
+    totalSlots: number
+  ): string {
+    const perMealProtein = Math.round(profile.proteinTargetG / totalSlots);
+    const perMealCarbs = Math.round(profile.carbsTargetG / totalSlots);
+    const perMealFat = Math.round(profile.fatTargetG / totalSlots);
+
     switch (macroStyle) {
       case 'high_protein':
-        return 'Prioritize lean proteins (chicken breast, fish, egg whites, Greek yogurt). Minimize added oils and fatty sauces. Use protein-rich sides like legumes and quinoa.';
-      case 'low_carb':
-        return 'Minimize grains, bread, pasta, rice, and starchy sides. Use leafy greens and non-starchy vegetables. Keep fat sources modest — proteins can include fattier cuts but do not add extra oils or butter.';
+        return `### Per-Meal Targets
+- Protein FLOOR: ${perMealProtein}g minimum per meal
+- Fat CAP: ${perMealFat}g maximum per meal
+- Carbs target: ~${perMealCarbs}g per meal
+
+### Allowed Proteins (use ONLY these)
+chicken breast (boneless/skinless), turkey breast, white fish (cod, tilapia, sole), egg whites, plain Greek yogurt (0% fat), shrimp, lean ground beef (95%+ lean), lean ground turkey (99% lean)
+
+### BANNED Proteins (do NOT use)
+chicken thigh, salmon, full eggs beyond 1 per meal, pork belly, ribeye, dark meat poultry, sausage
+
+### Fat Source Rules
+MAX 1 concentrated fat source per meal (oils, butter, nuts, avocado, cheese — pick only ONE).
+Do NOT stack multiple fat sources. If using oil for cooking, do NOT also add cheese or avocado.
+Keep cooking oil to 1 tsp (5ml) maximum when used.
+
+Each meal's estimatedNutrition MUST be within 15% of its targetNutrition for protein, carbs, AND fat. Max 1 concentrated fat source per meal.`;
+
       case 'keto':
-        return 'Eliminate grains, bread, most fruits, and starchy vegetables. Emphasize healthy fats (avocado, coconut oil, butter, nuts) and moderate protein. Vegetables should be leafy greens and low-carb only.';
+        return `### Per-Meal Targets
+- Carb CAP: ${perMealCarbs}g maximum per meal (STRICT — this is very low, count every gram)
+- Fat target: ~${perMealFat}g per meal
+- Protein target: ~${perMealProtein}g per meal
+
+### Hidden Carb Warnings (MUST account for these)
+- Garlic: >10g = 3g carbs. Use sparingly (1-2 cloves max = 6-8g)
+- Onion: >50g = 5g carbs. Use ≤25g or omit
+- Tomato: >50g = 2g carbs. Avoid or use ≤30g
+- Bell pepper: >50g = 3g carbs. Avoid or use ≤30g
+- Carrots: 100g = 10g carbs. NEVER use
+- Ranch dressing: 2 tbsp = 2g carbs + hidden sugars. NEVER use
+- Cream cheese: 30g = 1g carbs. Account for it
+
+### BANNED Foods (NEVER include)
+grains, bread, pasta, rice, potatoes, sweet potatoes, corn, beans, lentils, most fruits (bananas, apples, grapes, oranges, mangoes), milk, ranch dressing, BBQ sauce, ketchup, honey, sugar, maple syrup, teriyaki sauce, hoisin sauce, flour, breadcrumbs, tortillas, oats, quinoa
+
+### Allowed Vegetables (ONLY these, max 100g each)
+spinach, kale, zucchini, cauliflower, broccoli (≤100g), cucumber, celery, lettuce, arugula, asparagus, mushrooms, cabbage
+
+### Allowed Fat Sources
+butter, ghee, olive oil, coconut oil, avocado, MCT oil, heavy cream, cheese, bacon fat, nuts (macadamia, pecans — ≤30g)
+
+### Fat Source Rules
+MAX 3 concentrated fat sources per meal (keto needs fats, but don't overdo it).
+
+Each meal's estimatedNutrition MUST be within 10% of its targetNutrition for CARBS (strict) and within 15% for protein and fat. Max 3 concentrated fat sources per meal.`;
+
+      case 'low_carb':
+        return `### Per-Meal Targets
+- Carb CAP: ${perMealCarbs}g maximum per meal
+- Protein target: ~${perMealProtein}g per meal
+- Fat target: ~${perMealFat}g per meal
+
+### BANNED Starches (NEVER include)
+bread, pasta, rice, potatoes, sweet potatoes, corn, tortillas, oats, cereal, crackers, flour-based items
+
+### Allowed Carb Sources
+leafy greens, non-starchy vegetables (broccoli, cauliflower, zucchini, green beans, asparagus, mushrooms, peppers), berries (≤50g — strawberries, blueberries, raspberries)
+
+### Fat Source Rules
+MAX 2 concentrated fat sources per meal (oils, butter, nuts, avocado, cheese).
+
+Each meal's estimatedNutrition MUST be within 15% of its targetNutrition for protein, carbs, AND fat. Max 2 concentrated fat sources per meal.`;
+
       default:
-        return 'Use a mix of lean proteins, whole grains, fruits, vegetables, and moderate healthy fats. No single macro should dominate ingredient selection.';
+        return `### Per-Meal Targets
+- Protein target: ~${perMealProtein}g per meal
+- Carbs target: ~${perMealCarbs}g per meal
+- Fat target: ~${perMealFat}g per meal
+
+Use a mix of lean proteins, whole grains, fruits, vegetables, and moderate healthy fats. No single macro should dominate ingredient selection.
+
+### Fat Source Rules
+MAX 2 concentrated fat sources per meal (oils, butter, nuts, avocado, cheese).
+
+Each meal's estimatedNutrition MUST be within 15% of its targetNutrition for protein, carbs, AND fat. Max 2 concentrated fat sources per meal.`;
     }
   }
 
