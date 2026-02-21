@@ -48,6 +48,15 @@ const MIN_SCALE_FACTOR = 0.25;
 /** Concurrency limit for ingredient-level lookups (higher than meal-level) */
 const INGREDIENT_CONCURRENCY_LIMIT = 8;
 
+/** Recalibration: only activate if actual kcal diverges from target by more than this fraction */
+const RECALIBRATION_THRESHOLD = 0.15;
+
+/** Recalibration: minimum scale factor (don't shrink portions below 50%) */
+const MIN_RECALIBRATION_FACTOR = 0.5;
+
+/** Recalibration: maximum scale factor (don't inflate portions above 200%) */
+const MAX_RECALIBRATION_FACTOR = 2.0;
+
 /**
  * Convert a quantity + unit to grams for per-100g scaling.
  */
@@ -793,8 +802,19 @@ export class NutritionCompiler {
       // Strategy 1: Ingredient-level lookups (new primary path)
       if (meal.draftIngredients && meal.draftIngredients.length > 0) {
         const result = await this.compileMealFromIngredients(meal, dailyTargetKcal);
-        nutrition = result.nutrition;
-        ingredients = result.ingredients;
+
+        // Post-compilation recalibration: scale ingredient quantities so
+        // verified nutrition hits per-meal calorie target
+        const recalibrated = this.recalibrateMealToTarget(result, meal.targetNutrition);
+
+        if (recalibrated.applied) {
+          engineLogger.info(
+            `[NutritionCompiler] Recalibration: "${meal.name}" ${recalibrated.reason}`
+          );
+        }
+
+        nutrition = recalibrated.nutrition;
+        ingredients = recalibrated.ingredients;
         confidenceLevel = result.confidenceLevel;
       } else {
         // Strategy 2: Single-food FatSecret lookup (fallback for old drafts)
@@ -868,6 +888,90 @@ export class NutritionCompiler {
       instructions,
       primaryProtein: meal.primaryProtein,
       tags: meal.tags,
+    };
+  }
+
+  /**
+   * Recalibrate compiled meal nutrition toward the per-meal calorie target.
+   *
+   * After compileMealFromIngredients() sums real nutrition from food databases,
+   * the total often diverges from the target because Claude's ingredient
+   * quantity estimates don't match real calorie densities. This scales all
+   * ingredient amounts by a uniform factor to close the calorie gap.
+   *
+   * Skips if: within 15% threshold, factor outside [0.5, 2.0], or zero kcal.
+   */
+  private recalibrateMealToTarget(
+    result: {
+      nutrition: ScaledNutrition;
+      ingredients: Ingredient[];
+      confidenceLevel: 'verified' | 'ai_estimated';
+    },
+    targetNutrition: { kcal: number; proteinG: number; carbsG: number; fatG: number }
+  ): {
+    nutrition: ScaledNutrition;
+    ingredients: Ingredient[];
+    applied: boolean;
+    reason: string;
+  } {
+    const actualKcal = result.nutrition.kcal;
+    const targetKcal = targetNutrition.kcal;
+
+    if (targetKcal <= 0 || actualKcal <= 0) {
+      return {
+        nutrition: result.nutrition,
+        ingredients: result.ingredients,
+        applied: false,
+        reason: 'skipped: zero kcal',
+      };
+    }
+
+    const variance = (actualKcal - targetKcal) / targetKcal;
+
+    if (Math.abs(variance) <= RECALIBRATION_THRESHOLD) {
+      return {
+        nutrition: result.nutrition,
+        ingredients: result.ingredients,
+        applied: false,
+        reason: `skipped: within threshold (${(variance * 100).toFixed(1)}%)`,
+      };
+    }
+
+    const factor = targetKcal / actualKcal;
+
+    if (factor < MIN_RECALIBRATION_FACTOR || factor > MAX_RECALIBRATION_FACTOR) {
+      engineLogger.warn(
+        `[NutritionCompiler] Recalibration guard: factor ${factor.toFixed(2)}x outside [${MIN_RECALIBRATION_FACTOR}-${MAX_RECALIBRATION_FACTOR}] — likely food mismatch`
+      );
+      return {
+        nutrition: result.nutrition,
+        ingredients: result.ingredients,
+        applied: false,
+        reason: `skipped: factor ${factor.toFixed(2)}x outside guard range`,
+      };
+    }
+
+    const scaledIngredients = result.ingredients.map((ing) => ({
+      ...ing,
+      amount: Math.round(ing.amount * factor * 100) / 100,
+    }));
+
+    const scaledNutrition: ScaledNutrition = {
+      kcal: Math.round(actualKcal * factor),
+      proteinG: Math.round(result.nutrition.proteinG * factor * 10) / 10,
+      carbsG: Math.round(result.nutrition.carbsG * factor * 10) / 10,
+      fatG: Math.round(result.nutrition.fatG * factor * 10) / 10,
+      fiberG:
+        result.nutrition.fiberG !== undefined
+          ? Math.round(result.nutrition.fiberG * factor * 10) / 10
+          : undefined,
+    };
+
+    return {
+      nutrition: scaledNutrition,
+      ingredients: scaledIngredients,
+      applied: true,
+      reason: `recalibrated: ${actualKcal} -> ${scaledNutrition.kcal} kcal (${factor.toFixed(2)}x)`,
     };
   }
 
