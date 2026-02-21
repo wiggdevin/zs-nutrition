@@ -309,7 +309,11 @@ Rules:
    - Small items: pieces (e.g., 2 eggs)
 4. Realistic quantities: 85-230g protein per meal, max 340g; 100-200g grains; 1-2 tbsp oil
 5. Ingredient calories should closely match targetNutrition for that meal slot
-6. NEVER include ingredients conflicting with client allergies or dietary style
+6. Each meal MUST have 4-8 ingredients (not counting salt/pepper/water). This is a hard requirement:
+   - Minimum 4 distinct ingredients per meal (e.g., protein + grain/starch + vegetable + fat/sauce)
+   - Maximum 8 ingredients per meal to keep grocery lists manageable
+   - Snacks may have minimum 2 ingredients
+7. NEVER include ingredients conflicting with client allergies or dietary style
 ${this.buildBiometricPromptSection(biometricContext)}`;
   }
 

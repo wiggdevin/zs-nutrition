@@ -186,7 +186,7 @@ export class NutritionPipelineOrchestrator {
       // Agent 5: QA Validator
       await emit(5, 'QA Validator', 'Running quality assurance checks...');
       start = Date.now();
-      const validated = await this.qaValidator.validate(compiled);
+      const validated = await this.qaValidator.validate(compiled, clientIntake);
       timings['qaValidator'] = Date.now() - start;
 
       // Enrich validated plan with calculation metadata for templates (P4-T08)
@@ -337,7 +337,7 @@ export class NutritionPipelineOrchestrator {
       // Stage 3: QA + Rendering
       await emit(5, 'QA Validator', 'Running quality assurance checks...');
       start = Date.now();
-      const validated = await this.qaValidator.validate(compiled);
+      const validated = await this.qaValidator.validate(compiled, clientIntake);
       timings['qaValidator'] = Date.now() - start;
 
       await emit(6, 'Brand Renderer', 'Generating your meal plan deliverables...');

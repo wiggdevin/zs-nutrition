@@ -13,6 +13,7 @@ import {
 import { FatSecretAdapter } from '../../adapters/fatsecret';
 import { USDAAdapter } from '../../adapters/usda';
 import { engineLogger } from '../../utils/logger';
+import { isProductCompliant } from '../../utils/dietary-compliance';
 import {
   buildIngredientsFromFood,
   generateEstimatedIngredients,
@@ -275,6 +276,7 @@ function normalizeIngredientName(name: string): string[] {
  */
 export class NutritionCompiler {
   private readonly limit = pLimit(FATSECRET_CONCURRENCY_LIMIT);
+  private currentIntake?: ClientIntake;
 
   constructor(
     private fatSecretAdapter: FatSecretAdapter,
@@ -288,6 +290,9 @@ export class NutritionCompiler {
   ): Promise<MealPlanCompiled> {
     const startTime = Date.now();
     engineLogger.info('[NutritionCompiler] Starting compilation with parallel processing');
+
+    // Store clientIntake for dietary compliance filtering in downstream methods
+    this.currentIntake = clientIntake;
 
     const totalMeals = draft.days.reduce((sum, d) => sum + d.meals.length, 0);
     let mealsProcessed = 0;
@@ -530,6 +535,19 @@ export class NutritionCompiler {
       const foodDetails = await getFoodFn(match.foodId);
       if (foodDetails.servings.length === 0) continue;
 
+      // Dietary compliance filter: skip products that violate allergies or dietary style
+      if (this.currentIntake) {
+        const allergies = this.currentIntake.allergies;
+        const dietaryStyle = this.currentIntake.dietaryStyle;
+        if (!isProductCompliant(foodDetails.name, allergies, dietaryStyle)) {
+          engineLogger.warn(
+            `[NutritionCompiler] ${source} skipping "${foodDetails.name}" — violates dietary compliance ` +
+              `(allergies: [${allergies.join(', ')}], diet: ${dietaryStyle})`
+          );
+          continue;
+        }
+      }
+
       const targetKcal = meal.targetNutrition.kcal;
       const servingScale = meal.suggestedServings || 1;
       const bestServing = this.selectBestServing(foodDetails.servings, targetKcal);
@@ -601,6 +619,22 @@ export class NutritionCompiler {
                   const foodDetails = await this.fatSecretAdapter.getFood(result.foodId);
                   if (foodDetails.servings.length === 0) continue;
 
+                  // Dietary compliance filter for ingredient-level lookups
+                  if (this.currentIntake) {
+                    if (
+                      !isProductCompliant(
+                        foodDetails.name,
+                        this.currentIntake.allergies,
+                        this.currentIntake.dietaryStyle
+                      )
+                    ) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Skipping FatSecret "${foodDetails.name}" for ingredient "${ing.name}" — dietary compliance`
+                      );
+                      continue;
+                    }
+                  }
+
                   const bestServing = this.selectBestServingForGrams(
                     foodDetails.servings,
                     gramsNeeded,
@@ -666,6 +700,22 @@ export class NutritionCompiler {
                   for (const result of usdaResults) {
                     const foodDetails = await this.usdaAdapter.getFood(result.foodId);
                     if (foodDetails.servings.length === 0) continue;
+
+                    // Dietary compliance filter for USDA ingredient-level lookups
+                    if (this.currentIntake) {
+                      if (
+                        !isProductCompliant(
+                          foodDetails.name,
+                          this.currentIntake.allergies,
+                          this.currentIntake.dietaryStyle
+                        )
+                      ) {
+                        engineLogger.warn(
+                          `[NutritionCompiler] Skipping USDA "${foodDetails.name}" for ingredient "${ing.name}" — dietary compliance`
+                        );
+                        continue;
+                      }
+                    }
 
                     const bestServing = this.selectBestServingForGrams(
                       foodDetails.servings,

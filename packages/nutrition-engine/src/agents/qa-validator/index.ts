@@ -3,7 +3,9 @@ import {
   MealPlanValidated,
   MealPlanValidatedSchema,
   QAResult,
+  ClientIntake,
 } from '../../types/schemas';
+import { containsAllergenTerm, isDietaryCompliant } from '../../utils/dietary-compliance';
 import {
   KCAL_TOLERANCE,
   PROTEIN_TOLERANCE,
@@ -37,7 +39,10 @@ const REPAIR_CASCADE: RepairStrategy[] = [
  * Generates QA score 0-100 and aggregates grocery list.
  */
 export class QAValidator {
-  async validate(compiled: MealPlanCompiled): Promise<MealPlanValidated> {
+  async validate(
+    compiled: MealPlanCompiled,
+    clientIntake?: ClientIntake
+  ): Promise<MealPlanValidated> {
     const currentDays = [...compiled.days];
     const adjustmentsMade: string[] = [];
 
@@ -61,6 +66,31 @@ export class QAValidator {
           adjustmentsMade.push(
             `Day ${currentDays[violation.dayIndex].dayNumber}: No strategy could fix ${violation.type} violation (${violation.variancePercent}%)`
           );
+        }
+      }
+    }
+
+    // Dietary compliance scan (warnings only — compiler should have filtered, but belt-and-suspenders)
+    const complianceWarnings: string[] = [];
+    if (clientIntake) {
+      for (const day of currentDays) {
+        for (const meal of day.meals) {
+          for (const ingredient of meal.ingredients) {
+            // Check ingredient name against allergens
+            for (const allergen of clientIntake.allergies) {
+              if (containsAllergenTerm(ingredient.name, allergen)) {
+                complianceWarnings.push(
+                  `Day ${day.dayNumber} "${meal.name}": ingredient "${ingredient.name}" may contain allergen "${allergen}"`
+                );
+              }
+            }
+            // Check dietary style
+            if (!isDietaryCompliant(ingredient.name, clientIntake.dietaryStyle)) {
+              complianceWarnings.push(
+                `Day ${day.dayNumber} "${meal.name}": ingredient "${ingredient.name}" may violate ${clientIntake.dietaryStyle} diet`
+              );
+            }
+          }
         }
       }
     }
@@ -133,6 +163,11 @@ export class QAValidator {
       overallStatus = 'WARN';
     } else {
       overallStatus = 'PASS';
+    }
+
+    // Append compliance warnings to adjustmentsMade for visibility
+    if (complianceWarnings.length > 0) {
+      adjustmentsMade.push(...complianceWarnings.map((w) => `[COMPLIANCE] ${w}`));
     }
 
     const qa: QAResult = {
