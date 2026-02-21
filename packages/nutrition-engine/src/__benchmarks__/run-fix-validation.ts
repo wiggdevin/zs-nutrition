@@ -168,6 +168,52 @@ const MARCUS: RawIntakeForm = {
   planDurationDays: 7,
 };
 
+const KAYLA: RawIntakeForm = {
+  name: 'Kayla',
+  sex: 'female',
+  age: 20,
+  heightFeet: 5,
+  heightInches: 9,
+  weightLbs: 145,
+  goalType: 'maintain',
+  goalRate: 0,
+  activityLevel: 'very_active',
+  trainingDays: ['monday', 'tuesday', 'wednesday', 'thursday', 'friday'],
+  trainingTime: 'morning',
+  dietaryStyle: 'omnivore',
+  allergies: [],
+  exclusions: [],
+  cuisinePreferences: ['american', 'mexican'],
+  mealsPerDay: 4,
+  snacksPerDay: 2,
+  cookingSkill: 3,
+  prepTimeMaxMin: 15,
+  macroStyle: 'high_protein',
+  planDurationDays: 7,
+};
+
+const PRIYA: RawIntakeForm = {
+  name: 'Priya',
+  sex: 'female',
+  age: 16,
+  heightCm: 162,
+  weightKg: 52,
+  goalType: 'bulk',
+  goalRate: 0.25,
+  activityLevel: 'moderately_active',
+  trainingDays: ['monday', 'wednesday', 'friday'],
+  dietaryStyle: 'vegetarian',
+  allergies: ['peanut'],
+  exclusions: ['mushroom'],
+  cuisinePreferences: ['indian', 'mediterranean'],
+  mealsPerDay: 3,
+  snacksPerDay: 2,
+  cookingSkill: 4,
+  prepTimeMaxMin: 25,
+  macroStyle: 'balanced',
+  planDurationDays: 7,
+};
+
 const PERSONAS = [
   { label: 'Diane (Minimalist Cook)', input: DIANE },
   { label: 'Takeshi (Pescatarian Bodybuilder)', input: TAKESHI },
@@ -175,6 +221,8 @@ const PERSONAS = [
   { label: 'Jennifer (Keto Multi-Allergy)', input: JENNIFER },
   { label: 'Raj (Vegan Athlete)', input: RAJ },
   { label: 'Marcus (Large Man Cutting)', input: MARCUS },
+  { label: 'Kayla (College Athlete)', input: KAYLA },
+  { label: 'Priya (Teen Vegetarian)', input: PRIYA },
 ];
 
 // ============================================================
@@ -200,7 +248,9 @@ async function main(): Promise<void> {
     '/Users/zero-suminc./Desktop/ZS-MAC/NE Implementation/Nutrition Engine testing:validation';
 
   console.log('='.repeat(70));
-  console.log('  Fix Validation Run v2: ml conversion + macro-aware + low-cal caps');
+  console.log(
+    '  Fix Validation Run v3: recalibration + ml conversion + macro-aware + low-cal caps'
+  );
   console.log(`  Personas: ${PERSONAS.map((p) => p.input.name).join(', ')}`);
   console.log('='.repeat(70));
   console.log('');

@@ -22,6 +22,7 @@ import { proportionalScaling } from './strategies/proportional-scaling';
 import { selectiveScaling } from './strategies/selective-scaling';
 import { snackAdjustment } from './strategies/snack-adjustment';
 import { ingredientSubstitution } from './strategies/ingredient-substitution';
+import { repairComplianceViolations } from './strategies/compliance-substitution';
 
 /** Ordered cascade of repair strategies. For each violation, strategies are
  *  tried in order until one succeeds. */
@@ -46,15 +47,16 @@ export class QAValidator {
     const currentDays = [...compiled.days];
     const adjustmentsMade: string[] = [];
 
-    // Find violations and attempt repair via strategy cascade
-    const violations = findViolations(currentDays);
+    // 2-pass repair: first pass may partially fix, second pass finishes
+    for (let pass = 0; pass < 2; pass++) {
+      const violations = findViolations(currentDays);
+      if (violations.length === 0) break;
 
-    if (violations.length > 0) {
       for (const violation of violations) {
         let repaired = false;
         for (const strategy of REPAIR_CASCADE) {
           const day = currentDays[violation.dayIndex];
-          const result = strategy.attempt(day, violation);
+          const result = strategy.attempt(day, violation, clientIntake);
           if (result) {
             currentDays[violation.dayIndex] = result.adjustedDay;
             adjustmentsMade.push(result.description);
@@ -62,10 +64,21 @@ export class QAValidator {
             break;
           }
         }
-        if (!repaired) {
+        if (!repaired && pass === 1) {
           adjustmentsMade.push(
             `Day ${currentDays[violation.dayIndex].dayNumber}: No strategy could fix ${violation.type} violation (${violation.variancePercent}%)`
           );
+        }
+      }
+    }
+
+    // Active compliance repair (Layer A4): substitute violating ingredients
+    if (clientIntake) {
+      for (let i = 0; i < currentDays.length; i++) {
+        const result = repairComplianceViolations(currentDays[i], clientIntake);
+        if (result) {
+          currentDays[i] = result.adjustedDay;
+          adjustmentsMade.push(result.description);
         }
       }
     }
@@ -149,8 +162,11 @@ export class QAValidator {
       };
     });
 
+    // Count remaining compliance violations after repair
+    const remainingViolationCount = complianceWarnings.length;
+
     // Calculate overall QA score (0-100)
-    const score = calculateQAScore(currentDays);
+    const score = calculateQAScore(currentDays, remainingViolationCount);
 
     // Determine overall status
     const hasAnyFail = dayResults.some((d) => d.status === 'FAIL');
@@ -163,6 +179,13 @@ export class QAValidator {
       overallStatus = 'WARN';
     } else {
       overallStatus = 'PASS';
+    }
+
+    // Override status based on remaining compliance violations
+    if (remainingViolationCount >= 3) {
+      overallStatus = 'FAIL';
+    } else if (remainingViolationCount >= 1 && overallStatus === 'PASS') {
+      overallStatus = 'WARN';
     }
 
     // Append compliance warnings to adjustmentsMade for visibility

@@ -50,7 +50,7 @@ const MIN_SCALE_FACTOR = 0.25;
 const INGREDIENT_CONCURRENCY_LIMIT = 8;
 
 /** Recalibration: only activate if actual kcal diverges from target by more than this fraction */
-const RECALIBRATION_THRESHOLD = 0.15;
+const RECALIBRATION_THRESHOLD = 0.05;
 
 /** Recalibration: minimum scale factor (don't shrink portions below 50%) */
 const MIN_RECALIBRATION_FACTOR = 0.5;
@@ -172,6 +172,64 @@ const INGREDIENT_NAME_MAP: Record<string, string> = {
   'black beans': 'black beans cooked',
   chickpeas: 'chickpeas cooked',
   lentils: 'lentils cooked',
+  // Vegetables (expanded)
+  asparagus: 'asparagus raw',
+  cauliflower: 'cauliflower raw',
+  'bell pepper': 'bell pepper raw',
+  'bell peppers': 'bell pepper raw',
+  'red bell pepper': 'bell pepper red raw',
+  'green bell pepper': 'bell pepper green raw',
+  zucchini: 'zucchini raw',
+  mushrooms: 'mushrooms raw white',
+  mushroom: 'mushrooms raw white',
+  cucumber: 'cucumber raw',
+  celery: 'celery raw',
+  'green beans': 'green beans raw',
+  cabbage: 'cabbage raw',
+  eggplant: 'eggplant raw',
+  carrots: 'carrots raw',
+  carrot: 'carrots raw',
+  // Proteins (expanded)
+  cod: 'cod atlantic raw',
+  'cod fillet': 'cod atlantic raw',
+  'pork tenderloin': 'pork tenderloin raw',
+  'pork chop': 'pork chop boneless raw',
+  'turkey breast': 'turkey breast skinless raw',
+  tilapia: 'tilapia raw',
+  'mahi mahi': 'mahi mahi raw',
+  scallops: 'scallops raw',
+  // Condiments & sauces
+  'soy sauce': 'soy sauce',
+  'fish sauce': 'fish sauce',
+  sriracha: 'sriracha hot chili sauce',
+  breadcrumbs: 'bread crumbs plain dry',
+  mirin: 'rice wine mirin',
+  tahini: 'tahini sesame paste',
+  // Dairy (expanded)
+  'cottage cheese': 'cottage cheese low fat 2%',
+  'cream cheese': 'cream cheese',
+  parmesan: 'parmesan cheese grated',
+  mozzarella: 'mozzarella cheese',
+  feta: 'feta cheese crumbled',
+  ricotta: 'ricotta cheese part skim',
+  // Nuts & seeds (expanded)
+  'chia seeds': 'chia seeds dried',
+  'flax seeds': 'flax seeds ground',
+  flaxseed: 'flax seeds ground',
+  'hemp seeds': 'hemp seeds hulled',
+  'pumpkin seeds': 'pumpkin seeds raw',
+  'sunflower seeds': 'sunflower seed kernels',
+  cashews: 'cashews raw',
+  pecans: 'pecans raw',
+  'pine nuts': 'pine nuts dried',
+  // Grains (expanded)
+  couscous: 'couscous cooked',
+  farro: 'farro cooked',
+  bulgur: 'bulgur cooked',
+  tortilla: 'flour tortilla',
+  naan: 'naan bread',
+  'jasmine rice': 'jasmine rice cooked',
+  'basmati rice': 'basmati rice cooked',
 };
 
 /**
@@ -349,7 +407,7 @@ export class NutritionCompiler {
       fatG: Math.round(day.meals.reduce((sum, m) => sum + m.targetNutrition.fatG, 0)),
     };
 
-    return {
+    const result: CompiledDay = {
       dayNumber: day.dayNumber,
       dayName: day.dayName,
       isTrainingDay: day.isTrainingDay,
@@ -360,6 +418,8 @@ export class NutritionCompiler {
       varianceKcal: Math.round(varianceKcal),
       variancePercent,
     };
+
+    return this.calibrateDay(result);
   }
 
   /**
@@ -666,6 +726,27 @@ export class NutritionCompiler {
                     }
                   }
 
+                  // Reject ingredients with physically impossible calorie density
+                  const kcalPerGram = ingredientKcal / gramsNeeded;
+                  if (kcalPerGram > 9.0) {
+                    engineLogger.warn(
+                      `[NutritionCompiler] Anomalous data: "${foodDetails.name}" ` +
+                        `${kcalPerGram.toFixed(1)} kcal/g exceeds physical max (9.0). Skipping.`
+                    );
+                    continue;
+                  }
+                  // Reject if fat or protein density exceeds 1g per 1g food
+                  const scaledFat = bestServing.serving.fat * scale;
+                  const scaledProtein = bestServing.serving.protein * scale;
+                  const fatPerGram = scaledFat / gramsNeeded;
+                  const proteinPerGram = scaledProtein / gramsNeeded;
+                  if (fatPerGram > 1.0 || proteinPerGram > 1.0) {
+                    engineLogger.warn(
+                      `[NutritionCompiler] Anomalous macros for "${foodDetails.name}". Skipping.`
+                    );
+                    continue;
+                  }
+
                   return {
                     ingredient: {
                       name: ing.name,
@@ -747,6 +828,27 @@ export class NutritionCompiler {
                       }
                     }
 
+                    // Reject ingredients with physically impossible calorie density
+                    const kcalPerGram = ingredientKcal / gramsNeeded;
+                    if (kcalPerGram > 9.0) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Anomalous data: "${foodDetails.name}" ` +
+                          `${kcalPerGram.toFixed(1)} kcal/g exceeds physical max (9.0). Skipping.`
+                      );
+                      continue;
+                    }
+                    // Reject if fat or protein density exceeds 1g per 1g food
+                    const scaledFat = bestServing.serving.fat * scale;
+                    const scaledProtein = bestServing.serving.protein * scale;
+                    const fatPerGram = scaledFat / gramsNeeded;
+                    const proteinPerGram = scaledProtein / gramsNeeded;
+                    if (fatPerGram > 1.0 || proteinPerGram > 1.0) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Anomalous macros for "${foodDetails.name}". Skipping.`
+                      );
+                      continue;
+                    }
+
                     return {
                       ingredient: {
                         name: ing.name,
@@ -808,6 +910,26 @@ export class NutritionCompiler {
         hasFiber = true;
       }
       if (r.verified) verifiedCount++;
+    }
+
+    // Per-meal total cap: if total exceeds 2x the meal target, fall back to AI estimates
+    const mealTargetKcal = meal.targetNutrition.kcal;
+    if (mealTargetKcal && mealTargetKcal > 0 && totalKcal > mealTargetKcal * 2.0) {
+      engineLogger.warn(
+        `[NutritionCompiler] Meal "${meal.name}" total ${Math.round(totalKcal)} kcal ` +
+          `exceeds 2x target ${mealTargetKcal}. Falling back to AI estimates.`
+      );
+      return {
+        nutrition: {
+          kcal: meal.estimatedNutrition.kcal,
+          proteinG: meal.estimatedNutrition.proteinG,
+          carbsG: meal.estimatedNutrition.carbsG,
+          fatG: meal.estimatedNutrition.fatG,
+          fiberG: undefined,
+        },
+        ingredients: compiledIngredients,
+        confidenceLevel: 'ai_estimated',
+      };
     }
 
     const totalIngredients = meal.draftIngredients.length;
@@ -1022,6 +1144,83 @@ export class NutritionCompiler {
       ingredients: scaledIngredients,
       applied: true,
       reason: `recalibrated: ${actualKcal} -> ${scaledNutrition.kcal} kcal (${factor.toFixed(2)}x)`,
+    };
+  }
+
+  /**
+   * Post-compilation day-level calibration.
+   * Proportionally adjusts all meals in a day so the daily total kcal
+   * moves closer to the target. Each meal is clamped to +/-20% adjustment
+   * to avoid distorting individual meals too much.
+   */
+  private calibrateDay(day: CompiledDay): CompiledDay {
+    const targetKcal = day.targetKcal;
+    if (targetKcal <= 0) return day;
+
+    const variance = (day.dailyTotals.kcal - targetKcal) / targetKcal;
+    if (Math.abs(variance) <= 0.03) return day; // Already within QA tolerance
+
+    const kcalGap = targetKcal - day.dailyTotals.kcal;
+
+    const adjustedMeals = day.meals.map((meal) => {
+      if (day.dailyTotals.kcal === 0) return meal;
+      const mealShare = meal.nutrition.kcal / day.dailyTotals.kcal;
+      const mealAdjustment = kcalGap * mealShare;
+      const mealFactor =
+        meal.nutrition.kcal > 0 ? (meal.nutrition.kcal + mealAdjustment) / meal.nutrition.kcal : 1;
+
+      // Clamp to +/-20% per meal
+      const clampedFactor = Math.max(0.8, Math.min(1.2, mealFactor));
+
+      return {
+        ...meal,
+        nutrition: {
+          kcal: Math.round(meal.nutrition.kcal * clampedFactor),
+          proteinG: Math.round(meal.nutrition.proteinG * clampedFactor * 10) / 10,
+          carbsG: Math.round(meal.nutrition.carbsG * clampedFactor * 10) / 10,
+          fatG: Math.round(meal.nutrition.fatG * clampedFactor * 10) / 10,
+          fiberG: meal.nutrition.fiberG
+            ? Math.round(meal.nutrition.fiberG * clampedFactor * 10) / 10
+            : undefined,
+        },
+        ingredients: meal.ingredients.map((ing) => ({
+          ...ing,
+          amount: Math.round(ing.amount * clampedFactor * 100) / 100,
+        })),
+      };
+    });
+
+    // Recalculate daily totals
+    let newKcal = 0,
+      newProtein = 0,
+      newCarbs = 0,
+      newFat = 0,
+      newFiber = 0;
+    for (const m of adjustedMeals) {
+      newKcal += m.nutrition.kcal;
+      newProtein += m.nutrition.proteinG;
+      newCarbs += m.nutrition.carbsG;
+      newFat += m.nutrition.fatG;
+      if (m.nutrition.fiberG) newFiber += m.nutrition.fiberG;
+    }
+
+    const newTotals = {
+      kcal: Math.round(newKcal),
+      proteinG: Math.round(newProtein * 10) / 10,
+      carbsG: Math.round(newCarbs * 10) / 10,
+      fatG: Math.round(newFat * 10) / 10,
+      fiberG: newFiber > 0 ? Math.round(newFiber * 10) / 10 : undefined,
+    };
+    const newVarianceKcal = newTotals.kcal - targetKcal;
+    const newVariancePercent =
+      targetKcal > 0 ? Math.round((newVarianceKcal / targetKcal) * 10000) / 100 : 0;
+
+    return {
+      ...day,
+      meals: adjustedMeals,
+      dailyTotals: newTotals,
+      varianceKcal: Math.round(newVarianceKcal),
+      variancePercent: newVariancePercent,
     };
   }
 
