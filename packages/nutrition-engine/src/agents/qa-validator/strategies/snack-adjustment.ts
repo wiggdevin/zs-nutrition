@@ -1,8 +1,9 @@
-import type { CompiledDay, CompiledMeal } from '../../../types/schemas';
+import type { CompiledDay, CompiledMeal, ClientIntake } from '../../../types/schemas';
 import { recalcDailyTotals, type Violation } from '../tolerance-checks';
 import type { RepairStrategy, RepairResult } from './index';
+import { containsAllergenTerm, isDietaryCompliant } from '../../../utils/dietary-compliance';
 
-interface SnackTemplate {
+export interface SnackTemplate {
   name: string;
   kcal: number;
   proteinG: number;
@@ -11,6 +12,11 @@ interface SnackTemplate {
 }
 
 const SNACK_LIBRARY: SnackTemplate[] = [
+  { name: 'Celery Sticks', kcal: 10, proteinG: 0.5, carbsG: 2, fatG: 0.1 },
+  { name: 'Cucumber Slices', kcal: 16, proteinG: 0.7, carbsG: 3.6, fatG: 0.1 },
+  { name: 'Rice Cake', kcal: 35, proteinG: 0.7, carbsG: 7.3, fatG: 0.3 },
+  { name: 'Small Handful of Almonds', kcal: 50, proteinG: 1.8, carbsG: 1.9, fatG: 4.3 },
+  { name: 'Baby Carrots', kcal: 35, proteinG: 0.6, carbsG: 8, fatG: 0.1 },
   { name: 'String Cheese', kcal: 80, proteinG: 7, carbsG: 1, fatG: 5 },
   { name: 'Banana', kcal: 105, proteinG: 1.3, carbsG: 27, fatG: 0.4 },
   { name: 'Cottage Cheese (1/2 cup)', kcal: 110, proteinG: 14, carbsG: 5, fatG: 2.5 },
@@ -21,7 +27,32 @@ const SNACK_LIBRARY: SnackTemplate[] = [
   { name: 'Mixed Nuts (1 oz)', kcal: 180, proteinG: 5, carbsG: 7, fatG: 15 },
   { name: 'Protein Bar', kcal: 200, proteinG: 20, carbsG: 22, fatG: 7 },
   { name: 'Apple + Peanut Butter', kcal: 250, proteinG: 7, carbsG: 30, fatG: 14 },
+  { name: 'Rice Cake with Hummus', kcal: 130, proteinG: 4, carbsG: 20, fatG: 4 },
+  { name: 'Roasted Chickpeas', kcal: 140, proteinG: 7, carbsG: 18, fatG: 4 },
+  { name: 'Dried Mango Slices', kcal: 120, proteinG: 1, carbsG: 30, fatG: 0.3 },
+  { name: 'Sunflower Seed Butter on Celery', kcal: 160, proteinG: 5, carbsG: 6, fatG: 13 },
+  { name: 'Guacamole with Veggie Sticks', kcal: 150, proteinG: 2, carbsG: 10, fatG: 12 },
 ];
+
+export function filterSnackLibrary(clientIntake?: ClientIntake): SnackTemplate[] {
+  if (!clientIntake) {
+    return SNACK_LIBRARY;
+  }
+
+  return SNACK_LIBRARY.filter((snack) => {
+    // Check against each allergen
+    for (const allergen of clientIntake.allergies) {
+      if (containsAllergenTerm(snack.name, allergen)) {
+        return false;
+      }
+    }
+    // Check dietary style
+    if (!isDietaryCompliant(snack.name, clientIntake.dietaryStyle)) {
+      return false;
+    }
+    return true;
+  });
+}
 
 /**
  * Snack adjustment: add a filler snack if under target, or reduce/remove
@@ -30,11 +61,16 @@ const SNACK_LIBRARY: SnackTemplate[] = [
 export const snackAdjustment: RepairStrategy = {
   name: 'snack-adjustment',
 
-  attempt(day: CompiledDay, violation: Violation): RepairResult | null {
+  attempt(
+    day: CompiledDay,
+    violation: Violation,
+    clientIntake?: ClientIntake
+  ): RepairResult | null {
     const kcalGap = day.targetKcal - day.dailyTotals.kcal;
 
-    // Only trigger for gaps > 100 kcal (either direction)
-    if (Math.abs(kcalGap) <= 100) {
+    // Dynamic threshold: 2% of daily target, minimum 30 kcal
+    const minGap = Math.max(30, day.targetKcal * 0.02);
+    if (Math.abs(kcalGap) <= minGap) {
       return null;
     }
 
@@ -45,7 +81,7 @@ export const snackAdjustment: RepairStrategy = {
 
     if (kcalGap > 0) {
       // Under target: add a snack
-      return addSnack(day, kcalGap);
+      return addSnack(day, kcalGap, clientIntake);
     } else {
       // Over target: reduce or remove a snack
       return reduceSnack(day, kcalGap);
@@ -53,12 +89,17 @@ export const snackAdjustment: RepairStrategy = {
   },
 };
 
-function addSnack(day: CompiledDay, kcalGap: number): RepairResult | null {
+function addSnack(
+  day: CompiledDay,
+  kcalGap: number,
+  clientIntake?: ClientIntake
+): RepairResult | null {
   // Find the best-fitting snack (closest to the gap without exceeding 1.5x the gap)
   const maxKcal = kcalGap * 1.5;
-  const candidates = SNACK_LIBRARY.filter((s) => s.kcal <= maxKcal).sort(
-    (a, b) => Math.abs(a.kcal - kcalGap) - Math.abs(b.kcal - kcalGap)
-  );
+  const safeSnacks = filterSnackLibrary(clientIntake);
+  const candidates = safeSnacks
+    .filter((s) => s.kcal <= maxKcal)
+    .sort((a, b) => Math.abs(a.kcal - kcalGap) - Math.abs(b.kcal - kcalGap));
 
   if (candidates.length === 0) {
     return null;

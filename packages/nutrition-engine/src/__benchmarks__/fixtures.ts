@@ -407,6 +407,7 @@ function buildFastPathDraft(): MealPlanDraft {
         suggestedServings: slot === 'snack' ? 1 : 2,
         primaryProtein: entry.protein,
         tags: entry.tags,
+        draftIngredients: [],
       };
     });
 

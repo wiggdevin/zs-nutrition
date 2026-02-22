@@ -1,4 +1,4 @@
-import type { CompiledDay, CompiledMeal } from '../../../types/schemas';
+import type { CompiledDay, CompiledMeal, ClientIntake } from '../../../types/schemas';
 import { recalcDailyTotals, type Violation } from '../tolerance-checks';
 import type { RepairStrategy, RepairResult } from './index';
 
@@ -35,7 +35,11 @@ const PROTEIN_SUBSTITUTIONS: SubstitutionEntry[] = [
 export const ingredientSubstitution: RepairStrategy = {
   name: 'ingredient-substitution',
 
-  attempt(day: CompiledDay, violation: Violation): RepairResult | null {
+  attempt(
+    day: CompiledDay,
+    violation: Violation,
+    _clientIntake?: ClientIntake
+  ): RepairResult | null {
     // Only handle macro violations where protein is offending
     if (violation.type !== 'macro') {
       return null;

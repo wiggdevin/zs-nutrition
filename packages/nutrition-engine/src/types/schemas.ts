@@ -186,6 +186,15 @@ export const DraftMealSchema = z.object({
   suggestedServings: z.number(),
   primaryProtein: z.string(),
   tags: z.array(z.string()),
+  draftIngredients: z
+    .array(
+      z.object({
+        name: z.string(),
+        quantity: z.number(),
+        unit: z.string(),
+      })
+    )
+    .default([]),
 });
 
 export const DraftDaySchema = z.object({

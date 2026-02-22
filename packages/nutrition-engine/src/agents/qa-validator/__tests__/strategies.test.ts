@@ -244,9 +244,11 @@ describe('snack-adjustment', () => {
     expect(result!.adjustedDay.meals.length).toBeLessThanOrEqual(day.meals.length);
   });
 
-  it('returns null when gap is <= 100 kcal', () => {
-    // Day totals 1500, target 1550 -> gap of 50 kcal
-    const day = makeDay({ targetKcal: 1550 });
+  it('returns null when gap is within dynamic threshold', () => {
+    // Day totals 1500, target 1520 -> gap of 20 kcal
+    // Dynamic threshold: max(30, 1520 * 0.02) = max(30, 30.4) = 30.4
+    // 20 < 30.4 -> should return null
+    const day = makeDay({ targetKcal: 1520 });
     const violation: Violation = {
       dayIndex: 0,
       type: 'kcal',
@@ -405,23 +407,23 @@ describe('cascade fallback behavior', () => {
   ];
 
   it('falls through to second strategy when first fails', () => {
-    // Create a case where proportional scaling fails (scale factor > 1.25)
+    // Create a case where proportional scaling fails (scale factor > 1.35 dynamic guard)
     // but selective scaling succeeds (scale factor within 0.5-2.0 for one meal)
     const meals = [
       makeMeal({ slot: 'breakfast', nutrition: { kcal: 100, proteinG: 5, carbsG: 15, fatG: 2 } }),
       makeMeal({ slot: 'lunch', nutrition: { kcal: 300, proteinG: 25, carbsG: 30, fatG: 10 } }),
       makeMeal({ slot: 'dinner', nutrition: { kcal: 200, proteinG: 15, carbsG: 20, fatG: 8 } }),
     ];
-    // Total = 600 kcal, target = 800 -> scale factor = 1.33 (outside 0.75-1.25)
-    // But selective can scale the 300 kcal meal: needs to add 200 kcal -> 500/300 = 1.67x (within 0.5-2.0)
-    const day = makeDay({ meals, targetKcal: 800 });
+    // Total = 600 kcal, target = 850 -> scale factor = 1.417 (outside 0.65-1.35 for <1500 plans)
+    // But selective can scale the 300 kcal meal: needs to add 250 kcal -> 550/300 = 1.83x (within 0.5-2.0)
+    const day = makeDay({ meals, targetKcal: 850 });
     const violation: Violation = {
       dayIndex: 0,
       type: 'kcal',
       variancePercent: day.variancePercent,
     };
 
-    // Proportional scaling should fail
+    // Proportional scaling should fail (1.417 > 1.35 dynamic guard for <1500 plans)
     expect(proportionalScaling.attempt(day, violation)).toBeNull();
 
     // Selective scaling should succeed

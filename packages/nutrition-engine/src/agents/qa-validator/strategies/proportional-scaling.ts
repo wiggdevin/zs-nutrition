@@ -1,4 +1,4 @@
-import type { CompiledDay, CompiledMeal } from '../../../types/schemas';
+import type { CompiledDay, CompiledMeal, ClientIntake } from '../../../types/schemas';
 import { recalcDailyTotals, type Violation } from '../tolerance-checks';
 import type { RepairStrategy, RepairResult } from './index';
 
@@ -9,7 +9,11 @@ import type { RepairStrategy, RepairResult } from './index';
 export const proportionalScaling: RepairStrategy = {
   name: 'proportional-scaling',
 
-  attempt(day: CompiledDay, violation: Violation): RepairResult | null {
+  attempt(
+    day: CompiledDay,
+    violation: Violation,
+    _clientIntake?: ClientIntake
+  ): RepairResult | null {
     if (day.dailyTotals.kcal === 0) {
       return null;
     }
@@ -62,8 +66,11 @@ export const proportionalScaling: RepairStrategy = {
       return null;
     }
 
-    // Guard: 0.75x - 1.25x
-    if (scaleFactor < 0.75 || scaleFactor > 1.25) {
+    // Dynamic guard: wider range for low-calorie plans where small absolute
+    // errors produce large percentage deviations
+    const minGuard = day.targetKcal < 1500 ? 0.65 : 0.75;
+    const maxGuard = day.targetKcal < 1500 ? 1.35 : 1.25;
+    if (scaleFactor < minGuard || scaleFactor > maxGuard) {
       return null;
     }
 

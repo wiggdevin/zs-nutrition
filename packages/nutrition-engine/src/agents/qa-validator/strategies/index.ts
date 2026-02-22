@@ -1,4 +1,5 @@
 import type { CompiledDay } from '../../../types/schemas';
+import type { ClientIntake } from '../../../types/schemas';
 import type { Violation } from '../tolerance-checks';
 
 export interface RepairResult {
@@ -8,5 +9,5 @@ export interface RepairResult {
 
 export interface RepairStrategy {
   name: string;
-  attempt(day: CompiledDay, violation: Violation): RepairResult | null;
+  attempt(day: CompiledDay, violation: Violation, clientIntake?: ClientIntake): RepairResult | null;
 }

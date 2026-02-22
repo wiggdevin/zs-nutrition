@@ -1,4 +1,4 @@
-import type { CompiledDay, CompiledMeal } from '../../../types/schemas';
+import type { CompiledDay, CompiledMeal, ClientIntake } from '../../../types/schemas';
 import { recalcDailyTotals, type Violation } from '../tolerance-checks';
 import type { RepairStrategy, RepairResult } from './index';
 
@@ -9,7 +9,11 @@ import type { RepairStrategy, RepairResult } from './index';
 export const selectiveScaling: RepairStrategy = {
   name: 'selective-scaling',
 
-  attempt(day: CompiledDay, violation: Violation): RepairResult | null {
+  attempt(
+    day: CompiledDay,
+    violation: Violation,
+    _clientIntake?: ClientIntake
+  ): RepairResult | null {
     if (day.meals.length === 0 || day.dailyTotals.kcal === 0) {
       return null;
     }

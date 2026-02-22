@@ -169,6 +169,7 @@ export function generateDeterministic(
         suggestedServings: 1,
         primaryProtein: selected.primaryProtein,
         tags: selected.tags,
+        draftIngredients: [],
       });
     }
 

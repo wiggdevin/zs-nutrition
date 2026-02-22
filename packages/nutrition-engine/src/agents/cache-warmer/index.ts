@@ -28,6 +28,14 @@ const UNIVERSAL_FOODS = [
   'tofu',
 ] as const;
 
+/** Dietary-style-specific ingredients for better cache hit rates */
+const STYLE_FOODS: Record<string, readonly string[]> = {
+  omnivore: ['ground beef', 'pork tenderloin', 'cheddar cheese', 'whole wheat bread'],
+  vegan: ['tempeh', 'nutritional yeast', 'hemp seeds', 'cashews', 'coconut milk'],
+  keto: ['cream cheese', 'butter', 'coconut oil', 'cauliflower', 'heavy cream'],
+  pescatarian: ['tuna', 'shrimp', 'cod', 'sardines'],
+};
+
 const MEAT_ITEMS = new Set(['chicken breast', 'salmon fillet', 'ground turkey']);
 const DAIRY_ITEMS = new Set(['greek yogurt', 'cottage cheese']);
 const ANIMAL_ITEMS = new Set([...MEAT_ITEMS, ...DAIRY_ITEMS, 'eggs']);
@@ -74,18 +82,27 @@ export class CacheWarmer {
     const { signal, concurrency = 3 } = options;
     const allergySet = new Set(allergies.map((a) => a.toLowerCase()));
 
-    // Filter foods based on dietary restrictions
-    const foods = UNIVERSAL_FOODS.filter((food) => {
+    // Filter universal foods based on dietary restrictions
+    const filteredUniversal = UNIVERSAL_FOODS.filter((food) => {
       if (dietaryStyle === 'vegan' && ANIMAL_ITEMS.has(food)) return false;
       if (dietaryStyle === 'vegetarian' && MEAT_ITEMS.has(food)) return false;
       if (dietaryStyle === 'pescatarian' && MEAT_ITEMS.has(food) && food !== 'salmon fillet')
         return false;
-      // Exclude foods matching any declared allergy
       for (const allergy of allergySet) {
         if (food.toLowerCase().includes(allergy)) return false;
       }
       return true;
     });
+
+    // Add style-specific foods, filtering by allergies
+    const styleFoods = (STYLE_FOODS[dietaryStyle] || []).filter((food) => {
+      for (const allergy of allergySet) {
+        if (food.toLowerCase().includes(allergy)) return false;
+      }
+      return true;
+    });
+
+    const foods = [...filteredUniversal, ...styleFoods];
 
     let warmed = 0;
     let errors = 0;
@@ -107,7 +124,8 @@ export class CacheWarmer {
       }
     }
 
-    const skipped = UNIVERSAL_FOODS.length - foods.length;
+    const totalAvailable = UNIVERSAL_FOODS.length + (STYLE_FOODS[dietaryStyle]?.length || 0);
+    const skipped = totalAvailable - foods.length;
     engineLogger.info(`[CacheWarmer] Warmed ${warmed}, skipped ${skipped}, errors ${errors}`);
 
     return { warmed, skipped, errors };
