@@ -148,6 +148,10 @@ export function isGenericInstruction(instructions: string[]): boolean {
   if (!instructions || instructions.length === 0) return true;
 
   const combined = instructions.join(' ').toLowerCase();
+  const totalWords = combined.split(/\s+/).length;
+
+  // If there are 4+ steps or 25+ words, treat as real instructions
+  if (instructions.length >= 4 || totalWords >= 25) return false;
 
   // Known generic template patterns
   const GENERIC_PATTERNS = [
@@ -166,10 +170,7 @@ export function isGenericInstruction(instructions: string[]): boolean {
   }
 
   // Heuristic: 3 or fewer very short steps with low word count is likely a template
-  if (instructions.length <= 3) {
-    const totalWords = combined.split(/\s+/).length;
-    if (totalWords < 20) return true;
-  }
+  if (instructions.length <= 3 && totalWords < 20) return true;
 
   return false;
 }
