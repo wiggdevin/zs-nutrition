@@ -19,13 +19,13 @@ const DATASETS = [
   {
     name: 'Foundation',
     dataType: 'Foundation',
-    url: 'https://www.ars.usda.gov/fdc-datasets/FoodData_Central_foundation_food_json_2025-12-18.zip',
+    url: 'https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_foundation_food_json_2025-12-18.zip',
     jsonFile: 'foundationDownload.json',
   },
   {
     name: 'SR Legacy',
     dataType: 'SR Legacy',
-    url: 'https://www.ars.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_json_2018-04.zip',
+    url: 'https://fdc.nal.usda.gov/fdc-datasets/FoodData_Central_sr_legacy_food_json_2018-04.zip',
     jsonFile: 'SRLegacyDownload.json',
   },
 ] as const;
