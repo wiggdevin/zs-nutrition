@@ -1438,9 +1438,55 @@ export class NutritionCompiler {
       };
     }
 
-    const factor = targetKcal / actualKcal;
+    // Phase A: Macro ratio correction — if protein is significantly under target
+    // AND fat is significantly over target, apply differential scaling first
+    let phaseANutrition = result.nutrition;
+    let phaseAIngredients = result.ingredients;
+    let phaseAApplied = false;
+
+    const actualProtein = result.nutrition.proteinG;
+    const actualFat = result.nutrition.fatG;
+    const targetProtein = targetNutrition.proteinG;
+    const targetFat = targetNutrition.fatG;
+
+    if (
+      targetProtein > 0 &&
+      targetFat > 0 &&
+      actualProtein < targetProtein * 0.9 &&
+      actualFat > targetFat * 1.1
+    ) {
+      const proteinScale = Math.min(1.3, targetProtein / actualProtein);
+      const fatScale = Math.max(0.7, targetFat / actualFat);
+
+      const adjProtein = Math.round(actualProtein * proteinScale * 10) / 10;
+      const adjFat = Math.round(actualFat * fatScale * 10) / 10;
+      const adjCarbs = result.nutrition.carbsG; // unchanged in Phase A
+
+      phaseANutrition = {
+        kcal: kcalFromMacros(adjProtein, adjCarbs, adjFat),
+        proteinG: adjProtein,
+        carbsG: adjCarbs,
+        fatG: adjFat,
+        fiberG: result.nutrition.fiberG,
+      };
+      phaseAIngredients = result.ingredients.map((ing) => ({ ...ing }));
+      phaseAApplied = true;
+    }
+
+    // Phase B: Uniform kcal scaling on the Phase A result
+    const phaseAKcal = phaseANutrition.kcal;
+    const factor = targetKcal / phaseAKcal;
 
     if (factor < MIN_RECALIBRATION_FACTOR || factor > MAX_RECALIBRATION_FACTOR) {
+      if (phaseAApplied) {
+        // Return Phase A result only (ratio correction without kcal scaling)
+        return {
+          nutrition: phaseANutrition,
+          ingredients: phaseAIngredients,
+          applied: true,
+          reason: `ratio-corrected only: factor ${factor.toFixed(2)}x outside guard range`,
+        };
+      }
       engineLogger.warn(
         `[NutritionCompiler] Recalibration guard: factor ${factor.toFixed(2)}x outside [${MIN_RECALIBRATION_FACTOR}-${MAX_RECALIBRATION_FACTOR}] — likely food mismatch`
       );
@@ -1452,22 +1498,22 @@ export class NutritionCompiler {
       };
     }
 
-    const scaledIngredients = result.ingredients.map((ing) => ({
+    const scaledIngredients = phaseAIngredients.map((ing) => ({
       ...ing,
       amount: Math.round(ing.amount * factor * 100) / 100,
     }));
 
-    const scaledProtein = Math.round(result.nutrition.proteinG * factor * 10) / 10;
-    const scaledCarbs = Math.round(result.nutrition.carbsG * factor * 10) / 10;
-    const scaledFat = Math.round(result.nutrition.fatG * factor * 10) / 10;
+    const scaledProtein = Math.round(phaseANutrition.proteinG * factor * 10) / 10;
+    const scaledCarbs = Math.round(phaseANutrition.carbsG * factor * 10) / 10;
+    const scaledFat = Math.round(phaseANutrition.fatG * factor * 10) / 10;
     const scaledNutrition: ScaledNutrition = {
       kcal: kcalFromMacros(scaledProtein, scaledCarbs, scaledFat),
       proteinG: scaledProtein,
       carbsG: scaledCarbs,
       fatG: scaledFat,
       fiberG:
-        result.nutrition.fiberG !== undefined
-          ? Math.round(result.nutrition.fiberG * factor * 10) / 10
+        phaseANutrition.fiberG !== undefined
+          ? Math.round(phaseANutrition.fiberG * factor * 10) / 10
           : undefined,
     };
 
@@ -1475,7 +1521,7 @@ export class NutritionCompiler {
       nutrition: scaledNutrition,
       ingredients: scaledIngredients,
       applied: true,
-      reason: `recalibrated: ${actualKcal} -> ${scaledNutrition.kcal} kcal (${factor.toFixed(2)}x)`,
+      reason: `recalibrated: ${actualKcal} -> ${scaledNutrition.kcal} kcal (${factor.toFixed(2)}x)${phaseAApplied ? ' [with ratio correction]' : ''}`,
     };
   }
 

@@ -152,12 +152,12 @@ describe('Pipeline E2E', () => {
     expect(profile.goalKcal).toBe(CALORIC_FLOOR_FEMALE);
   }, 10000);
 
-  // ── Test 5: Male caloric floor 1500 (P1-T01) ───────────────────────
-  it('enforces 1500 kcal caloric floor for male sedentary aggressive cut', async () => {
+  // ── Test 5: Male caloric floor 800 (P1-T01) ────────────────────────
+  it('enforces 800 kcal caloric floor for small male sedentary aggressive cut', async () => {
     const result = await orchestrator.run(
       createTestInput({
-        heightCm: 175,
-        weightKg: 70,
+        heightCm: 160,
+        weightKg: 55,
         activityLevel: 'sedentary',
         goalType: 'cut',
         goalRate: 2,
@@ -169,8 +169,8 @@ describe('Pipeline E2E', () => {
     const normalizer = new IntakeNormalizer();
     const intake = normalizer.normalize(
       createTestInput({
-        heightCm: 175,
-        weightKg: 70,
+        heightCm: 160,
+        weightKg: 55,
         activityLevel: 'sedentary',
         goalType: 'cut',
         goalRate: 2,

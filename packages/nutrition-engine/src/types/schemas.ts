@@ -158,6 +158,8 @@ export const MetabolicProfileSchema = z.object({
       reason: z.string(),
     })
     .optional(),
+  proteinClampApplied: z.boolean().optional(),
+  proteinClampReason: z.string().optional(),
 });
 
 export type MetabolicProfile = z.infer<typeof MetabolicProfileSchema>;

@@ -259,7 +259,7 @@ describe('snack-adjustment', () => {
     expect(result).toBeNull();
   });
 
-  it('returns null for macro violations', () => {
+  it('adds high-protein snack for protein-deficit macro violations', () => {
     const day = makeDay({
       targetKcal: 1700,
       macroTargets: { proteinG: 150, carbsG: 150, fatG: 50 },
@@ -269,6 +269,24 @@ describe('snack-adjustment', () => {
       type: 'macro',
       variancePercent: 15,
       offendingMacros: ['protein'],
+    };
+
+    const result = snackAdjustment.attempt(day, violation);
+    expect(result).not.toBeNull();
+    expect(result!.adjustedDay.meals.length).toBeGreaterThan(day.meals.length);
+    expect(result!.description).toContain('high-protein');
+  });
+
+  it('returns null for non-protein macro violations', () => {
+    const day = makeDay({
+      targetKcal: 1700,
+      macroTargets: { proteinG: 150, carbsG: 150, fatG: 50 },
+    });
+    const violation: Violation = {
+      dayIndex: 0,
+      type: 'macro',
+      variancePercent: 15,
+      offendingMacros: ['carbs'],
     };
 
     const result = snackAdjustment.attempt(day, violation);

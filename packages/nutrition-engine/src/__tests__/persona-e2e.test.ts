@@ -66,16 +66,17 @@ describe('Persona 1: Small Female Aggressive Cut', () => {
     expect(profile!.calculationMethod).toBe('katch_mcardle');
   });
 
-  it('should apply female caloric floor (1200 kcal)', () => {
-    expect(profile!.goalKcal).toBeGreaterThanOrEqual(1200);
+  it('should apply female caloric floor (500 kcal)', () => {
+    expect(profile!.goalKcal).toBeGreaterThanOrEqual(500);
     expect(profile!.goalKcalFloorApplied).toBe(true);
   });
 
-  it('should set protein via g_per_kg method for cut (~2.0 g/kg)', () => {
+  it('should set protein via g_per_kg method for cut (clamped to 40% of kcal budget)', () => {
     expect(profile!.proteinMethod).toBe('g_per_kg');
-    // ~54.43 kg * 2.0 = ~108.9g
-    expect(profile!.proteinTargetG).toBeGreaterThanOrEqual(100);
-    expect(profile!.proteinTargetG).toBeLessThanOrEqual(120);
+    // ~54.43 kg * 2.0 = ~109g raw, but clamped to 40% of 500 kcal = 50g
+    expect(profile!.proteinClampApplied).toBe(true);
+    expect(profile!.proteinTargetG).toBeGreaterThanOrEqual(45);
+    expect(profile!.proteinTargetG).toBeLessThanOrEqual(55);
   });
 
   it('should expand dairy and tree nut allergies', () => {

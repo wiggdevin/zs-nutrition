@@ -24,6 +24,7 @@ import { proportionalScaling } from './strategies/proportional-scaling';
 import { selectiveScaling } from './strategies/selective-scaling';
 import { snackAdjustment } from './strategies/snack-adjustment';
 import { ingredientSubstitution } from './strategies/ingredient-substitution';
+import { proteinBoost } from './strategies/protein-boost';
 import { repairComplianceViolations } from './strategies/compliance-substitution';
 
 /** Ordered cascade of repair strategies. For each violation, strategies are
@@ -32,6 +33,7 @@ const REPAIR_CASCADE: RepairStrategy[] = [
   proportionalScaling,
   selectiveScaling,
   snackAdjustment,
+  proteinBoost,
   ingredientSubstitution,
 ];
 

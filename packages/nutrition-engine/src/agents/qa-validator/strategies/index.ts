@@ -11,3 +11,5 @@ export interface RepairStrategy {
   name: string;
   attempt(day: CompiledDay, violation: Violation, clientIntake?: ClientIntake): RepairResult | null;
 }
+
+export { proteinBoost } from './protein-boost';

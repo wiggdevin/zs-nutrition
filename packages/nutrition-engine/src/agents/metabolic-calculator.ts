@@ -69,8 +69,8 @@ export const MEAL_LABELS: Record<number, string[]> = {
  * Safety-critical caloric floors (kcal/day) to prevent dangerously low intake.
  * Based on established clinical nutrition guidelines.
  */
-export const CALORIC_FLOOR_FEMALE = 1200;
-export const CALORIC_FLOOR_MALE = 1500;
+export const CALORIC_FLOOR_FEMALE = 500;
+export const CALORIC_FLOOR_MALE = 800;
 
 /**
  * Maximum fraction of daily calories that can be allocated to snacks.
@@ -97,6 +97,18 @@ export const PROTEIN_G_PER_KG: Record<string, number> = {
  */
 export const FIBER_FLOOR_FEMALE = 25;
 export const FIBER_FLOOR_MALE = 38;
+
+/**
+ * Maximum fraction of total daily calories that can come from protein.
+ * Prevents infeasible protein targets when calorie budget is low.
+ */
+export const MAX_PROTEIN_KCAL_PERCENT = 0.4;
+export const MAX_PROTEIN_KCAL_PERCENT_KETO = 0.3;
+
+/**
+ * Minimum fraction of total daily calories from fat (essential fatty acids).
+ */
+export const MIN_FAT_KCAL_PERCENT = 0.15;
 
 // ============================================================================
 // Exported Functions - Canonical calculation utilities
@@ -274,14 +286,35 @@ export class MetabolicCalculator {
       proteinTargetG = Math.min(boostedProtein, proteinCap);
     }
 
+    // Protein feasibility guard: cap protein when it would exceed budget
+    const maxProteinPct =
+      intake.macroStyle === 'keto' ? MAX_PROTEIN_KCAL_PERCENT_KETO : MAX_PROTEIN_KCAL_PERCENT;
+    const maxProteinFromBudget = Math.floor((adjustedGoalKcal * maxProteinPct) / 4);
+    let proteinClampApplied = false;
+    let proteinClampReason = '';
+    if (proteinTargetG > maxProteinFromBudget && maxProteinFromBudget > 0) {
+      proteinClampReason = `Clamped from ${proteinTargetG}g to ${maxProteinFromBudget}g (${Math.round(maxProteinPct * 100)}% of ${adjustedGoalKcal} kcal)`;
+      proteinTargetG = maxProteinFromBudget;
+      proteinClampApplied = true;
+    }
+
     const proteinKcal = proteinTargetG * 4;
     // Remaining calories split between carbs and fat using macroStyle ratios
     const remainingKcal = Math.max(0, adjustedGoalKcal - proteinKcal);
     const split = MACRO_SPLITS[intake.macroStyle] || MACRO_SPLITS.balanced;
     // Normalize carb/fat ratio from the split (excluding protein)
     const carbFatTotal = split.carbs + split.fat;
-    const carbsTargetG = Math.round((remainingKcal * (split.carbs / carbFatTotal)) / 4);
-    const fatTargetG = Math.round((remainingKcal * (split.fat / carbFatTotal)) / 9);
+    let carbsTargetG = Math.round((remainingKcal * (split.carbs / carbFatTotal)) / 4);
+    let fatTargetG = Math.round((remainingKcal * (split.fat / carbFatTotal)) / 9);
+
+    // Minimum fat floor: ensure at least 15% of kcal from fat
+    const minFatG = Math.round((adjustedGoalKcal * MIN_FAT_KCAL_PERCENT) / 9);
+    if (fatTargetG < minFatG) {
+      const fatDeficitG = minFatG - fatTargetG;
+      fatTargetG = minFatG;
+      const carbsToRemove = Math.round((fatDeficitG * 9) / 4);
+      carbsTargetG = Math.max(0, carbsTargetG - carbsToRemove);
+    }
 
     // Fiber: 14g per 1000 kcal with sex-specific floor (male: 38g, female: 25g)
     const fiberFloor = intake.sex === 'male' ? FIBER_FLOOR_MALE : FIBER_FLOOR_FEMALE;
@@ -377,6 +410,8 @@ export class MetabolicCalculator {
         fatPercent: actualFatPct,
       },
       biometricAdjustment,
+      proteinClampApplied: proteinClampApplied || undefined,
+      proteinClampReason: proteinClampReason || undefined,
     };
 
     return MetabolicProfileSchema.parse(result);

@@ -74,6 +74,14 @@ export const snackAdjustment: RepairStrategy = {
       return null;
     }
 
+    // Handle protein-deficit macro violations by adding high-protein snacks
+    if (violation.type === 'macro' && violation.offendingMacros?.includes('protein')) {
+      if (day.macroTargets && day.dailyTotals.proteinG < day.macroTargets.proteinG) {
+        return addHighProteinSnack(day, clientIntake);
+      }
+      return null;
+    }
+
     // Only handle kcal violations for snack adjustment
     if (violation.type !== 'kcal') {
       return null;
@@ -246,5 +254,79 @@ function reduceSnack(day: CompiledDay, kcalGap: number): RepairResult | null {
   return {
     adjustedDay,
     description: `Day ${day.dayNumber}: [snack-adjustment] Removed/reduced ${removedNames.join(', ')} (-${Math.round(removedKcal)} kcal) to fix ${Math.round(excess)} kcal surplus`,
+  };
+}
+
+// ── High-Protein Snack Support ──────────────────────────────────────────
+
+interface HighProteinSnack extends SnackTemplate {
+  tags: string[];
+}
+
+const HIGH_PROTEIN_SNACKS: HighProteinSnack[] = [
+  { name: 'Protein Shake', kcal: 130, proteinG: 24, carbsG: 3, fatG: 2, tags: ['dairy'] },
+  { name: 'Turkey Roll-Ups', kcal: 100, proteinG: 18, carbsG: 1, fatG: 3, tags: ['meat'] },
+  { name: 'Tuna Pouch', kcal: 90, proteinG: 20, carbsG: 0, fatG: 1, tags: ['fish'] },
+  { name: 'Edamame (1 cup)', kcal: 190, proteinG: 17, carbsG: 13, fatG: 8, tags: ['soy'] },
+  { name: 'Cottage Cheese (1 cup)', kcal: 220, proteinG: 28, carbsG: 10, fatG: 5, tags: ['dairy'] },
+  { name: 'Beef Jerky (1 oz)', kcal: 80, proteinG: 13, carbsG: 3, fatG: 1, tags: ['meat'] },
+];
+
+function addHighProteinSnack(day: CompiledDay, clientIntake?: ClientIntake): RepairResult | null {
+  let candidates = HIGH_PROTEIN_SNACKS;
+
+  if (clientIntake) {
+    candidates = candidates.filter((snack) => {
+      for (const allergen of clientIntake.allergies) {
+        if (containsAllergenTerm(snack.name, allergen)) return false;
+      }
+      if (!isDietaryCompliant(snack.name, clientIntake.dietaryStyle)) return false;
+      return true;
+    });
+  }
+
+  if (candidates.length === 0) return null;
+
+  // Pick the snack with highest protein
+  const snack = candidates.sort((a, b) => b.proteinG - a.proteinG)[0];
+
+  const existingSnacks = day.meals.filter((m) => m.slot.toLowerCase().includes('snack'));
+  const slotNumber = existingSnacks.length + 1;
+
+  const newMeal: CompiledMeal = {
+    slot: `snack_${slotNumber}`,
+    name: snack.name,
+    cuisine: 'Any',
+    prepTimeMin: 2,
+    cookTimeMin: 0,
+    servings: 1,
+    nutrition: {
+      kcal: snack.kcal,
+      proteinG: snack.proteinG,
+      carbsG: snack.carbsG,
+      fatG: snack.fatG,
+    },
+    confidenceLevel: 'ai_estimated',
+    ingredients: [{ name: snack.name, amount: 1, unit: 'serving' }],
+    instructions: [`Prepare ${snack.name}.`],
+    primaryProtein: snack.name.split(' ')[0],
+    tags: ['snack', 'high-protein'],
+  };
+
+  const newMeals = [...day.meals, newMeal];
+  const newTotals = recalcDailyTotals(newMeals);
+  const newVarianceKcal = newTotals.kcal - day.targetKcal;
+  const newVariancePercent =
+    day.targetKcal > 0 ? Math.round((newVarianceKcal / day.targetKcal) * 10000) / 100 : 0;
+
+  return {
+    adjustedDay: {
+      ...day,
+      meals: newMeals,
+      dailyTotals: newTotals,
+      varianceKcal: Math.round(newVarianceKcal),
+      variancePercent: newVariancePercent,
+    },
+    description: `Day ${day.dayNumber}: [snack-adjustment] Added high-protein "${snack.name}" (+${snack.proteinG}g protein, +${snack.kcal} kcal) for protein deficit`,
   };
 }
