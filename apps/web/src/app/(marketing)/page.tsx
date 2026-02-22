@@ -2,11 +2,17 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
+import dynamic from 'next/dynamic';
 import { isDevMode } from '@/lib/dev-mode';
 import { AnimatedCounter } from './_components/AnimatedCounter';
 import { PipelineVisualizer } from './_components/PipelineVisualizer';
 import { ScrollReveal } from './_components/ScrollReveal';
 import { FAQ } from './_components/FAQ';
+
+const PlasmaBackground = dynamic(
+  () => import('./_components/PlasmaBackground').then((mod) => ({ default: mod.PlasmaBackground })),
+  { ssr: false }
+);
 
 export const metadata: Metadata = {
   title: 'AI-Powered Meal Planning & Macro Tracking',
@@ -81,7 +87,8 @@ export default async function HomePage() {
         dangerouslySetInnerHTML={{ __html: structuredData }}
       />
 
-      <div className="relative min-h-screen bg-background">
+      <div className="relative min-h-screen">
+        <PlasmaBackground />
         {/* ─── SECTION 1: STICKY HEADER ─── */}
         <header className="fixed top-0 z-50 w-full border-b border-border/50 bg-background/80 backdrop-blur-md">
           <div className="mx-auto flex max-w-7xl items-center justify-between px-4 py-4 sm:px-6 lg:px-12">
@@ -110,7 +117,7 @@ export default async function HomePage() {
           </div>
         </header>
 
-        <main id="main-content">
+        <main id="main-content" className="relative z-10">
           {/* ─── SECTION 2: HERO ─── */}
           <section className="relative flex items-center pt-20 pb-12 lg:min-h-screen lg:pb-0">
             <div className="mx-auto grid w-full max-w-7xl gap-12 px-6 sm:px-8 lg:grid-cols-2 lg:gap-16 lg:px-12">
@@ -695,7 +702,7 @@ export default async function HomePage() {
         </main>
 
         {/* ─── SECTION 9: FOOTER ─── */}
-        <footer className="border-t border-border">
+        <footer className="relative z-10 border-t border-border">
           <div className="mx-auto max-w-7xl px-6 py-6 sm:px-8 lg:px-12">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
