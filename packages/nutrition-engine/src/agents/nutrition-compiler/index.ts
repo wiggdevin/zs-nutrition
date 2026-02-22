@@ -12,6 +12,7 @@ import {
 } from '../../types/schemas';
 import { FatSecretAdapter } from '../../adapters/fatsecret';
 import { USDAAdapter } from '../../adapters/usda';
+import { LocalUSDAAdapter } from '../../adapters/usda-local';
 import { engineLogger } from '../../utils/logger';
 import { isProductCompliant } from '../../utils/dietary-compliance';
 import {
@@ -388,7 +389,8 @@ export class NutritionCompiler {
 
   constructor(
     private usdaAdapter: USDAAdapter,
-    private fatSecretAdapter?: FatSecretAdapter
+    private fatSecretAdapter?: FatSecretAdapter,
+    private localUsdaAdapter?: LocalUSDAAdapter
   ) {}
 
   async compile(
@@ -760,7 +762,117 @@ export class NutritionCompiler {
 
           // Try each normalized name variant
           for (const searchName of normalizedNames) {
-            // --- USDA primary ---
+            // --- Local USDA primary (sub-millisecond, no API calls) ---
+            if (this.localUsdaAdapter) {
+              try {
+                const localResults = await this.localUsdaAdapter.searchFoods(searchName, 5);
+                if (localResults.length > 0) {
+                  for (const result of localResults) {
+                    const foodDetails = await this.localUsdaAdapter.getFood(result.foodId);
+                    if (foodDetails.servings.length === 0) continue;
+
+                    if (this.currentIntake) {
+                      if (
+                        !isProductCompliant(
+                          foodDetails.name,
+                          this.currentIntake.allergies,
+                          this.currentIntake.dietaryStyle
+                        )
+                      ) {
+                        engineLogger.warn(
+                          `[NutritionCompiler] Skipping LocalUSDA "${foodDetails.name}" for ingredient "${ing.name}" — dietary compliance`
+                        );
+                        continue;
+                      }
+                    }
+
+                    const bestServing = this.selectBestServingForGrams(
+                      foodDetails.servings,
+                      gramsNeeded,
+                      foodDetails.name
+                    );
+                    if (!bestServing) continue;
+
+                    const scale = gramsNeeded / bestServing.servingGrams;
+                    if (scale < 0.01 || scale > 20) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Rejecting LocalUSDA "${foodDetails.name}" for "${ing.name}": scale ${scale.toFixed(2)}x out of range`
+                      );
+                      continue;
+                    }
+
+                    const ingredientKcal = bestServing.serving.calories * scale;
+                    if (dailyTargetKcal && dailyTargetKcal < 1500) {
+                      const maxIngredientKcal = dailyTargetKcal * 0.4;
+                      if (ingredientKcal > maxIngredientKcal) {
+                        engineLogger.warn(
+                          `[NutritionCompiler] Rejecting LocalUSDA "${foodDetails.name}" for "${ing.name}": ` +
+                            `${Math.round(ingredientKcal)} kcal exceeds ${Math.round(maxIngredientKcal)} kcal cap`
+                        );
+                        continue;
+                      }
+                    }
+
+                    const kcalPerGram = ingredientKcal / gramsNeeded;
+                    const kcalPerGramLimit = bestServing.wasMLConverted ? 10.0 : 9.5;
+                    if (kcalPerGram > kcalPerGramLimit) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Anomalous data: LocalUSDA "${foodDetails.name}" ` +
+                          `${kcalPerGram.toFixed(1)} kcal/g exceeds limit. Skipping.`
+                      );
+                      continue;
+                    }
+                    const searchCookingState = extractCookingState(searchName);
+                    if (
+                      searchCookingState === 'cooked' &&
+                      kcalPerGram > COOKED_KCAL_PER_GRAM_CEILING
+                    ) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Cooking-state mismatch: LocalUSDA "${foodDetails.name}" ` +
+                          `${kcalPerGram.toFixed(1)} kcal/g exceeds cooked ceiling. Skipping.`
+                      );
+                      continue;
+                    }
+                    const scaledFat = bestServing.serving.fat * scale;
+                    const scaledProtein = bestServing.serving.protein * scale;
+                    const fatPerGram = scaledFat / gramsNeeded;
+                    const proteinPerGram = scaledProtein / gramsNeeded;
+                    const macroDensityLimit = bestServing.wasMLConverted ? 1.15 : 1.05;
+                    if (fatPerGram > macroDensityLimit || proteinPerGram > macroDensityLimit) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Anomalous macros for LocalUSDA "${foodDetails.name}" (fat/g=${fatPerGram.toFixed(2)}, protein/g=${proteinPerGram.toFixed(2)}). Skipping.`
+                      );
+                      continue;
+                    }
+
+                    return {
+                      ingredient: {
+                        name: ing.name,
+                        amount: Math.round(gramsNeeded),
+                        unit: 'g',
+                        foodId: `usda-${result.foodId}`,
+                      } as Ingredient,
+                      kcal: ingredientKcal,
+                      proteinG: bestServing.serving.protein * scale,
+                      carbsG: bestServing.serving.carbohydrate * scale,
+                      fatG: bestServing.serving.fat * scale,
+                      fiberG:
+                        bestServing.serving.fiber !== undefined
+                          ? bestServing.serving.fiber * scale
+                          : undefined,
+                      verified: true,
+                    };
+                  }
+                }
+              } catch (err) {
+                engineLogger.warn(
+                  `[NutritionCompiler] LocalUSDA lookup failed for ingredient "${searchName}":`,
+                  err instanceof Error ? err.message : err
+                );
+              }
+            }
+
+            // --- USDA live API fallback ---
             try {
               const usdaResults = await this.usdaAdapter.searchFoods(searchName, 5);
               if (usdaResults.length > 0) {
@@ -855,7 +967,7 @@ export class NutritionCompiler {
                       name: ing.name,
                       amount: Math.round(gramsNeeded),
                       unit: 'g',
-                      foodId: result.foodId,
+                      foodId: `usda-${result.foodId}`,
                     } as Ingredient,
                     kcal: ingredientKcal,
                     proteinG: bestServing.serving.protein * scale,
@@ -1133,19 +1245,39 @@ export class NutritionCompiler {
         // Strategy 2: Single-food lookup (fallback for old drafts without ingredients)
         let verified = false;
 
-        // --- USDA primary ---
-        const usdaResult = await this.tryVerifyFromFoodDB(
-          (q, max) => this.usdaAdapter.searchFoods(q, max),
-          (id) => this.usdaAdapter.getFood(id),
-          meal,
-          'USDA'
-        );
+        // --- Local USDA primary (sub-millisecond) ---
+        if (this.localUsdaAdapter) {
+          const localRef = this.localUsdaAdapter;
+          const localResult = await this.tryVerifyFromFoodDB(
+            (q, max) => localRef.searchFoods(q, max),
+            (id) => localRef.getFood(id),
+            meal,
+            'LocalUSDA'
+          );
 
-        if (usdaResult) {
-          nutrition = usdaResult.nutrition;
-          ingredients = usdaResult.ingredients;
-          confidenceLevel = 'verified';
-          verified = true;
+          if (localResult) {
+            nutrition = localResult.nutrition;
+            ingredients = localResult.ingredients;
+            confidenceLevel = 'verified';
+            verified = true;
+          }
+        }
+
+        // --- USDA live API fallback ---
+        if (!verified) {
+          const usdaResult = await this.tryVerifyFromFoodDB(
+            (q, max) => this.usdaAdapter.searchFoods(q, max),
+            (id) => this.usdaAdapter.getFood(id),
+            meal,
+            'USDA'
+          );
+
+          if (usdaResult) {
+            nutrition = usdaResult.nutrition;
+            ingredients = usdaResult.ingredients;
+            confidenceLevel = 'verified';
+            verified = true;
+          }
         }
 
         // --- FatSecret fallback for Strategy 2 ---

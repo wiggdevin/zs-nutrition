@@ -11,6 +11,21 @@ datasource db {
 }
 
 // ============================================================
+// USDA Food (local dataset for sub-millisecond lookups)
+// ============================================================
+model UsdaFood {
+  fdcId        Int    @id // FDC ID from USDA — not auto-generated
+  description  String
+  dataType     String // "Foundation" | "SR Legacy"
+  nutrients    Json   // { "203": protein, "204": fat, "205": carbs, "208": kcal, "291": fiber }
+  portions     Json   // [{ gramWeight: number, description: string }]
+  searchVector Unsupported("tsvector")? // Generated column — see migration SQL
+
+  @@index([dataType])
+  @@index([searchVector], type: Gin)
+}
+
+// ============================================================
 // User (synced with Clerk)
 // ============================================================
 model User {
@@ -215,9 +230,9 @@ model TrackedMeal {
   carbsG          Float
   fatG            Float
   fiberG          Float?
-  source          String // plan_meal | fatsecret_search | manual | quick_add | food_scan
+  source          String // plan_meal | fatsecret_search | usda_search | usda_local | manual | quick_add | food_scan
   confidenceScore Float? // 0-1
-  fatsecretId     String?
+  foodId          String? // Food source ID (USDA fdcId, FatSecret foodId, etc.)
   photoUrl        String?
   scanId          String?
   createdAt       DateTime  @default(now())

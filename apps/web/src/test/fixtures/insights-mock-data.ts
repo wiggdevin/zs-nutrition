@@ -44,7 +44,7 @@ export interface MockTrackedMeal {
   fiberG: number | null;
   source: string;
   confidenceScore: number | null;
-  fatsecretId: string | null;
+  foodId: string | null;
   photoUrl: string | null;
   scanId: string | null;
   createdAt: Date;
@@ -308,7 +308,7 @@ export function createMockTrackedMeals(
         fiberG: randFloat(2, 12),
         source,
         confidenceScore: source === 'food_scan' ? randFloat(0.7, 0.98) : null,
-        fatsecretId: source === 'fatsecret_search' ? `fs-${randomUUID().slice(0, 8)}` : null,
+        foodId: source === 'fatsecret_search' ? `fs-${randomUUID().slice(0, 8)}` : null,
         photoUrl: null,
         scanId: null,
         createdAt: new Date(),

@@ -41,6 +41,7 @@ export {
 export { FatSecretAdapter, fatSecretCircuitBreaker } from './adapters/fatsecret';
 export type { CircuitBreakerState } from './adapters/fatsecret';
 export { USDAAdapter } from './adapters/usda';
+export { LocalUSDAAdapter } from './adapters/usda-local';
 
 // Data - Meal Database
 export {

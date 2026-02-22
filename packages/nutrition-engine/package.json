@@ -13,7 +13,8 @@
     "test:watch": "vitest",
     "benchmark": "tsx src/__benchmarks__/run-benchmark.ts",
     "benchmark:baseline": "tsx src/__benchmarks__/run-benchmark.ts --output=src/__benchmarks__/baseline.json",
-    "benchmark:compare": "tsx src/__benchmarks__/compare.ts"
+    "benchmark:compare": "tsx src/__benchmarks__/compare.ts",
+    "test:usda-only": "tsx src/__benchmarks__/run-usda-only-test.ts"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "^0.72.1",
@@ -26,13 +27,17 @@
   "devDependencies": {
     "@eslint/compat": "^1.2.4",
     "@eslint/js": "^9.18.0",
+    "@prisma/client": "6.19.2",
+    "@types/adm-zip": "^0.5.7",
     "@types/node": "^22.0.0",
+    "adm-zip": "^0.5.16",
     "eslint": "^9.18.0",
     "eslint-plugin-prettier": "^5.2.1",
     "prettier": "^3.4.2",
+    "prisma": "6.19.2",
+    "tsx": "^4.19.0",
     "typescript": "5.9.3",
     "typescript-eslint": "^8.19.1",
-    "tsx": "^4.19.0",
     "vitest": "^4.0.18"
   }
 }

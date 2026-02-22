@@ -8,15 +8,18 @@ import { BrandRenderer, renderHtml, renderPdf } from './agents/brand-renderer';
 import { CacheWarmer } from './agents/cache-warmer';
 import { FatSecretAdapter } from './adapters/fatsecret';
 import { USDAAdapter } from './adapters/usda';
+import { LocalUSDAAdapter } from './adapters/usda-local';
 import { assertPipelineConfig } from './config/env-validation';
 import { sanitizeError } from './utils/error-sanitizer';
 import { engineLogger } from './utils/logger';
+import type { PrismaClient } from '@prisma/client';
 
 export interface PipelineConfig {
   anthropicApiKey: string;
   usdaApiKey: string;
   fatsecretClientId?: string;
   fatsecretClientSecret?: string;
+  prismaClient?: PrismaClient;
 }
 
 export interface PipelineResult {
@@ -64,6 +67,7 @@ export class NutritionPipelineOrchestrator {
   private cacheWarmer: CacheWarmer;
   private usdaAdapter: USDAAdapter;
   private fatSecretAdapter?: FatSecretAdapter;
+  private localUsdaAdapter?: LocalUSDAAdapter;
 
   constructor(config: PipelineConfig) {
     assertPipelineConfig(config);
@@ -75,10 +79,18 @@ export class NutritionPipelineOrchestrator {
         ? new FatSecretAdapter(config.fatsecretClientId, config.fatsecretClientSecret)
         : undefined;
 
+    this.localUsdaAdapter = config.prismaClient
+      ? new LocalUSDAAdapter(config.prismaClient)
+      : undefined;
+
     this.intakeNormalizer = new IntakeNormalizer();
     this.metabolicCalculator = new MetabolicCalculator();
     this.recipeCurator = new RecipeCurator(config.anthropicApiKey);
-    this.nutritionCompiler = new NutritionCompiler(this.usdaAdapter, this.fatSecretAdapter);
+    this.nutritionCompiler = new NutritionCompiler(
+      this.usdaAdapter,
+      this.fatSecretAdapter,
+      this.localUsdaAdapter
+    );
     this.qaValidator = new QAValidator();
     this.brandRenderer = new BrandRenderer();
     this.cacheWarmer = new CacheWarmer();
