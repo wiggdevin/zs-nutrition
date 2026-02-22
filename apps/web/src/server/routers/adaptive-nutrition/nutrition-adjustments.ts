@@ -247,46 +247,25 @@ export const nutritionAdjustmentsRouter = router({
 
         const intakeData = {
           name: updatedProfile.name,
-          sex: updatedProfile.sex as 'male' | 'female',
+          sex: updatedProfile.sex,
           age: updatedProfile.age,
           heightCm: updatedProfile.heightCm,
           weightKg: updatedProfile.weightKg,
-          bodyFatPercent: updatedProfile.bodyFatPercent ?? undefined,
-          goalType: updatedProfile.goalType as 'cut' | 'maintain' | 'bulk',
+          bodyFatPercent: updatedProfile.bodyFatPercent || undefined,
+          goalType: updatedProfile.goalType,
           goalRate: updatedProfile.goalRate,
-          activityLevel: updatedProfile.activityLevel as
-            | 'sedentary'
-            | 'lightly_active'
-            | 'moderately_active'
-            | 'very_active'
-            | 'extremely_active',
-          trainingDays: trainingDays as Array<
-            'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday'
-          >,
-          trainingTime: updatedProfile.trainingTime as
-            | 'morning'
-            | 'afternoon'
-            | 'evening'
-            | undefined,
-          dietaryStyle: updatedProfile.dietaryStyle as
-            | 'omnivore'
-            | 'vegetarian'
-            | 'vegan'
-            | 'pescatarian'
-            | 'keto'
-            | 'paleo',
+          activityLevel: updatedProfile.activityLevel,
+          trainingDays,
+          trainingTime: updatedProfile.trainingTime || undefined,
+          dietaryStyle: updatedProfile.dietaryStyle,
           allergies,
           exclusions,
           cuisinePreferences,
           mealsPerDay: updatedProfile.mealsPerDay,
           snacksPerDay: updatedProfile.snacksPerDay,
-          cookingSkill: updatedProfile.cookingSkill,
-          prepTimeMaxMin: updatedProfile.prepTimeMax,
-          macroStyle: updatedProfile.macroStyle as
-            | 'balanced'
-            | 'high_protein'
-            | 'low_carb'
-            | 'keto',
+          cookingSkill: updatedProfile.cookingSkill || 5,
+          prepTimeMaxMin: updatedProfile.prepTimeMax || 30,
+          macroStyle: updatedProfile.macroStyle,
           planDurationDays: 7,
         };
 
