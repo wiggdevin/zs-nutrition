@@ -11,7 +11,7 @@ import {
   categorizeError,
   InsightsErrorCategory,
 } from '@/server/utils/insights-logger';
-import { getConfig, callWithFallback } from '@zero-sum/nutrition-engine';
+import { getConfig, callWithFallback } from '@zero-sum/nutrition-engine/config';
 
 // ---------------------------------------------------------------------------
 // Lazy singleton Claude client (mirrors pattern in claude-chat.ts)

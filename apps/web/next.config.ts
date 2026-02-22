@@ -15,7 +15,15 @@ const nextConfig: NextConfig = {
   reactStrictMode: true,
   transpilePackages: ['@zero-sum/nutrition-engine', '@zsn/queue-config'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
-  serverExternalPackages: ['puppeteer-core', '@sparticuz/chromium', 'sharp'],
+  serverExternalPackages: [
+    'puppeteer-core',
+    '@sparticuz/chromium',
+    'sharp',
+    'proxy-agent',
+    'pac-proxy-agent',
+    'get-uri',
+    'basic-ftp',
+  ],
   turbopack: {
     resolveExtensions: ['.tsx', '.ts', '.jsx', '.js', '.mjs', '.json'],
   },

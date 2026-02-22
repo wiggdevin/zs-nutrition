@@ -2,17 +2,12 @@ import type { Metadata } from 'next';
 import { redirect } from 'next/navigation';
 import { cookies } from 'next/headers';
 import Link from 'next/link';
-import dynamic from 'next/dynamic';
 import { isDevMode } from '@/lib/dev-mode';
 import { AnimatedCounter } from './_components/AnimatedCounter';
 import { PipelineVisualizer } from './_components/PipelineVisualizer';
 import { ScrollReveal } from './_components/ScrollReveal';
 import { FAQ } from './_components/FAQ';
-
-const PlasmaBackground = dynamic(
-  () => import('./_components/PlasmaBackground').then((mod) => ({ default: mod.PlasmaBackground })),
-  { ssr: false }
-);
+import { PlasmaBackgroundLoader as PlasmaBackground } from './_components/PlasmaBackgroundLoader';
 
 export const metadata: Metadata = {
   title: 'AI-Powered Meal Planning & Macro Tracking',

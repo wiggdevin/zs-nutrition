@@ -7,7 +7,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '@/lib/safe-logger';
-import { getConfig } from '@zero-sum/nutrition-engine';
+import { getConfig } from '@zero-sum/nutrition-engine/config';
 
 // Nutrition analysis result structure
 export interface NutritionEstimate {
