@@ -21,7 +21,7 @@ const testMeal = {
     carbsG: 85,
     fatG: 18,
   },
-  fatsecretSearchQuery: 'oatmeal with nuts',
+  foodSearchQuery: 'oatmeal with nuts',
   suggestedServings: 1,
   primaryProtein: 'mixed',
   tags: ['vegetarian', 'meal-prep'],

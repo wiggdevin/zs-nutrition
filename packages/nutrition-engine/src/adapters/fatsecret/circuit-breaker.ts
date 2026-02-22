@@ -1,8 +1,8 @@
 /**
- * Lightweight circuit breaker for FatSecret API calls.
+ * Lightweight circuit breaker for external API calls.
  *
  * Prevents timeout cascades (up to 14 minutes observed) by fast-failing
- * when the API is consistently unresponsive. The breaker transitions
+ * when an API is consistently unresponsive. The breaker transitions
  * through three states:
  *
  *   CLOSED  --[failures >= threshold]--> OPEN
@@ -29,7 +29,9 @@ export class CircuitBreaker {
     /** How long to wait (ms) before allowing a probe request in half-open state */
     private readonly resetTimeoutMs: number = 30_000,
     /** Per-request timeout (ms) enforced via Promise.race */
-    private readonly requestTimeoutMs: number = 10_000
+    private readonly requestTimeoutMs: number = 10_000,
+    /** Label used in log messages (e.g. 'FatSecret', 'USDA') */
+    private readonly label: string = 'FatSecret'
   ) {}
 
   /**
@@ -41,10 +43,10 @@ export class CircuitBreaker {
       if (Date.now() - this.lastFailureTime > this.resetTimeoutMs) {
         this.state = 'half_open';
         engineLogger.info(
-          '[FatSecret] Circuit breaker transitioning to HALF_OPEN -- allowing probe request'
+          `[${this.label}] Circuit breaker transitioning to HALF_OPEN -- allowing probe request`
         );
       } else {
-        throw new Error('Circuit breaker is OPEN - FatSecret API unavailable');
+        throw new Error(`Circuit breaker is OPEN - ${this.label} API unavailable`);
       }
     }
 
@@ -53,7 +55,7 @@ export class CircuitBreaker {
         fn(),
         new Promise<never>((_, reject) =>
           setTimeout(
-            () => reject(new Error('FatSecret API request timeout')),
+            () => reject(new Error(`${this.label} API request timeout`)),
             this.requestTimeoutMs
           )
         ),
@@ -68,7 +70,7 @@ export class CircuitBreaker {
 
   private onSuccess(): void {
     if (this.state === 'half_open') {
-      engineLogger.info('[FatSecret] Circuit breaker CLOSED -- probe request succeeded');
+      engineLogger.info(`[${this.label}] Circuit breaker CLOSED -- probe request succeeded`);
     }
     this.failures = 0;
     this.state = 'closed';
@@ -80,7 +82,7 @@ export class CircuitBreaker {
     if (this.failures >= this.failureThreshold) {
       this.state = 'open';
       engineLogger.warn(
-        `[FatSecret] Circuit breaker OPEN after ${this.failures} consecutive failures`
+        `[${this.label}] Circuit breaker OPEN after ${this.failures} consecutive failures`
       );
     }
   }

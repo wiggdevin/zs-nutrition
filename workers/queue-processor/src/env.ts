@@ -17,16 +17,14 @@ const workerEnvSchema = z.object({
     ? z.string().min(1, 'ANTHROPIC_API_KEY is required in production')
     : z.string().optional().default(''),
 
-  // FatSecret API
-  FATSECRET_CLIENT_ID: isProduction
-    ? z.string().min(1, 'FATSECRET_CLIENT_ID is required in production')
-    : z.string().optional().default(''),
-  FATSECRET_CLIENT_SECRET: isProduction
-    ? z.string().min(1, 'FATSECRET_CLIENT_SECRET is required in production')
+  // USDA FoodData Central (required — primary nutrition source)
+  USDA_API_KEY: isProduction
+    ? z.string().min(1, 'USDA_API_KEY is required in production')
     : z.string().optional().default(''),
 
-  // USDA FoodData Central (optional fallback)
-  USDA_API_KEY: z.string().optional().default(''),
+  // FatSecret API (optional — fallback nutrition source)
+  FATSECRET_CLIENT_ID: z.string().optional().default(''),
+  FATSECRET_CLIENT_SECRET: z.string().optional().default(''),
 
   // Web app callback
   WEB_APP_URL: z.string().optional().default('http://localhost:3456'),

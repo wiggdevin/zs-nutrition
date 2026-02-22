@@ -165,7 +165,7 @@ export function generateDeterministic(
           carbsG: mealCarbs,
           fatG: mealFat,
         },
-        fatsecretSearchQuery: selected.searchQuery,
+        foodSearchQuery: selected.searchQuery,
         suggestedServings: 1,
         primaryProtein: selected.primaryProtein,
         tags: selected.tags,

@@ -87,68 +87,15 @@ export interface FatSecretTokenResponse {
 }
 
 // ============================================================================
-// Public Types (exported for use by other modules)
+// Public Types (re-exported from shared food-data-types)
 // ============================================================================
 
-export interface FoodSearchResult {
-  foodId: string;
-  name: string;
-  description: string;
-  brandName?: string;
-}
-
-export interface FoodDetails {
-  foodId: string;
-  name: string;
-  brandName?: string;
-  servings: FoodServing[];
-}
-
-export interface FoodServing {
-  servingId: string;
-  servingDescription: string;
-  metricServingAmount?: number;
-  metricServingUnit?: string;
-  calories: number;
-  protein: number;
-  carbohydrate: number;
-  fat: number;
-  fiber?: number;
-}
-
-export interface RecipeSearchResult {
-  recipeId: string;
-  name: string;
-  description: string;
-  preparationTimeMin?: number;
-  cookingTimeMin?: number;
-}
-
-export interface RecipeDetails {
-  recipeId: string;
-  name: string;
-  description: string;
-  preparationTimeMin?: number;
-  cookingTimeMin?: number;
-  servingSize: number;
-  ingredients: RecipeIngredient[];
-  directions: RecipeDirection[];
-  nutrition: {
-    calories: number;
-    protein: number;
-    carbohydrate: number;
-    fat: number;
-    fiber?: number;
-  };
-}
-
-export interface RecipeIngredient {
-  foodId?: string;
-  name: string;
-  amount: string;
-}
-
-export interface RecipeDirection {
-  stepNumber: number;
-  description: string;
-}
+export type {
+  FoodSearchResult,
+  FoodDetails,
+  FoodServing,
+  RecipeSearchResult,
+  RecipeDetails,
+  RecipeIngredient,
+  RecipeDirection,
+} from '../food-data-types';

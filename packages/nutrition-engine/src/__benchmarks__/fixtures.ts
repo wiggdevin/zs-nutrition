@@ -403,7 +403,7 @@ function buildFastPathDraft(): MealPlanDraft {
         cookTimeMin: slot === 'snack' ? 0 : 20,
         estimatedNutrition: { kcal: mealKcal, proteinG, carbsG, fatG },
         targetNutrition: { kcal: mealKcal, proteinG, carbsG, fatG },
-        fatsecretSearchQuery: entry.query,
+        foodSearchQuery: entry.query,
         suggestedServings: slot === 'snack' ? 1 : 2,
         primaryProtein: entry.protein,
         tags: entry.tags,

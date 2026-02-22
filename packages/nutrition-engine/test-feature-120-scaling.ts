@@ -28,7 +28,7 @@ const testMeal = {
     carbsG: 65,
     fatG: 14,
   },
-  fatsecretSearchQuery: 'oats rolled dry',
+  foodSearchQuery: 'oats rolled dry',
   suggestedServings: 1,
   primaryProtein: 'mixed',
   tags: ['vegetarian'],

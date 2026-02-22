@@ -45,7 +45,7 @@ async function runFeature120Tests() {
             cookTimeMin: 20,
             estimatedNutrition: { kcal: 370, proteinG: 53, carbsG: 0, fatG: 6 },
             targetNutrition: { kcal: 250, proteinG: 40, carbsG: 0, fatG: 4 }, // Target is 250
-            fatsecretSearchQuery: 'chicken breast grilled',
+            foodSearchQuery: 'chicken breast grilled',
             suggestedServings: 1,
             primaryProtein: 'chicken',
             tags: ['high-protein'],
@@ -111,7 +111,7 @@ async function runFeature120Tests() {
             cookTimeMin: 5,
             estimatedNutrition: { kcal: 200, proteinG: 5, carbsG: 35, fatG: 3 },
             targetNutrition: { kcal: 450, proteinG: 15, carbsG: 60, fatG: 10 }, // Target is 450
-            fatsecretSearchQuery: 'oats rolled dry',
+            foodSearchQuery: 'oats rolled dry',
             suggestedServings: 1,
             primaryProtein: 'mixed',
             tags: ['vegetarian'],
@@ -179,7 +179,7 @@ async function runFeature120Tests() {
             cookTimeMin: 25,
             estimatedNutrition: { kcal: 500, proteinG: 35, carbsG: 45, fatG: 12 },
             targetNutrition: { kcal: 350, proteinG: 30, carbsG: 30, fatG: 10 }, // Scale down to 350
-            fatsecretSearchQuery: 'chicken breast grilled',
+            foodSearchQuery: 'chicken breast grilled',
             suggestedServings: 1,
             primaryProtein: 'chicken',
             tags: ['high-protein'],

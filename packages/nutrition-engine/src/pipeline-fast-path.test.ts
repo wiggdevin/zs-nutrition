@@ -24,8 +24,7 @@ vi.mock('./agents/brand-renderer/pdf-renderer', () => ({
 
 const TEST_CONFIG: PipelineConfig = {
   anthropicApiKey: 'YOUR_KEY_placeholder',
-  fatsecretClientId: 'placeholder-id',
-  fatsecretClientSecret: 'placeholder-secret',
+  usdaApiKey: 'placeholder-usda-key',
 };
 
 function createTestInput(overrides: Partial<RawIntakeForm> = {}): RawIntakeForm {

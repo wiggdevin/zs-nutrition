@@ -182,7 +182,7 @@ export const DraftMealSchema = z.object({
   cookTimeMin: z.number(),
   estimatedNutrition: EstimatedNutritionSchema,
   targetNutrition: EstimatedNutritionSchema, // Target nutrition for this meal slot
-  fatsecretSearchQuery: z.string(),
+  foodSearchQuery: z.string(),
   suggestedServings: z.number(),
   primaryProtein: z.string(),
   tags: z.array(z.string()),
@@ -234,7 +234,7 @@ export const IngredientSchema = z.object({
   name: z.string(),
   amount: z.number(),
   unit: z.string(),
-  fatsecretFoodId: z.string().optional(),
+  foodId: z.string().optional(),
 });
 
 export const CompiledMealSchema = z.object({
@@ -245,7 +245,7 @@ export const CompiledMealSchema = z.object({
   cookTimeMin: z.number(),
   servings: z.number(),
   nutrition: VerifiedNutritionSchema,
-  fatsecretRecipeId: z.string().optional(),
+  recipeId: z.string().optional(),
   confidenceLevel: ConfidenceLevelEnum,
   ingredients: z.array(IngredientSchema),
   instructions: z.array(z.string()),

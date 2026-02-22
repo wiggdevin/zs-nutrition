@@ -1,1 +1,15 @@
+# Secret scanning (runs first — fast, catches leaked credentials)
+if command -v gitleaks >/dev/null 2>&1; then
+  gitleaks protect --staged --config .gitleaks.toml -v
+  if [ $? -ne 0 ]; then
+    echo ""
+    echo "❌ Secret detected in staged changes! Commit blocked."
+    echo "If false positive, add a rule to .gitleaks.toml"
+    exit 1
+  fi
+else
+  echo "⚠️  gitleaks not installed — skipping secret scan (brew install gitleaks)"
+fi
+
+# Lint staged files
 pnpm lint-staged

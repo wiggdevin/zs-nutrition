@@ -62,7 +62,7 @@ const mealPlanTool = {
                     },
                     required: ['kcal', 'proteinG', 'carbsG', 'fatG'],
                   },
-                  fatsecretSearchQuery: { type: 'string' },
+                  foodSearchQuery: { type: 'string' },
                   suggestedServings: { type: 'number' },
                   primaryProtein: { type: 'string' },
                   tags: { type: 'array', items: { type: 'string' } },
@@ -97,7 +97,7 @@ const mealPlanTool = {
                   'cookTimeMin',
                   'estimatedNutrition',
                   'targetNutrition',
-                  'fatsecretSearchQuery',
+                  'foodSearchQuery',
                   'suggestedServings',
                   'primaryProtein',
                   'tags',
@@ -294,7 +294,7 @@ ${metabolicProfile.mealTargets.map((t) => `- ${t.label}: ${t.kcal} kcal (P: ${t.
 - Rest days get ${metabolicProfile.restDayKcal} kcal
 - Training days get ${metabolicProfile.goalKcal + metabolicProfile.trainingDayBonusKcal} kcal
 - Each meal's estimatedNutrition should closely match its targetNutrition
-- fatsecretSearchQuery should be the primary protein or main ingredient (used as fallback only)
+- foodSearchQuery should be the primary protein or main ingredient (used as fallback only)
 - Include a varietyReport summarizing all proteins and cuisines used
 
 ## Ingredient Requirements (CRITICAL)
@@ -609,7 +609,7 @@ Use the replace_meals tool to provide the replacement meals.`;
                   },
                   required: ['kcal', 'proteinG', 'carbsG', 'fatG'],
                 },
-                fatsecretSearchQuery: { type: 'string' },
+                foodSearchQuery: { type: 'string' },
                 suggestedServings: { type: 'number' },
                 primaryProtein: { type: 'string' },
                 tags: { type: 'array', items: { type: 'string' } },
@@ -645,7 +645,7 @@ Use the replace_meals tool to provide the replacement meals.`;
                 'cookTimeMin',
                 'estimatedNutrition',
                 'targetNutrition',
-                'fatsecretSearchQuery',
+                'foodSearchQuery',
                 'suggestedServings',
                 'primaryProtein',
                 'tags',
@@ -699,7 +699,7 @@ Use the replace_meals tool to provide the replacement meals.`;
           cookTimeMin: number;
           estimatedNutrition: { kcal: number; proteinG: number; carbsG: number; fatG: number };
           targetNutrition: { kcal: number; proteinG: number; carbsG: number; fatG: number };
-          fatsecretSearchQuery: string;
+          foodSearchQuery: string;
           suggestedServings: number;
           primaryProtein: string;
           tags: string[];
@@ -725,7 +725,7 @@ Use the replace_meals tool to provide the replacement meals.`;
                 cookTimeMin: replacement.cookTimeMin,
                 estimatedNutrition: replacement.estimatedNutrition,
                 targetNutrition: replacement.targetNutrition,
-                fatsecretSearchQuery: replacement.fatsecretSearchQuery,
+                foodSearchQuery: replacement.foodSearchQuery,
                 suggestedServings: replacement.suggestedServings,
                 primaryProtein: replacement.primaryProtein,
                 tags: replacement.tags,

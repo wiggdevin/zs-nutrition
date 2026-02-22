@@ -232,15 +232,13 @@ const PERSONAS = [
 async function main(): Promise<void> {
   const config: PipelineConfig = {
     anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-    fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
-    fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || '',
-    usdaApiKey: process.env.USDA_API_KEY,
+    usdaApiKey: process.env.USDA_API_KEY || '',
+    fatsecretClientId: process.env.FATSECRET_CLIENT_ID || undefined,
+    fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || undefined,
   };
 
-  if (!config.anthropicApiKey || !config.fatsecretClientId || !config.fatsecretClientSecret) {
-    console.error(
-      'ERROR: Missing required env vars: ANTHROPIC_API_KEY, FATSECRET_CLIENT_ID, FATSECRET_CLIENT_SECRET'
-    );
+  if (!config.anthropicApiKey || !config.usdaApiKey) {
+    console.error('ERROR: Missing required env vars: ANTHROPIC_API_KEY, USDA_API_KEY');
     process.exit(1);
   }
 
@@ -331,7 +329,7 @@ async function main(): Promise<void> {
           targetP += meal.nutrition.proteinG ? 0 : 0; // just for counting
           for (const ing of meal.ingredients) {
             totalIngredients++;
-            if (ing.fatsecretFoodId) verifiedIngredients++;
+            if (ing.foodId) verifiedIngredients++;
           }
         }
         // Use macroTargets from the compiled day

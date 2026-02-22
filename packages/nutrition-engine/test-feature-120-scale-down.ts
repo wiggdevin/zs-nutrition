@@ -28,7 +28,7 @@ const testMeal = {
     carbsG: 0,
     fatG: 3,
   },
-  fatsecretSearchQuery: 'chicken breast grilled',
+  foodSearchQuery: 'chicken breast grilled',
   suggestedServings: 1,
   primaryProtein: 'chicken',
   tags: ['high-protein'],

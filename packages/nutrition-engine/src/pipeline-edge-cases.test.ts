@@ -21,8 +21,7 @@ vi.mock('./agents/brand-renderer/pdf-renderer', () => ({
 
 const TEST_CONFIG: PipelineConfig = {
   anthropicApiKey: 'YOUR_KEY_placeholder',
-  fatsecretClientId: 'placeholder-id',
-  fatsecretClientSecret: 'placeholder-secret',
+  usdaApiKey: 'placeholder-usda-key',
 };
 
 function createTestInput(overrides: Partial<RawIntakeForm> = {}): RawIntakeForm {
@@ -104,13 +103,12 @@ describe('Pipeline Edge Cases', () => {
   }, 10000);
 
   // ── Test 3: Config validation rejects missing keys (P3-T07) ─────────
-  it('throws on construction with empty FatSecret credentials', () => {
+  it('throws on construction with missing USDA API key', () => {
     expect(
       () =>
         new NutritionPipelineOrchestrator({
           anthropicApiKey: 'YOUR_KEY_test',
-          fatsecretClientId: '',
-          fatsecretClientSecret: '',
+          usdaApiKey: '',
         })
     ).toThrow('Pipeline configuration is invalid');
   });
@@ -120,8 +118,7 @@ describe('Pipeline Edge Cases', () => {
       () =>
         new NutritionPipelineOrchestrator({
           anthropicApiKey: '',
-          fatsecretClientId: 'test-id',
-          fatsecretClientSecret: 'test-secret',
+          usdaApiKey: 'test-usda-key',
         })
     ).toThrow('Pipeline configuration is invalid');
   });

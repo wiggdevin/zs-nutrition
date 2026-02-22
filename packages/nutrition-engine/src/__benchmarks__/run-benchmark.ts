@@ -318,14 +318,15 @@ async function runBenchmark(): Promise<void> {
     args.mode === 'mock'
       ? {
           anthropicApiKey: 'sk-ant-placeholder-benchmark',
+          usdaApiKey: 'placeholder-benchmark-usda-key',
           fatsecretClientId: 'placeholder-benchmark-id',
           fatsecretClientSecret: 'placeholder-benchmark-secret',
         }
       : {
           anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-          fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
-          fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || '',
-          usdaApiKey: process.env.USDA_API_KEY,
+          usdaApiKey: process.env.USDA_API_KEY || '',
+          fatsecretClientId: process.env.FATSECRET_CLIENT_ID || undefined,
+          fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || undefined,
         };
 
   const capture = new ConsoleCapture();

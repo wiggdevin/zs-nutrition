@@ -17,7 +17,7 @@ export interface Meal {
   ingredients?: Array<{
     name: string;
     amount: number | string; // Support both old (string) and new (number) formats
-    fatsecretFoodId?: string;
+    foodId?: string;
     unit?: string;
   }>;
   instructions?: string[];

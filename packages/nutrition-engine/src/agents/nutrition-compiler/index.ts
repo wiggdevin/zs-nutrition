@@ -19,7 +19,7 @@ import {
   generateEstimatedIngredients,
   generateInstructions,
 } from './ingredient-builder';
-import type { FoodServing, FoodDetails, FoodSearchResult } from '../../adapters/fatsecret';
+import type { FoodServing, FoodDetails, FoodSearchResult } from '../../adapters/food-data-types';
 
 /** Nutrition data after scaling to target kcal */
 interface ScaledNutrition {
@@ -30,8 +30,8 @@ interface ScaledNutrition {
   fiberG: number | undefined;
 }
 
-/** Maximum concurrent FatSecret API calls to respect rate limits */
-const FATSECRET_CONCURRENCY_LIMIT = 5;
+/** Maximum concurrent food data API calls to respect rate limits */
+const API_CONCURRENCY_LIMIT = 5;
 
 /**
  * Maximum scale factor before falling back to AI estimates.
@@ -375,19 +375,20 @@ function normalizeIngredientName(name: string): string[] {
 
 /**
  * Agent 4: Nutrition Compiler
- * Verifies nutrition via FatSecret API, gets full recipes, scales portions.
- * Tags meals as "verified" or "ai_estimated" based on FatSecret match.
+ * Verifies nutrition via USDA (primary) and FatSecret (fallback) APIs,
+ * gets full recipes, scales portions.
+ * Tags meals as "verified" or "ai_estimated" based on food database match.
  *
- * Performance optimization: Uses p-limit to parallelize FatSecret API calls
+ * Performance optimization: Uses p-limit to parallelize API calls
  * with a concurrency limit to respect rate limits.
  */
 export class NutritionCompiler {
-  private readonly limit = pLimit(FATSECRET_CONCURRENCY_LIMIT);
+  private readonly limit = pLimit(API_CONCURRENCY_LIMIT);
   private currentIntake?: ClientIntake;
 
   constructor(
-    private fatSecretAdapter: FatSecretAdapter,
-    private usdaAdapter?: USDAAdapter
+    private usdaAdapter: USDAAdapter,
+    private fatSecretAdapter?: FatSecretAdapter
   ) {}
 
   async compile(
@@ -678,7 +679,7 @@ export class NutritionCompiler {
     foodId: string;
     scaleFactor: number;
   } | null> {
-    const results = await searchFn(meal.fatsecretSearchQuery, 5);
+    const results = await searchFn(meal.foodSearchQuery, 5);
     if (results.length === 0) return null;
 
     // Try each search result until one produces a reasonable scale factor
@@ -722,7 +723,7 @@ export class NutritionCompiler {
 
     // All matches required extreme scaling — not usable
     engineLogger.warn(
-      `[NutritionCompiler] ${source} matches for "${meal.fatsecretSearchQuery}" all require ` +
+      `[NutritionCompiler] ${source} matches for "${meal.foodSearchQuery}" all require ` +
         `extreme scaling (>${MAX_SCALE_FACTOR}x), falling back to AI estimates`
     );
     return null;
@@ -759,18 +760,15 @@ export class NutritionCompiler {
 
           // Try each normalized name variant
           for (const searchName of normalizedNames) {
-            // --- FatSecret ---
+            // --- USDA primary ---
             try {
-              const searchResults = await this.fatSecretAdapter.searchFoods(searchName, 5);
-              if (searchResults.length > 0) {
-                const orderedResults = this.preferGenericFoods(searchResults, searchName);
-
-                // Try multiple search results, not just the first
-                for (const result of orderedResults) {
-                  const foodDetails = await this.fatSecretAdapter.getFood(result.foodId);
+              const usdaResults = await this.usdaAdapter.searchFoods(searchName, 5);
+              if (usdaResults.length > 0) {
+                for (const result of usdaResults) {
+                  const foodDetails = await this.usdaAdapter.getFood(result.foodId);
                   if (foodDetails.servings.length === 0) continue;
 
-                  // Dietary compliance filter for ingredient-level lookups
+                  // Dietary compliance filter for USDA ingredient-level lookups
                   if (this.currentIntake) {
                     if (
                       !isProductCompliant(
@@ -780,7 +778,7 @@ export class NutritionCompiler {
                       )
                     ) {
                       engineLogger.warn(
-                        `[NutritionCompiler] Skipping FatSecret "${foodDetails.name}" for ingredient "${ing.name}" — dietary compliance`
+                        `[NutritionCompiler] Skipping USDA "${foodDetails.name}" for ingredient "${ing.name}" — dietary compliance`
                       );
                       continue;
                     }
@@ -798,7 +796,7 @@ export class NutritionCompiler {
                   // Sanity check: reject absurd scale factors
                   if (scale < 0.01 || scale > 20) {
                     engineLogger.warn(
-                      `[NutritionCompiler] Rejecting "${foodDetails.name}" for "${ing.name}": scale ${scale.toFixed(2)}x out of range`
+                      `[NutritionCompiler] Rejecting USDA "${foodDetails.name}" for "${ing.name}": scale ${scale.toFixed(2)}x out of range`
                     );
                     continue;
                   }
@@ -809,7 +807,7 @@ export class NutritionCompiler {
                     const maxIngredientKcal = dailyTargetKcal * 0.4;
                     if (ingredientKcal > maxIngredientKcal) {
                       engineLogger.warn(
-                        `[NutritionCompiler] Rejecting "${foodDetails.name}" for "${ing.name}": ` +
+                        `[NutritionCompiler] Rejecting USDA "${foodDetails.name}" for "${ing.name}": ` +
                           `${Math.round(ingredientKcal)} kcal exceeds ${Math.round(maxIngredientKcal)} kcal cap ` +
                           `(40% of ${dailyTargetKcal} daily target)`
                       );
@@ -818,32 +816,28 @@ export class NutritionCompiler {
                   }
 
                   // Reject ingredients with physically impossible calorie density
-                  // Use higher threshold for ml-converted servings (density conversion inflates apparent kcal/g)
                   const kcalPerGram = ingredientKcal / gramsNeeded;
                   const kcalPerGramLimit = bestServing.wasMLConverted ? 10.0 : 9.5;
                   if (kcalPerGram > kcalPerGramLimit) {
                     engineLogger.warn(
-                      `[NutritionCompiler] Anomalous data: "${foodDetails.name}" ` +
+                      `[NutritionCompiler] Anomalous data: USDA "${foodDetails.name}" ` +
                         `${kcalPerGram.toFixed(1)} kcal/g exceeds limit (${kcalPerGramLimit}). Skipping.`
                     );
                     continue;
                   }
-                  // Cooking-state mismatch: if search says "cooked" but calorie density
-                  // looks like dry data, skip this result and try the next one
+                  // Cooking-state mismatch guard
                   const searchCookingState = extractCookingState(searchName);
                   if (
                     searchCookingState === 'cooked' &&
                     kcalPerGram > COOKED_KCAL_PER_GRAM_CEILING
                   ) {
                     engineLogger.warn(
-                      `[NutritionCompiler] Cooking-state mismatch: "${foodDetails.name}" ` +
-                        `${kcalPerGram.toFixed(1)} kcal/g exceeds cooked ceiling (${COOKED_KCAL_PER_GRAM_CEILING}). ` +
-                        `Likely dry data for a cooked ingredient. Skipping.`
+                      `[NutritionCompiler] Cooking-state mismatch: USDA "${foodDetails.name}" ` +
+                        `${kcalPerGram.toFixed(1)} kcal/g exceeds cooked ceiling. Skipping.`
                     );
                     continue;
                   }
                   // Reject if fat or protein density exceeds physical max
-                  // Pure fats/oils are ~1.0g fat per gram; ml-conversion inflates to ~1.09
                   const scaledFat = bestServing.serving.fat * scale;
                   const scaledProtein = bestServing.serving.protein * scale;
                   const fatPerGram = scaledFat / gramsNeeded;
@@ -851,7 +845,7 @@ export class NutritionCompiler {
                   const macroDensityLimit = bestServing.wasMLConverted ? 1.15 : 1.05;
                   if (fatPerGram > macroDensityLimit || proteinPerGram > macroDensityLimit) {
                     engineLogger.warn(
-                      `[NutritionCompiler] Anomalous macros for "${foodDetails.name}" (fat/g=${fatPerGram.toFixed(2)}, protein/g=${proteinPerGram.toFixed(2)}, limit=${macroDensityLimit}). Skipping.`
+                      `[NutritionCompiler] Anomalous macros for USDA "${foodDetails.name}" (fat/g=${fatPerGram.toFixed(2)}, protein/g=${proteinPerGram.toFixed(2)}, limit=${macroDensityLimit}). Skipping.`
                     );
                     continue;
                   }
@@ -861,7 +855,7 @@ export class NutritionCompiler {
                       name: ing.name,
                       amount: Math.round(gramsNeeded),
                       unit: 'g',
-                      fatsecretFoodId: result.foodId,
+                      foodId: result.foodId,
                     } as Ingredient,
                     kcal: ingredientKcal,
                     proteinG: bestServing.serving.protein * scale,
@@ -877,21 +871,23 @@ export class NutritionCompiler {
               }
             } catch (err) {
               engineLogger.warn(
-                `[NutritionCompiler] FatSecret lookup failed for ingredient "${searchName}":`,
+                `[NutritionCompiler] USDA lookup failed for ingredient "${searchName}":`,
                 err instanceof Error ? err.message : err
               );
             }
 
-            // --- USDA fallback ---
-            if (this.usdaAdapter) {
+            // --- FatSecret fallback ---
+            if (this.fatSecretAdapter) {
               try {
-                const usdaResults = await this.usdaAdapter.searchFoods(searchName, 5);
-                if (usdaResults.length > 0) {
-                  for (const result of usdaResults) {
-                    const foodDetails = await this.usdaAdapter.getFood(result.foodId);
+                const searchResults = await this.fatSecretAdapter.searchFoods(searchName, 5);
+                if (searchResults.length > 0) {
+                  const orderedResults = this.preferGenericFoods(searchResults, searchName);
+
+                  for (const result of orderedResults) {
+                    const foodDetails = await this.fatSecretAdapter.getFood(result.foodId);
                     if (foodDetails.servings.length === 0) continue;
 
-                    // Dietary compliance filter for USDA ingredient-level lookups
+                    // Dietary compliance filter for FatSecret ingredient-level lookups
                     if (this.currentIntake) {
                       if (
                         !isProductCompliant(
@@ -901,7 +897,7 @@ export class NutritionCompiler {
                         )
                       ) {
                         engineLogger.warn(
-                          `[NutritionCompiler] Skipping USDA "${foodDetails.name}" for ingredient "${ing.name}" — dietary compliance`
+                          `[NutritionCompiler] Skipping FatSecret "${foodDetails.name}" for ingredient "${ing.name}" — dietary compliance`
                         );
                         continue;
                       }
@@ -918,7 +914,7 @@ export class NutritionCompiler {
 
                     if (scale < 0.01 || scale > 20) {
                       engineLogger.warn(
-                        `[NutritionCompiler] Rejecting USDA "${foodDetails.name}" for "${ing.name}": scale ${scale.toFixed(2)}x out of range`
+                        `[NutritionCompiler] Rejecting FatSecret "${foodDetails.name}" for "${ing.name}": scale ${scale.toFixed(2)}x out of range`
                       );
                       continue;
                     }
@@ -929,7 +925,7 @@ export class NutritionCompiler {
                       const maxIngredientKcal = dailyTargetKcal * 0.4;
                       if (ingredientKcal > maxIngredientKcal) {
                         engineLogger.warn(
-                          `[NutritionCompiler] Rejecting USDA "${foodDetails.name}" for "${ing.name}": ` +
+                          `[NutritionCompiler] Rejecting FatSecret "${foodDetails.name}" for "${ing.name}": ` +
                             `${Math.round(ingredientKcal)} kcal exceeds ${Math.round(maxIngredientKcal)} kcal cap ` +
                             `(40% of ${dailyTargetKcal} daily target)`
                         );
@@ -942,20 +938,21 @@ export class NutritionCompiler {
                     const kcalPerGramLimit = bestServing.wasMLConverted ? 10.0 : 9.5;
                     if (kcalPerGram > kcalPerGramLimit) {
                       engineLogger.warn(
-                        `[NutritionCompiler] Anomalous data: "${foodDetails.name}" ` +
+                        `[NutritionCompiler] Anomalous data: FatSecret "${foodDetails.name}" ` +
                           `${kcalPerGram.toFixed(1)} kcal/g exceeds limit (${kcalPerGramLimit}). Skipping.`
                       );
                       continue;
                     }
-                    // Cooking-state mismatch guard (same as FatSecret path)
+                    // Cooking-state mismatch guard
                     const searchCookingState = extractCookingState(searchName);
                     if (
                       searchCookingState === 'cooked' &&
                       kcalPerGram > COOKED_KCAL_PER_GRAM_CEILING
                     ) {
                       engineLogger.warn(
-                        `[NutritionCompiler] Cooking-state mismatch: USDA "${foodDetails.name}" ` +
-                          `${kcalPerGram.toFixed(1)} kcal/g exceeds cooked ceiling. Skipping.`
+                        `[NutritionCompiler] Cooking-state mismatch: FatSecret "${foodDetails.name}" ` +
+                          `${kcalPerGram.toFixed(1)} kcal/g exceeds cooked ceiling (${COOKED_KCAL_PER_GRAM_CEILING}). ` +
+                          `Likely dry data for a cooked ingredient. Skipping.`
                       );
                       continue;
                     }
@@ -967,7 +964,7 @@ export class NutritionCompiler {
                     const macroDensityLimit = bestServing.wasMLConverted ? 1.15 : 1.05;
                     if (fatPerGram > macroDensityLimit || proteinPerGram > macroDensityLimit) {
                       engineLogger.warn(
-                        `[NutritionCompiler] Anomalous macros for "${foodDetails.name}" (fat/g=${fatPerGram.toFixed(2)}, protein/g=${proteinPerGram.toFixed(2)}, limit=${macroDensityLimit}). Skipping.`
+                        `[NutritionCompiler] Anomalous macros for FatSecret "${foodDetails.name}" (fat/g=${fatPerGram.toFixed(2)}, protein/g=${proteinPerGram.toFixed(2)}, limit=${macroDensityLimit}). Skipping.`
                       );
                       continue;
                     }
@@ -977,7 +974,7 @@ export class NutritionCompiler {
                         name: ing.name,
                         amount: Math.round(gramsNeeded),
                         unit: 'g',
-                        fatsecretFoodId: `usda-${result.foodId}`,
+                        foodId: `fatsecret-${result.foodId}`,
                       } as Ingredient,
                       kcal: ingredientKcal,
                       proteinG: bestServing.serving.protein * scale,
@@ -993,7 +990,7 @@ export class NutritionCompiler {
                 }
               } catch (err) {
                 engineLogger.warn(
-                  `[NutritionCompiler] USDA lookup failed for ingredient "${searchName}":`,
+                  `[NutritionCompiler] FatSecret fallback failed for ingredient "${searchName}":`,
                   err instanceof Error ? err.message : err
                 );
               }
@@ -1133,43 +1130,44 @@ export class NutritionCompiler {
         ingredients = recalibrated.ingredients;
         confidenceLevel = result.confidenceLevel;
       } else {
-        // Strategy 2: Single-food FatSecret lookup (fallback for old drafts)
+        // Strategy 2: Single-food lookup (fallback for old drafts without ingredients)
         let verified = false;
 
-        const fatsecretResult = await this.tryVerifyFromFoodDB(
-          (q, max) => this.fatSecretAdapter.searchFoods(q, max),
-          (id) => this.fatSecretAdapter.getFood(id),
+        // --- USDA primary ---
+        const usdaResult = await this.tryVerifyFromFoodDB(
+          (q, max) => this.usdaAdapter.searchFoods(q, max),
+          (id) => this.usdaAdapter.getFood(id),
           meal,
-          'FatSecret'
+          'USDA'
         );
 
-        if (fatsecretResult) {
-          nutrition = fatsecretResult.nutrition;
-          ingredients = fatsecretResult.ingredients;
+        if (usdaResult) {
+          nutrition = usdaResult.nutrition;
+          ingredients = usdaResult.ingredients;
           confidenceLevel = 'verified';
           verified = true;
         }
 
-        // USDA fallback for Strategy 2
-        if (!verified && this.usdaAdapter) {
+        // --- FatSecret fallback for Strategy 2 ---
+        if (!verified && this.fatSecretAdapter) {
           try {
-            const usdaRef = this.usdaAdapter;
-            const usdaResult = await this.tryVerifyFromFoodDB(
-              (q, max) => usdaRef.searchFoods(q, max),
-              (id) => usdaRef.getFood(id),
+            const fatsecretRef = this.fatSecretAdapter;
+            const fatsecretResult = await this.tryVerifyFromFoodDB(
+              (q, max) => fatsecretRef.searchFoods(q, max),
+              (id) => fatsecretRef.getFood(id),
               meal,
-              'USDA'
+              'FatSecret'
             );
 
-            if (usdaResult) {
-              nutrition = usdaResult.nutrition;
-              ingredients = usdaResult.ingredients;
+            if (fatsecretResult) {
+              nutrition = fatsecretResult.nutrition;
+              ingredients = fatsecretResult.ingredients;
               confidenceLevel = 'verified';
             }
-          } catch (usdaError) {
+          } catch (fatsecretError) {
             engineLogger.warn(
-              `[NutritionCompiler] USDA fallback failed for "${meal.fatsecretSearchQuery}":`,
-              usdaError instanceof Error ? usdaError.message : usdaError
+              `[NutritionCompiler] FatSecret fallback failed for "${meal.foodSearchQuery}":`,
+              fatsecretError instanceof Error ? fatsecretError.message : fatsecretError
             );
           }
         }
@@ -1198,7 +1196,7 @@ export class NutritionCompiler {
       cookTimeMin: meal.cookTimeMin,
       servings: meal.suggestedServings || 1,
       nutrition,
-      fatsecretRecipeId: undefined,
+      recipeId: undefined,
       confidenceLevel,
       ingredients,
       instructions,

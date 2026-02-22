@@ -616,9 +616,9 @@ async function main(): Promise<void> {
 
   const config: PipelineConfig = {
     anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-    fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
-    fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || '',
-    usdaApiKey: process.env.USDA_API_KEY,
+    usdaApiKey: process.env.USDA_API_KEY || '',
+    fatsecretClientId: process.env.FATSECRET_CLIENT_ID || undefined,
+    fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || undefined,
   };
 
   // Validate config
@@ -626,8 +626,8 @@ async function main(): Promise<void> {
     console.error('ERROR: ANTHROPIC_API_KEY is missing or invalid. Check .env file.');
     process.exit(1);
   }
-  if (!config.fatsecretClientId) {
-    console.error('ERROR: FATSECRET_CLIENT_ID is missing. Check .env file.');
+  if (!config.usdaApiKey) {
+    console.error('ERROR: USDA_API_KEY is missing. Check .env file.');
     process.exit(1);
   }
 

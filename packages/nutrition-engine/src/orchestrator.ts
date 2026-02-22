@@ -14,9 +14,9 @@ import { engineLogger } from './utils/logger';
 
 export interface PipelineConfig {
   anthropicApiKey: string;
-  fatsecretClientId: string;
-  fatsecretClientSecret: string;
-  usdaApiKey?: string;
+  usdaApiKey: string;
+  fatsecretClientId?: string;
+  fatsecretClientSecret?: string;
 }
 
 export interface PipelineResult {
@@ -62,22 +62,23 @@ export class NutritionPipelineOrchestrator {
   private qaValidator: QAValidator;
   private brandRenderer: BrandRenderer;
   private cacheWarmer: CacheWarmer;
-  private fatSecretAdapter: FatSecretAdapter;
+  private usdaAdapter: USDAAdapter;
+  private fatSecretAdapter?: FatSecretAdapter;
 
   constructor(config: PipelineConfig) {
     assertPipelineConfig(config);
 
-    this.fatSecretAdapter = new FatSecretAdapter(
-      config.fatsecretClientId,
-      config.fatsecretClientSecret
-    );
+    this.usdaAdapter = new USDAAdapter(config.usdaApiKey);
 
-    const usdaAdapter = config.usdaApiKey ? new USDAAdapter(config.usdaApiKey) : undefined;
+    this.fatSecretAdapter =
+      config.fatsecretClientId && config.fatsecretClientSecret
+        ? new FatSecretAdapter(config.fatsecretClientId, config.fatsecretClientSecret)
+        : undefined;
 
     this.intakeNormalizer = new IntakeNormalizer();
     this.metabolicCalculator = new MetabolicCalculator();
     this.recipeCurator = new RecipeCurator(config.anthropicApiKey);
-    this.nutritionCompiler = new NutritionCompiler(this.fatSecretAdapter, usdaAdapter);
+    this.nutritionCompiler = new NutritionCompiler(this.usdaAdapter, this.fatSecretAdapter);
     this.qaValidator = new QAValidator();
     this.brandRenderer = new BrandRenderer();
     this.cacheWarmer = new CacheWarmer();
@@ -162,7 +163,7 @@ export class NutritionPipelineOrchestrator {
           .warm(
             clientIntake.dietaryStyle,
             clientIntake.allergies,
-            (query) => this.fatSecretAdapter.searchFoods(query, 5).then(() => undefined),
+            (query) => this.usdaAdapter.searchFoods(query, 5).then(() => undefined),
             { signal: cacheWarmAbort.signal, concurrency: 3 }
           )
           .catch(() => {
@@ -191,11 +192,11 @@ export class NutritionPipelineOrchestrator {
         );
       }
 
-      // Agent 4: Nutrition Compiler (FatSecret verification)
-      await emit(4, 'Nutrition Compiler', 'Verifying nutrition data via FatSecret...');
+      // Agent 4: Nutrition Compiler
+      await emit(4, 'Nutrition Compiler', 'Verifying nutrition data...');
       start = Date.now();
       const compiled = await this.nutritionCompiler.compile(finalDraft, clientIntake, (sub) => {
-        emit(4, 'Nutrition Compiler', 'Verifying nutrition data via FatSecret...', sub);
+        emit(4, 'Nutrition Compiler', 'Verifying nutrition data...', sub);
       });
       timings['nutritionCompiler'] = Date.now() - start;
 

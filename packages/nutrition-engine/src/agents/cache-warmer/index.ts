@@ -54,10 +54,10 @@ interface CacheWarmerResult {
 }
 
 /**
- * Pre-populates FatSecret cache during Claude API wait time.
+ * Pre-populates food data cache during Claude API wait time.
  *
  * The nutrition pipeline spends 30-60s waiting for Claude to generate
- * recipes. During that idle window, CacheWarmer fires off FatSecret
+ * recipes. During that idle window, CacheWarmer fires off USDA
  * searches for common foods so they are already cached when Agent 4
  * (Nutrition Compiler) needs them.
  *
@@ -70,7 +70,7 @@ export class CacheWarmer {
    *
    * @param dietaryStyle - e.g. 'omnivore', 'vegetarian', 'vegan', 'pescatarian'
    * @param allergies - list of allergy strings (e.g. ['dairy', 'nuts'])
-   * @param searchFn - the FatSecret search function (injected for testability)
+   * @param searchFn - the food data search function (injected for testability)
    * @param options - concurrency and abort signal
    */
   async warm(

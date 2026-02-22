@@ -13,9 +13,9 @@ import { engineLogger } from '../utils/logger';
 /** The subset of environment config the pipeline needs to operate. */
 export interface PipelineEnvConfig {
   anthropicApiKey: string;
-  fatsecretClientId: string;
-  fatsecretClientSecret: string;
-  usdaApiKey?: string;
+  usdaApiKey: string;
+  fatsecretClientId?: string;
+  fatsecretClientSecret?: string;
 }
 
 export interface ValidationResult {
@@ -41,18 +41,14 @@ export function validatePipelineConfig(config: PipelineEnvConfig): ValidationRes
     warnings.push('ANTHROPIC_API_KEY does not start with expected prefix "sk-ant-"');
   }
 
-  // -- FatSecret (required) ---------------------------------------------------
-  if (!config.fatsecretClientId) {
-    errors.push('FATSECRET_CLIENT_ID is missing');
-  }
-
-  if (!config.fatsecretClientSecret) {
-    errors.push('FATSECRET_CLIENT_SECRET is missing');
-  }
-
-  // -- USDA (optional fallback) -----------------------------------------------
+  // -- USDA (required — primary nutrition source) ------------------------------
   if (!config.usdaApiKey) {
-    warnings.push('USDA_API_KEY is not set - USDA fallback will be unavailable');
+    errors.push('USDA_API_KEY is missing');
+  }
+
+  // -- FatSecret (optional — fallback nutrition source) -----------------------
+  if (!config.fatsecretClientId || !config.fatsecretClientSecret) {
+    warnings.push('FatSecret credentials not set — FatSecret fallback will be unavailable');
   }
 
   return { valid: errors.length === 0, errors, warnings };

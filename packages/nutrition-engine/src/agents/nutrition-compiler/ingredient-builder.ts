@@ -25,7 +25,7 @@ function isSweetDish(meal: DraftMeal): boolean {
     'chocolate',
     'protein shake',
   ];
-  const text = `${meal.name} ${meal.fatsecretSearchQuery} ${meal.tags.join(' ')}`.toLowerCase();
+  const text = `${meal.name} ${meal.foodSearchQuery} ${meal.tags.join(' ')}`.toLowerCase();
   return indicators.some((ind) => text.includes(ind));
 }
 
@@ -51,7 +51,7 @@ export function buildIngredientsFromFood(
       name: foodDetails.name,
       amount: Math.round((primaryServing.metricServingAmount || 100) * scaleFactor),
       unit: primaryServing.metricServingUnit || 'g',
-      fatsecretFoodId: foodDetails.foodId,
+      foodId: foodDetails.foodId,
     });
   }
 
@@ -69,7 +69,7 @@ export function generateEstimatedIngredients(meal: DraftMeal): Ingredient[] {
   const ingredients: Ingredient[] = [];
 
   // Parse the search query for ingredient hints
-  const queryWords = meal.fatsecretSearchQuery.toLowerCase().split(/\s+/);
+  const queryWords = meal.foodSearchQuery.toLowerCase().split(/\s+/);
 
   // Common protein sources
   const proteinMap: Record<string, { name: string; amount: number; unit: string }> = {
@@ -177,7 +177,7 @@ export function generateEstimatedIngredients(meal: DraftMeal): Ingredient[] {
  */
 export function getComplementaryIngredients(meal: DraftMeal): Ingredient[] {
   const ingredients: Ingredient[] = [];
-  const query = meal.fatsecretSearchQuery.toLowerCase();
+  const query = meal.foodSearchQuery.toLowerCase();
 
   // Add carb source if mentioned in query
   if (query.includes('rice')) {
@@ -244,7 +244,7 @@ export function generateInstructions(meal: DraftMeal, ingredients: Ingredient[])
   if (tags.includes('no-cook') || meal.cookTimeMin === 0) {
     if (
       meal.name.toLowerCase().includes('smoothie') ||
-      meal.fatsecretSearchQuery.toLowerCase().includes('smoothie')
+      meal.foodSearchQuery.toLowerCase().includes('smoothie')
     ) {
       return [
         `Add ${mainIngredients.slice(0, 3).join(', ')} to a blender.`,

@@ -201,9 +201,9 @@ function buildPipelineConfig(): PipelineConfig {
   const env = workerEnv();
   return {
     anthropicApiKey: env.ANTHROPIC_API_KEY,
-    fatsecretClientId: env.FATSECRET_CLIENT_ID,
-    fatsecretClientSecret: env.FATSECRET_CLIENT_SECRET,
-    usdaApiKey: env.USDA_API_KEY || undefined,
+    usdaApiKey: env.USDA_API_KEY,
+    fatsecretClientId: env.FATSECRET_CLIENT_ID || undefined,
+    fatsecretClientSecret: env.FATSECRET_CLIENT_SECRET || undefined,
   };
 }
 

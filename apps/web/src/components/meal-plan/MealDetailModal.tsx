@@ -32,7 +32,7 @@ interface Meal {
     name: string;
     amount: number | string; // Support both old (string) and new (number) formats
     unit?: string;
-    fatsecretFoodId?: string;
+    foodId?: string;
   }>;
   instructions?: string[];
 }

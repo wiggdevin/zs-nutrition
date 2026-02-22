@@ -29,7 +29,7 @@ export interface PdfPlanData {
         name: string;
         amount: number | string;
         unit?: string;
-        fatsecretFoodId?: string;
+        foodId?: string;
       }>;
       instructions?: string[];
     }>;

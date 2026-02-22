@@ -513,8 +513,8 @@ function extractCoverage(plan: MealPlanValidated): CoverageStats {
     for (const meal of day.meals) {
       for (const ing of meal.ingredients) {
         total++;
-        if (ing.fatsecretFoodId) {
-          if (ing.fatsecretFoodId.startsWith('usda-')) {
+        if (ing.foodId) {
+          if (ing.foodId.startsWith('usda-')) {
             usda++;
           } else {
             fs++;
@@ -1030,9 +1030,9 @@ async function main(): Promise<void> {
 
   const config: PipelineConfig = {
     anthropicApiKey: process.env.ANTHROPIC_API_KEY || '',
-    fatsecretClientId: process.env.FATSECRET_CLIENT_ID || '',
-    fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || '',
-    usdaApiKey: process.env.USDA_API_KEY,
+    usdaApiKey: process.env.USDA_API_KEY || '',
+    fatsecretClientId: process.env.FATSECRET_CLIENT_ID || undefined,
+    fatsecretClientSecret: process.env.FATSECRET_CLIENT_SECRET || undefined,
   };
 
   console.log('='.repeat(70));

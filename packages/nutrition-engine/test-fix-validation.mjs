@@ -51,7 +51,7 @@ const testMeals = [
       prepTimeMin: 15,
       cookTimeMin: 20,
       suggestedServings: 1,
-      fatsecretSearchQuery: 'cod with quinoa and feta',
+      foodSearchQuery: 'cod with quinoa and feta',
       targetNutrition: { kcal: 550, proteinG: 40, carbsG: 45, fatG: 22 },
       estimatedNutrition: { kcal: 550, proteinG: 40, carbsG: 45, fatG: 22 },
       primaryProtein: 'cod',
@@ -76,7 +76,7 @@ const testMeals = [
       prepTimeMin: 5,
       cookTimeMin: 0,
       suggestedServings: 1,
-      fatsecretSearchQuery: 'olive oil salad',
+      foodSearchQuery: 'olive oil salad',
       targetNutrition: { kcal: 350, proteinG: 5, carbsG: 10, fatG: 30 },
       estimatedNutrition: { kcal: 350, proteinG: 5, carbsG: 10, fatG: 30 },
       primaryProtein: 'none',
@@ -98,7 +98,7 @@ const testMeals = [
       prepTimeMin: 10,
       cookTimeMin: 15,
       suggestedServings: 1,
-      fatsecretSearchQuery: 'quinoa bowl',
+      foodSearchQuery: 'quinoa bowl',
       targetNutrition: { kcal: 400, proteinG: 20, carbsG: 50, fatG: 12 },
       estimatedNutrition: { kcal: 400, proteinG: 20, carbsG: 50, fatG: 12 },
       primaryProtein: 'chicken',
@@ -120,7 +120,7 @@ const testMeals = [
       prepTimeMin: 5,
       cookTimeMin: 0,
       suggestedServings: 1,
-      fatsecretSearchQuery: 'quinoa salad',
+      foodSearchQuery: 'quinoa salad',
       targetNutrition: { kcal: 300, proteinG: 12, carbsG: 40, fatG: 8 },
       estimatedNutrition: { kcal: 300, proteinG: 12, carbsG: 40, fatG: 8 },
       primaryProtein: 'none',
@@ -142,7 +142,7 @@ const testMeals = [
       prepTimeMin: 5,
       cookTimeMin: 10,
       suggestedServings: 1,
-      fatsecretSearchQuery: 'scrambled eggs',
+      foodSearchQuery: 'scrambled eggs',
       targetNutrition: { kcal: 350, proteinG: 20, carbsG: 5, fatG: 28 },
       estimatedNutrition: { kcal: 350, proteinG: 20, carbsG: 5, fatG: 28 },
       primaryProtein: 'eggs',
@@ -163,7 +163,7 @@ const testMeals = [
       prepTimeMin: 10,
       cookTimeMin: 20,
       suggestedServings: 1,
-      fatsecretSearchQuery: 'chicken rice',
+      foodSearchQuery: 'chicken rice',
       targetNutrition: { kcal: 500, proteinG: 35, carbsG: 55, fatG: 12 },
       estimatedNutrition: { kcal: 500, proteinG: 35, carbsG: 55, fatG: 12 },
       primaryProtein: 'chicken',
@@ -217,7 +217,7 @@ for (const test of testMeals) {
     console.log(`  Nutrition: ${meal.nutrition.kcal} kcal | P: ${meal.nutrition.proteinG}g | C: ${meal.nutrition.carbsG}g | F: ${meal.nutrition.fatG}g | Fiber: ${meal.nutrition.fiberG ?? 'N/A'}g`);
     console.log(`  Ingredients:`);
     for (const ing of meal.ingredients) {
-      console.log(`    - ${ing.name}: ${ing.amount}${ing.unit} ${ing.fatsecretFoodId ? '✓ verified' : '✗ unverified'}`);
+      console.log(`    - ${ing.name}: ${ing.amount}${ing.unit} ${ing.foodId ? '✓ verified' : '✗ unverified'}`);
     }
 
     // Validation checks

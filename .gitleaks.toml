@@ -6,16 +6,54 @@ title = "ZS-MAC Secret Scanning"
 [extend]
 useDefault = true
 
+# Custom rules for project-specific secret patterns
+[[rules]]
+  id = "anthropic-api-key"
+  description = "Anthropic API Key"
+  regex = '''sk-ant-[a-zA-Z0-9_-]{20,}'''
+  keywords = ["sk-ant-"]
+  entropy = 3.5
+
+[[rules]]
+  id = "upstash-redis-url"
+  description = "Upstash Redis Connection String"
+  regex = '''rediss?://[^@]+@[a-z0-9-]+\.upstash\.io:\d+'''
+  keywords = ["upstash.io"]
+
+[[rules]]
+  id = "neon-db-url"
+  description = "Neon Database Connection String"
+  regex = '''postgresql://[^@]+@[a-z0-9-]+\.neon\.tech[:/]'''
+  keywords = ["neon.tech"]
+
+[[rules]]
+  id = "clerk-secret-key"
+  description = "Clerk Secret Key (live or test)"
+  regex = '''sk_(live|test)_[a-zA-Z0-9]{20,}'''
+  keywords = ["sk_live_", "sk_test_"]
+
+[[rules]]
+  id = "fatsecret-client-secret"
+  description = "FatSecret Client Secret"
+  regex = '''[0-9a-f]{32,}'''
+  keywords = ["FATSECRET_CLIENT_SECRET"]
+  entropy = 3.5
+
 # Allowlist: suppress known false positives
 [allowlist]
-  # sk_test_placeholder used in dev-mode detection (not a real key)
   regexes = [
+    # Placeholder strings used in dev-mode detection (not real keys)
     '''sk_test_placeholder''',
     '''msk_test_placeholder''',
+    '''sk-ant-placeholder-benchmark''',
     '''sk-ant-placeholder''',
+    # Regex patterns used in code for redaction (not secrets themselves)
+    '''sk-ant-\[a-zA-Z0-9_''',
   ]
 
   paths = [
     '''\.env\.example$''',
     '''\.gitleaks\.toml$''',
+    '''SECURITY-AUDIT-REPORT\.md$''',
+    '''DOCKER_SETUP\.md$''',
   ]
