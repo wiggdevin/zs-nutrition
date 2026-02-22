@@ -21,6 +21,7 @@ import {
   generateInstructions,
 } from './ingredient-builder';
 import type { FoodServing, FoodDetails, FoodSearchResult } from '../../adapters/food-data-types';
+import type { FoodAliasCache } from '../../data/food-alias-cache';
 
 /** Nutrition data after scaling to target kcal */
 interface ScaledNutrition {
@@ -116,136 +117,8 @@ function convertToGrams(quantity: number, unit: string): number {
   }
 }
 
-/**
- * Map of common generic ingredient names to more specific FatSecret search terms.
- * Fixes the ~30 most common unmatched ingredients from validation runs.
- */
-const INGREDIENT_NAME_MAP: Record<string, string> = {
-  // Proteins
-  eggs: 'egg whole raw',
-  egg: 'egg whole raw',
-  'egg whites': 'egg white raw',
-  chicken: 'chicken breast raw',
-  'chicken breast': 'chicken breast skinless raw',
-  salmon: 'atlantic salmon raw',
-  tuna: 'tuna canned in water drained',
-  shrimp: 'shrimp raw',
-  'ground beef': 'ground beef 90 lean raw',
-  'ground turkey': 'ground turkey raw',
-  tofu: 'tofu firm raw',
-  tempeh: 'tempeh',
-  // Grains & starches
-  rice: 'white rice cooked',
-  'brown rice': 'brown rice cooked',
-  'sweet potato': 'sweet potato baked',
-  'sweet potatoes': 'sweet potato baked',
-  potato: 'potato baked flesh and skin',
-  potatoes: 'potato baked flesh and skin',
-  oats: 'oats rolled dry',
-  oatmeal: 'oats rolled dry',
-  quinoa: 'quinoa cooked',
-  pasta: 'pasta cooked',
-  bread: 'whole wheat bread',
-  // Vegetables
-  broccoli: 'broccoli raw',
-  spinach: 'spinach raw',
-  kale: 'kale raw',
-  'mixed greens': 'mixed salad greens raw',
-  tomato: 'tomato raw',
-  tomatoes: 'tomato raw',
-  onion: 'onion raw',
-  // Fruits
-  banana: 'banana raw',
-  apple: 'apple raw with skin',
-  berries: 'mixed berries raw',
-  blueberries: 'blueberries raw',
-  strawberries: 'strawberries raw',
-  avocado: 'avocado raw',
-  // Dairy & fats
-  'greek yogurt': 'greek yogurt plain nonfat',
-  yogurt: 'yogurt plain low fat',
-  cheese: 'cheddar cheese',
-  butter: 'butter salted',
-  'olive oil': 'olive oil',
-  'coconut oil': 'coconut oil',
-  milk: 'milk whole',
-  // Nuts & seeds
-  almonds: 'almonds raw',
-  walnuts: 'walnuts raw',
-  'peanut butter': 'peanut butter smooth',
-  'almond butter': 'almond butter',
-  // Legumes
-  'black beans': 'black beans cooked',
-  chickpeas: 'chickpeas cooked',
-  lentils: 'lentils cooked',
-  // Vegetables (expanded)
-  asparagus: 'asparagus raw',
-  cauliflower: 'cauliflower raw',
-  'bell pepper': 'bell pepper raw',
-  'bell peppers': 'bell pepper raw',
-  'red bell pepper': 'bell pepper red raw',
-  'green bell pepper': 'bell pepper green raw',
-  zucchini: 'zucchini raw',
-  mushrooms: 'mushrooms raw white',
-  mushroom: 'mushrooms raw white',
-  cucumber: 'cucumber raw',
-  celery: 'celery raw',
-  'green beans': 'green beans raw',
-  cabbage: 'cabbage raw',
-  eggplant: 'eggplant raw',
-  carrots: 'carrots raw',
-  carrot: 'carrots raw',
-  // Proteins (expanded)
-  cod: 'cod atlantic raw',
-  'cod fillet': 'cod atlantic raw',
-  'pork tenderloin': 'pork tenderloin raw',
-  'pork chop': 'pork chop boneless raw',
-  'turkey breast': 'turkey breast skinless raw',
-  tilapia: 'tilapia raw',
-  'mahi mahi': 'mahi mahi raw',
-  scallops: 'scallops raw',
-  // Condiments & sauces
-  'soy sauce': 'soy sauce',
-  'fish sauce': 'fish sauce',
-  sriracha: 'sriracha hot chili sauce',
-  breadcrumbs: 'bread crumbs plain dry',
-  mirin: 'rice wine mirin',
-  tahini: 'tahini sesame paste',
-  // Dairy (expanded)
-  'cottage cheese': 'cottage cheese low fat 2%',
-  'cream cheese': 'cream cheese',
-  parmesan: 'parmesan cheese grated',
-  mozzarella: 'mozzarella cheese',
-  feta: 'feta cheese crumbled',
-  ricotta: 'ricotta cheese part skim',
-  // Nuts & seeds (expanded)
-  'chia seeds': 'chia seeds dried',
-  'flax seeds': 'flax seeds ground',
-  flaxseed: 'flax seeds ground',
-  'hemp seeds': 'hemp seeds hulled',
-  'pumpkin seeds': 'pumpkin seeds raw',
-  'sunflower seeds': 'sunflower seed kernels',
-  cashews: 'cashews raw',
-  pecans: 'pecans raw',
-  'pine nuts': 'pine nuts dried',
-  // Grains (expanded)
-  couscous: 'couscous cooked',
-  farro: 'farro cooked',
-  bulgur: 'bulgur cooked',
-  // Cooked variants — prevent dry-value lookups
-  'quinoa cooked': 'quinoa cooked',
-  'cooked quinoa': 'quinoa cooked',
-  'rice cooked': 'white rice cooked',
-  'cooked rice': 'white rice cooked',
-  'pasta cooked': 'pasta cooked',
-  'cooked pasta': 'pasta cooked',
-  'lentils cooked': 'lentils cooked',
-  'cooked lentils': 'lentils cooked',
-  tortilla: 'flour tortilla',
-  naan: 'naan bread',
-  'jasmine rice': 'jasmine rice cooked',
-  'basmati rice': 'basmati rice cooked',
-};
+// INGREDIENT_NAME_MAP has been migrated to the FoodAlias database table.
+// See seed-food-aliases.ts for the data and FoodAliasCache for runtime lookups.
 
 /**
  * Density map for converting ml-based FatSecret servings to gram equivalents.
@@ -335,16 +208,29 @@ function extractCookingState(name: string): string | null {
  */
 const COOKED_KCAL_PER_GRAM_CEILING = 2.5;
 
+/** Result of normalizing an ingredient name */
+interface NormalizedIngredient {
+  searchName: string;
+  fdcId?: number;
+}
+
 /**
- * Normalize an ingredient name to improve FatSecret search hit rate.
+ * Normalize an ingredient name to improve search hit rate.
+ * Uses FoodAliasCache (database-driven) when available, falls back to plain cleaning.
  * Returns an array (usually 1 item; multiple for compound names like "Apple + Peanut Butter").
  */
-function normalizeIngredientName(name: string): string[] {
+function normalizeIngredientName(
+  name: string,
+  aliasCache?: FoodAliasCache
+): NormalizedIngredient[] {
   const trimmed = name.trim().toLowerCase();
 
-  // Check exact match in map
-  if (INGREDIENT_NAME_MAP[trimmed]) {
-    return [INGREDIENT_NAME_MAP[trimmed]];
+  // Check alias cache for exact match
+  if (aliasCache) {
+    const entry = aliasCache.get(trimmed);
+    if (entry) {
+      return [{ searchName: entry.canonicalName, fdcId: entry.fdcId }];
+    }
   }
 
   // Remove commas (fixes "tuna, canned in water" → "tuna canned in water")
@@ -363,15 +249,18 @@ function normalizeIngredientName(name: string): string[] {
       .map((p) => p.trim())
       .filter(Boolean);
     // Recursively normalize each part
-    return parts.flatMap((part) => normalizeIngredientName(part));
+    return parts.flatMap((part) => normalizeIngredientName(part, aliasCache));
   }
 
-  // Check map again after cleaning
-  if (INGREDIENT_NAME_MAP[cleaned]) {
-    return [INGREDIENT_NAME_MAP[cleaned]];
+  // Check alias cache again after cleaning
+  if (aliasCache) {
+    const entry = aliasCache.get(cleaned);
+    if (entry) {
+      return [{ searchName: entry.canonicalName, fdcId: entry.fdcId }];
+    }
   }
 
-  return [cleaned];
+  return [{ searchName: cleaned }];
 }
 
 /**
@@ -389,7 +278,8 @@ export class NutritionCompiler {
   constructor(
     private usdaAdapter: USDAAdapter,
     private fatSecretAdapter?: FatSecretAdapter,
-    private localUsdaAdapter?: LocalUSDAAdapter
+    private localUsdaAdapter?: LocalUSDAAdapter,
+    private aliasCache?: FoodAliasCache
   ) {}
 
   async compile(
@@ -882,10 +772,53 @@ export class NutritionCompiler {
       meal.draftIngredients.map((ing) =>
         ingredientLimit(async () => {
           const gramsNeeded = convertToGrams(ing.quantity, ing.unit);
-          const normalizedNames = normalizeIngredientName(ing.name);
+          const normalized = normalizeIngredientName(ing.name, this.aliasCache);
 
           // Try each normalized name variant against all sources
-          for (const searchName of normalizedNames) {
+          for (const { searchName, fdcId } of normalized) {
+            // --- Direct fdcId lookup (O(1), skip search entirely) ---
+            if (fdcId && this.localUsdaAdapter) {
+              try {
+                const foodDetails = await this.localUsdaAdapter.getFood(String(fdcId));
+                const bestServing = this.selectBestServingForGrams(
+                  foodDetails.servings,
+                  gramsNeeded,
+                  foodDetails.name
+                );
+                if (bestServing) {
+                  const scale = gramsNeeded / bestServing.servingGrams;
+                  if (scale >= 0.01 && scale <= 20) {
+                    const ingredientKcal = bestServing.serving.calories * scale;
+                    engineLogger.info(
+                      `[NutritionCompiler] Direct fdcId hit for "${ing.name}" → ${foodDetails.name} (fdcId=${fdcId})`
+                    );
+                    return {
+                      ingredient: {
+                        name: ing.name,
+                        amount: Math.round(gramsNeeded),
+                        unit: 'g',
+                        foodId: `usda-${fdcId}`,
+                      } as Ingredient,
+                      kcal: ingredientKcal,
+                      proteinG: bestServing.serving.protein * scale,
+                      carbsG: bestServing.serving.carbohydrate * scale,
+                      fatG: bestServing.serving.fat * scale,
+                      fiberG:
+                        bestServing.serving.fiber !== undefined
+                          ? bestServing.serving.fiber * scale
+                          : undefined,
+                      verified: true,
+                    };
+                  }
+                }
+              } catch (err) {
+                engineLogger.warn(
+                  `[NutritionCompiler] Direct fdcId lookup failed for "${ing.name}" (fdcId=${fdcId}):`,
+                  err instanceof Error ? err.message : err
+                );
+              }
+            }
+
             // --- Local USDA primary (sub-millisecond, no API calls) ---
             if (this.localUsdaAdapter) {
               try {
@@ -959,7 +892,7 @@ export class NutritionCompiler {
 
           // All names/sources failed — ingredient stays unverified
           engineLogger.warn(
-            `[NutritionCompiler] No match found for ingredient "${ing.name}" (tried: ${normalizedNames.join(', ')})`
+            `[NutritionCompiler] No match found for ingredient "${ing.name}" (tried: ${normalized.map((n) => n.searchName).join(', ')})`
           );
           return {
             ingredient: {

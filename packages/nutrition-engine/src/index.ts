@@ -43,6 +43,10 @@ export type { CircuitBreakerState } from './adapters/fatsecret';
 export { USDAAdapter } from './adapters/usda';
 export { LocalUSDAAdapter } from './adapters/usda-local';
 
+// Data - Food Alias Cache
+export { FoodAliasCache } from './data/food-alias-cache';
+export type { AliasEntry } from './data/food-alias-cache';
+
 // Data - Meal Database
 export {
   MEAL_DATABASE,

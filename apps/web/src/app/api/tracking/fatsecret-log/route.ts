@@ -12,11 +12,13 @@ import {
   badRequest,
   serverError,
 } from '@/lib/api-response';
+import { sourceFromFoodId } from '@/lib/food-search-service';
 
 /**
  * POST /api/tracking/fatsecret-log
- * Log a food from FatSecret search results.
- * Creates a TrackedMeal with source='fatsecret_search' and updates the DailyLog.
+ * Log a food from search results (USDA or FatSecret).
+ * Source is determined from the foodId prefix: usda:* → 'usda_search', else 'fatsecret_search'.
+ * Creates a TrackedMeal and updates the DailyLog.
  */
 export async function POST(request: Request) {
   try {
@@ -137,6 +139,9 @@ export async function POST(request: Request) {
       dateOnly = toLocalDay();
     }
 
+    // Determine source from foodId prefix (usda: → usda_search, else fatsecret_search)
+    const source = sourceFromFoodId(foodId);
+
     // Use a serialized transaction to prevent race conditions from concurrent requests
     const result = await prisma.$transaction(async (tx) => {
       // Duplicate detection: check if an identical meal was logged in the last 10 seconds
@@ -147,7 +152,7 @@ export async function POST(request: Request) {
           loggedDate: dateOnly,
           mealName: foodName.trim(),
           kcal,
-          source: 'fatsecret_search',
+          source,
           foodId: foodId,
           createdAt: { gte: tenSecondsAgo },
         },
@@ -187,7 +192,7 @@ export async function POST(request: Request) {
         };
       }
 
-      // Create TrackedMeal with source='fatsecret_search'
+      // Create TrackedMeal with source derived from food ID prefix
       const trackedMeal = await tx.trackedMeal.create({
         data: {
           userId: user.id,
@@ -201,8 +206,8 @@ export async function POST(request: Request) {
           carbsG,
           fatG,
           fiberG,
-          source: 'fatsecret_search',
-          confidenceScore: 1.0, // FatSecret verified data
+          source,
+          confidenceScore: 1.0, // Verified food database data
           foodId: foodId,
         },
       });

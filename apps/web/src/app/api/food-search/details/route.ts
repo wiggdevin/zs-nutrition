@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { FatSecretAdapter } from '@zero-sum/nutrition-engine';
 import { logger } from '@/lib/safe-logger';
 import { requireActiveUser } from '@/lib/auth';
 import { checkRateLimit, foodSearchLimiter, rateLimitExceededResponse } from '@/lib/rate-limit';
-
-// Singleton FatSecret adapter instance
-let fatSecretAdapter: FatSecretAdapter | null = null;
-
-function getFatSecretAdapter(): FatSecretAdapter {
-  if (!fatSecretAdapter) {
-    fatSecretAdapter = new FatSecretAdapter(
-      process.env.FATSECRET_CLIENT_ID || '',
-      process.env.FATSECRET_CLIENT_SECRET || ''
-    );
-  }
-  return fatSecretAdapter;
-}
+import { getFood } from '@/lib/food-search-service';
 
 /**
- * GET /api/food-search/details?id=local-1
+ * GET /api/food-search/details?id=usda:171534
+ *
+ * Routes to correct adapter based on ID prefix (usda: / fs: / legacy).
  */
 export async function GET(request: NextRequest) {
   try {
@@ -47,8 +36,7 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Food ID required' }, { status: 400 });
     }
 
-    const fatSecret = getFatSecretAdapter();
-    const food = await fatSecret.getFood(foodId);
+    const food = await getFood(foodId);
     return NextResponse.json({ food });
   } catch (error) {
     logger.error('Food details error:', error);

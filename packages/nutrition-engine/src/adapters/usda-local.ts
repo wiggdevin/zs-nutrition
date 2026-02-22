@@ -2,7 +2,8 @@
  * LocalUSDAAdapter — Sub-millisecond food lookups against the local UsdaFood table.
  *
  * Uses PostgreSQL full-text search (tsvector + GIN index) for fast ingredient matching.
- * Falls back to ILIKE when tsvector returns zero results (handles partial/fuzzy queries).
+ * Falls back to pg_trgm trigram search when tsvector returns zero results
+ * (handles partial words, abbreviations, typos like "broc" → "Broccoli").
  *
  * Interface matches USDAAdapter exactly: searchFoods(query, maxResults), getFood(fdcId).
  */
@@ -21,25 +22,52 @@ const FIBER = '291';
 export class LocalUSDAAdapter {
   constructor(private prisma: PrismaClient) {}
 
-  async searchFoods(query: string, maxResults: number = 20): Promise<FoodSearchResult[]> {
+  async searchFoods(
+    query: string,
+    maxResults: number = 20,
+    page: number = 0
+  ): Promise<FoodSearchResult[]> {
     const trimmed = query.trim();
     if (!trimmed) return [];
 
-    // Primary: full-text search via tsvector (GIN-indexed)
-    let rows = await this.fullTextSearch(trimmed, maxResults);
+    const offset = page * maxResults;
 
-    // Fallback: ILIKE if tsvector returns nothing (handles partial words, abbreviations)
+    // Primary: full-text search via tsvector (GIN-indexed)
+    let rows = await this.fullTextSearch(trimmed, maxResults, offset);
+
+    // Fallback: trigram search if tsvector returns nothing (handles partial words, typos)
     if (rows.length === 0) {
-      rows = await this.ilikeSearch(trimmed, maxResults);
+      rows = await this.trigramSearch(trimmed, maxResults, offset);
     }
 
     if (rows.length > 0) {
-      engineLogger.debug(`[LocalUSDA] Search HIT for "${trimmed}" (${rows.length} results)`);
+      engineLogger.debug(
+        `[LocalUSDA] Search HIT for "${trimmed}" (${rows.length} results, page ${page})`
+      );
     } else {
       engineLogger.debug(`[LocalUSDA] Search MISS for "${trimmed}"`);
     }
 
     return rows.map((row) => this.toSearchResult(row));
+  }
+
+  /**
+   * Autocomplete: returns food description strings matching the query.
+   * Uses tsvector primary, trigram fallback. Suitable for typeahead UI.
+   */
+  async autocomplete(query: string, maxResults: number = 10): Promise<string[]> {
+    const trimmed = query.trim();
+    if (!trimmed) return [];
+
+    // Primary: full-text search
+    let rows = await this.fullTextSearch(trimmed, maxResults, 0);
+
+    // Fallback: trigram for partial/fuzzy
+    if (rows.length === 0) {
+      rows = await this.trigramSearch(trimmed, maxResults, 0);
+    }
+
+    return rows.map((row) => row.description);
   }
 
   async getFood(fdcId: string): Promise<FoodDetails> {
@@ -59,34 +87,39 @@ export class LocalUSDAAdapter {
 
   // ------- Private helpers -------
 
-  private async fullTextSearch(query: string, maxResults: number) {
+  private async fullTextSearch(query: string, maxResults: number, offset: number) {
     // plainto_tsquery handles natural language input without requiring boolean operators
     return this.prisma.$queryRawUnsafe<UsdaFoodRow[]>(
       `SELECT "fdcId", "description", "dataType", "nutrients", "portions"
        FROM "UsdaFood"
        WHERE "searchVector" @@ plainto_tsquery('english', $1)
        ORDER BY ts_rank("searchVector", plainto_tsquery('english', $1)) DESC
-       LIMIT $2`,
+       LIMIT $2 OFFSET $3`,
       query,
-      maxResults
+      maxResults,
+      offset
     );
   }
 
-  private async ilikeSearch(query: string, maxResults: number) {
-    // Split query into words and match each with ILIKE for better multi-word coverage
-    const words = query.split(/\s+/).filter(Boolean);
-    if (words.length === 0) return [];
-
-    const conditions = words.map((_, i) => `"description" ILIKE $${i + 1}`).join(' AND ');
-    const params = [...words.map((w) => `%${w}%`), maxResults];
-
+  /**
+   * Trigram fuzzy search using pg_trgm's word_similarity().
+   * word_similarity is better than similarity for short query fragments
+   * against long descriptions (e.g. "broc" matches "Broccoli, raw").
+   * Threshold 0.3 balances recall vs precision.
+   */
+  private async trigramSearch(query: string, maxResults: number, offset: number) {
     return this.prisma.$queryRawUnsafe<UsdaFoodRow[]>(
       `SELECT "fdcId", "description", "dataType", "nutrients", "portions"
-       FROM "UsdaFood"
-       WHERE ${conditions}
-       ORDER BY length("description") ASC
-       LIMIT $${words.length + 1}`,
-      ...params
+       FROM (
+         SELECT *, word_similarity($1, "description") AS wsim
+         FROM "UsdaFood"
+       ) sub
+       WHERE wsim > 0.3
+       ORDER BY wsim DESC, length("description") ASC
+       LIMIT $2 OFFSET $3`,
+      query,
+      maxResults,
+      offset
     );
   }
 

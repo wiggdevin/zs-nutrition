@@ -30,7 +30,7 @@ export interface TrackedMealEntry {
   carbs: number;
   fat: number;
   portion: number; // Portion multiplier (e.g., 1.0, 1.5, 2.0)
-  source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual' | 'food_scan';
+  source: 'plan_meal' | 'fatsecret_search' | 'usda_search' | 'quick_add' | 'manual' | 'food_scan';
   mealSlot: string | null;
   confidenceScore?: number | null;
   createdAt: string;
@@ -105,7 +105,7 @@ const trackedMealEntrySchema = z.object({
   fat: z.number().catch(0),
   portion: z.number().catch(1),
   source: z
-    .enum(['plan_meal', 'fatsecret_search', 'quick_add', 'manual', 'food_scan'])
+    .enum(['plan_meal', 'fatsecret_search', 'usda_search', 'quick_add', 'manual', 'food_scan'])
     .catch('manual'),
   mealSlot: z.string().nullable().catch(null),
   createdAt: z.string().catch(''),

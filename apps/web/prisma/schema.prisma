@@ -21,8 +21,25 @@ model UsdaFood {
   portions     Json   // [{ gramWeight: number, description: string }]
   searchVector Unsupported("tsvector")? // Generated column — see migration SQL
 
+  aliases FoodAlias[]
+
   @@index([dataType])
   @@index([searchVector], type: Gin)
+}
+
+// ============================================================
+// Food Alias (data-driven ingredient name mapping)
+// ============================================================
+model FoodAlias {
+  alias         String   @id // Lowercase alias (e.g. "chicken")
+  canonicalName String // Canonical USDA search term (e.g. "chicken breast raw")
+  usdaFdcId     Int? // Optional direct fdcId for O(1) lookups
+  usdaFood      UsdaFood? @relation(fields: [usdaFdcId], references: [fdcId], onDelete: SetNull)
+  priority      Int      @default(0) // Higher = preferred when multiple aliases match
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @default(now()) @updatedAt
+
+  @@index([canonicalName])
 }
 
 // ============================================================

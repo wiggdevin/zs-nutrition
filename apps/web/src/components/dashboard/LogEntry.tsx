@@ -15,7 +15,7 @@ export interface LogEntryProps {
   carbs: number;
   fat: number;
   portion: number;
-  source: 'plan_meal' | 'fatsecret_search' | 'quick_add' | 'manual' | 'food_scan';
+  source: 'plan_meal' | 'fatsecret_search' | 'usda_search' | 'quick_add' | 'manual' | 'food_scan';
   confidenceScore?: number | null;
   time: string;
   onAdjust: (id: string, newPortion: number) => void;
@@ -43,7 +43,7 @@ export const LogEntry = React.memo(function LogEntry({
   // - Plan meals: confidenceScore >= 1.0 = "Verified", < 1.0 = "AI-Estimated"
   // - Quick Add and Manual use their original badges
   const getConfidenceBadge = () => {
-    if (source === 'fatsecret_search') {
+    if (source === 'fatsecret_search' || source === 'usda_search') {
       return { label: 'Verified', color: 'bg-success/10 text-success' };
     }
     if (source === 'plan_meal') {

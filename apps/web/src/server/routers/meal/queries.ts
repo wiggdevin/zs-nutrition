@@ -185,6 +185,7 @@ export const mealQueriesRouter = router({
           source: m.source as
             | 'plan_meal'
             | 'fatsecret_search'
+            | 'usda_search'
             | 'quick_add'
             | 'manual'
             | 'food_scan',

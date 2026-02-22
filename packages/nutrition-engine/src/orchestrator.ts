@@ -9,6 +9,7 @@ import { CacheWarmer } from './agents/cache-warmer';
 import { FatSecretAdapter } from './adapters/fatsecret';
 import { USDAAdapter } from './adapters/usda';
 import { LocalUSDAAdapter } from './adapters/usda-local';
+import { FoodAliasCache } from './data/food-alias-cache';
 import { assertPipelineConfig } from './config/env-validation';
 import { sanitizeError } from './utils/error-sanitizer';
 import { engineLogger } from './utils/logger';
@@ -68,6 +69,7 @@ export class NutritionPipelineOrchestrator {
   private usdaAdapter: USDAAdapter;
   private fatSecretAdapter?: FatSecretAdapter;
   private localUsdaAdapter?: LocalUSDAAdapter;
+  private foodAliasCache?: FoodAliasCache;
 
   constructor(config: PipelineConfig) {
     assertPipelineConfig(config);
@@ -83,13 +85,16 @@ export class NutritionPipelineOrchestrator {
       ? new LocalUSDAAdapter(config.prismaClient)
       : undefined;
 
+    this.foodAliasCache = config.prismaClient ? new FoodAliasCache(config.prismaClient) : undefined;
+
     this.intakeNormalizer = new IntakeNormalizer();
     this.metabolicCalculator = new MetabolicCalculator();
     this.recipeCurator = new RecipeCurator(config.anthropicApiKey);
     this.nutritionCompiler = new NutritionCompiler(
       this.usdaAdapter,
       this.fatSecretAdapter,
-      this.localUsdaAdapter
+      this.localUsdaAdapter,
+      this.foodAliasCache
     );
     this.qaValidator = new QAValidator();
     this.brandRenderer = new BrandRenderer();
@@ -146,6 +151,11 @@ export class NutritionPipelineOrchestrator {
       start = Date.now();
       const metabolicProfile = this.metabolicCalculator.calculate(clientIntake);
       timings['metabolicCalculator'] = Date.now() - start;
+
+      // Lazy-load FoodAliasCache (one-time, ~124 rows, negligible latency)
+      if (this.foodAliasCache && !this.foodAliasCache.isLoaded) {
+        await this.foodAliasCache.load();
+      }
 
       // ──────────────────────────────────────────────
       // STAGE 2: Recipe Generation + Cache Warming (parallel), then Compilation
@@ -354,6 +364,11 @@ export class NutritionPipelineOrchestrator {
       start = Date.now();
       this.metabolicCalculator.calculate(clientIntake);
       timings['metabolicCalculator'] = Date.now() - start;
+
+      // Lazy-load FoodAliasCache (one-time, ~124 rows, negligible latency)
+      if (this.foodAliasCache && !this.foodAliasCache.isLoaded) {
+        await this.foodAliasCache.load();
+      }
 
       // Stage 2: Skip Agent 3, re-compile with updated targets
       await emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...');
