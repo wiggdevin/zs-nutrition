@@ -8,6 +8,7 @@ import {
 import { containsAllergenTerm, isDietaryCompliant } from '../../utils/dietary-compliance';
 import {
   KCAL_TOLERANCE,
+  KCAL_ABS_FLOOR,
   PROTEIN_TOLERANCE,
   CARBS_TOLERANCE,
   FAT_TOLERANCE,
@@ -15,6 +16,7 @@ import {
   computeMacroVariances,
   calculateQAScore,
   calculateWeeklyTotals,
+  confidenceToleranceMultiplier,
 } from './tolerance-checks';
 import { aggregateGroceryList } from './repair-strategies';
 import type { RepairStrategy } from './strategies/index';
@@ -108,21 +110,25 @@ export class QAValidator {
       }
     }
 
-    // Recalculate violations after the single optimization pass to determine final status
-    const finalViolations = findViolations(currentDays);
-    const _violatedDayIndices = new Set(finalViolations.map((v) => v.dayIndex));
-
     // Calculate final day QA results with macro variances
     const dayResults = currentDays.map((day, _idx) => {
       const absVariance = Math.abs(day.variancePercent);
       const macroVars = computeMacroVariances(day);
 
+      // Confidence-aware tolerance multiplier (looser for low-confidence days)
+      const confMultiplier = confidenceToleranceMultiplier(day);
+
+      // Effective kcal tolerance: max of percentage-based and absolute-floor-based
+      const effectiveKcalTol =
+        day.targetKcal > 0
+          ? Math.max(KCAL_TOLERANCE * confMultiplier, KCAL_ABS_FLOOR / day.targetKcal)
+          : KCAL_TOLERANCE * confMultiplier;
+
       // Determine kcal status
       let kcalStatus: 'PASS' | 'WARN' | 'FAIL';
-      if (absVariance <= KCAL_TOLERANCE * 100) {
+      if (absVariance <= effectiveKcalTol * 100) {
         kcalStatus = 'PASS';
-      } else if (absVariance <= KCAL_TOLERANCE * 100 * 2) {
-        // Between 3-6% -> WARN
+      } else if (absVariance <= effectiveKcalTol * 100 * 2) {
         kcalStatus = 'WARN';
       } else {
         kcalStatus = 'FAIL';
@@ -135,15 +141,15 @@ export class QAValidator {
         const cAbs = Math.abs(macroVars.carbsPercent) / 100;
         const fAbs = Math.abs(macroVars.fatPercent) / 100;
 
-        const proteinFail = pAbs > PROTEIN_TOLERANCE;
-        const carbsFail = cAbs > CARBS_TOLERANCE;
-        const fatFail = fAbs > FAT_TOLERANCE;
+        const proteinFail = pAbs > PROTEIN_TOLERANCE * confMultiplier;
+        const carbsFail = cAbs > CARBS_TOLERANCE * confMultiplier;
+        const fatFail = fAbs > FAT_TOLERANCE * confMultiplier;
 
         if (proteinFail || carbsFail || fatFail) {
           // Check if any macro is more than 2x its tolerance (FAIL vs WARN)
-          const proteinHardFail = pAbs > PROTEIN_TOLERANCE * 2;
-          const carbsHardFail = cAbs > CARBS_TOLERANCE * 2;
-          const fatHardFail = fAbs > FAT_TOLERANCE * 2;
+          const proteinHardFail = pAbs > PROTEIN_TOLERANCE * confMultiplier * 2;
+          const carbsHardFail = cAbs > CARBS_TOLERANCE * confMultiplier * 2;
+          const fatHardFail = fAbs > FAT_TOLERANCE * confMultiplier * 2;
 
           macroStatus = proteinHardFail || carbsHardFail || fatHardFail ? 'FAIL' : 'WARN';
         }
