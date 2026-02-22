@@ -21,6 +21,7 @@
 
 import { writeFileSync, readFileSync, mkdirSync, existsSync } from 'fs';
 import { resolve } from 'path';
+import { PrismaClient } from '@prisma/client';
 import {
   NutritionPipelineOrchestrator,
   type PipelineConfig,
@@ -180,10 +181,22 @@ async function main(): Promise<void> {
     mkdirSync(OUTPUT_DIR, { recursive: true });
   }
 
+  // Connect to local USDA database if DATABASE_URL is set
+  let prismaClient: PrismaClient | undefined;
+  if (process.env.DATABASE_URL) {
+    prismaClient = new PrismaClient();
+    await prismaClient.$connect();
+    const count = await prismaClient.usdaFood.count();
+    console.log(`  LocalUSDA database: ${count} foods loaded`);
+  } else {
+    console.warn('  WARNING: DATABASE_URL not set — using remote USDA API only (slow!)');
+  }
+
   // USDA-only config: omit FatSecret credentials
   const config: PipelineConfig = {
     anthropicApiKey: process.env.ANTHROPIC_API_KEY,
     usdaApiKey: process.env.USDA_API_KEY,
+    prismaClient,
     // fatsecretClientId and fatsecretClientSecret intentionally omitted
     // This causes orchestrator.ts:73-76 to skip FatSecretAdapter creation
   };
@@ -192,6 +205,7 @@ async function main(): Promise<void> {
   console.log('  USDA-Only Pipeline Test — Full Pipeline Run');
   console.log('='.repeat(70));
   console.log(`  Personas: ${selectedPersonas.map((p) => p.slug).join(', ')}`);
+  console.log(`  LocalUSDA: ${prismaClient ? 'ENABLED' : 'DISABLED (remote API only)'}`);
   console.log('  FatSecret: DISABLED (USDA-only mode)');
   console.log(`  Output:   ${OUTPUT_DIR}`);
   console.log('='.repeat(70));
@@ -495,6 +509,11 @@ async function main(): Promise<void> {
   }
 
   console.log(`${'='.repeat(70)}\n`);
+
+  // Disconnect Prisma
+  if (prismaClient) {
+    await prismaClient.$disconnect();
+  }
 }
 
 main().catch((err) => {
