@@ -11,6 +11,7 @@ import {
   categorizeError,
   InsightsErrorCategory,
 } from '@/server/utils/insights-logger';
+import { getConfig, callWithFallback } from '@zero-sum/nutrition-engine';
 
 // ---------------------------------------------------------------------------
 // Lazy singleton Claude client (mirrors pattern in claude-chat.ts)
@@ -33,8 +34,7 @@ function getInsightsClient(): Anthropic {
 // Constants
 // ---------------------------------------------------------------------------
 
-const MODEL = 'claude-sonnet-4-20250514';
-const MAX_TOKENS = 1024;
+const insightsConfig = getConfig('insights');
 const MAX_ATTEMPTS = 3;
 const BASE_DELAY_MS = 1_000;
 
@@ -104,16 +104,24 @@ export async function generateInsights(payload: InsightsDataPayload): Promise<{
     // Cast to Anthropic.Tool to strip `readonly` from `as const` schema arrays
     const tool = claudeInsightsToolSchema as unknown as Anthropic.Messages.Tool;
 
-    const response = await withRetry(() =>
-      anthropic.messages.create({
-        model: MODEL,
-        max_tokens: MAX_TOKENS,
-        stream: false,
-        system: SYSTEM_PROMPT,
-        tools: [tool],
-        tool_choice: { type: 'tool', name: 'generate_nutrition_insights' },
-        messages: [{ role: 'user', content: payloadStr }],
-      })
+    const response = await callWithFallback(insightsConfig, (model, maxTokens) =>
+      withRetry(() =>
+        anthropic.messages.create({
+          model,
+          max_tokens: maxTokens,
+          stream: false,
+          system: [
+            {
+              type: 'text' as const,
+              text: SYSTEM_PROMPT,
+              cache_control: { type: 'ephemeral' as const },
+            },
+          ],
+          tools: [tool],
+          tool_choice: { type: 'tool', name: 'generate_nutrition_insights' },
+          messages: [{ role: 'user', content: payloadStr }],
+        })
+      )
     );
 
     const durationMs = Date.now() - startMs;

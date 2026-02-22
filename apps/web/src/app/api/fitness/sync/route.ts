@@ -4,7 +4,7 @@
 
 import { NextRequest, NextResponse } from 'next/server';
 import { requireActiveUser } from '@/lib/auth';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/safe-logger';
 import { syncUserActivity } from '@/lib/fitness/scheduler';
 

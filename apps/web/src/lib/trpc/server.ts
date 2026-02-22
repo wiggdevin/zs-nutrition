@@ -1,7 +1,7 @@
 import { initTRPC, TRPCError } from '@trpc/server';
 import { auth } from '@clerk/nextjs/server';
 import superjson from 'superjson';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 
 export const createTRPCContext = async () => {
   let clerkUserId: string | null = null;

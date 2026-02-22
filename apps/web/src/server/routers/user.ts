@@ -9,6 +9,7 @@ import {
   calculateMacroTargets,
   getTrainingDayBonus,
 } from '@/lib/metabolic-utils';
+import { cacheGet, cacheSet, cacheDelete, CacheKeys } from '@/lib/cache';
 
 export const userRouter = router({
   getOnboardingState: protectedProcedure.query(async ({ ctx }) => {
@@ -183,11 +184,23 @@ export const userRouter = router({
         },
       });
 
+      // Invalidate profile cache after onboarding
+      await cacheDelete(CacheKeys.userProfile(dbUserId));
+
       return { profile, redirectTo: '/generate' };
     }),
 
   getProfile: protectedProcedure.query(async ({ ctx }) => {
     const dbUserId = ctx.dbUserId;
+
+    // Check cache first (TTL: 1hr)
+    const cacheKey = CacheKeys.userProfile(dbUserId);
+    const cached =
+      await cacheGet<NonNullable<Awaited<ReturnType<typeof ctx.prisma.userProfile.findFirst>>>>(
+        cacheKey
+      );
+    if (cached) return cached;
+
     const profile = await ctx.prisma.userProfile.findFirst({
       where: { userId: dbUserId, isActive: true },
       select: {
@@ -223,6 +236,8 @@ export const userRouter = router({
         updatedAt: true,
       },
     });
+
+    if (profile) await cacheSet(cacheKey, profile, 3600);
     return profile;
   }),
 
@@ -371,6 +386,9 @@ export const userRouter = router({
           updatedAt: true,
         },
       });
+
+      // Invalidate profile cache
+      await cacheDelete(CacheKeys.userProfile(dbUserId));
 
       return { profile: updated };
     }),

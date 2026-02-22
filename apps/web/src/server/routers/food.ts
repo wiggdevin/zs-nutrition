@@ -1,6 +1,27 @@
 import { z } from 'zod';
 import { protectedProcedure, router } from '../trpc';
 import { FatSecretAdapter } from '@zero-sum/nutrition-engine';
+import type { ExternalFoodCache } from '@zero-sum/nutrition-engine';
+import { redis } from '@/lib/redis';
+import { logger } from '@/lib/safe-logger';
+
+/** Thin Redis wrapper implementing ExternalFoodCache for L2 caching. */
+const redisFoodCache: ExternalFoodCache = {
+  async get(key: string): Promise<string | null> {
+    try {
+      return await redis.get(key);
+    } catch {
+      return null;
+    }
+  },
+  async set(key: string, value: string, ttlSeconds: number): Promise<void> {
+    try {
+      await redis.set(key, value, 'EX', ttlSeconds);
+    } catch (err) {
+      logger.warn('[FoodCache L2] SET failed:', err);
+    }
+  },
+};
 
 // Singleton FatSecret adapter instance
 let fatSecretAdapter: FatSecretAdapter | null = null;
@@ -9,7 +30,8 @@ function getFatSecretAdapter(): FatSecretAdapter {
   if (!fatSecretAdapter) {
     fatSecretAdapter = new FatSecretAdapter(
       process.env.FATSECRET_CLIENT_ID || '',
-      process.env.FATSECRET_CLIENT_SECRET || ''
+      process.env.FATSECRET_CLIENT_SECRET || '',
+      redisFoodCache
     );
   }
   return fatSecretAdapter;

@@ -2,6 +2,46 @@ import { z } from 'zod';
 import { TRPCError } from '@trpc/server';
 import { protectedProcedure, router } from '../trpc';
 import { toLocalDay, parseLocalDay } from '@/lib/date-utils';
+import { cacheGet, cacheSet, cacheDelete, CacheKeys } from '@/lib/cache';
+
+/** Typed cache shape for getDailySummary to preserve tRPC inference. */
+interface DailySummaryResult {
+  date: string;
+  dailyLog: {
+    id: string;
+    targetKcal: number | null;
+    targetProteinG: number | null;
+    targetCarbsG: number | null;
+    targetFatG: number | null;
+    actualKcal: number;
+    actualProteinG: number;
+    actualCarbsG: number;
+    actualFatG: number;
+    adherenceScore: number;
+  } | null;
+  trackedMeals: {
+    id: string;
+    mealPlanId: string | null;
+    mealSlot: string | null;
+    mealName: string;
+    portion: number;
+    kcal: number;
+    proteinG: number;
+    carbsG: number;
+    fatG: number;
+    fiberG: number | null;
+    source: string;
+    confidenceScore: number | null;
+    createdAt: Date;
+  }[];
+  totals: {
+    kcal: number;
+    proteinG: number;
+    carbsG: number;
+    fatG: number;
+  };
+  mealCount: number;
+}
 
 /**
  * Tracking Router — handles daily summary, tracked meals queries, and macro tracking.
@@ -28,6 +68,12 @@ export const trackingRouter = router({
       // Parse date input or default to today
       // Use local day utilities to ensure consistent date boundaries
       const dateOnly = input?.date ? parseLocalDay(input.date) : toLocalDay();
+
+      // Check cache first (TTL: 60s)
+      const dateStr = dateOnly.toISOString().slice(0, 10);
+      const dailyCacheKey = CacheKeys.dailySummary(dbUserId, dateStr);
+      const cached = await cacheGet<DailySummaryResult>(dailyCacheKey);
+      if (cached) return cached;
 
       // Fetch DailyLog and all TrackedMeals for this date in parallel
       // Use select to only fetch needed fields for optimal performance
@@ -87,7 +133,7 @@ export const trackingRouter = router({
         { kcal: 0, proteinG: 0, carbsG: 0, fatG: 0 }
       );
 
-      return {
+      const result = {
         date: dateOnly.toISOString(),
         dailyLog: dailyLog
           ? {
@@ -126,6 +172,10 @@ export const trackingRouter = router({
         },
         mealCount: trackedMeals.length,
       };
+
+      // Cache for 60 seconds
+      await cacheSet(dailyCacheKey, result, 60);
+      return result;
     }),
 
   /**
@@ -363,12 +413,18 @@ export const trackingRouter = router({
       const dbUserId = ctx.dbUserId;
       const dateOnly = input?.date ? parseLocalDay(input.date) : toLocalDay();
 
-      const entries = await prisma.waterLog.findMany({
-        where: { userId: dbUserId, date: dateOnly },
-        orderBy: { createdAt: 'asc' },
-      });
+      const [entries, aggregateResult] = await Promise.all([
+        prisma.waterLog.findMany({
+          where: { userId: dbUserId, date: dateOnly },
+          orderBy: { createdAt: 'asc' },
+        }),
+        prisma.waterLog.aggregate({
+          where: { userId: dbUserId, date: dateOnly },
+          _sum: { amountMl: true },
+        }),
+      ]);
 
-      const totalMl = entries.reduce((sum, e) => sum + e.amountMl, 0);
+      const totalMl = aggregateResult._sum.amountMl ?? 0;
 
       return {
         date: dateOnly.toISOString(),
@@ -406,10 +462,15 @@ export const trackingRouter = router({
         },
       });
 
-      const allEntries = await prisma.waterLog.findMany({
+      const aggregation = await prisma.waterLog.aggregate({
         where: { userId: dbUserId, date: dateOnly },
+        _sum: { amountMl: true },
       });
-      const totalMl = allEntries.reduce((sum, e) => sum + e.amountMl, 0);
+      const totalMl = aggregation._sum.amountMl ?? 0;
+
+      // Invalidate daily summary cache
+      const waterDateStr = dateOnly.toISOString().slice(0, 10);
+      await cacheDelete(CacheKeys.dailySummary(dbUserId, waterDateStr));
 
       return {
         entry: { id: entry.id, amountMl: entry.amountMl, createdAt: entry.createdAt },
@@ -477,11 +538,6 @@ export const trackingRouter = router({
         });
 
         // Find or create DailyLog
-        const activeProfile = await tx.userProfile.findFirst({
-          where: { userId: dbUserId, isActive: true },
-          orderBy: { createdAt: 'desc' },
-        });
-
         let dailyLog = await tx.dailyLog.findUnique({
           where: {
             userId_date: {
@@ -492,6 +548,11 @@ export const trackingRouter = router({
         });
 
         if (!dailyLog) {
+          const activeProfile = await tx.userProfile.findFirst({
+            where: { userId: dbUserId, isActive: true },
+            orderBy: { createdAt: 'desc' },
+          });
+
           dailyLog = await tx.dailyLog.create({
             data: {
               userId: dbUserId,
@@ -538,6 +599,10 @@ export const trackingRouter = router({
           },
         };
       });
+
+      // Invalidate daily summary cache
+      const logDateStr = dateOnly.toISOString().slice(0, 10);
+      await cacheDelete(CacheKeys.dailySummary(dbUserId, logDateStr));
 
       return result;
     }),

@@ -11,7 +11,7 @@ import { LRUCache } from 'lru-cache';
 import pLimit from 'p-limit';
 import { engineLogger } from '../utils/logger';
 import { CircuitBreaker } from './fatsecret/circuit-breaker';
-import { FoodSearchResult, FoodDetails, FoodServing } from './food-data-types';
+import { FoodSearchResult, FoodDetails, FoodServing, ExternalFoodCache } from './food-data-types';
 
 /**
  * Module-level circuit breaker for USDA API calls.
@@ -65,6 +65,7 @@ export class USDAAdapter {
 
   private searchCache: LRUCache<string, FoodSearchResult[]>;
   private foodCache: LRUCache<string, FoodDetails>;
+  private externalCache?: ExternalFoodCache;
 
   private cacheStats = {
     searchHits: 0,
@@ -73,8 +74,9 @@ export class USDAAdapter {
     foodMisses: 0,
   };
 
-  constructor(apiKey: string) {
+  constructor(apiKey: string, externalCache?: ExternalFoodCache) {
     this.apiKey = apiKey;
+    this.externalCache = externalCache;
 
     // Initialize search cache: 500 entries, 1-hour TTL
     this.searchCache = new LRUCache<string, FoodSearchResult[]>({
@@ -194,15 +196,31 @@ export class USDAAdapter {
         return [];
       }
 
-      // Check cache first
+      // Check L1 cache first
       const cacheKey = `${query.toLowerCase().trim()}:${maxResults}`;
       const cached = this.searchCache.get(cacheKey);
       if (cached) {
         this.cacheStats.searchHits++;
         engineLogger.debug(
-          `[USDA] Search cache HIT for "${query}" (total hits: ${this.cacheStats.searchHits})`
+          `[USDA] Search cache L1 HIT for "${query}" (total hits: ${this.cacheStats.searchHits})`
         );
         return cached;
+      }
+
+      // Check L2 cache
+      if (this.externalCache) {
+        try {
+          const l2Data = await this.externalCache.get(`usda:search:${cacheKey}`);
+          if (l2Data) {
+            const parsed = JSON.parse(l2Data) as FoodSearchResult[];
+            this.searchCache.set(cacheKey, parsed); // backfill L1
+            this.cacheStats.searchHits++;
+            engineLogger.debug(`[USDA] Search cache L2 HIT for "${query}"`);
+            return parsed;
+          }
+        } catch {
+          // L2 failure is non-fatal
+        }
       }
 
       this.cacheStats.searchMisses++;
@@ -220,6 +238,13 @@ export class USDAAdapter {
       if (!foods || !Array.isArray(foods) || foods.length === 0) {
         // Cache empty results too to avoid repeated failed lookups
         this.searchCache.set(cacheKey, []);
+        if (this.externalCache) {
+          try {
+            await this.externalCache.set(`usda:search:${cacheKey}`, '[]', 3600);
+          } catch {
+            /* non-fatal */
+          }
+        }
         return [];
       }
 
@@ -247,8 +272,15 @@ export class USDAAdapter {
         };
       });
 
-      // Store in cache
+      // Store in L1 + L2 cache
       this.searchCache.set(cacheKey, results);
+      if (this.externalCache) {
+        try {
+          await this.externalCache.set(`usda:search:${cacheKey}`, JSON.stringify(results), 3600);
+        } catch {
+          /* non-fatal */
+        }
+      }
       return results;
     });
   }
@@ -259,14 +291,30 @@ export class USDAAdapter {
         throw new Error('USDA food lookup requires a valid API key');
       }
 
-      // Check cache first
+      // Check L1 cache first
       const cached = this.foodCache.get(fdcId);
       if (cached) {
         this.cacheStats.foodHits++;
         engineLogger.debug(
-          `[USDA] Food cache HIT for ID "${fdcId}" (total hits: ${this.cacheStats.foodHits})`
+          `[USDA] Food cache L1 HIT for ID "${fdcId}" (total hits: ${this.cacheStats.foodHits})`
         );
         return cached;
+      }
+
+      // Check L2 cache
+      if (this.externalCache) {
+        try {
+          const l2Data = await this.externalCache.get(`usda:food:${fdcId}`);
+          if (l2Data) {
+            const parsed = JSON.parse(l2Data) as FoodDetails;
+            this.foodCache.set(fdcId, parsed); // backfill L1
+            this.cacheStats.foodHits++;
+            engineLogger.debug(`[USDA] Food cache L2 HIT for ID "${fdcId}"`);
+            return parsed;
+          }
+        } catch {
+          // L2 failure is non-fatal
+        }
       }
 
       this.cacheStats.foodMisses++;
@@ -335,8 +383,15 @@ export class USDAAdapter {
         servings,
       };
 
-      // Store in cache
+      // Store in L1 + L2 cache
       this.foodCache.set(fdcId, result);
+      if (this.externalCache) {
+        try {
+          await this.externalCache.set(`usda:food:${fdcId}`, JSON.stringify(result), 86400);
+        } catch {
+          /* non-fatal */
+        }
+      }
       return result;
     });
   }

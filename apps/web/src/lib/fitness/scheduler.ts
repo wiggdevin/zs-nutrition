@@ -2,7 +2,7 @@
 // Background Sync Scheduler for Fitness Platforms
 // ============================================================
 
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/encryption';
 import { logger } from '@/lib/safe-logger';
 import { OuraApiClient } from './oura-client';

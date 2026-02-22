@@ -27,9 +27,9 @@ export async function searchFoods(
     return LocalFoodDatabase.searchFoods(query, maxResults, pageNumber);
   }
 
-  // Check cache first
+  // Check cache first (L1 + L2)
   const cacheKey = `${query.toLowerCase().trim()}:${maxResults}:${pageNumber}`;
-  const cached = cache.getSearchResult(cacheKey);
+  const cached = await cache.getSearchResult(cacheKey);
   if (cached) {
     return cached;
   }
@@ -45,7 +45,7 @@ export async function searchFoods(
   const foods = data?.foods?.food;
   if (!foods) {
     // Cache empty results too to avoid repeated failed lookups
-    cache.setSearchResult(cacheKey, []);
+    await cache.setSearchResult(cacheKey, []);
     return [];
   }
 
@@ -57,8 +57,8 @@ export async function searchFoods(
     brandName: f.brand_name || undefined,
   }));
 
-  // Store in cache
-  cache.setSearchResult(cacheKey, results);
+  // Store in cache (L1 + L2)
+  await cache.setSearchResult(cacheKey, results);
   return results;
 }
 

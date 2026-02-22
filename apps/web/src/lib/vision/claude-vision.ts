@@ -7,6 +7,7 @@
 
 import Anthropic from '@anthropic-ai/sdk';
 import { logger } from '@/lib/safe-logger';
+import { getConfig } from '@zero-sum/nutrition-engine';
 
 // Nutrition analysis result structure
 export interface NutritionEstimate {
@@ -56,7 +57,7 @@ function clampNutrition(value: number, field: keyof typeof VISION_NUTRITION_BOUN
  */
 export class ClaudeVisionClient {
   private client: Anthropic | null = null;
-  private readonly model = 'claude-sonnet-4-20250514'; // Use Sonnet for vision
+  private readonly model = getConfig('vision').model;
 
   constructor() {
     this.initializeClient();
@@ -138,6 +139,13 @@ export class ClaudeVisionClient {
     const message = await this.client.messages.create({
       model: this.model,
       max_tokens: 2048,
+      system: [
+        {
+          type: 'text' as const,
+          text: 'You are an expert nutritionist and food analyst.',
+          cache_control: { type: 'ephemeral' as const },
+        },
+      ],
       messages: [
         {
           role: 'user',

@@ -12,7 +12,9 @@
 
 import { prisma } from './prisma';
 import { LocalUSDAAdapter, FatSecretAdapter } from '@zero-sum/nutrition-engine';
-import type { FoodSearchResult, FoodDetails } from '@zero-sum/nutrition-engine';
+import type { FoodSearchResult, FoodDetails, ExternalFoodCache } from '@zero-sum/nutrition-engine';
+import { redis } from './redis';
+import { logger } from './safe-logger';
 
 // Singleton LocalUSDAAdapter
 let localAdapter: LocalUSDAAdapter | null = null;
@@ -24,6 +26,24 @@ function getLocalAdapter(): LocalUSDAAdapter {
   return localAdapter;
 }
 
+/** Thin Redis wrapper implementing ExternalFoodCache for L2 caching. */
+const redisFoodCache: ExternalFoodCache = {
+  async get(key: string): Promise<string | null> {
+    try {
+      return await redis.get(key);
+    } catch {
+      return null;
+    }
+  },
+  async set(key: string, value: string, ttlSeconds: number): Promise<void> {
+    try {
+      await redis.set(key, value, 'EX', ttlSeconds);
+    } catch (err) {
+      logger.warn('[FoodCache L2] SET failed:', err);
+    }
+  },
+};
+
 // Singleton FatSecretAdapter (only used for legacy/branded food lookups)
 let fatSecretAdapter: FatSecretAdapter | null = null;
 
@@ -31,7 +51,8 @@ function getFatSecretAdapter(): FatSecretAdapter {
   if (!fatSecretAdapter) {
     fatSecretAdapter = new FatSecretAdapter(
       process.env.FATSECRET_CLIENT_ID || '',
-      process.env.FATSECRET_CLIENT_SECRET || ''
+      process.env.FATSECRET_CLIENT_SECRET || '',
+      redisFoodCache
     );
   }
   return fatSecretAdapter;

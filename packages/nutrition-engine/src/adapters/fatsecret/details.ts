@@ -18,8 +18,8 @@ export async function getFood(
     return LocalFoodDatabase.getFood(foodId);
   }
 
-  // Check cache first
-  const cached = cache.getFoodResult(foodId);
+  // Check cache first (L1 + L2)
+  const cached = await cache.getFoodResult(foodId);
   if (cached) {
     return cached;
   }
@@ -58,8 +58,8 @@ export async function getFood(
     })),
   };
 
-  // Store in cache
-  cache.setFoodResult(foodId, result);
+  // Store in cache (L1 + L2)
+  await cache.setFoodResult(foodId, result);
   return result;
 }
 

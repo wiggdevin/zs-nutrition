@@ -260,6 +260,7 @@ model TrackedMeal {
   // NOTE: A migration is needed after this change (npx prisma migrate dev)
   @@unique([userId, mealPlanId, loggedDate, mealSlot, source], name: "TrackedMeal_plan_dedup")
   @@index([userId, loggedDate])
+  @@index([userId, loggedDate, createdAt])
   @@index([loggedDate])
   @@index([source])
 }
@@ -403,6 +404,7 @@ model ActivitySync {
 
   @@unique([connectionId, syncDate])
   @@index([userId, syncDate])
+  @@index([userId, platform, syncDate])
   @@index([connectionId, syncDate])
   @@index([processed])
 }

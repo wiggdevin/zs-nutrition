@@ -3,6 +3,7 @@ import { TRPCError } from '@trpc/server';
 import { protectedProcedure, router } from '../../trpc';
 import { recalculateDailyLog, calculateAdherenceScore } from '../../utils/daily-log';
 import { isUniqueConstraintError } from '@/lib/prisma-utils';
+import { cacheDelete, CacheKeys } from '@/lib/cache';
 
 /**
  * Meal Mutations — write procedures for logging and managing tracked meals.
@@ -49,50 +50,7 @@ export const mealMutationsRouter = router({
       const dateOnly = new Date(Date.UTC(today.getFullYear(), today.getMonth(), today.getDate()));
 
       try {
-        return await prisma.$transaction(async (tx) => {
-          const recentDuplicate = await tx.trackedMeal.findFirst({
-            where: {
-              userId: dbUserId,
-              mealPlanId: input.planId,
-              loggedDate: dateOnly,
-              mealSlot: input.slot,
-              source: 'plan_meal',
-            },
-            orderBy: { createdAt: 'desc' },
-          });
-
-          if (recentDuplicate) {
-            const existingDailyLog = await tx.dailyLog.findUnique({
-              where: { userId_date: { userId: dbUserId, date: dateOnly } },
-            });
-            return {
-              trackedMeal: {
-                id: recentDuplicate.id,
-                mealName: recentDuplicate.mealName,
-                mealSlot: recentDuplicate.mealSlot,
-                kcal: recentDuplicate.kcal,
-                proteinG: recentDuplicate.proteinG,
-                carbsG: recentDuplicate.carbsG,
-                fatG: recentDuplicate.fatG,
-                source: recentDuplicate.source,
-                createdAt: recentDuplicate.createdAt,
-              },
-              dailyLog: {
-                actualKcal: existingDailyLog?.actualKcal ?? recentDuplicate.kcal,
-                actualProteinG:
-                  existingDailyLog?.actualProteinG ?? Math.round(recentDuplicate.proteinG),
-                actualCarbsG: existingDailyLog?.actualCarbsG ?? Math.round(recentDuplicate.carbsG),
-                actualFatG: existingDailyLog?.actualFatG ?? Math.round(recentDuplicate.fatG),
-                targetKcal: existingDailyLog?.targetKcal ?? null,
-                targetProteinG: existingDailyLog?.targetProteinG ?? null,
-                targetCarbsG: existingDailyLog?.targetCarbsG ?? null,
-                targetFatG: existingDailyLog?.targetFatG ?? null,
-                adherenceScore: existingDailyLog?.adherenceScore ?? 0,
-              },
-              duplicate: true,
-            };
-          }
-
+        const txResult = await prisma.$transaction(async (tx) => {
           const portionMultiplier = input.portion;
           const kcal = Math.round(input.calories * portionMultiplier);
           const proteinG = Math.round(input.protein * portionMultiplier * 10) / 10;
@@ -183,8 +141,15 @@ export const mealMutationsRouter = router({
               targetFatG: dailyLog.targetFatG,
               adherenceScore,
             },
+            duplicate: false,
           };
         });
+
+        // Invalidate daily summary cache
+        const planDateStr = dateOnly.toISOString().slice(0, 10);
+        await cacheDelete(CacheKeys.dailySummary(dbUserId, planDateStr));
+
+        return txResult;
       } catch (error) {
         if (isUniqueConstraintError(error)) {
           const existing = await prisma.trackedMeal.findFirst({
@@ -271,7 +236,7 @@ export const mealMutationsRouter = router({
       const fatG = input.fat ?? 0;
       const mealName = input.mealName || `Quick Add (${kcal} kcal)`;
 
-      return await prisma.$transaction(async (tx) => {
+      const quickAddResult = await prisma.$transaction(async (tx) => {
         const threeSecondsAgo = new Date(Date.now() - 3000);
         const recentDuplicate = await tx.trackedMeal.findFirst({
           where: {
@@ -333,11 +298,6 @@ export const mealMutationsRouter = router({
           },
         });
 
-        const activeProfile = await tx.userProfile.findFirst({
-          where: { userId: dbUserId, isActive: true },
-          orderBy: { createdAt: 'desc' },
-        });
-
         let dailyLog = await tx.dailyLog.findUnique({
           where: {
             userId_date: {
@@ -348,6 +308,11 @@ export const mealMutationsRouter = router({
         });
 
         if (!dailyLog) {
+          const activeProfile = await tx.userProfile.findFirst({
+            where: { userId: dbUserId, isActive: true },
+            orderBy: { createdAt: 'desc' },
+          });
+
           dailyLog = await tx.dailyLog.create({
             data: {
               userId: dbUserId,
@@ -405,6 +370,12 @@ export const mealMutationsRouter = router({
           },
         };
       });
+
+      // Invalidate daily summary cache
+      const quickAddDateStr = dateOnly.toISOString().slice(0, 10);
+      await cacheDelete(CacheKeys.dailySummary(dbUserId, quickAddDateStr));
+
+      return quickAddResult;
     }),
 
   /**
@@ -445,6 +416,10 @@ export const mealMutationsRouter = router({
       await prisma.trackedMeal.delete({
         where: { id: input.trackedMealId },
       });
+
+      // Invalidate daily summary cache
+      const deleteDateStr = dateOnly.toISOString().slice(0, 10);
+      await cacheDelete(CacheKeys.dailySummary(dbUserId, deleteDateStr));
 
       const newTotals = await recalculateDailyLog(prisma, dbUserId, dateOnly);
 

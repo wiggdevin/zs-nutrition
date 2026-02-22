@@ -2,6 +2,7 @@ import { z } from 'zod';
 import { protectedProcedure, router } from '../../trpc';
 import { ValidatedPlanSchema } from '@/lib/schemas/plan';
 import { decompressJson } from '@/lib/compression';
+import { cacheGet, cacheSet, CacheKeys } from '@/lib/cache';
 
 /**
  * Meal Queries — read-only procedures for meal plans and daily logs.
@@ -13,6 +14,26 @@ export const mealQueriesRouter = router({
   getActivePlan: protectedProcedure.query(async ({ ctx }) => {
     const { prisma } = ctx;
     const dbUserId = ctx.dbUserId;
+
+    // Check cache first (TTL: 6hr)
+    const cacheKey = CacheKeys.activePlan(dbUserId);
+    const cached = await cacheGet<{
+      id: string;
+      dailyKcalTarget: number | null;
+      dailyProteinG: number | null;
+      dailyCarbsG: number | null;
+      dailyFatG: number | null;
+      trainingBonusKcal: number | null;
+      planDays: number;
+      startDate: Date | null;
+      endDate: Date | null;
+      qaScore: number | null;
+      qaStatus: string | null;
+      status: string;
+      generatedAt: Date;
+      validatedPlan: z.infer<typeof ValidatedPlanSchema>;
+    }>(cacheKey);
+    if (cached) return cached;
 
     const plan = await prisma.mealPlan.findFirst({
       where: {
@@ -47,7 +68,7 @@ export const mealQueriesRouter = router({
       ? (decompressedPlan as z.infer<typeof ValidatedPlanSchema>)
       : { days: [] };
 
-    return {
+    const result = {
       id: plan.id,
       dailyKcalTarget: plan.dailyKcalTarget,
       dailyProteinG: plan.dailyProteinG,
@@ -63,6 +84,10 @@ export const mealQueriesRouter = router({
       generatedAt: plan.generatedAt,
       validatedPlan: parsedPlan,
     };
+
+    // Cache for 6 hours
+    await cacheSet(cacheKey, result, 21600);
+    return result;
   }),
 
   /**

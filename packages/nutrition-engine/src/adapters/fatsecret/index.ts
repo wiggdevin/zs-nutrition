@@ -14,6 +14,7 @@ import { fatSecretCircuitBreaker } from './circuit-breaker';
 import { searchFoods, searchRecipes } from './search';
 import { getFood, getFoodByBarcode, getRecipe } from './details';
 import { autocomplete } from './autocomplete';
+import type { ExternalFoodCache } from '../food-data-types';
 import type { FoodSearchResult, FoodDetails, RecipeSearchResult, RecipeDetails } from './types';
 
 // Re-export all public types
@@ -40,11 +41,11 @@ export class FatSecretAdapter {
   private clientId: string;
   private clientSecret: string;
 
-  constructor(clientId: string, clientSecret: string) {
+  constructor(clientId: string, clientSecret: string, externalCache?: ExternalFoodCache) {
     this.clientId = clientId;
     this.clientSecret = clientSecret;
     this.oauth = new OAuthManager(clientId, clientSecret);
-    this.cache = new FatSecretCache();
+    this.cache = new FatSecretCache(externalCache);
   }
 
   getCacheStats() {

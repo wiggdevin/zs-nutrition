@@ -3,7 +3,7 @@
 // ============================================================
 
 import { decrypt, encrypt } from '@/lib/encryption';
-import { prisma } from '@/lib/db';
+import { prisma } from '@/lib/prisma';
 import { logger } from '@/lib/safe-logger';
 import type {
   OuraListResponse,

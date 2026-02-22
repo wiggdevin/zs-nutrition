@@ -1,11 +1,15 @@
 /**
- * FatSecret LRU cache management
+ * FatSecret LRU cache management with optional L2 (Redis) cache.
  * Provides food search, food detail, recipe search, and recipe detail caching
  * to reduce redundant API calls.
+ *
+ * L1: In-memory LRU cache (fast, per-process)
+ * L2: Optional external cache e.g. Redis (shared across processes/deploys)
  */
 
 import { LRUCache } from 'lru-cache';
 import { engineLogger } from '../../utils/logger';
+import type { ExternalFoodCache } from '../food-data-types';
 import type { FoodSearchResult, FoodDetails, RecipeSearchResult, RecipeDetails } from './types';
 
 export interface CacheStats {
@@ -24,6 +28,7 @@ export class FatSecretCache {
   private foodCache: LRUCache<string, FoodDetails>;
   private recipeSearchCache: LRUCache<string, RecipeSearchResult[]>;
   private recipeCache: LRUCache<string, RecipeDetails>;
+  private externalCache?: ExternalFoodCache;
   private stats: CacheStats = {
     searchHits: 0,
     searchMisses: 0,
@@ -35,7 +40,9 @@ export class FatSecretCache {
     recipeMisses: 0,
   };
 
-  constructor() {
+  constructor(externalCache?: ExternalFoodCache) {
+    this.externalCache = externalCache;
+
     // Initialize food search cache: 500 entries, 1-hour TTL
     this.searchCache = new LRUCache<string, FoodSearchResult[]>({
       max: 500,
@@ -63,46 +70,96 @@ export class FatSecretCache {
 
   // -- Food search cache --
 
-  getSearchResult(cacheKey: string): FoodSearchResult[] | undefined {
+  async getSearchResult(cacheKey: string): Promise<FoodSearchResult[] | undefined> {
+    // L1 check
     const cached = this.searchCache.get(cacheKey);
     if (cached) {
       this.stats.searchHits++;
       engineLogger.debug(
-        `[FatSecret] Search cache HIT for "${cacheKey}" (total hits: ${this.stats.searchHits})`
+        `[FatSecret] Search cache L1 HIT for "${cacheKey}" (total hits: ${this.stats.searchHits})`
       );
-    } else {
-      this.stats.searchMisses++;
-      engineLogger.debug(
-        `[FatSecret] Search cache MISS for "${cacheKey}" (total misses: ${this.stats.searchMisses})`
-      );
+      return cached;
     }
-    return cached;
+
+    // L2 check
+    if (this.externalCache) {
+      try {
+        const l2Data = await this.externalCache.get(`fs:search:${cacheKey}`);
+        if (l2Data) {
+          const parsed = JSON.parse(l2Data) as FoodSearchResult[];
+          this.searchCache.set(cacheKey, parsed); // backfill L1
+          this.stats.searchHits++;
+          engineLogger.debug(`[FatSecret] Search cache L2 HIT for "${cacheKey}"`);
+          return parsed;
+        }
+      } catch {
+        // L2 failure is non-fatal
+      }
+    }
+
+    this.stats.searchMisses++;
+    engineLogger.debug(
+      `[FatSecret] Search cache MISS for "${cacheKey}" (total misses: ${this.stats.searchMisses})`
+    );
+    return undefined;
   }
 
-  setSearchResult(cacheKey: string, results: FoodSearchResult[]): void {
+  async setSearchResult(cacheKey: string, results: FoodSearchResult[]): Promise<void> {
     this.searchCache.set(cacheKey, results);
+    if (this.externalCache) {
+      try {
+        await this.externalCache.set(`fs:search:${cacheKey}`, JSON.stringify(results), 3600); // 1h
+      } catch {
+        // L2 failure is non-fatal
+      }
+    }
   }
 
   // -- Food details cache --
 
-  getFoodResult(foodId: string): FoodDetails | undefined {
+  async getFoodResult(foodId: string): Promise<FoodDetails | undefined> {
+    // L1 check
     const cached = this.foodCache.get(foodId);
     if (cached) {
       this.stats.foodHits++;
       engineLogger.debug(
-        `[FatSecret] Food cache HIT for ID "${foodId}" (total hits: ${this.stats.foodHits})`
+        `[FatSecret] Food cache L1 HIT for ID "${foodId}" (total hits: ${this.stats.foodHits})`
       );
-    } else {
-      this.stats.foodMisses++;
-      engineLogger.debug(
-        `[FatSecret] Food cache MISS for ID "${foodId}" (total misses: ${this.stats.foodMisses})`
-      );
+      return cached;
     }
-    return cached;
+
+    // L2 check
+    if (this.externalCache) {
+      try {
+        const l2Data = await this.externalCache.get(`fs:food:${foodId}`);
+        if (l2Data) {
+          const parsed = JSON.parse(l2Data) as FoodDetails;
+          this.foodCache.set(foodId, parsed); // backfill L1
+          this.stats.foodHits++;
+          engineLogger.debug(`[FatSecret] Food cache L2 HIT for ID "${foodId}"`);
+          return parsed;
+        }
+      } catch {
+        // L2 failure is non-fatal
+      }
+    }
+
+    this.stats.foodMisses++;
+    engineLogger.debug(
+      `[FatSecret] Food cache MISS for ID "${foodId}" (total misses: ${this.stats.foodMisses})`
+    );
+    return undefined;
   }
 
-  setFoodResult(foodId: string, details: FoodDetails): void {
+  async setFoodResult(foodId: string, details: FoodDetails): Promise<void> {
     this.foodCache.set(foodId, details);
+    if (this.externalCache) {
+      try {
+        await this.externalCache.set(`fs:food:${foodId}`, JSON.stringify(details), 86400); // 24h
+      } catch {
+        // L2 failure is non-fatal
+      }
+    }
   }
 
   // -- Recipe search cache --

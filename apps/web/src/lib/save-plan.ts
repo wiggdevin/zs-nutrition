@@ -6,6 +6,7 @@ import { logger } from '@/lib/safe-logger';
 import { toLocalDay, addDays } from '@/lib/date-utils';
 import { isUniqueConstraintError } from '@/lib/plan-utils';
 import { compressJson, decompressJson, jsonSizeBytes } from '@/lib/compression';
+import { cacheDelete, CacheKeys } from '@/lib/cache';
 
 /**
  * Saves a completed plan generation result to the MealPlan table.
@@ -349,6 +350,9 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
         completedAt: new Date(),
       },
     });
+
+    // 9. Invalidate active plan cache
+    await cacheDelete(CacheKeys.activePlan(userId));
 
     return { success: true, planId: mealPlan.id };
   } catch (error) {

@@ -42,6 +42,7 @@ export { FatSecretAdapter, fatSecretCircuitBreaker } from './adapters/fatsecret'
 export type { CircuitBreakerState } from './adapters/fatsecret';
 export { USDAAdapter } from './adapters/usda';
 export { LocalUSDAAdapter } from './adapters/usda-local';
+export type { ExternalFoodCache } from './adapters/food-data-types';
 
 // Data - Food Alias Cache
 export { FoodAliasCache } from './data/food-alias-cache';
@@ -67,6 +68,15 @@ export { sanitizeError } from './utils/error-sanitizer';
 // Config Validation
 export { validatePipelineConfig, assertPipelineConfig } from './config/env-validation';
 export type { PipelineEnvConfig, ValidationResult } from './config/env-validation';
+
+// Model Config
+export {
+  getConfig,
+  getModelConfig,
+  callWithFallback,
+  DEFAULT_MODEL_CONFIG,
+} from './config/model-config';
+export type { ModelConfig, ModelConfigMap } from './config/model-config';
 
 // Orchestrator
 export { NutritionPipelineOrchestrator } from './orchestrator';

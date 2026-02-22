@@ -3,6 +3,12 @@
  * Canonical definitions for the nutrition pipeline's food data interfaces.
  */
 
+/** Optional L2 (Redis) cache interface for food API adapters. */
+export interface ExternalFoodCache {
+  get(key: string): Promise<string | null>;
+  set(key: string, value: string, ttlSeconds: number): Promise<void>;
+}
+
 export interface FoodSearchResult {
   foodId: string;
   name: string;
