@@ -3,6 +3,7 @@ import { requireActiveUser } from '@/lib/auth';
 import { calculateAdherenceScore } from '@/lib/adherence';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay, parseLocalDay } from '@/lib/date-utils';
+import { checkRateLimit, generalLimiter, rateLimitExceededResponse } from '@/lib/rate-limit';
 import {
   apiSuccess,
   unauthorized,
@@ -28,6 +29,13 @@ export async function POST(request: Request) {
       return message === 'Account is deactivated' ? forbidden(message) : unauthorized(message);
     }
 
+    // Rate limiting by IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rl = await checkRateLimit(generalLimiter, ip);
+    if (rl && !rl.success) {
+      return rateLimitExceededResponse(rl.reset);
+    }
+
     const user = await prisma.user.findUnique({ where: { clerkUserId } });
     if (!user) {
       return notFound('User not found');
@@ -45,13 +53,41 @@ export async function POST(request: Request) {
     if (!foodName || typeof foodName !== 'string' || foodName.trim().length === 0) {
       return badRequest('Food name is required');
     }
+    if (typeof foodName === 'string' && foodName.trim().length > 200) {
+      return badRequest('Food name must be 200 characters or less');
+    }
     if (
       calories === undefined ||
       calories === null ||
       isNaN(Number(calories)) ||
-      Number(calories) < 0
+      Number(calories) < 0 ||
+      Number(calories) > 10000
     ) {
-      return badRequest('Valid calories value is required');
+      return badRequest('Valid calories value is required (0-10000)');
+    }
+    if (
+      protein !== undefined &&
+      protein !== null &&
+      (isNaN(Number(protein)) || Number(protein) < 0 || Number(protein) > 1000)
+    ) {
+      return badRequest('Protein must be between 0 and 1000');
+    }
+    if (
+      carbs !== undefined &&
+      carbs !== null &&
+      (isNaN(Number(carbs)) || Number(carbs) < 0 || Number(carbs) > 1000)
+    ) {
+      return badRequest('Carbs must be between 0 and 1000');
+    }
+    if (
+      fat !== undefined &&
+      fat !== null &&
+      (isNaN(Number(fat)) || Number(fat) < 0 || Number(fat) > 1000)
+    ) {
+      return badRequest('Fat must be between 0 and 1000');
+    }
+    if (mealSlot !== undefined && typeof mealSlot === 'string' && mealSlot.length > 200) {
+      return badRequest('Meal slot must be 200 characters or less');
     }
 
     const kcal = Math.round(Number(calories));

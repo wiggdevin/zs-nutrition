@@ -3,6 +3,20 @@ import IORedis from 'ioredis';
 import { QUEUE_NAMES } from './queues.js';
 import { workerEnv } from './env.js';
 
+/** Sanitize error messages to strip PII before logging or sending via webhook */
+function safeError(error: unknown): string {
+  if (!error) return 'Unknown error';
+  const message = error instanceof Error ? error.message : String(error);
+  return message
+    .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[EMAIL_REDACTED]')
+    .replace(/sk-ant-[a-zA-Z0-9_-]+/g, '[API_KEY_REDACTED]')
+    .replace(/sk_(test|live)_[a-zA-Z0-9]+/g, '[CLERK_KEY_REDACTED]')
+    .replace(/Bearer\s+[a-zA-Z0-9._-]+/gi, 'Bearer [TOKEN_REDACTED]')
+    .replace(/postgresql:\/\/[^\s"']+/g, '[DB_URL_REDACTED]')
+    .replace(/rediss?:\/\/[^\s"']+/g, '[REDIS_URL_REDACTED]')
+    .replace(/\/Users\/[^\s"']+/g, '[PATH_REDACTED]');
+}
+
 /**
  * DLQ job payload — matches what the main worker pushes to dead-letter queue.
  */
@@ -26,7 +40,7 @@ async function sendAdminAlert(data: DLQJobData): Promise<void> {
     text: `[ZS-MAC DLQ] Job permanently failed`,
     jobId: data.jobId,
     originalJobId: data.originalJobId,
-    failedReason: data.failedReason,
+    failedReason: safeError(data.failedReason),
     attemptsMade: data.attemptsMade,
     failedAt: data.failedAt,
   };
@@ -42,10 +56,7 @@ async function sendAdminAlert(data: DLQJobData): Promise<void> {
         console.warn(`[DLQ] Alert webhook returned ${response.status}`);
       }
     } catch (err) {
-      console.error(
-        '[DLQ] Failed to send alert webhook:',
-        err instanceof Error ? err.message : err
-      );
+      console.error('[DLQ] Failed to send alert webhook:', safeError(err));
     }
   } else {
     // No webhook configured — log at CRITICAL level for log aggregator to pick up
@@ -84,7 +95,7 @@ export function startDLQConsumer(connection: IORedis): Worker<DLQJobData> {
           message: 'Processing dead letter job',
           jobId,
           originalJobId,
-          failedReason,
+          failedReason: safeError(failedReason),
           attemptsMade,
           failedAt,
           timestamp: new Date().toISOString(),
@@ -125,11 +136,11 @@ export function startDLQConsumer(connection: IORedis): Worker<DLQJobData> {
   });
 
   worker.on('failed', (job, err) => {
-    console.error(`[DLQ] Failed to process dead letter job ${job?.id}:`, err.message);
+    console.error(`[DLQ] Failed to process dead letter job ${job?.id}:`, safeError(err));
   });
 
   worker.on('error', (err) => {
-    console.error('[DLQ] Worker error:', err.message);
+    console.error('[DLQ] Worker error:', safeError(err));
   });
 
   console.log(`🪦 DLQ consumer started on queue: ${QUEUE_NAMES.DEAD_LETTER}`);

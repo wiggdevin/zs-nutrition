@@ -106,12 +106,17 @@ async function fetchIntakeData(
 }
 
 /** Extract safe error message without PII or stack traces */
-function safeError(err: unknown): string {
-  if (err instanceof Error)
-    return `${err.name}: ${err.message.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED]')}`;
-  if (typeof err === 'string')
-    return err.replace(/[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}/g, '[REDACTED]');
-  return 'Unknown error';
+function safeError(error: unknown): string {
+  if (!error) return 'Unknown error';
+  const message = error instanceof Error ? error.message : String(error);
+  return message
+    .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[EMAIL_REDACTED]')
+    .replace(/sk-ant-[a-zA-Z0-9_-]+/g, '[API_KEY_REDACTED]')
+    .replace(/sk_(test|live)_[a-zA-Z0-9]+/g, '[CLERK_KEY_REDACTED]')
+    .replace(/Bearer\s+[a-zA-Z0-9._-]+/gi, 'Bearer [TOKEN_REDACTED]')
+    .replace(/postgresql:\/\/[^\s"']+/g, '[DB_URL_REDACTED]')
+    .replace(/rediss?:\/\/[^\s"']+/g, '[REDIS_URL_REDACTED]')
+    .replace(/\/Users\/[^\s"']+/g, '[PATH_REDACTED]');
 }
 
 /**
@@ -339,11 +344,11 @@ async function startWorker() {
         );
         console.log(`💾 Plan saved to database: ${saveData.planId}`);
 
-        return { planData: result.plan, deliverables: result.deliverables };
+        return { success: true, jobId: job.data.jobId };
       } catch (error) {
         console.error(`❌ Job ${job.id} failed:`, safeError(error));
-        if (error instanceof Error) {
-          console.error(`❌ Raw error stack:`, error.stack);
+        if (error instanceof Error && error.stack) {
+          console.error(`❌ Error stack:`, safeError({ message: error.stack }));
         }
         throw error;
       }
@@ -368,7 +373,7 @@ async function startWorker() {
 
   worker.on('failed', async (job, err) => {
     if (!job) {
-      console.error('❌ Unknown job failed:', err.message);
+      console.error('❌ Unknown job failed:', safeError(err));
       return;
     }
 
@@ -378,7 +383,7 @@ async function startWorker() {
     if (attemptsMade >= maxAttempts) {
       // Job exhausted all retries — move to dead letter queue
       console.error(
-        `💀 Job ${job.id} permanently failed after ${attemptsMade}/${maxAttempts} attempts: ${err.message}`
+        `💀 Job ${job.id} permanently failed after ${attemptsMade}/${maxAttempts} attempts: ${safeError(err)}`
       );
 
       // Publish failure event for SSE subscribers (only on final failure)
@@ -419,7 +424,7 @@ async function startWorker() {
       }
     } else {
       console.warn(
-        `⚠️ Job ${job.id} failed (attempt ${attemptsMade}/${maxAttempts}), will retry: ${err.message}`
+        `⚠️ Job ${job.id} failed (attempt ${attemptsMade}/${maxAttempts}), will retry: ${safeError(err)}`
       );
     }
   });
@@ -428,8 +433,8 @@ async function startWorker() {
     console.error('Worker error:', safeError(err));
   });
 
-  process.on('unhandledRejection', (reason, promise) => {
-    console.error('Unhandled Rejection at:', promise, 'reason:', safeError(reason));
+  process.on('unhandledRejection', (reason) => {
+    console.error('Unhandled Rejection:', safeError(reason));
   });
 
   process.on('uncaughtException', async (error) => {

@@ -75,6 +75,10 @@ const serverEnvSchema = z.object({
     ? z.string().min(20, 'INTERNAL_API_SECRET must be at least 20 characters in production')
     : z.string().optional().default('dev-internal-secret'),
 
+  CRON_SECRET: isProduction
+    ? z.string().min(20, 'CRON_SECRET must be at least 20 characters in production')
+    : z.string().optional().default(''),
+
   WEB_APP_URL: z.string().optional().default('http://localhost:3456'),
 
   // Token encryption (required when fitness integrations are active)

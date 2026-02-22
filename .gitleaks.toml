@@ -1,0 +1,21 @@
+# Gitleaks configuration for ZS-MAC (Zero Sum Nutrition)
+# https://github.com/gitleaks/gitleaks
+
+title = "ZS-MAC Secret Scanning"
+
+[extend]
+useDefault = true
+
+# Allowlist: suppress known false positives
+[allowlist]
+  # sk_test_placeholder used in dev-mode detection (not a real key)
+  regexes = [
+    '''sk_test_placeholder''',
+    '''msk_test_placeholder''',
+    '''sk-ant-placeholder''',
+  ]
+
+  paths = [
+    '''\.env\.example$''',
+    '''\.gitleaks\.toml$''',
+  ]

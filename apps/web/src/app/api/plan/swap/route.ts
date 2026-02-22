@@ -5,6 +5,7 @@ import { requireActiveUser } from '@/lib/auth';
 import { mealSwapLimiter, checkRateLimit, rateLimitExceededResponse } from '@/lib/rate-limit';
 import { logger } from '@/lib/safe-logger';
 import { decompressJson, compressJson } from '@/lib/compression';
+import { z } from 'zod';
 import {
   apiSuccess,
   unauthorized,
@@ -13,6 +14,34 @@ import {
   badRequest,
   serverError,
 } from '@/lib/api-response';
+
+const MealNutritionSchema = z.object({
+  kcal: z.number().min(0).max(10000),
+  proteinG: z.number().min(0).max(1000),
+  carbsG: z.number().min(0).max(1000),
+  fatG: z.number().min(0).max(1000),
+});
+
+const MealSchema = z
+  .object({
+    slot: z.string().max(50),
+    name: z.string().max(200),
+    cuisine: z.string().max(100).optional(),
+    prepTimeMin: z.number().min(0).max(1440).optional(),
+    cookTimeMin: z.number().min(0).max(1440).optional(),
+    nutrition: MealNutritionSchema,
+    confidenceLevel: z.string().max(50).optional(),
+    ingredients: z
+      .array(
+        z.object({
+          name: z.string().max(200),
+          amount: z.string().max(100),
+        })
+      )
+      .optional(),
+    instructions: z.array(z.string().max(2000)).optional(),
+  })
+  .passthrough();
 
 interface MealNutrition {
   kcal: number;
@@ -69,6 +98,16 @@ export async function POST(req: NextRequest) {
 
     if (!planId || !dayNumber || !slot || mealIdx === undefined || !originalMeal || !newMeal) {
       return badRequest('Missing required fields');
+    }
+
+    // Validate meal objects against schema
+    const originalMealValidation = MealSchema.safeParse(originalMeal);
+    if (!originalMealValidation.success) {
+      return badRequest('Invalid originalMeal data');
+    }
+    const newMealValidation = MealSchema.safeParse(newMeal);
+    if (!newMealValidation.success) {
+      return badRequest('Invalid newMeal data');
     }
 
     // Verify user owns this plan

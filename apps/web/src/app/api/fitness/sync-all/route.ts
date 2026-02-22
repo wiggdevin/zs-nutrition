@@ -5,6 +5,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { syncAllUserActivity } from '@/lib/fitness/scheduler';
 import { logger } from '@/lib/safe-logger';
+import { safeCompare } from '@/lib/safe-compare';
 
 /**
  * POST /api/fitness/sync-all
@@ -12,15 +13,19 @@ import { logger } from '@/lib/safe-logger';
  * Trigger background sync for all users with active fitness connections
  * This should be called by a cron job or background worker
  *
- * Note: In production, this should be protected with authentication
+ * Protected by CRON_SECRET Bearer token.
  */
 export async function POST(req: NextRequest) {
   try {
-    // Simple API key check (in production, use proper authentication)
-    const authHeader = req.headers.get('authorization');
-    const cronKey = process.env.CRON_SECRET_KEY || 'dev-cron-key';
+    const cronSecret = process.env.CRON_SECRET;
+    if (!cronSecret) {
+      return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
+    }
 
-    if (authHeader !== `Bearer ${cronKey}`) {
+    const authHeader = req.headers.get('authorization') || '';
+    const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+
+    if (!token || !safeCompare(token, cronSecret)) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 

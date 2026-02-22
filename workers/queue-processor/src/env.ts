@@ -32,7 +32,7 @@ const workerEnvSchema = z.object({
   WEB_APP_URL: z.string().optional().default('http://localhost:3456'),
   INTERNAL_API_SECRET: isProduction
     ? z.string().min(20, 'INTERNAL_API_SECRET must be at least 20 characters in production')
-    : z.string().optional().default('dev-internal-secret'),
+    : z.string().optional().default(''),
 
   // FatSecret proxy (optional)
   FATSECRET_PROXY_SECRET: z.string().optional().default(''),

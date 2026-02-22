@@ -25,6 +25,13 @@ function createRedisConnection() {
         'REDIS_URL is required in production. Set it in your Vercel environment variables.'
       );
     }
+  }
+
+  if (process.env.NODE_ENV === 'production' && redisUrl && !redisUrl.startsWith('rediss://')) {
+    throw new Error('REDIS_URL must use TLS (rediss://) in production');
+  }
+
+  if (!redisUrl) {
     logger.warn('REDIS_URL not configured, using lazy Redis connection for development');
     return new IORedis({
       host: '127.0.0.1',

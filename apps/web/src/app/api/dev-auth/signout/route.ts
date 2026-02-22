@@ -1,10 +1,15 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { logger } from '@/lib/safe-logger';
+import { isDevMode } from '@/lib/dev-mode';
 
 export async function POST() {
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json({ error: 'Not Found' }, { status: 404 });
+  }
+
+  if (!isDevMode) {
+    return NextResponse.json({ error: 'Not available' }, { status: 403 });
   }
 
   try {

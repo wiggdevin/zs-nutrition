@@ -52,10 +52,9 @@ interface LogVisionMealRequest {
 export async function POST(request: Request) {
   try {
     // Authenticate user
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
@@ -84,8 +83,8 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
     }
 
-    // Verify ownership
-    if (foodScan.userId !== clerkUserId) {
+    // Verify ownership (FoodScan records are created with dbUserId)
+    if (foodScan.userId !== dbUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -126,7 +125,7 @@ export async function POST(request: Request) {
     await prisma.trackedMeal.create({
       data: {
         id: trackedMealId,
-        userId: clerkUserId,
+        userId: dbUserId,
         loggedDate,
         mealSlot: mealSlot || 'snack',
         mealName: nutritionData.meal_name,
@@ -154,7 +153,7 @@ export async function POST(request: Request) {
     const dailyLog = await prisma.dailyLog.findUnique({
       where: {
         userId_date: {
-          userId: clerkUserId,
+          userId: dbUserId,
           date: loggedDate,
         },
       },
@@ -185,14 +184,12 @@ export async function POST(request: Request) {
       },
     });
   } catch (error) {
-    logger.error('Error in /api/vision/log-meal:', error);
-
     const message = error instanceof Error ? error.message : 'Failed to log meal';
+    logger.error('Error in /api/vision/log-meal:', message);
 
     return NextResponse.json(
       {
         error: 'Failed to log meal',
-        message,
       },
       { status: 500 }
     );
@@ -206,10 +203,9 @@ export async function POST(request: Request) {
  */
 export async function GET(request: Request) {
   try {
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
@@ -231,8 +227,8 @@ export async function GET(request: Request) {
       return NextResponse.json({ error: 'Scan not found' }, { status: 404 });
     }
 
-    // Verify ownership
-    if (foodScan.userId !== clerkUserId) {
+    // Verify ownership (FoodScan records are created with dbUserId)
+    if (foodScan.userId !== dbUserId) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 });
     }
 
@@ -251,10 +247,9 @@ export async function GET(request: Request) {
       error: foodScan.error,
     });
   } catch (error) {
-    logger.error('Error in GET /api/vision/log-meal:', error);
-
     const message = error instanceof Error ? error.message : 'Failed to fetch scan';
+    logger.error('Error in GET /api/vision/log-meal:', message);
 
-    return NextResponse.json({ error: 'Failed to fetch scan', message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch scan' }, { status: 500 });
   }
 }

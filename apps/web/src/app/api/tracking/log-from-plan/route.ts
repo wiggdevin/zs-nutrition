@@ -6,6 +6,7 @@ import { calculateAdherenceScore } from '@/lib/adherence';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay } from '@/lib/date-utils';
 import { decompressJson } from '@/lib/compression';
+import { checkRateLimit, generalLimiter, rateLimitExceededResponse } from '@/lib/rate-limit';
 import {
   apiSuccess,
   unauthorized,
@@ -24,6 +25,13 @@ export async function POST(request: NextRequest) {
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       return message === 'Account is deactivated' ? forbidden(message) : unauthorized(message);
+    }
+
+    // Rate limiting by IP
+    const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'unknown';
+    const rl = await checkRateLimit(generalLimiter, ip);
+    if (rl && !rl.success) {
+      return rateLimitExceededResponse(rl.reset);
     }
 
     const user = await prisma.user.findUnique({

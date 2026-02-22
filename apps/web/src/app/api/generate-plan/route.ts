@@ -1,11 +1,23 @@
-import { auth } from '@clerk/nextjs/server';
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
+import { requireActiveUser } from '@/lib/auth';
 
 // POST - create a plan generation job
 export async function POST() {
-  const { userId: clerkUserId } = await auth();
-  if (!clerkUserId) {
+  let clerkUserId: string;
+
+  try {
+    const activeUser = await requireActiveUser();
+    clerkUserId = activeUser.clerkUserId;
+  } catch (error) {
+    if (error instanceof Error) {
+      if (error.message === 'Account is deactivated') {
+        return NextResponse.json({ error: 'Account is deactivated' }, { status: 403 });
+      }
+      if (error.message === 'Unauthorized') {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+    }
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 

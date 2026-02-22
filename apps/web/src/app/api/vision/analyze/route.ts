@@ -117,14 +117,12 @@ export async function POST(request: NextRequest) {
       throw analysisError;
     }
   } catch (error) {
-    logger.error('Error in /api/vision/analyze:', error);
-
     const message = error instanceof Error ? error.message : 'Failed to analyze image';
+    logger.error('[VISION] Analysis error:', message);
 
     return NextResponse.json(
       {
         error: 'Analysis failed',
-        message,
       },
       { status: 500 }
     );

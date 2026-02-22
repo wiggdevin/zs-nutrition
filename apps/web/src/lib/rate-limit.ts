@@ -12,6 +12,12 @@ function createRedis() {
 
 const redis = createRedis();
 
+if (process.env.NODE_ENV === 'production' && !redis) {
+  console.error(
+    '⚠️ CRITICAL: Upstash Redis not configured in production — all rate limiting is DISABLED'
+  );
+}
+
 // General API: 60 requests per minute
 export const generalLimiter = redis
   ? new Ratelimit({

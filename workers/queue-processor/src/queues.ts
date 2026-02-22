@@ -44,8 +44,12 @@ export function createDeadLetterQueue(connection: IORedis): Queue {
   return new Queue(QUEUE_NAMES.DEAD_LETTER, {
     connection,
     defaultJobOptions: {
-      removeOnComplete: false,
-      removeOnFail: false,
+      removeOnComplete: {
+        age: 30 * 24 * 3600, // 30 days
+      },
+      removeOnFail: {
+        age: 30 * 24 * 3600, // 30 days
+      },
     },
   });
 }

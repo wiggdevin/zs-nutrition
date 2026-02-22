@@ -170,7 +170,7 @@ export const planCrudRouter = router({
         currentAgent: job.currentAgent || 0,
         currentAgentName: currentAgentName,
         progress: parsedProgress,
-        error: job.error,
+        error: job.error ? 'Plan generation failed' : null,
         planId: parsedPlanId,
       };
     }),

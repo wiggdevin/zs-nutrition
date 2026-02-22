@@ -1,22 +1,11 @@
 {
   "$schema": "https://turbo.build/schema.json",
   "globalEnv": [
-    "DATABASE_URL",
-    "CLERK_SECRET_KEY",
     "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-    "ANTHROPIC_API_KEY",
-    "FATSECRET_CLIENT_ID",
-    "FATSECRET_CLIENT_SECRET",
-    "REDIS_URL",
-    "BLOB_READ_WRITE_TOKEN",
-    "USE_MOCK_QUEUE",
-    "USDA_API_KEY",
-    "INTERNAL_API_SECRET",
-    "WEB_APP_URL",
-    "TOKEN_ENCRYPTION_KEY",
-    "UPSTASH_REDIS_REST_URL",
-    "UPSTASH_REDIS_REST_TOKEN",
-    "SKIP_ENV_VALIDATION"
+    "NEXT_PUBLIC_APP_URL",
+    "NEXT_PUBLIC_SENTRY_DSN",
+    "SKIP_ENV_VALIDATION",
+    "NODE_ENV"
   ],
   "remoteCache": {
     "signature": true
@@ -25,13 +14,7 @@
     "build": {
       "dependsOn": ["^build"],
       "outputs": [".next/**", "!.next/cache/**", "dist/**"],
-      "env": [
-        "DATABASE_URL",
-        "NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY",
-        "ANTHROPIC_API_KEY",
-        "FATSECRET_CLIENT_ID",
-        "REDIS_URL"
-      ]
+      "env": ["NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY", "SKIP_ENV_VALIDATION"]
     },
     "typecheck": {
       "dependsOn": ["^build"],

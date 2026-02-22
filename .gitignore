@@ -59,6 +59,7 @@ check-*.js
 create-test-*.js
 verify-*.js
 test-*.py
+test-*.js
 *.pid
 server*.log
 

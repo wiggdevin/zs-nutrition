@@ -1,6 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
+import { z } from 'zod';
+import { Prisma } from '@prisma/client';
 import { prisma } from '@/lib/prisma';
 import { requireActiveUser } from '@/lib/auth';
+
+const OnboardingBodySchema = z.object({
+  step: z.number().int().min(1).max(6),
+  data: z.record(z.unknown()).optional(),
+  complete: z.boolean().optional(),
+});
 
 async function getOrCreateUser(clerkUserId: string) {
   let user = await prisma.user.findUnique({ where: { clerkUserId } });
@@ -101,7 +109,16 @@ export async function POST(request: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Invalid JSON in request body' }, { status: 400 });
   }
-  const { step, data, complete } = body;
+
+  const validation = OnboardingBodySchema.safeParse(body);
+  if (!validation.success) {
+    return NextResponse.json(
+      { error: 'Invalid request body', details: validation.error.errors },
+      { status: 400 }
+    );
+  }
+
+  const { step, data, complete } = validation.data;
 
   const user = await getOrCreateUser(clerkUserId);
 
@@ -126,7 +143,7 @@ export async function POST(request: NextRequest) {
       data: {
         currentStep: 6,
         completed: true,
-        stepData: mergedData,
+        stepData: mergedData as Prisma.InputJsonValue,
       },
     });
 
@@ -141,7 +158,7 @@ export async function POST(request: NextRequest) {
     where: { userId: user.id },
     data: {
       currentStep: step,
-      stepData: mergedData,
+      stepData: mergedData as Prisma.InputJsonValue,
     },
   });
 

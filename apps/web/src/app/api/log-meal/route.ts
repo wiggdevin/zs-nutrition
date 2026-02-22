@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { getClerkUserId } from '@/lib/auth';
+import { requireActiveUser } from '@/lib/auth';
 
 /**
  * POST /api/log-meal
@@ -8,14 +8,15 @@ import { getClerkUserId } from '@/lib/auth';
  */
 export async function POST(request: Request) {
   try {
-    const clerkUserId = await getClerkUserId();
-    if (!clerkUserId) {
+    let dbUserId: string;
+    try {
+      ({ dbUserId } = await requireActiveUser());
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unauthorized';
+      if (message === 'Account is deactivated') {
+        return NextResponse.json({ error: 'Account deactivated' }, { status: 403 });
+      }
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    }
-
-    const user = await prisma.user.findUnique({ where: { clerkUserId } });
-    if (!user) {
-      return NextResponse.json({ error: 'User not found' }, { status: 404 });
     }
 
     const body = await request.json();
@@ -38,7 +39,7 @@ export async function POST(request: Request) {
 
     // Verify plan belongs to user
     const plan = await prisma.mealPlan.findFirst({
-      where: { id: planId, userId: user.id },
+      where: { id: planId, userId: dbUserId },
     });
 
     if (!plan) {
@@ -47,7 +48,7 @@ export async function POST(request: Request) {
 
     // Fetch active profile for targets (single source of truth)
     const activeProfile = await prisma.userProfile.findFirst({
-      where: { userId: user.id, isActive: true },
+      where: { userId: dbUserId, isActive: true },
       select: { goalKcal: true, proteinTargetG: true, carbsTargetG: true, fatTargetG: true },
     });
 
@@ -64,7 +65,7 @@ export async function POST(request: Request) {
     // Create TrackedMeal with source='plan_meal'
     const trackedMeal = await prisma.trackedMeal.create({
       data: {
-        userId: user.id,
+        userId: dbUserId,
         mealPlanId: planId,
         loggedDate: dateOnly,
         mealSlot: slot || null,
@@ -83,14 +84,14 @@ export async function POST(request: Request) {
     // Update or create DailyLog
     let dailyLog = await prisma.dailyLog.findUnique({
       where: {
-        userId_date: { userId: user.id, date: dateOnly },
+        userId_date: { userId: dbUserId, date: dateOnly },
       },
     });
 
     if (!dailyLog) {
       dailyLog = await prisma.dailyLog.create({
         data: {
-          userId: user.id,
+          userId: dbUserId,
           date: dateOnly,
           targetKcal: activeProfile?.goalKcal || plan.dailyKcalTarget || 2290,
           targetProteinG: activeProfile?.proteinTargetG || plan.dailyProteinG || 172,
@@ -150,6 +151,6 @@ export async function POST(request: Request) {
     });
   } catch (error) {
     console.error('Log meal error:', error);
-    return NextResponse.json({ success: false, error: (error as Error).message }, { status: 500 });
+    return NextResponse.json({ success: false, error: 'Failed to log meal' }, { status: 500 });
   }
 }

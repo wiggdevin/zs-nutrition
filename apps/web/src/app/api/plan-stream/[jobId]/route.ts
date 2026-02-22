@@ -90,7 +90,7 @@ export async function GET(
         send({
           status: 'failed',
           agent: job.currentAgent || 0,
-          message: job.error || 'Plan generation failed',
+          message: 'Plan generation failed',
         });
         controller.close();
         return;

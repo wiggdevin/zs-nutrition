@@ -10,18 +10,17 @@ import { logger } from '@/lib/safe-logger';
  */
 export async function GET(request: Request) {
   try {
-    let clerkUserId: string;
-    let _dbUserId: string;
+    let dbUserId: string;
     try {
-      ({ clerkUserId, dbUserId: _dbUserId } = await requireActiveUser());
+      ({ dbUserId } = await requireActiveUser());
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Unauthorized';
       const status = message === 'Account is deactivated' ? 403 : 401;
       return NextResponse.json({ error: message }, { status });
     }
 
-    // Use clerkUserId as userId for foodScan queries (foodScan stores Clerk user IDs)
-    const userId = clerkUserId;
+    // Use dbUserId for foodScan queries (foodScan records are created with dbUserId)
+    const userId = dbUserId;
 
     const { searchParams } = new URL(request.url);
     const limit = parseInt(searchParams.get('limit') || '20');
@@ -71,10 +70,9 @@ export async function GET(request: Request) {
       },
     });
   } catch (error) {
-    logger.error('Error in GET /api/vision/history:', error);
-
     const message = error instanceof Error ? error.message : 'Failed to fetch history';
+    logger.error('Error in GET /api/vision/history:', message);
 
-    return NextResponse.json({ error: 'Failed to fetch history', message }, { status: 500 });
+    return NextResponse.json({ error: 'Failed to fetch history' }, { status: 500 });
   }
 }

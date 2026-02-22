@@ -62,30 +62,30 @@ function csrfCheck(request: NextRequest): NextResponse | null {
  */
 const productionPublicPaths = [
   '/',
-  '/sign-in',
-  '/sign-up',
-  '/api/webhooks',
+  '/sign-in/*',
+  '/sign-up/*',
+  '/api/webhooks/*',
   '/api/food-search',
   '/api/health',
   '/api/plan/complete',
   '/api/plan/intake',
   '/api/plan/progress',
-  '/api/cron',
+  '/api/cron/*',
   '/robots.txt',
   '/sitemap.xml',
 ];
 
 const devOnlyPublicPaths = [
-  // API: dev, test, debug, seed routes (prefix-matched)
-  '/api/dev-',
-  '/api/test-',
-  '/api/debug-',
-  '/api/seed-',
-  '/api/trpc/test.',
-  // Page: test, dev routes (prefix-matched)
-  '/test-',
+  // API: dev, test, debug, seed routes (prefix-matched via startsWith)
+  '/api/dev-*',
+  '/api/test-*',
+  '/api/debug-*',
+  '/api/seed-*',
+  '/api/trpc/test.*',
+  // Page: test, dev routes
+  '/test-*',
   '/test',
-  '/dev-',
+  '/dev-*',
 ];
 
 const publicPaths = isProduction
@@ -93,12 +93,21 @@ const publicPaths = isProduction
   : [...productionPublicPaths, ...devOnlyPublicPaths];
 
 function isPublicPath(pathname: string): boolean {
-  // Exact match for root
   if (pathname === '/') return true;
-  // Prefix match for other public paths.
-  // Works for both exact paths (e.g. "/api/food-search") and prefix patterns
-  // (e.g. "/api/test-" matches "/api/test-prisma", "/api/test-fatsecret", etc.)
-  return publicPaths.some((p) => p !== '/' && pathname.startsWith(p));
+  return publicPaths.some((p) => {
+    if (p === '/') return false;
+    if (p.endsWith('/*')) {
+      // Slash-based wildcard: /api/webhooks/* matches /api/webhooks and /api/webhooks/clerk
+      const prefix = p.slice(0, -2);
+      return pathname === prefix || pathname.startsWith(prefix + '/');
+    }
+    if (p.endsWith('*')) {
+      // Pure prefix wildcard: /api/dev-* matches /api/dev-auth, /api/dev-auth/signin, etc.
+      const prefix = p.slice(0, -1);
+      return pathname.startsWith(prefix);
+    }
+    return pathname === p;
+  });
 }
 
 const productionPublicRoutes = [

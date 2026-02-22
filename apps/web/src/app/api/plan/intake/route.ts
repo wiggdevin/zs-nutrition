@@ -1,14 +1,8 @@
-import { timingSafeEqual } from 'crypto';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
-import { isDevMode } from '@/lib/auth';
 import { logger } from '@/lib/safe-logger';
 import { decompressJson } from '@/lib/compression';
-
-function safeCompare(a: string, b: string): boolean {
-  if (a.length !== b.length) return false;
-  return timingSafeEqual(Buffer.from(a), Buffer.from(b));
-}
+import { safeCompare } from '@/lib/safe-compare';
 
 /**
  * GET /api/plan/intake?jobId=xxx
@@ -18,18 +12,22 @@ function safeCompare(a: string, b: string): boolean {
  * Protected by INTERNAL_API_SECRET.
  */
 export async function GET(request: NextRequest) {
-  const authHeader = request.headers.get('authorization');
-  const expectedSecret =
-    process.env.INTERNAL_API_SECRET || (isDevMode ? 'dev-internal-secret' : null);
-
+  const expectedSecret = process.env.INTERNAL_API_SECRET;
   if (!expectedSecret) {
     logger.error('[/api/plan/intake] INTERNAL_API_SECRET not configured');
-    return NextResponse.json({ error: 'Server misconfiguration' }, { status: 500 });
+    return NextResponse.json({ error: 'Server configuration error' }, { status: 500 });
   }
 
-  if (!authHeader || !safeCompare(authHeader, `Bearer ${expectedSecret}`)) {
+  const authHeader = request.headers.get('authorization') || '';
+  const token = authHeader.startsWith('Bearer ') ? authHeader.slice(7) : '';
+
+  if (!token || !safeCompare(token, expectedSecret)) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
+
+  logger.info(
+    `[AUDIT] ${new Date().toISOString()} ${request.method} /api/plan/intake from ${request.headers.get('x-forwarded-for') || 'unknown'}`
+  );
 
   const jobId = request.nextUrl.searchParams.get('jobId');
   if (!jobId) {
