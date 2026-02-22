@@ -276,7 +276,7 @@ export class MetabolicCalculator {
 
     const proteinKcal = proteinTargetG * 4;
     // Remaining calories split between carbs and fat using macroStyle ratios
-    const remainingKcal = adjustedGoalKcal - proteinKcal;
+    const remainingKcal = Math.max(0, adjustedGoalKcal - proteinKcal);
     const split = MACRO_SPLITS[intake.macroStyle] || MACRO_SPLITS.balanced;
     // Normalize carb/fat ratio from the split (excluding protein)
     const carbFatTotal = split.carbs + split.fat;

@@ -22,6 +22,9 @@ const workerEnvSchema = z.object({
     ? z.string().min(1, 'USDA_API_KEY is required in production')
     : z.string().optional().default(''),
 
+  // Database (optional — enables LocalUSDAAdapter for sub-ms food lookups)
+  DATABASE_URL: z.string().optional().default(''),
+
   // FatSecret API (optional — fallback nutrition source)
   FATSECRET_CLIENT_ID: z.string().optional().default(''),
   FATSECRET_CLIENT_SECRET: z.string().optional().default(''),

@@ -10,6 +10,7 @@ import IORedis from 'ioredis';
 import type { PlanGenerationJobData } from '@zsn/shared-types';
 import type { RawIntakeForm, MealPlanDraft } from '@zero-sum/nutrition-engine';
 import { workerEnv } from './env.js';
+import { PrismaClient } from '@prisma/client';
 import { startDLQConsumer } from './dlq-consumer.js';
 
 /**
@@ -197,6 +198,17 @@ async function reportProgressToWebApp(
   }
 }
 
+let _prisma: PrismaClient | undefined;
+
+function getPrismaClient(): PrismaClient | undefined {
+  const env = workerEnv();
+  if (!env.DATABASE_URL) return undefined;
+  if (!_prisma) {
+    _prisma = new PrismaClient();
+  }
+  return _prisma;
+}
+
 function buildPipelineConfig(): PipelineConfig {
   const env = workerEnv();
   return {
@@ -204,6 +216,7 @@ function buildPipelineConfig(): PipelineConfig {
     usdaApiKey: env.USDA_API_KEY,
     fatsecretClientId: env.FATSECRET_CLIENT_ID || undefined,
     fatsecretClientSecret: env.FATSECRET_CLIENT_SECRET || undefined,
+    prismaClient: getPrismaClient(),
   };
 }
 
@@ -451,6 +464,7 @@ async function startWorker() {
   const shutdown = async () => {
     console.log('\n🛑 Shutting down worker...');
     await closeBrowserPool();
+    if (_prisma) await _prisma.$disconnect();
     await worker.close();
     await dlqWorker.close();
     await deadLetterQueue.close();

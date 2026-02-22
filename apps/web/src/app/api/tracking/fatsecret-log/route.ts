@@ -148,7 +148,7 @@ export async function POST(request: Request) {
           mealName: foodName.trim(),
           kcal,
           source: 'fatsecret_search',
-          fatsecretId: foodId,
+          foodId: foodId,
           createdAt: { gte: tenSecondsAgo },
         },
         orderBy: { createdAt: 'desc' },
@@ -171,7 +171,7 @@ export async function POST(request: Request) {
             fatG: recentDuplicate.fatG,
             portion: recentDuplicate.portion || 1.0,
             source: recentDuplicate.source,
-            fatsecretId: recentDuplicate.fatsecretId,
+            foodId: recentDuplicate.foodId,
             servingDescription: servingDescription || null,
             quantity: qty,
           },
@@ -203,7 +203,7 @@ export async function POST(request: Request) {
           fiberG,
           source: 'fatsecret_search',
           confidenceScore: 1.0, // FatSecret verified data
-          fatsecretId: foodId,
+          foodId: foodId,
         },
       });
 
@@ -266,7 +266,7 @@ export async function POST(request: Request) {
           fatG: trackedMeal.fatG,
           portion: trackedMeal.portion,
           source: trackedMeal.source,
-          fatsecretId: trackedMeal.fatsecretId,
+          foodId: trackedMeal.foodId,
           servingDescription: servingDescription || null,
           quantity: qty,
         },

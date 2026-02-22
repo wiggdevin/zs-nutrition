@@ -50,8 +50,8 @@ export const RawIntakeFormSchema = z.object({
   name: z.string().min(1),
   sex: SexEnum,
   age: z.number().int().min(18).max(100),
-  heightFeet: z.number().optional(),
-  heightInches: z.number().optional(),
+  heightFeet: z.number().min(0).max(8).optional(),
+  heightInches: z.number().min(0).max(11).optional(),
   heightCm: z.number().optional(),
   weightLbs: z.number().optional(),
   weightKg: z.number().optional(),
@@ -168,10 +168,10 @@ export type MealTarget = z.infer<typeof MealTargetSchema>;
 // ============================================================
 
 export const EstimatedNutritionSchema = z.object({
-  kcal: z.number(),
-  proteinG: z.number(),
-  carbsG: z.number(),
-  fatG: z.number(),
+  kcal: z.number().min(0),
+  proteinG: z.number().min(0),
+  carbsG: z.number().min(0),
+  fatG: z.number().min(0),
 });
 
 export const DraftMealSchema = z.object({
@@ -223,11 +223,11 @@ export type DraftMeal = z.infer<typeof DraftMealSchema>;
 // ============================================================
 
 export const VerifiedNutritionSchema = z.object({
-  kcal: z.number(),
-  proteinG: z.number(),
-  carbsG: z.number(),
-  fatG: z.number(),
-  fiberG: z.number().optional(),
+  kcal: z.number().min(0),
+  proteinG: z.number().min(0),
+  carbsG: z.number().min(0),
+  fatG: z.number().min(0),
+  fiberG: z.number().min(0).optional(),
 });
 
 export const IngredientSchema = z.object({
