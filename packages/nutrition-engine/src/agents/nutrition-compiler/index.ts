@@ -328,6 +328,13 @@ function extractCookingState(name: string): string | null {
 }
 
 /**
+ * Maximum kcal/g for cooked foods. Cooked grains/legumes absorb water → ~1.0-1.8 kcal/g.
+ * Dry versions are ~3.0-4.0 kcal/g. If a search says "cooked" but the result exceeds this
+ * ceiling, we're likely matching dry data for a cooked food — skip it.
+ */
+const COOKED_KCAL_PER_GRAM_CEILING = 2.5;
+
+/**
  * Normalize an ingredient name to improve FatSecret search hit rate.
  * Returns an array (usually 1 item; multiple for compound names like "Apple + Peanut Butter").
  */
@@ -576,13 +583,34 @@ export class NutritionCompiler {
       }
     }
 
-    // Within generics, prefer results matching the cooking state of the search term
+    // Within generics, prefer results matching the cooking state of the search term.
+    // Only boost results that also match at least one non-cooking-state word from the
+    // search term (prevents e.g. "Banana, Raw" being promoted over "Broccoli, Steamed"
+    // when searching "broccoli raw").
     const cookingState = searchTerm ? extractCookingState(searchTerm) : null;
     if (cookingState) {
+      const baseWords = searchTerm!
+        .toLowerCase()
+        .split(/\s+/)
+        .filter((w) => w.length >= 2 && !COOKING_STATE_KEYWORDS.includes(w));
+
       generic.sort((a, b) => {
-        const aHas = a.name.toLowerCase().includes(cookingState) ? 0 : 1;
-        const bHas = b.name.toLowerCase().includes(cookingState) ? 0 : 1;
-        return aHas - bHas;
+        const aLower = a.name.toLowerCase();
+        const bLower = b.name.toLowerCase();
+        const aMatchesBase = baseWords.length === 0 || baseWords.some((w) => aLower.includes(w));
+        const bMatchesBase = baseWords.length === 0 || baseWords.some((w) => bLower.includes(w));
+
+        // Only apply cooking-state preference among results that match the base food
+        if (aMatchesBase && bMatchesBase) {
+          const aHas = aLower.includes(cookingState!) ? 0 : 1;
+          const bHas = bLower.includes(cookingState!) ? 0 : 1;
+          return aHas - bHas;
+        }
+        // Base-matching results always rank above non-matching ones
+        if (aMatchesBase !== bMatchesBase) {
+          return aMatchesBase ? -1 : 1;
+        }
+        return 0;
       });
     }
 
@@ -800,14 +828,30 @@ export class NutritionCompiler {
                     );
                     continue;
                   }
-                  // Reject if fat or protein density exceeds 1g per 1g food
+                  // Cooking-state mismatch: if search says "cooked" but calorie density
+                  // looks like dry data, skip this result and try the next one
+                  const searchCookingState = extractCookingState(searchName);
+                  if (
+                    searchCookingState === 'cooked' &&
+                    kcalPerGram > COOKED_KCAL_PER_GRAM_CEILING
+                  ) {
+                    engineLogger.warn(
+                      `[NutritionCompiler] Cooking-state mismatch: "${foodDetails.name}" ` +
+                        `${kcalPerGram.toFixed(1)} kcal/g exceeds cooked ceiling (${COOKED_KCAL_PER_GRAM_CEILING}). ` +
+                        `Likely dry data for a cooked ingredient. Skipping.`
+                    );
+                    continue;
+                  }
+                  // Reject if fat or protein density exceeds physical max
+                  // Pure fats/oils are ~1.0g fat per gram; ml-conversion inflates to ~1.09
                   const scaledFat = bestServing.serving.fat * scale;
                   const scaledProtein = bestServing.serving.protein * scale;
                   const fatPerGram = scaledFat / gramsNeeded;
                   const proteinPerGram = scaledProtein / gramsNeeded;
-                  if (fatPerGram > 1.0 || proteinPerGram > 1.0) {
+                  const macroDensityLimit = bestServing.wasMLConverted ? 1.15 : 1.05;
+                  if (fatPerGram > macroDensityLimit || proteinPerGram > macroDensityLimit) {
                     engineLogger.warn(
-                      `[NutritionCompiler] Anomalous macros for "${foodDetails.name}". Skipping.`
+                      `[NutritionCompiler] Anomalous macros for "${foodDetails.name}" (fat/g=${fatPerGram.toFixed(2)}, protein/g=${proteinPerGram.toFixed(2)}, limit=${macroDensityLimit}). Skipping.`
                     );
                     continue;
                   }
@@ -903,14 +947,27 @@ export class NutritionCompiler {
                       );
                       continue;
                     }
-                    // Reject if fat or protein density exceeds 1g per 1g food
+                    // Cooking-state mismatch guard (same as FatSecret path)
+                    const searchCookingState = extractCookingState(searchName);
+                    if (
+                      searchCookingState === 'cooked' &&
+                      kcalPerGram > COOKED_KCAL_PER_GRAM_CEILING
+                    ) {
+                      engineLogger.warn(
+                        `[NutritionCompiler] Cooking-state mismatch: USDA "${foodDetails.name}" ` +
+                          `${kcalPerGram.toFixed(1)} kcal/g exceeds cooked ceiling. Skipping.`
+                      );
+                      continue;
+                    }
+                    // Reject if fat or protein density exceeds physical max
                     const scaledFat = bestServing.serving.fat * scale;
                     const scaledProtein = bestServing.serving.protein * scale;
                     const fatPerGram = scaledFat / gramsNeeded;
                     const proteinPerGram = scaledProtein / gramsNeeded;
-                    if (fatPerGram > 1.0 || proteinPerGram > 1.0) {
+                    const macroDensityLimit = bestServing.wasMLConverted ? 1.15 : 1.05;
+                    if (fatPerGram > macroDensityLimit || proteinPerGram > macroDensityLimit) {
                       engineLogger.warn(
-                        `[NutritionCompiler] Anomalous macros for "${foodDetails.name}". Skipping.`
+                        `[NutritionCompiler] Anomalous macros for "${foodDetails.name}" (fat/g=${fatPerGram.toFixed(2)}, protein/g=${proteinPerGram.toFixed(2)}, limit=${macroDensityLimit}). Skipping.`
                       );
                       continue;
                     }
