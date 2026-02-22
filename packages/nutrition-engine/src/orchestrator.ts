@@ -6,6 +6,7 @@ import { NutritionCompiler } from './agents/nutrition-compiler';
 import { QAValidator } from './agents/qa-validator';
 import { BrandRenderer, renderHtml, renderPdf } from './agents/brand-renderer';
 import { CacheWarmer } from './agents/cache-warmer';
+import { BatchIngredientResolver } from './agents/recipe-curator/batch-resolver';
 import { FatSecretAdapter } from './adapters/fatsecret';
 import { USDAAdapter } from './adapters/usda';
 import { LocalUSDAAdapter } from './adapters/usda-local';
@@ -87,9 +88,16 @@ export class NutritionPipelineOrchestrator {
 
     this.foodAliasCache = config.prismaClient ? new FoodAliasCache(config.prismaClient) : undefined;
 
+    const batchResolver = new BatchIngredientResolver(
+      this.localUsdaAdapter,
+      this.usdaAdapter,
+      this.fatSecretAdapter,
+      this.foodAliasCache
+    );
+
     this.intakeNormalizer = new IntakeNormalizer();
     this.metabolicCalculator = new MetabolicCalculator();
-    this.recipeCurator = new RecipeCurator(config.anthropicApiKey);
+    this.recipeCurator = new RecipeCurator(config.anthropicApiKey, batchResolver);
     this.nutritionCompiler = new NutritionCompiler(
       this.usdaAdapter,
       this.fatSecretAdapter,

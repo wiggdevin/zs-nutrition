@@ -13,6 +13,37 @@ export const KCAL_ABS_FLOOR = 50; // 50 kcal absolute minimum variance threshold
 
 export const MAX_ITERATIONS = 3; // Legacy: kept for backward compat but single-pass is now used
 
+/**
+ * Compute a tolerance multiplier based on average meal confidence for a day.
+ * High-confidence days (database-backed data) get tighter tolerances.
+ * Low-confidence days (AI estimates) get looser tolerances.
+ *
+ * >= 0.8 avg confidence → 1.0x (default, tightest)
+ * 0.5 - 0.8            → 1.5x
+ * < 0.5                → 2.0x (loosest)
+ */
+export function confidenceToleranceMultiplier(day: CompiledDay): number {
+  const meals = day.meals;
+  if (meals.length === 0) return 1.0;
+
+  let totalScore = 0;
+  let scoredMeals = 0;
+  for (const meal of meals) {
+    if (meal.confidenceScore !== undefined && meal.confidenceScore !== null) {
+      totalScore += meal.confidenceScore;
+      scoredMeals++;
+    }
+  }
+
+  // If no meals have confidence scores, use default tolerances
+  if (scoredMeals === 0) return 1.0;
+
+  const avg = totalScore / scoredMeals;
+  if (avg >= 0.8) return 1.0;
+  if (avg >= 0.5) return 1.5;
+  return 2.0;
+}
+
 export interface Violation {
   dayIndex: number;
   type: 'kcal' | 'macro';
@@ -41,11 +72,14 @@ export function findViolations(days: CompiledDay[]): Violation[] {
     const day = days[i];
     const absKcalVariance = Math.abs(day.variancePercent) / 100;
 
+    // Confidence-aware tolerance multiplier: looser for low-confidence days
+    const confMultiplier = confidenceToleranceMultiplier(day);
+
     // Effective kcal tolerance: max of percentage-based and absolute-floor-based
     const effectiveKcalTolerance =
       day.targetKcal > 0
-        ? Math.max(KCAL_TOLERANCE, KCAL_ABS_FLOOR / day.targetKcal)
-        : KCAL_TOLERANCE;
+        ? Math.max(KCAL_TOLERANCE * confMultiplier, KCAL_ABS_FLOOR / day.targetKcal)
+        : KCAL_TOLERANCE * confMultiplier;
 
     if (absKcalVariance > effectiveKcalTolerance) {
       violations.push({
@@ -65,11 +99,11 @@ export function findViolations(days: CompiledDay[]): Violation[] {
       const carbsVar = tC > 0 ? Math.abs(aC - tC) / tC : 0;
       const fatVar = tF > 0 ? Math.abs(aF - tF) / tF : 0;
 
-      // Check each macro against its individual tolerance
+      // Check each macro against its individual tolerance (scaled by confidence)
       const offendingMacros: Array<'protein' | 'carbs' | 'fat'> = [];
-      if (proteinVar > PROTEIN_TOLERANCE) offendingMacros.push('protein');
-      if (carbsVar > CARBS_TOLERANCE) offendingMacros.push('carbs');
-      if (fatVar > FAT_TOLERANCE) offendingMacros.push('fat');
+      if (proteinVar > PROTEIN_TOLERANCE * confMultiplier) offendingMacros.push('protein');
+      if (carbsVar > CARBS_TOLERANCE * confMultiplier) offendingMacros.push('carbs');
+      if (fatVar > FAT_TOLERANCE * confMultiplier) offendingMacros.push('fat');
 
       if (offendingMacros.length > 0) {
         const worstVar = Math.max(proteinVar, carbsVar, fatVar);

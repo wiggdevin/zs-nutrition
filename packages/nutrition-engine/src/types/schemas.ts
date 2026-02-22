@@ -192,6 +192,15 @@ export const DraftMealSchema = z.object({
         name: z.string(),
         quantity: z.number(),
         unit: z.string(),
+        fdcId: z.number().int().optional(),
+        resolvedPer100g: z
+          .object({
+            kcal: z.number(),
+            proteinG: z.number(),
+            carbsG: z.number(),
+            fatG: z.number(),
+          })
+          .optional(),
       })
     )
     .default([]),
@@ -235,6 +244,8 @@ export const IngredientSchema = z.object({
   amount: z.number(),
   unit: z.string(),
   foodId: z.string().optional(),
+  /** Per-ingredient confidence: 1.0=LocalUSDA, 0.9=USDA API, 0.8=FatSecret generic, 0.6=FatSecret branded, 0.0=unverified */
+  confidenceScore: z.number().min(0).max(1).optional(),
 });
 
 export const CompiledMealSchema = z.object({
@@ -247,6 +258,8 @@ export const CompiledMealSchema = z.object({
   nutrition: VerifiedNutritionSchema,
   recipeId: z.string().optional(),
   confidenceLevel: ConfidenceLevelEnum,
+  /** Weighted average confidence score (0-1) across ingredients by caloric share */
+  confidenceScore: z.number().min(0).max(1).optional(),
   ingredients: z.array(IngredientSchema),
   instructions: z.array(z.string()),
   primaryProtein: z.string(),

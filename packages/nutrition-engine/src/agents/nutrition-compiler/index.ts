@@ -32,6 +32,31 @@ interface ScaledNutrition {
   fiberG: number | undefined;
 }
 
+/** Cached result of a single ingredient lookup, keyed by normalized name + grams */
+interface IngredientCacheEntry {
+  ingredient: Ingredient;
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG: number | undefined;
+  verified: boolean;
+  /** Which source provided the match */
+  source: 'local-usda' | 'usda-api' | 'fatsecret-generic' | 'fatsecret-branded' | 'unverified';
+}
+
+/** Per-compilation deduplication cache for ingredient lookups */
+type IngredientDeduplicationCache = Map<string, IngredientCacheEntry>;
+
+/** Map data source to a numeric confidence score (0-1) */
+const SOURCE_CONFIDENCE: Record<IngredientCacheEntry['source'], number> = {
+  'local-usda': 1.0,
+  'usda-api': 0.9,
+  'fatsecret-generic': 0.8,
+  'fatsecret-branded': 0.6,
+  unverified: 0.0,
+};
+
 /** Maximum concurrent food data API calls to respect rate limits */
 const API_CONCURRENCY_LIMIT = 5;
 
@@ -290,13 +315,16 @@ export class NutritionCompiler {
     const startTime = Date.now();
     engineLogger.info('[NutritionCompiler] Starting compilation with parallel processing');
 
+    // Per-compilation deduplication cache: same ingredient looked up once across all days
+    const ingredientCache: IngredientDeduplicationCache = new Map();
+
     const totalMeals = draft.days.reduce((sum, d) => sum + d.meals.length, 0);
     let mealsProcessed = 0;
 
     // Process all days in parallel (each day's meals are processed concurrently with rate limiting)
     const compiledDays = await Promise.all(
       draft.days.map(async (day) => {
-        const compiled = await this.compileDay(day, clientIntake);
+        const compiled = await this.compileDay(day, clientIntake, ingredientCache);
         mealsProcessed += day.meals.length;
         // Emit sub-progress every 5 meals
         if (mealsProcessed % 5 === 0 || mealsProcessed === totalMeals) {
@@ -304,6 +332,10 @@ export class NutritionCompiler {
         }
         return compiled;
       })
+    );
+
+    engineLogger.info(
+      `[NutritionCompiler] Dedup cache: ${ingredientCache.size} unique ingredients cached`
     );
 
     // Calculate weekly averages
@@ -324,11 +356,15 @@ export class NutritionCompiler {
   /**
    * Compile a single day's meals concurrently with rate limiting.
    */
-  private async compileDay(day: DraftDay, clientIntake?: ClientIntake): Promise<CompiledDay> {
+  private async compileDay(
+    day: DraftDay,
+    clientIntake?: ClientIntake,
+    ingredientCache?: IngredientDeduplicationCache
+  ): Promise<CompiledDay> {
     // Process all meals in this day concurrently, limited by p-limit
     const compiledMeals = await Promise.all(
       day.meals.map((meal) =>
-        this.limit(() => this.compileMeal(meal, day.targetKcal, clientIntake))
+        this.limit(() => this.compileMeal(meal, day.targetKcal, clientIntake, ingredientCache))
       )
     );
 
@@ -752,11 +788,13 @@ export class NutritionCompiler {
   private async compileMealFromIngredients(
     meal: DraftMeal,
     dailyTargetKcal: number | undefined,
-    clientIntake: ClientIntake | undefined
+    clientIntake: ClientIntake | undefined,
+    ingredientCache?: IngredientDeduplicationCache
   ): Promise<{
     nutrition: ScaledNutrition;
     ingredients: Ingredient[];
     confidenceLevel: 'verified' | 'ai_estimated';
+    confidenceScore: number;
   }> {
     const ingredientLimit = pLimit(INGREDIENT_CONCURRENCY_LIMIT);
     let verifiedCount = 0;
@@ -767,12 +805,63 @@ export class NutritionCompiler {
     let totalFiber = 0;
     let hasFiber = false;
     const compiledIngredients: Ingredient[] = [];
+    let cacheHits = 0;
 
     const results = await Promise.all(
       meal.draftIngredients.map((ing) =>
         ingredientLimit(async () => {
           const gramsNeeded = convertToGrams(ing.quantity, ing.unit);
           const normalized = normalizeIngredientName(ing.name, this.aliasCache);
+
+          // Deduplication: check if we've already looked up this ingredient at this gram amount
+          if (ingredientCache) {
+            const cacheKey = `${normalized.map((n) => n.searchName).join('|')}:${Math.round(gramsNeeded)}`;
+            const cached = ingredientCache.get(cacheKey);
+            if (cached) {
+              cacheHits++;
+              // Return a copy with updated ingredient name (may differ across meals)
+              return {
+                ingredient: { ...cached.ingredient, name: ing.name },
+                kcal: cached.kcal,
+                proteinG: cached.proteinG,
+                carbsG: cached.carbsG,
+                fatG: cached.fatG,
+                fiberG: cached.fiberG,
+                verified: cached.verified,
+                source: cached.source,
+              };
+            }
+          }
+
+          // Cache key for deduplication (same normalized name + same gram amount)
+          const cacheKey = ingredientCache
+            ? `${normalized.map((n) => n.searchName).join('|')}:${Math.round(gramsNeeded)}`
+            : '';
+
+          // Helper to store result in dedup cache before returning
+          const cacheAndReturn = (result: IngredientCacheEntry): IngredientCacheEntry => {
+            if (ingredientCache && cacheKey) {
+              ingredientCache.set(cacheKey, result);
+            }
+            return result;
+          };
+
+          // --- FAST PATH: Resolved at prompt-time (fdcId from BatchResolver) ---
+          if (ing.fdcId) {
+            const resolvedResult = await this.resolvedIngredientLookup(
+              ing.fdcId,
+              ing.name,
+              gramsNeeded,
+              ing.resolvedPer100g
+            );
+            if (resolvedResult) {
+              return cacheAndReturn(resolvedResult);
+            }
+            // Fast-path miss — fall through to normal search chain
+            engineLogger.warn(
+              `[NutritionCompiler] Fast-path miss for "${ing.name}" (fdcId=${ing.fdcId}), falling through to search chain`
+            );
+          }
 
           // Try each normalized name variant against all sources
           for (const { searchName, fdcId } of normalized) {
@@ -792,7 +881,7 @@ export class NutritionCompiler {
                     engineLogger.info(
                       `[NutritionCompiler] Direct fdcId hit for "${ing.name}" → ${foodDetails.name} (fdcId=${fdcId})`
                     );
-                    return {
+                    return cacheAndReturn({
                       ingredient: {
                         name: ing.name,
                         amount: Math.round(gramsNeeded),
@@ -808,7 +897,8 @@ export class NutritionCompiler {
                           ? bestServing.serving.fiber * scale
                           : undefined,
                       verified: true,
-                    };
+                      source: 'local-usda',
+                    });
                   }
                 }
               } catch (err) {
@@ -819,49 +909,74 @@ export class NutritionCompiler {
               }
             }
 
-            // --- Local USDA primary (sub-millisecond, no API calls) ---
-            if (this.localUsdaAdapter) {
-              try {
+            // --- Parallel: Race LocalUSDA + USDA API, prefer LocalUSDA ---
+            {
+              const lookups: Promise<IngredientCacheEntry | null>[] = [];
+
+              // LocalUSDA (sub-millisecond, no API calls)
+              if (this.localUsdaAdapter) {
                 const localRef = this.localUsdaAdapter;
-                const localResult = await this.tryIngredientFromSource(
-                  (q, max) => localRef.searchFoods(q, max),
-                  (id) => localRef.getFood(id),
+                lookups.push(
+                  this.tryIngredientFromSource(
+                    (q, max) => localRef.searchFoods(q, max),
+                    (id) => localRef.getFood(id),
+                    searchName,
+                    ing.name,
+                    gramsNeeded,
+                    dailyTargetKcal,
+                    clientIntake,
+                    'LocalUSDA',
+                    'usda'
+                  )
+                    .then((r) => (r ? { ...r, source: 'local-usda' as const } : null))
+                    .catch((err) => {
+                      engineLogger.warn(
+                        `[NutritionCompiler] LocalUSDA lookup failed for ingredient "${searchName}":`,
+                        err instanceof Error ? err.message : err
+                      );
+                      return null;
+                    })
+                );
+              }
+
+              // USDA live API (parallel with LocalUSDA)
+              lookups.push(
+                this.tryIngredientFromSource(
+                  (q, max) => this.usdaAdapter.searchFoods(q, max),
+                  (id) => this.usdaAdapter.getFood(id),
                   searchName,
                   ing.name,
                   gramsNeeded,
                   dailyTargetKcal,
                   clientIntake,
-                  'LocalUSDA',
+                  'USDA',
                   'usda'
-                );
-                if (localResult) return localResult;
-              } catch (err) {
-                engineLogger.warn(
-                  `[NutritionCompiler] LocalUSDA lookup failed for ingredient "${searchName}":`,
-                  err instanceof Error ? err.message : err
-                );
-              }
-            }
+                )
+                  .then((r) => (r ? { ...r, source: 'usda-api' as const } : null))
+                  .catch((err) => {
+                    engineLogger.warn(
+                      `[NutritionCompiler] USDA lookup failed for ingredient "${searchName}":`,
+                      err instanceof Error ? err.message : err
+                    );
+                    return null;
+                  })
+              );
 
-            // --- USDA live API fallback ---
-            try {
-              const usdaResult = await this.tryIngredientFromSource(
-                (q, max) => this.usdaAdapter.searchFoods(q, max),
-                (id) => this.usdaAdapter.getFood(id),
-                searchName,
-                ing.name,
-                gramsNeeded,
-                dailyTargetKcal,
-                clientIntake,
-                'USDA',
-                'usda'
-              );
-              if (usdaResult) return usdaResult;
-            } catch (err) {
-              engineLogger.warn(
-                `[NutritionCompiler] USDA lookup failed for ingredient "${searchName}":`,
-                err instanceof Error ? err.message : err
-              );
+              const settled = await Promise.allSettled(lookups);
+              const resolvedResults = settled
+                .filter(
+                  (s): s is PromiseFulfilledResult<IngredientCacheEntry | null> =>
+                    s.status === 'fulfilled'
+                )
+                .map((s) => s.value)
+                .filter((v): v is IngredientCacheEntry => v !== null);
+
+              // Prefer LocalUSDA (source: 'local-usda') over USDA API
+              const localHit = resolvedResults.find((r) => r.source === 'local-usda');
+              const usdaHit = resolvedResults.find((r) => r.source === 'usda-api');
+              const bestHit = localHit ?? usdaHit;
+
+              if (bestHit) return cacheAndReturn(bestHit);
             }
 
             // --- FatSecret fallback ---
@@ -880,7 +995,14 @@ export class NutritionCompiler {
                   'fatsecret',
                   (results) => this.preferGenericFoods(results as FoodSearchResult[], searchName)
                 );
-                if (fsResult) return fsResult;
+                if (fsResult) {
+                  // Determine if branded or generic based on foodId prefix check
+                  const isBranded = fsResult.ingredient.foodId?.startsWith('fatsecret-') ?? false;
+                  return cacheAndReturn({
+                    ...fsResult,
+                    source: isBranded ? 'fatsecret-branded' : 'fatsecret-generic',
+                  });
+                }
               } catch (err) {
                 engineLogger.warn(
                   `[NutritionCompiler] FatSecret fallback failed for ingredient "${searchName}":`,
@@ -894,7 +1016,7 @@ export class NutritionCompiler {
           engineLogger.warn(
             `[NutritionCompiler] No match found for ingredient "${ing.name}" (tried: ${normalized.map((n) => n.searchName).join(', ')})`
           );
-          return {
+          return cacheAndReturn({
             ingredient: {
               name: ing.name,
               amount: Math.round(gramsNeeded),
@@ -906,14 +1028,21 @@ export class NutritionCompiler {
             fatG: 0,
             fiberG: undefined as number | undefined,
             verified: false,
-          };
+            source: 'unverified',
+          });
         })
       )
     );
 
-    // Sum all ingredient nutrition
+    // Sum all ingredient nutrition and attach per-ingredient confidence scores
     for (const r of results) {
-      compiledIngredients.push(r.ingredient);
+      // Attach numeric confidence score to each ingredient
+      const ingConfidence = SOURCE_CONFIDENCE[r.source];
+      const ingredientWithConfidence: Ingredient = {
+        ...r.ingredient,
+        confidenceScore: ingConfidence,
+      };
+      compiledIngredients.push(ingredientWithConfidence);
       totalKcal += r.kcal;
       totalProtein += r.proteinG;
       totalCarbs += r.carbsG;
@@ -923,6 +1052,12 @@ export class NutritionCompiler {
         hasFiber = true;
       }
       if (r.verified) verifiedCount++;
+    }
+
+    if (cacheHits > 0) {
+      engineLogger.info(
+        `[NutritionCompiler] Dedup: "${meal.name}" had ${cacheHits}/${meal.draftIngredients.length} cache hits`
+      );
     }
 
     // Per-meal total cap: if total exceeds 2x the meal target, fall back to AI estimates
@@ -946,12 +1081,25 @@ export class NutritionCompiler {
         },
         ingredients: compiledIngredients,
         confidenceLevel: 'ai_estimated',
+        confidenceScore: 0,
       };
     }
 
     const totalIngredients = meal.draftIngredients.length;
     const verifiedRatio = totalIngredients > 0 ? verifiedCount / totalIngredients : 0;
     const confidenceLevel = verifiedRatio >= 0.7 ? 'verified' : 'ai_estimated';
+
+    // Compute weighted meal confidence: weight each ingredient's confidence by its caloric share
+    let mealConfidenceScore = 0;
+    if (totalKcal > 0) {
+      let weightedSum = 0;
+      for (const r of results) {
+        const ingConfidence = SOURCE_CONFIDENCE[r.source];
+        const kcalWeight = r.kcal / totalKcal;
+        weightedSum += ingConfidence * kcalWeight;
+      }
+      mealConfidenceScore = Math.round(weightedSum * 100) / 100;
+    }
 
     // Derive calories from macros (4/4/9) to guarantee consistency
     const roundedProtein = Math.round(totalProtein * 10) / 10;
@@ -967,7 +1115,7 @@ export class NutritionCompiler {
     }
 
     engineLogger.info(
-      `[NutritionCompiler] Ingredient-level: "${meal.name}" — ${verifiedCount}/${totalIngredients} verified (${Math.round(verifiedRatio * 100)}%) → ${confidenceLevel}, ${macroKcal} kcal`
+      `[NutritionCompiler] Ingredient-level: "${meal.name}" — ${verifiedCount}/${totalIngredients} verified (${Math.round(verifiedRatio * 100)}%) → ${confidenceLevel} (score: ${mealConfidenceScore.toFixed(2)}), ${macroKcal} kcal`
     );
 
     return {
@@ -980,7 +1128,117 @@ export class NutritionCompiler {
       },
       ingredients: compiledIngredients,
       confidenceLevel,
+      confidenceScore: mealConfidenceScore,
     };
+  }
+
+  /**
+   * Fast-path: Direct PK lookup for ingredients resolved at prompt-time (fdcId from BatchResolver).
+   * Tries LocalUSDA → USDA API → resolvedPer100g snapshot fallback.
+   * Returns null only if all three fail, causing the caller to fall through to search chain.
+   */
+  private async resolvedIngredientLookup(
+    fdcId: number,
+    ingName: string,
+    gramsNeeded: number,
+    resolvedPer100g?: { kcal: number; proteinG: number; carbsG: number; fatG: number }
+  ): Promise<IngredientCacheEntry | null> {
+    const fdcIdStr = String(fdcId);
+
+    // Try LocalUSDA first (sub-ms)
+    if (this.localUsdaAdapter) {
+      try {
+        const food = await this.localUsdaAdapter.getFood(fdcIdStr);
+        const bestServing = this.selectBestServingForGrams(food.servings, gramsNeeded, food.name);
+        if (bestServing) {
+          const scale = gramsNeeded / bestServing.servingGrams;
+          if (scale >= 0.01 && scale <= 20) {
+            engineLogger.info(
+              `[NutritionCompiler] Fast-path HIT (LocalUSDA) for "${ingName}" → ${food.name} (fdcId=${fdcId})`
+            );
+            return {
+              ingredient: {
+                name: ingName,
+                amount: Math.round(gramsNeeded),
+                unit: 'g',
+                foodId: `usda-${fdcId}`,
+              } as Ingredient,
+              kcal: bestServing.serving.calories * scale,
+              proteinG: bestServing.serving.protein * scale,
+              carbsG: bestServing.serving.carbohydrate * scale,
+              fatG: bestServing.serving.fat * scale,
+              fiberG:
+                bestServing.serving.fiber !== undefined
+                  ? bestServing.serving.fiber * scale
+                  : undefined,
+              verified: true,
+              source: 'local-usda',
+            };
+          }
+        }
+      } catch {
+        // LocalUSDA lookup failed, try USDA API
+      }
+    }
+
+    // Try USDA live API (direct getFood by fdcId)
+    try {
+      const food = await this.usdaAdapter.getFood(fdcIdStr);
+      const bestServing = this.selectBestServingForGrams(food.servings, gramsNeeded, food.name);
+      if (bestServing) {
+        const scale = gramsNeeded / bestServing.servingGrams;
+        if (scale >= 0.01 && scale <= 20) {
+          engineLogger.info(
+            `[NutritionCompiler] Fast-path HIT (USDA-API) for "${ingName}" → ${food.name} (fdcId=${fdcId})`
+          );
+          return {
+            ingredient: {
+              name: ingName,
+              amount: Math.round(gramsNeeded),
+              unit: 'g',
+              foodId: `usda-${fdcId}`,
+            } as Ingredient,
+            kcal: bestServing.serving.calories * scale,
+            proteinG: bestServing.serving.protein * scale,
+            carbsG: bestServing.serving.carbohydrate * scale,
+            fatG: bestServing.serving.fat * scale,
+            fiberG:
+              bestServing.serving.fiber !== undefined
+                ? bestServing.serving.fiber * scale
+                : undefined,
+            verified: true,
+            source: 'usda-api',
+          };
+        }
+      }
+    } catch {
+      // USDA API lookup failed, try resolvedPer100g fallback
+    }
+
+    // Fallback: Use the resolvedPer100g snapshot embedded in the draft
+    if (resolvedPer100g && resolvedPer100g.kcal > 0) {
+      const scale = gramsNeeded / 100;
+      engineLogger.info(
+        `[NutritionCompiler] Fast-path FALLBACK (resolvedPer100g) for "${ingName}" (fdcId=${fdcId})`
+      );
+      return {
+        ingredient: {
+          name: ingName,
+          amount: Math.round(gramsNeeded),
+          unit: 'g',
+          foodId: `usda-${fdcId}`,
+        } as Ingredient,
+        kcal: resolvedPer100g.kcal * scale,
+        proteinG: resolvedPer100g.proteinG * scale,
+        carbsG: resolvedPer100g.carbsG * scale,
+        fatG: resolvedPer100g.fatG * scale,
+        fiberG: undefined,
+        verified: true,
+        source: 'local-usda',
+      };
+    }
+
+    return null;
   }
 
   /**
@@ -992,9 +1250,11 @@ export class NutritionCompiler {
   private async compileMeal(
     meal: DraftMeal,
     dailyTargetKcal?: number,
-    clientIntake?: ClientIntake
+    clientIntake?: ClientIntake,
+    ingredientCache?: IngredientDeduplicationCache
   ): Promise<CompiledMeal> {
     let confidenceLevel: 'verified' | 'ai_estimated' = 'ai_estimated';
+    let mealConfidenceScore: number | undefined;
     let nutrition = {
       kcal: kcalFromMacros(
         meal.estimatedNutrition.proteinG,
@@ -1011,7 +1271,12 @@ export class NutritionCompiler {
     try {
       // Strategy 1: Ingredient-level lookups (new primary path)
       if (meal.draftIngredients && meal.draftIngredients.length > 0) {
-        const result = await this.compileMealFromIngredients(meal, dailyTargetKcal, clientIntake);
+        const result = await this.compileMealFromIngredients(
+          meal,
+          dailyTargetKcal,
+          clientIntake,
+          ingredientCache
+        );
 
         // Post-compilation recalibration: scale ingredient quantities so
         // verified nutrition hits per-meal calorie target
@@ -1026,6 +1291,7 @@ export class NutritionCompiler {
         nutrition = recalibrated.nutrition;
         ingredients = recalibrated.ingredients;
         confidenceLevel = result.confidenceLevel;
+        mealConfidenceScore = result.confidenceScore;
       } else {
         // Strategy 2: Single-food lookup (fallback for old drafts without ingredients)
         let verified = false;
@@ -1118,6 +1384,7 @@ export class NutritionCompiler {
       nutrition,
       recipeId: undefined,
       confidenceLevel,
+      confidenceScore: mealConfidenceScore,
       ingredients,
       instructions,
       primaryProtein: meal.primaryProtein,
