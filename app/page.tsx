@@ -16,6 +16,7 @@ export const metadata: Metadata = {
 };
 
 export default function HomePage() {
+  console.log("[v0] HomePage rendering");
   return (
     <div className="relative min-h-screen bg-background">
       {/* Sticky Header */}
