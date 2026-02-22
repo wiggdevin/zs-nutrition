@@ -46,6 +46,11 @@ const MAX_SCALE_FACTOR = 8.0;
  */
 const MIN_SCALE_FACTOR = 0.25;
 
+/** Derive calories from macros using standard Atwater factors (4/4/9). */
+export function kcalFromMacros(proteinG: number, carbsG: number, fatG: number): number {
+  return Math.round(proteinG * 4 + carbsG * 4 + fatG * 9);
+}
+
 /** Concurrency limit for ingredient-level lookups (higher than meal-level) */
 const INGREDIENT_CONCURRENCY_LIMIT = 8;
 
@@ -550,12 +555,15 @@ export class NutritionCompiler {
       return null;
     }
 
+    const sProtein = Math.round(serving.protein * servingScale * scaleFactor * 10) / 10;
+    const sCarbs = Math.round(serving.carbohydrate * servingScale * scaleFactor * 10) / 10;
+    const sFat = Math.round(serving.fat * servingScale * scaleFactor * 10) / 10;
     const scaled = {
       nutrition: {
-        kcal: Math.round(serving.calories * servingScale * scaleFactor),
-        proteinG: Math.round(serving.protein * servingScale * scaleFactor * 10) / 10,
-        carbsG: Math.round(serving.carbohydrate * servingScale * scaleFactor * 10) / 10,
-        fatG: Math.round(serving.fat * servingScale * scaleFactor * 10) / 10,
+        kcal: kcalFromMacros(sProtein, sCarbs, sFat),
+        proteinG: sProtein,
+        carbsG: sCarbs,
+        fatG: sFat,
         fiberG:
           serving.fiber !== undefined
             ? Math.round(serving.fiber * servingScale * scaleFactor * 10) / 10
@@ -921,7 +929,11 @@ export class NutritionCompiler {
       );
       return {
         nutrition: {
-          kcal: meal.estimatedNutrition.kcal,
+          kcal: kcalFromMacros(
+            meal.estimatedNutrition.proteinG,
+            meal.estimatedNutrition.carbsG,
+            meal.estimatedNutrition.fatG
+          ),
           proteinG: meal.estimatedNutrition.proteinG,
           carbsG: meal.estimatedNutrition.carbsG,
           fatG: meal.estimatedNutrition.fatG,
@@ -936,16 +948,29 @@ export class NutritionCompiler {
     const verifiedRatio = totalIngredients > 0 ? verifiedCount / totalIngredients : 0;
     const confidenceLevel = verifiedRatio >= 0.7 ? 'verified' : 'ai_estimated';
 
+    // Derive calories from macros (4/4/9) to guarantee consistency
+    const roundedProtein = Math.round(totalProtein * 10) / 10;
+    const roundedCarbs = Math.round(totalCarbs * 10) / 10;
+    const roundedFat = Math.round(totalFat * 10) / 10;
+    const macroKcal = kcalFromMacros(roundedProtein, roundedCarbs, roundedFat);
+    const sourceKcal = Math.round(totalKcal);
+    if (Math.abs(macroKcal - sourceKcal) > sourceKcal * 0.05) {
+      engineLogger.info(
+        `[NutritionCompiler] Calorie reconciliation for "${meal.name}": ` +
+          `source=${sourceKcal} kcal, macro-derived=${macroKcal} kcal (delta=${macroKcal - sourceKcal})`
+      );
+    }
+
     engineLogger.info(
-      `[NutritionCompiler] Ingredient-level: "${meal.name}" — ${verifiedCount}/${totalIngredients} verified (${Math.round(verifiedRatio * 100)}%) → ${confidenceLevel}, ${Math.round(totalKcal)} kcal`
+      `[NutritionCompiler] Ingredient-level: "${meal.name}" — ${verifiedCount}/${totalIngredients} verified (${Math.round(verifiedRatio * 100)}%) → ${confidenceLevel}, ${macroKcal} kcal`
     );
 
     return {
       nutrition: {
-        kcal: Math.round(totalKcal),
-        proteinG: Math.round(totalProtein * 10) / 10,
-        carbsG: Math.round(totalCarbs * 10) / 10,
-        fatG: Math.round(totalFat * 10) / 10,
+        kcal: macroKcal,
+        proteinG: roundedProtein,
+        carbsG: roundedCarbs,
+        fatG: roundedFat,
         fiberG: hasFiber ? Math.round(totalFiber * 10) / 10 : undefined,
       },
       ingredients: compiledIngredients,
@@ -962,7 +987,11 @@ export class NutritionCompiler {
   private async compileMeal(meal: DraftMeal, dailyTargetKcal?: number): Promise<CompiledMeal> {
     let confidenceLevel: 'verified' | 'ai_estimated' = 'ai_estimated';
     let nutrition = {
-      kcal: meal.estimatedNutrition.kcal,
+      kcal: kcalFromMacros(
+        meal.estimatedNutrition.proteinG,
+        meal.estimatedNutrition.carbsG,
+        meal.estimatedNutrition.fatG
+      ),
       proteinG: meal.estimatedNutrition.proteinG,
       carbsG: meal.estimatedNutrition.carbsG,
       fatG: meal.estimatedNutrition.fatG,
@@ -1128,11 +1157,14 @@ export class NutritionCompiler {
       amount: Math.round(ing.amount * factor * 100) / 100,
     }));
 
+    const scaledProtein = Math.round(result.nutrition.proteinG * factor * 10) / 10;
+    const scaledCarbs = Math.round(result.nutrition.carbsG * factor * 10) / 10;
+    const scaledFat = Math.round(result.nutrition.fatG * factor * 10) / 10;
     const scaledNutrition: ScaledNutrition = {
-      kcal: Math.round(actualKcal * factor),
-      proteinG: Math.round(result.nutrition.proteinG * factor * 10) / 10,
-      carbsG: Math.round(result.nutrition.carbsG * factor * 10) / 10,
-      fatG: Math.round(result.nutrition.fatG * factor * 10) / 10,
+      kcal: kcalFromMacros(scaledProtein, scaledCarbs, scaledFat),
+      proteinG: scaledProtein,
+      carbsG: scaledCarbs,
+      fatG: scaledFat,
       fiberG:
         result.nutrition.fiberG !== undefined
           ? Math.round(result.nutrition.fiberG * factor * 10) / 10
@@ -1172,13 +1204,17 @@ export class NutritionCompiler {
       // Clamp to +/-20% per meal
       const clampedFactor = Math.max(0.8, Math.min(1.2, mealFactor));
 
+      const dayScaledProtein = Math.round(meal.nutrition.proteinG * clampedFactor * 10) / 10;
+      const dayScaledCarbs = Math.round(meal.nutrition.carbsG * clampedFactor * 10) / 10;
+      const dayScaledFat = Math.round(meal.nutrition.fatG * clampedFactor * 10) / 10;
+
       return {
         ...meal,
         nutrition: {
-          kcal: Math.round(meal.nutrition.kcal * clampedFactor),
-          proteinG: Math.round(meal.nutrition.proteinG * clampedFactor * 10) / 10,
-          carbsG: Math.round(meal.nutrition.carbsG * clampedFactor * 10) / 10,
-          fatG: Math.round(meal.nutrition.fatG * clampedFactor * 10) / 10,
+          kcal: kcalFromMacros(dayScaledProtein, dayScaledCarbs, dayScaledFat),
+          proteinG: dayScaledProtein,
+          carbsG: dayScaledCarbs,
+          fatG: dayScaledFat,
           fiberG: meal.nutrition.fiberG
             ? Math.round(meal.nutrition.fiberG * clampedFactor * 10) / 10
             : undefined,
@@ -1191,24 +1227,25 @@ export class NutritionCompiler {
     });
 
     // Recalculate daily totals
-    let newKcal = 0,
-      newProtein = 0,
+    let newProtein = 0,
       newCarbs = 0,
       newFat = 0,
       newFiber = 0;
     for (const m of adjustedMeals) {
-      newKcal += m.nutrition.kcal;
       newProtein += m.nutrition.proteinG;
       newCarbs += m.nutrition.carbsG;
       newFat += m.nutrition.fatG;
       if (m.nutrition.fiberG) newFiber += m.nutrition.fiberG;
     }
 
+    const roundedNewProtein = Math.round(newProtein * 10) / 10;
+    const roundedNewCarbs = Math.round(newCarbs * 10) / 10;
+    const roundedNewFat = Math.round(newFat * 10) / 10;
     const newTotals = {
-      kcal: Math.round(newKcal),
-      proteinG: Math.round(newProtein * 10) / 10,
-      carbsG: Math.round(newCarbs * 10) / 10,
-      fatG: Math.round(newFat * 10) / 10,
+      kcal: kcalFromMacros(roundedNewProtein, roundedNewCarbs, roundedNewFat),
+      proteinG: roundedNewProtein,
+      carbsG: roundedNewCarbs,
+      fatG: roundedNewFat,
       fiberG: newFiber > 0 ? Math.round(newFiber * 10) / 10 : undefined,
     };
     const newVarianceKcal = newTotals.kcal - targetKcal;
@@ -1228,14 +1265,12 @@ export class NutritionCompiler {
    * Calculate daily nutrition totals from compiled meals.
    */
   private calculateDailyTotals(meals: CompiledMeal[]) {
-    let kcal = 0;
     let proteinG = 0;
     let carbsG = 0;
     let fatG = 0;
     let fiberG = 0;
 
     for (const meal of meals) {
-      kcal += meal.nutrition.kcal;
       proteinG += meal.nutrition.proteinG;
       carbsG += meal.nutrition.carbsG;
       fatG += meal.nutrition.fatG;
@@ -1244,11 +1279,14 @@ export class NutritionCompiler {
       }
     }
 
+    const roundedP = Math.round(proteinG * 10) / 10;
+    const roundedC = Math.round(carbsG * 10) / 10;
+    const roundedF = Math.round(fatG * 10) / 10;
     return {
-      kcal: Math.round(kcal),
-      proteinG: Math.round(proteinG * 10) / 10,
-      carbsG: Math.round(carbsG * 10) / 10,
-      fatG: Math.round(fatG * 10) / 10,
+      kcal: kcalFromMacros(roundedP, roundedC, roundedF),
+      proteinG: roundedP,
+      carbsG: roundedC,
+      fatG: roundedF,
       fiberG: fiberG > 0 ? Math.round(fiberG * 10) / 10 : undefined,
     };
   }

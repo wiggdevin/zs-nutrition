@@ -141,6 +141,18 @@ export async function GET(request: Request) {
             confidenceLevel: m.confidenceLevel || 'ai_estimated',
           })
         );
+
+        // Dev-mode assertion: flag any remaining calorie/macro mismatches
+        if (process.env.NODE_ENV === 'development') {
+          for (const m of todayPlanMeals) {
+            const expected = Math.round(m.protein * 4 + m.carbs * 4 + m.fat * 9);
+            if (Math.abs(m.calories - expected) > 5) {
+              console.warn(
+                `[NutritionQA] ${m.name}: displayed=${m.calories}, macro-derived=${expected}`
+              );
+            }
+          }
+        }
       }
     }
 
