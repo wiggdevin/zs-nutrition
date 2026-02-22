@@ -25,6 +25,9 @@ CREDENTIALS.md
 *.sqlite
 *.sqlite3
 
+# USDA data cache
+.usda-cache/
+
 # Generated files
 *.tsbuildinfo
 *.log
