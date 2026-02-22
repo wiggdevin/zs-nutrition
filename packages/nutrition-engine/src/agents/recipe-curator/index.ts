@@ -12,6 +12,9 @@ import { generateDeterministic } from './meal-generator';
 import type { DraftViolation } from '../../utils/draft-compliance-gate';
 import { scanDraftForViolations } from '../../utils/draft-compliance-gate';
 
+/** Timeout for Claude streaming requests (2 minutes per attempt) */
+const CLAUDE_STREAM_TIMEOUT_MS = 120_000;
+
 /**
  * Tool schema for Claude tool_use structured output.
  * Mirrors the MealPlanDraft Zod schema so Claude returns validated JSON
@@ -214,7 +217,8 @@ export class RecipeCurator {
       ],
     });
 
-    const response = await stream.finalMessage();
+    const streamTimeout = setTimeout(() => stream.abort(), CLAUDE_STREAM_TIMEOUT_MS);
+    const response = await stream.finalMessage().finally(() => clearTimeout(streamTimeout));
 
     // Check if response was truncated due to token limit
     if (response.stop_reason === 'max_tokens') {
@@ -677,7 +681,8 @@ Use the replace_meals tool to provide the replacement meals.`;
         ],
       });
 
-      const response = await stream.finalMessage();
+      const streamTimeout = setTimeout(() => stream.abort(), CLAUDE_STREAM_TIMEOUT_MS);
+      const response = await stream.finalMessage().finally(() => clearTimeout(streamTimeout));
 
       const toolUseBlock = response.content.find(
         (block: { type: string }) => block.type === 'tool_use'

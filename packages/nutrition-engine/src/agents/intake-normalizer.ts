@@ -23,7 +23,9 @@ export const ALLERGY_SYNONYMS: Record<string, string[]> = {
 export function expandAllergySynonyms(allergies: string[]): string[] {
   const expanded = new Set(allergies);
   for (const allergy of allergies) {
-    const synonyms = ALLERGY_SYNONYMS[allergy];
+    // Normalize: try exact match first, then try singular form (strip trailing 's')
+    const synonyms =
+      ALLERGY_SYNONYMS[allergy] || ALLERGY_SYNONYMS[allergy.replace(/s$/, '')] || null;
     if (synonyms) {
       for (const syn of synonyms) {
         expanded.add(syn);
