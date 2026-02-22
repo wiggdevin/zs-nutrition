@@ -231,6 +231,15 @@ const INGREDIENT_NAME_MAP: Record<string, string> = {
   couscous: 'couscous cooked',
   farro: 'farro cooked',
   bulgur: 'bulgur cooked',
+  // Cooked variants — prevent dry-value lookups
+  'quinoa cooked': 'quinoa cooked',
+  'cooked quinoa': 'quinoa cooked',
+  'rice cooked': 'white rice cooked',
+  'cooked rice': 'white rice cooked',
+  'pasta cooked': 'pasta cooked',
+  'cooked pasta': 'pasta cooked',
+  'lentils cooked': 'lentils cooked',
+  'cooked lentils': 'lentils cooked',
   tortilla: 'flour tortilla',
   naan: 'naan bread',
   'jasmine rice': 'jasmine rice cooked',
@@ -288,6 +297,34 @@ function estimateDensityForFood(foodName: string): number {
     }
   }
   return 1.0; // safe default
+}
+
+/**
+ * Keywords that indicate a cooking/preparation state.
+ * Used to prefer FatSecret results matching the same state as the search term.
+ */
+const COOKING_STATE_KEYWORDS = [
+  'cooked',
+  'raw',
+  'baked',
+  'roasted',
+  'grilled',
+  'steamed',
+  'boiled',
+  'fried',
+  'dried',
+  'canned',
+];
+
+/**
+ * Extract the first cooking-state keyword from a food name, or null if none found.
+ */
+function extractCookingState(name: string): string | null {
+  const lower = name.toLowerCase();
+  for (const kw of COOKING_STATE_KEYWORDS) {
+    if (lower.includes(kw)) return kw;
+  }
+  return null;
 }
 
 /**
@@ -468,7 +505,7 @@ export class NutritionCompiler {
     servings: FoodServing[],
     gramsNeeded: number,
     foodName?: string
-  ): { serving: FoodServing; servingGrams: number } | null {
+  ): { serving: FoodServing; servingGrams: number; wasMLConverted: boolean } | null {
     // Gram-based servings (existing)
     const withGrams = servings.filter(
       (s) => s.metricServingAmount && s.metricServingAmount > 0 && s.metricServingUnit === 'g'
@@ -482,10 +519,14 @@ export class NutritionCompiler {
       )
       .map((s) => ({ serving: s, servingGrams: s.metricServingAmount! * density }));
 
-    // Combined candidate pool
-    const candidates: { serving: FoodServing; servingGrams: number }[] = [
-      ...withGrams.map((s) => ({ serving: s, servingGrams: s.metricServingAmount! })),
-      ...mlConverted,
+    // Combined candidate pool — track which pool each candidate came from
+    const candidates: { serving: FoodServing; servingGrams: number; wasMLConverted: boolean }[] = [
+      ...withGrams.map((s) => ({
+        serving: s,
+        servingGrams: s.metricServingAmount!,
+        wasMLConverted: false,
+      })),
+      ...mlConverted.map((s) => ({ ...s, wasMLConverted: true })),
     ];
 
     if (candidates.length > 0) {
@@ -498,7 +539,11 @@ export class NutritionCompiler {
           best = c;
         }
       }
-      return { serving: best.serving, servingGrams: best.servingGrams };
+      return {
+        serving: best.serving,
+        servingGrams: best.servingGrams,
+        wasMLConverted: best.wasMLConverted,
+      };
     }
 
     // No gram metadata — try to find a "per 100g" by description
@@ -508,7 +553,7 @@ export class NutritionCompiler {
         s.servingDescription.toLowerCase().includes('100 g')
     );
     if (per100gByDesc) {
-      return { serving: per100gByDesc, servingGrams: 100 };
+      return { serving: per100gByDesc, servingGrams: 100, wasMLConverted: false };
     }
 
     // No usable gram data at all
@@ -519,7 +564,7 @@ export class NutritionCompiler {
    * Reorder search results to prefer generic/whole foods over branded/processed ones.
    * Items without brandName are sorted first; branded items are pushed to the end.
    */
-  private preferGenericFoods(results: FoodSearchResult[]): FoodSearchResult[] {
+  private preferGenericFoods(results: FoodSearchResult[], searchTerm?: string): FoodSearchResult[] {
     const generic: FoodSearchResult[] = [];
     const branded: FoodSearchResult[] = [];
 
@@ -529,6 +574,16 @@ export class NutritionCompiler {
       } else {
         generic.push(r);
       }
+    }
+
+    // Within generics, prefer results matching the cooking state of the search term
+    const cookingState = searchTerm ? extractCookingState(searchTerm) : null;
+    if (cookingState) {
+      generic.sort((a, b) => {
+        const aHas = a.name.toLowerCase().includes(cookingState) ? 0 : 1;
+        const bHas = b.name.toLowerCase().includes(cookingState) ? 0 : 1;
+        return aHas - bHas;
+      });
     }
 
     return [...generic, ...branded];
@@ -680,7 +735,7 @@ export class NutritionCompiler {
             try {
               const searchResults = await this.fatSecretAdapter.searchFoods(searchName, 5);
               if (searchResults.length > 0) {
-                const orderedResults = this.preferGenericFoods(searchResults);
+                const orderedResults = this.preferGenericFoods(searchResults, searchName);
 
                 // Try multiple search results, not just the first
                 for (const result of orderedResults) {
@@ -735,11 +790,13 @@ export class NutritionCompiler {
                   }
 
                   // Reject ingredients with physically impossible calorie density
+                  // Use higher threshold for ml-converted servings (density conversion inflates apparent kcal/g)
                   const kcalPerGram = ingredientKcal / gramsNeeded;
-                  if (kcalPerGram > 9.0) {
+                  const kcalPerGramLimit = bestServing.wasMLConverted ? 10.0 : 9.5;
+                  if (kcalPerGram > kcalPerGramLimit) {
                     engineLogger.warn(
                       `[NutritionCompiler] Anomalous data: "${foodDetails.name}" ` +
-                        `${kcalPerGram.toFixed(1)} kcal/g exceeds physical max (9.0). Skipping.`
+                        `${kcalPerGram.toFixed(1)} kcal/g exceeds limit (${kcalPerGramLimit}). Skipping.`
                     );
                     continue;
                   }
@@ -838,10 +895,11 @@ export class NutritionCompiler {
 
                     // Reject ingredients with physically impossible calorie density
                     const kcalPerGram = ingredientKcal / gramsNeeded;
-                    if (kcalPerGram > 9.0) {
+                    const kcalPerGramLimit = bestServing.wasMLConverted ? 10.0 : 9.5;
+                    if (kcalPerGram > kcalPerGramLimit) {
                       engineLogger.warn(
                         `[NutritionCompiler] Anomalous data: "${foodDetails.name}" ` +
-                          `${kcalPerGram.toFixed(1)} kcal/g exceeds physical max (9.0). Skipping.`
+                          `${kcalPerGram.toFixed(1)} kcal/g exceeds limit (${kcalPerGramLimit}). Skipping.`
                       );
                       continue;
                     }
