@@ -154,21 +154,33 @@ export class BatchIngredientResolver {
     // 1. FoodAliasCache exact match
     if (this.foodAliasCache) {
       const alias = this.foodAliasCache.get(searchName);
-      if (alias?.fdcId && this.localUsdaAdapter) {
-        try {
-          const food = await this.localUsdaAdapter.getFood(String(alias.fdcId));
-          const per100g = this.extractPer100g(food);
-          if (per100g) {
-            matches.push({
-              fdcId: alias.fdcId,
-              description: food.name,
-              source: 'alias',
-              per100g,
-              dataType: 'alias-direct',
-            });
+      if (alias?.fdcId) {
+        // Use pre-computed nutrition if available (skip food detail lookup)
+        if (alias.per100g) {
+          matches.push({
+            fdcId: alias.fdcId,
+            description: alias.canonicalName,
+            source: 'alias',
+            per100g: alias.per100g,
+            dataType: 'alias-precomputed',
+          });
+        } else if (this.localUsdaAdapter) {
+          // Fall back to food detail lookup
+          try {
+            const food = await this.localUsdaAdapter.getFood(String(alias.fdcId));
+            const per100g = this.extractPer100g(food);
+            if (per100g) {
+              matches.push({
+                fdcId: alias.fdcId,
+                description: food.name,
+                source: 'alias',
+                per100g,
+                dataType: 'alias-direct',
+              });
+            }
+          } catch {
+            // Alias fdcId lookup failed, continue to search
           }
-        } catch {
-          // Alias fdcId lookup failed, continue to search
         }
       }
     }

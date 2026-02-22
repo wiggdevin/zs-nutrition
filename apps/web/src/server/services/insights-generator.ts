@@ -147,6 +147,7 @@ export async function generateInsights(payload: InsightsDataPayload): Promise<{
     insightsLogger.claudeResponse({
       inputTokens,
       outputTokens,
+      cacheReadTokens: (response.usage as any)?.cache_read_input_tokens ?? 0,
       recommendations: rawRecommendations.length,
       durationMs,
     });

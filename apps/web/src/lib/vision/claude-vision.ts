@@ -167,6 +167,10 @@ export class ClaudeVisionClient {
       ],
     });
 
+    logger.info(
+      `[Vision] Usage: input=${message.usage?.input_tokens}, output=${message.usage?.output_tokens}, cache_read=${(message.usage as any)?.cache_read_input_tokens ?? 0}`
+    );
+
     // Extract the text response
     const textContent = message.content
       .filter((block) => block.type === 'text')

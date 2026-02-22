@@ -310,7 +310,7 @@ export class RecipeCurator {
     // Check if response was truncated due to token limit
     if (response.stop_reason === 'max_tokens') {
       engineLogger.warn(
-        `[RecipeCurator] Claude response truncated (max_tokens hit). Usage: input=${response.usage?.input_tokens}, output=${response.usage?.output_tokens}`
+        `[RecipeCurator] Claude response truncated (max_tokens hit). Usage: input=${response.usage?.input_tokens}, output=${response.usage?.output_tokens}, cache_read=${(response.usage as any)?.cache_read_input_tokens ?? 0}`
       );
       throw new Error('Claude response truncated — meal plan too large for token limit');
     }
@@ -387,6 +387,9 @@ Include cooking state when relevant: "brown rice, cooked" not just "rice".`;
     const ingredientList = (
       round1ToolUse.input as { ingredients: Array<{ name: string; context?: string }> }
     ).ingredients;
+    engineLogger.info(
+      `[RecipeCurator] Round 1 complete. Usage: input=${round1Response.usage?.input_tokens}, output=${round1Response.usage?.output_tokens}, cache_read=${(round1Response.usage as any)?.cache_read_input_tokens ?? 0}`
+    );
     engineLogger.info(
       `[RecipeCurator] Round 1: Claude listed ${ingredientList.length} unique ingredients`
     );
@@ -468,7 +471,7 @@ You have received food database resolution results. For each ingredient in draft
 
     if (round2Response.stop_reason === 'max_tokens') {
       engineLogger.warn(
-        `[RecipeCurator] Round 2 truncated (max_tokens hit). Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}`
+        `[RecipeCurator] Round 2 truncated (max_tokens hit). Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}, cache_read=${(round2Response.usage as any)?.cache_read_input_tokens ?? 0}`
       );
       throw new Error('Round 2: Claude response truncated — meal plan too large for token limit');
     }
@@ -481,7 +484,7 @@ You have received food database resolution results. For each ingredient in draft
     }
 
     engineLogger.info(
-      `[RecipeCurator] Round 2 complete. Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}`
+      `[RecipeCurator] Round 2 complete. Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}, cache_read=${(round2Response.usage as any)?.cache_read_input_tokens ?? 0}`
     );
 
     return MealPlanDraftSchema.parse(round2ToolUse.input);
@@ -565,6 +568,21 @@ Rules:
 ## Calorie Reference (kcal/g)
 oil/butter=9, nuts=5.5, cheese=3.5, avocado=1.6, chicken breast=1.1, salmon=2.1, rice(cooked)=1.3, egg=1.55(72/ea), vegetables=0.3
 Verify ingredient kcal sum ≈ targetNutrition.kcal (adjust if >15% off).
+
+## Macro Density Reference (per 100g cooked)
+chicken breast: 31g protein, 3.6g fat
+cod/tilapia: 23g protein, 1g fat
+95% lean beef: 26g protein, 5g fat
+egg whites: 11g protein, 0.2g fat
+Greek yogurt 0%: 10g protein, 0g fat
+shrimp: 24g protein, 0.3g fat
+tofu (firm): 17g protein, 9g fat
+olive oil: 0g protein, 100g fat
+
+CRITICAL: For each meal, multiply protein source grams × protein density to verify
+you hit targetNutrition.proteinG. Known bias: AI underestimates protein, overestimates fat.
+Counter by using UPPER end of protein portions (170-230g lean protein per main meal).
+
 Priority: dietary compliance > variety > calorie accuracy.
 ${this.buildBiometricPromptSection(biometricContext)}`;
   }
@@ -623,6 +641,8 @@ ${this.buildBiometricPromptSection(biometricContext)}`;
 ALLOWED proteins: chicken breast, turkey breast, white fish (cod/tilapia/sole), egg whites, Greek yogurt 0%, shrimp, 95%+ lean beef, 99% lean turkey
 BANNED proteins: chicken thigh, salmon, >1 whole egg/meal, pork belly, ribeye, dark meat, sausage
 Fat rules: MAX 1 fat source/meal (oil OR butter OR nuts OR avocado OR cheese). No stacking. Cooking oil≤1tsp.
+Main meals: 170-230g lean protein source (yields 40-60g protein). Snacks: include ≥15g protein.
+If protein target seems high, use LARGER lean protein portions rather than adding fat-heavy alternatives.
 Tolerance: estimatedNutrition within 15% of targetNutrition for all macros.`;
 
       case 'keto':

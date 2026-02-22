@@ -55,9 +55,10 @@ export const insightsLogger = {
     outputTokens: number;
     recommendations: number;
     durationMs: number;
+    cacheReadTokens?: number;
   }) {
     logger.info(
-      `[${PREFIX}] Claude response | in: ${stats.inputTokens} | out: ${stats.outputTokens} | recs: ${stats.recommendations} | ${stats.durationMs}ms`
+      `[${PREFIX}] Claude response | in: ${stats.inputTokens} | out: ${stats.outputTokens} | cache_read: ${stats.cacheReadTokens ?? 0} | recs: ${stats.recommendations} | ${stats.durationMs}ms`
     );
   },
 

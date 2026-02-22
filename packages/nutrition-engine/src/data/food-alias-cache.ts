@@ -12,6 +12,12 @@ import { engineLogger } from '../utils/logger';
 export interface AliasEntry {
   canonicalName: string;
   fdcId?: number;
+  per100g?: {
+    kcal: number;
+    proteinG: number;
+    carbsG: number;
+    fatG: number;
+  };
 }
 
 export class FoodAliasCache {
@@ -30,15 +36,40 @@ export class FoodAliasCache {
     if (this.cache) return;
 
     const rows = await this.prisma.foodAlias.findMany({
-      select: { alias: true, canonicalName: true, usdaFdcId: true },
+      select: {
+        alias: true,
+        canonicalName: true,
+        usdaFdcId: true,
+        per100gKcal: true,
+        per100gProtein: true,
+        per100gCarbs: true,
+        per100gFat: true,
+      },
     });
 
     this.cache = new Map();
     for (const row of rows) {
-      this.cache.set(row.alias.toLowerCase(), {
+      const entry: AliasEntry = {
         canonicalName: row.canonicalName,
         fdcId: row.usdaFdcId ?? undefined,
-      });
+      };
+
+      // Include pre-computed per100g nutrition if all four fields are present
+      if (
+        row.per100gKcal !== null &&
+        row.per100gProtein !== null &&
+        row.per100gCarbs !== null &&
+        row.per100gFat !== null
+      ) {
+        entry.per100g = {
+          kcal: row.per100gKcal,
+          proteinG: row.per100gProtein,
+          carbsG: row.per100gCarbs,
+          fatG: row.per100gFat,
+        };
+      }
+
+      this.cache.set(row.alias.toLowerCase(), entry);
     }
 
     engineLogger.info(`[FoodAliasCache] Loaded ${this.cache.size} aliases`);

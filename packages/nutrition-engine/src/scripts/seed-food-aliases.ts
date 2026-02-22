@@ -653,6 +653,7 @@ async function main() {
     console.warn(`Seeding ${Object.keys(INGREDIENT_NAME_MAP).length} food aliases...`);
 
     let resolved = 0;
+    let resolvedWithNutrition = 0;
     let unresolved = 0;
 
     for (const [alias, canonicalName] of Object.entries(INGREDIENT_NAME_MAP)) {
@@ -667,6 +668,31 @@ async function main() {
 
       const fdcId = rows.length > 0 ? rows[0].fdcId : null;
 
+      // Extract per100g nutrition from UsdaFood nutrients JSON if we have an fdcId
+      let per100gKcal: number | null = null;
+      let per100gProtein: number | null = null;
+      let per100gCarbs: number | null = null;
+      let per100gFat: number | null = null;
+
+      if (fdcId) {
+        try {
+          const usdaFood = await prisma.usdaFood.findUnique({
+            where: { fdcId },
+            select: { nutrients: true },
+          });
+          if (usdaFood?.nutrients && typeof usdaFood.nutrients === 'object') {
+            const nutrients = usdaFood.nutrients as Record<string, number>;
+            // Nutrient numbers: 203=protein, 204=fat, 205=carbs, 208=energy(kcal)
+            per100gKcal = nutrients['208'] ?? null;
+            per100gProtein = nutrients['203'] ?? null;
+            per100gCarbs = nutrients['205'] ?? null;
+            per100gFat = nutrients['204'] ?? null;
+          }
+        } catch {
+          // Failed to extract nutrition — leave per100g fields null
+        }
+      }
+
       await prisma.foodAlias.upsert({
         where: { alias },
         create: {
@@ -674,22 +700,35 @@ async function main() {
           canonicalName,
           usdaFdcId: fdcId,
           priority: 0,
+          per100gKcal,
+          per100gProtein,
+          per100gCarbs,
+          per100gFat,
         },
         update: {
           canonicalName,
           usdaFdcId: fdcId,
+          per100gKcal,
+          per100gProtein,
+          per100gCarbs,
+          per100gFat,
         },
       });
 
       if (fdcId) {
         resolved++;
+        if (per100gKcal !== null) {
+          resolvedWithNutrition++;
+        }
       } else {
         unresolved++;
         console.warn(`  [MISS] "${alias}" → "${canonicalName}" (no fdcId found)`);
       }
     }
 
-    console.warn(`\nDone! ${resolved} resolved with fdcId, ${unresolved} without.`);
+    console.warn(
+      `\nDone! ${resolved} resolved with fdcId (${resolvedWithNutrition} with per100g nutrition), ${unresolved} without.`
+    );
   } finally {
     await prisma.$disconnect();
   }
