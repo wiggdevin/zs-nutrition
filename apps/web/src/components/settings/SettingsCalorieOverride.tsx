@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { trpc } from '@/lib/trpc';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
@@ -26,6 +27,7 @@ interface ProfileData {
 }
 
 export default function SettingsCalorieOverride() {
+  const router = useRouter();
   const utils = trpc.useUtils();
   const [profile, setProfile] = useState<ProfileData | null>(null);
   const [loading, setLoading] = useState(true);
@@ -50,17 +52,19 @@ export default function SettingsCalorieOverride() {
   const applyMutation = trpc.adaptiveNutrition.applyCalorieAdjustment.useMutation({
     onSuccess: (result) => {
       setShowConfirm(false);
-      if (result.planRegenerated) {
-        toast.success('Target updated! New plan is being generated.');
-      } else {
-        toast.success('Target updated! Go to Dashboard to generate a new plan.');
-      }
       // Update local state
       if (profile) {
         setProfile({ ...profile, goalKcal: Number(customKcal) });
       }
       // Invalidate daily targets so all pages update
       utils.user.getDailyTargets.invalidate();
+
+      if (result.planRegenerated && result.regenerationJobId) {
+        toast.success('Target updated! Generating your new plan...');
+        router.push(`/generate?jobId=${result.regenerationJobId}`);
+      } else {
+        toast.success('Target updated! Go to Dashboard to generate a new plan.');
+      }
     },
     onError: (err) => {
       setShowConfirm(false);

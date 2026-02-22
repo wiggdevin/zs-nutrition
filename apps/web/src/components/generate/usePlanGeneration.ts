@@ -179,10 +179,24 @@ export function usePlanGeneration() {
     [startPolling]
   );
 
+  // Resume polling for an existing job when navigated with ?jobId=xxx (e.g. from Settings)
+  useEffect(() => {
+    const incomingJobId = searchParams.get('jobId');
+    if (incomingJobId && status === 'idle' && !autoTriggered.current && !isSubmitting.current) {
+      autoTriggered.current = true;
+      isSubmitting.current = true;
+      setJobId(incomingJobId);
+      localStorage.setItem('zsn_plan_job_id', incomingJobId);
+      setStatus('enqueued');
+      startPolling(incomingJobId);
+    }
+  }, [status, searchParams, startPolling]);
+
   // Auto-start plan generation when redirected from onboarding with ?auto=true
   useEffect(() => {
     if (
       searchParams.get('auto') === 'true' &&
+      !searchParams.get('jobId') &&
       hasProfile &&
       status === 'idle' &&
       !autoTriggered.current &&
