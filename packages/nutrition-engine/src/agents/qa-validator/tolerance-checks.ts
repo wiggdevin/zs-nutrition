@@ -131,7 +131,10 @@ export function computeMacroVariances(
  * Score is based on how close each day is to its target kcal.
  * Perfect adherence = 100, each % of variance costs points.
  */
-export function calculateQAScore(days: CompiledDay[]): number {
+export function calculateQAScore(
+  days: CompiledDay[],
+  complianceViolationCount: number = 0
+): number {
   if (days.length === 0) {
     return 100;
   }
@@ -146,7 +149,9 @@ export function calculateQAScore(days: CompiledDay[]): number {
     totalScore += dayScore;
   }
 
-  return Math.round(totalScore / days.length);
+  let score = Math.round(totalScore / days.length);
+  score = Math.max(0, score - complianceViolationCount * 15);
+  return score;
 }
 
 /**

@@ -10,6 +10,7 @@ import { FatSecretAdapter } from './adapters/fatsecret';
 import { USDAAdapter } from './adapters/usda';
 import { assertPipelineConfig } from './config/env-validation';
 import { sanitizeError } from './utils/error-sanitizer';
+import { engineLogger } from './utils/logger';
 
 export interface PipelineConfig {
   anthropicApiKey: string;
@@ -171,10 +172,29 @@ export class NutritionPipelineOrchestrator {
 
       timings['recipeCurator'] = Date.now() - start;
 
+      // Pre-compilation compliance gate: scan draft for allergen/dietary violations
+      const { scanDraftForViolations } = await import('./utils/draft-compliance-gate');
+      const draftViolations = scanDraftForViolations(draft, clientIntake);
+      let finalDraft = draft;
+
+      if (draftViolations.length > 0) {
+        engineLogger.info(
+          `[Pipeline] Compliance gate found ${draftViolations.length} violations, triggering re-generation`
+        );
+        await emit(3, 'Recipe Curator', 'Fixing compliance violations...');
+        finalDraft = await this.recipeCurator.regenerateViolatingMeals(
+          draft,
+          draftViolations,
+          metabolicProfile,
+          clientIntake,
+          2
+        );
+      }
+
       // Agent 4: Nutrition Compiler (FatSecret verification)
       await emit(4, 'Nutrition Compiler', 'Verifying nutrition data via FatSecret...');
       start = Date.now();
-      const compiled = await this.nutritionCompiler.compile(draft, (sub) => {
+      const compiled = await this.nutritionCompiler.compile(finalDraft, clientIntake, (sub) => {
         emit(4, 'Nutrition Compiler', 'Verifying nutrition data via FatSecret...', sub);
       });
       timings['nutritionCompiler'] = Date.now() - start;
@@ -186,7 +206,7 @@ export class NutritionPipelineOrchestrator {
       // Agent 5: QA Validator
       await emit(5, 'QA Validator', 'Running quality assurance checks...');
       start = Date.now();
-      const validated = await this.qaValidator.validate(compiled);
+      const validated = await this.qaValidator.validate(compiled, clientIntake);
       timings['qaValidator'] = Date.now() - start;
 
       // Enrich validated plan with calculation metadata for templates (P4-T08)
@@ -244,7 +264,7 @@ export class NutritionPipelineOrchestrator {
       return {
         success: true,
         plan: validated,
-        draft,
+        draft: finalDraft,
         deliverables: { summaryHtml, gridHtml, groceryHtml, pdfBuffer },
       };
     } catch (error) {
@@ -325,15 +345,19 @@ export class NutritionPipelineOrchestrator {
       // Stage 2: Skip Agent 3, re-compile with updated targets
       await emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...');
       start = Date.now();
-      const compiled = await this.nutritionCompiler.compile(input.existingDraft, (sub) => {
-        emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...', sub);
-      });
+      const compiled = await this.nutritionCompiler.compile(
+        input.existingDraft,
+        clientIntake,
+        (sub) => {
+          emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...', sub);
+        }
+      );
       timings['nutritionCompiler'] = Date.now() - start;
 
       // Stage 3: QA + Rendering
       await emit(5, 'QA Validator', 'Running quality assurance checks...');
       start = Date.now();
-      const validated = await this.qaValidator.validate(compiled);
+      const validated = await this.qaValidator.validate(compiled, clientIntake);
       timings['qaValidator'] = Date.now() - start;
 
       await emit(6, 'Brand Renderer', 'Generating your meal plan deliverables...');
