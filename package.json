@@ -1,8 +1,13 @@
 {
   "name": "zero-sum-nutrition",
   "private": true,
+  "dependencies": {
+    "next": "^15.3.3",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0"
+  },
   "scripts": {
-    "dev": "turbo run dev",
+    "dev": "next dev --turbopack",
     "dev:web": "pnpm --filter @zsn/web dev",
     "dev:worker": "pnpm --filter @zsn/queue-processor dev",
     "build": "turbo run build",
