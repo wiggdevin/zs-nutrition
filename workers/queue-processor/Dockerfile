@@ -27,12 +27,14 @@ WORKDIR /app
 COPY pnpm-lock.yaml pnpm-workspace.yaml package.json turbo.json tsconfig.json ./
 
 # Copy package.json files for all workspace packages needed by the worker
+# Include apps/web so pnpm installs the prisma CLI (needed for prisma generate)
 COPY packages/nutrition-engine/package.json packages/nutrition-engine/
 COPY packages/shared-types/package.json packages/shared-types/
 COPY packages/queue-config/package.json packages/queue-config/
 COPY workers/queue-processor/package.json workers/queue-processor/
+COPY apps/web/package.json apps/web/
 
-# Install dependencies
+# Install dependencies (frozen lockfile — all packages already in lockfile)
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
@@ -41,13 +43,9 @@ COPY packages/shared-types/ packages/shared-types/
 COPY packages/queue-config/ packages/queue-config/
 COPY workers/queue-processor/ workers/queue-processor/
 
-# Generate Prisma client
-# Prisma v6 auto-install of devDependencies fails in Docker (pnpm frozen lockfile),
-# but generate itself completes before that step — ignore the exit code, then verify.
+# Copy Prisma schema and generate the client via apps/web's prisma dep
 COPY apps/web/prisma/ apps/web/prisma/
-RUN npm install -g prisma@6.19.2 \
-    && (prisma generate --schema=./apps/web/prisma/schema.prisma || true) \
-    && node -e "require('@prisma/client'); console.log('✅ Prisma client generated successfully')"
+RUN pnpm --filter @zsn/web exec prisma generate
 
 # Build the queue-processor and its dependencies
 RUN pnpm turbo run build --filter=@zsn/queue-processor
