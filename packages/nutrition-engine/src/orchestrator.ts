@@ -189,11 +189,14 @@ export class NutritionPipelineOrchestrator {
           }),
 
         // CacheWarmer: fire-and-forget, runs during Claude wait
+        // Prefer local adapter when available to avoid live API calls
         this.cacheWarmer
           .warm(
             clientIntake.dietaryStyle,
             clientIntake.allergies,
-            (query) => this.usdaAdapter.searchFoods(query, 5).then(() => undefined),
+            this.localUsdaAdapter
+              ? (query) => this.localUsdaAdapter!.searchFoods(query, 5).then(() => undefined)
+              : (query) => this.usdaAdapter.searchFoods(query, 5).then(() => undefined),
             { signal: cacheWarmAbort.signal, concurrency: 3 }
           )
           .catch(() => {

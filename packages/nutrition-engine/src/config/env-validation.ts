@@ -16,6 +16,8 @@ export interface PipelineEnvConfig {
   usdaApiKey: string;
   fatsecretClientId?: string;
   fatsecretClientSecret?: string;
+  /** When present, local DB mode is active and live USDA API is not required. */
+  prismaClient?: object;
 }
 
 export interface ValidationResult {
@@ -41,9 +43,13 @@ export function validatePipelineConfig(config: PipelineEnvConfig): ValidationRes
     warnings.push('ANTHROPIC_API_KEY does not start with expected prefix "sk-ant-"');
   }
 
-  // -- USDA (required — primary nutrition source) ------------------------------
+  // -- USDA (required when no local DB; optional in local-DB mode) ------------
   if (!config.usdaApiKey) {
-    errors.push('USDA_API_KEY is missing');
+    if (config.prismaClient) {
+      warnings.push('USDA_API_KEY not set — live USDA API disabled (local DB mode active)');
+    } else {
+      errors.push('USDA_API_KEY is required when no local database is configured');
+    }
   }
 
   // -- FatSecret (optional — fallback nutrition source) -----------------------

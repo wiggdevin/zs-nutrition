@@ -226,6 +226,12 @@ function validateEnvVars() {
   const env = workerEnv();
 
   // Additional runtime warnings
+  if (!env.DATABASE_URL) {
+    console.warn(
+      '⚠️  DATABASE_URL not set — LocalUSDAAdapter disabled. All food lookups will hit live USDA API.'
+    );
+  }
+
   if (env.REDIS_URL && !env.REDIS_URL.startsWith('rediss://')) {
     console.warn('⚠️  REDIS_URL does not use TLS (rediss://). Upstash requires TLS.');
   }

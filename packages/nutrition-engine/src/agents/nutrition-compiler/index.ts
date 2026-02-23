@@ -939,28 +939,30 @@ export class NutritionCompiler {
                 );
               }
 
-              // USDA live API (parallel with LocalUSDA)
-              lookups.push(
-                this.tryIngredientFromSource(
-                  (q, max) => this.usdaAdapter.searchFoods(q, max),
-                  (id) => this.usdaAdapter.getFood(id),
-                  searchName,
-                  ing.name,
-                  gramsNeeded,
-                  dailyTargetKcal,
-                  clientIntake,
-                  'USDA',
-                  'usda'
-                )
-                  .then((r) => (r ? { ...r, source: 'usda-api' as const } : null))
-                  .catch((err) => {
-                    engineLogger.warn(
-                      `[NutritionCompiler] USDA lookup failed for ingredient "${searchName}":`,
-                      err instanceof Error ? err.message : err
-                    );
-                    return null;
-                  })
-              );
+              // USDA live API (only when no local DB available)
+              if (!this.localUsdaAdapter) {
+                lookups.push(
+                  this.tryIngredientFromSource(
+                    (q, max) => this.usdaAdapter.searchFoods(q, max),
+                    (id) => this.usdaAdapter.getFood(id),
+                    searchName,
+                    ing.name,
+                    gramsNeeded,
+                    dailyTargetKcal,
+                    clientIntake,
+                    'USDA',
+                    'usda'
+                  )
+                    .then((r) => (r ? { ...r, source: 'usda-api' as const } : null))
+                    .catch((err) => {
+                      engineLogger.warn(
+                        `[NutritionCompiler] USDA lookup failed for ingredient "${searchName}":`,
+                        err instanceof Error ? err.message : err
+                      );
+                      return null;
+                    })
+                );
+              }
 
               const settled = await Promise.allSettled(lookups);
               const resolvedResults = settled
@@ -979,8 +981,8 @@ export class NutritionCompiler {
               if (bestHit) return cacheAndReturn(bestHit);
             }
 
-            // --- FatSecret fallback ---
-            if (this.fatSecretAdapter) {
+            // --- FatSecret fallback (only when no local DB available) ---
+            if (!this.localUsdaAdapter && this.fatSecretAdapter) {
               try {
                 const fsRef = this.fatSecretAdapter;
                 const fsResult = await this.tryIngredientFromSource(
@@ -1177,11 +1179,16 @@ export class NutritionCompiler {
           }
         }
       } catch {
-        // LocalUSDA lookup failed, try USDA API
+        // LocalUSDA lookup failed — do not fall through to live API
+        engineLogger.warn(
+          `[NutritionCompiler] LocalUSDA getFood miss for fdcId=${fdcId} ("${ingName}"), returning null`
+        );
+        return null;
       }
     }
 
-    // Try USDA live API (direct getFood by fdcId)
+    // Try USDA live API (direct getFood by fdcId) — only when no local DB
+    if (this.localUsdaAdapter) return null;
     try {
       const food = await this.usdaAdapter.getFood(fdcIdStr);
       const bestServing = this.selectBestServingForGrams(food.servings, gramsNeeded, food.name);
@@ -1315,8 +1322,8 @@ export class NutritionCompiler {
           }
         }
 
-        // --- USDA live API fallback ---
-        if (!verified) {
+        // --- USDA live API fallback (only when no local DB available) ---
+        if (!verified && !this.localUsdaAdapter) {
           const usdaResult = await this.tryVerifyFromFoodDB(
             (q, max) => this.usdaAdapter.searchFoods(q, max),
             (id) => this.usdaAdapter.getFood(id),
@@ -1333,8 +1340,8 @@ export class NutritionCompiler {
           }
         }
 
-        // --- FatSecret fallback for Strategy 2 ---
-        if (!verified && this.fatSecretAdapter) {
+        // --- FatSecret fallback for Strategy 2 (only when no local DB available) ---
+        if (!verified && !this.localUsdaAdapter && this.fatSecretAdapter) {
           try {
             const fatsecretRef = this.fatSecretAdapter;
             const fatsecretResult = await this.tryVerifyFromFoodDB(

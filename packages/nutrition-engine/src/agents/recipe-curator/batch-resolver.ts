@@ -204,8 +204,8 @@ export class BatchIngredientResolver {
       }
     }
 
-    // 3. USDA API search (only if we don't have enough matches yet)
-    if (matches.length < MAX_MATCHES_PER) {
+    // 3. USDA API search — only when no local DB is available
+    if (!this.localUsdaAdapter && matches.length < MAX_MATCHES_PER) {
       // Check timeout before making API call
       if (Date.now() - batchStartTime <= BATCH_TIMEOUT_MS) {
         try {
@@ -226,8 +226,8 @@ export class BatchIngredientResolver {
       }
     }
 
-    // 4. FatSecret search (only if we still don't have enough matches)
-    if (this.fatSecretAdapter && matches.length < MAX_MATCHES_PER) {
+    // 4. FatSecret search — only when no local DB is available
+    if (!this.localUsdaAdapter && this.fatSecretAdapter && matches.length < MAX_MATCHES_PER) {
       if (Date.now() - batchStartTime <= BATCH_TIMEOUT_MS) {
         try {
           const fsResults = await this.fatSecretAdapter.searchFoods(searchName, 5);
@@ -239,6 +239,12 @@ export class BatchIngredientResolver {
           );
         }
       }
+    }
+
+    if (this.localUsdaAdapter && matches.length === 0) {
+      engineLogger.warn(
+        `[BatchResolver] LocalUSDA returned 0 matches for "${name}" — ingredient not in local DB`
+      );
     }
 
     return {
