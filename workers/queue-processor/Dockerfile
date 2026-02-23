@@ -34,7 +34,10 @@ COPY packages/queue-config/package.json packages/queue-config/
 COPY workers/queue-processor/package.json workers/queue-processor/
 COPY apps/web/package.json apps/web/
 
-# Install dependencies (frozen lockfile — all packages already in lockfile)
+# Copy Prisma schema BEFORE install (apps/web postinstall runs prisma generate)
+COPY apps/web/prisma/ apps/web/prisma/
+
+# Install dependencies (frozen lockfile — postinstall generates Prisma client)
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
@@ -42,10 +45,6 @@ COPY packages/nutrition-engine/ packages/nutrition-engine/
 COPY packages/shared-types/ packages/shared-types/
 COPY packages/queue-config/ packages/queue-config/
 COPY workers/queue-processor/ workers/queue-processor/
-
-# Copy Prisma schema and generate the client via apps/web's prisma dep
-COPY apps/web/prisma/ apps/web/prisma/
-RUN pnpm --filter @zsn/web exec prisma generate
 
 # Build the queue-processor and its dependencies
 RUN pnpm turbo run build --filter=@zsn/queue-processor
