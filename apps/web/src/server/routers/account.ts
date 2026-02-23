@@ -65,8 +65,9 @@ export const accountRouter = router({
       const { clerkClient } = await import('@clerk/nextjs/server');
       const clerk = await clerkClient();
       await clerk.users.deleteUser(clerkUserId);
-    } catch {
+    } catch (err) {
       // If Clerk deletion fails, user can re-register and auto-create a fresh DB record
+      console.warn('[account.deleteAccount] Clerk user deletion failed (non-fatal):', err);
     }
 
     return { success: true, message: 'Account permanently deleted.' };

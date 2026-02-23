@@ -264,7 +264,7 @@ export function logSyncError(
   userId: string,
   platform: string,
   error: Error,
-  context?: Record<string, any>
+  context?: Record<string, unknown>
 ): void {
   logger.error('fitness_sync_error', {
     userId,

@@ -31,7 +31,8 @@ const redisFoodCache: ExternalFoodCache = {
   async get(key: string): Promise<string | null> {
     try {
       return await redis.get(key);
-    } catch {
+    } catch (err) {
+      logger.warn('[FoodSearchCache L2] GET failed:', err);
       return null;
     }
   },

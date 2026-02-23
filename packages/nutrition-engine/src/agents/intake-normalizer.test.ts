@@ -386,7 +386,7 @@ describe('IntakeNormalizer', () => {
   describe('Invalid input rejection', () => {
     it('rejects invalid sex through schema validation', () => {
       const input = createBaseRawIntake({
-        sex: 'invalid' as any,
+        sex: 'invalid' as unknown as 'male',
       });
 
       expect(() => normalizer.normalize(input)).toThrow();
@@ -394,7 +394,7 @@ describe('IntakeNormalizer', () => {
 
     it('rejects invalid goal type through schema validation', () => {
       const input = createBaseRawIntake({
-        goalType: 'invalid' as any,
+        goalType: 'invalid' as unknown as 'maintain',
       });
 
       expect(() => normalizer.normalize(input)).toThrow();
@@ -402,7 +402,7 @@ describe('IntakeNormalizer', () => {
 
     it('rejects invalid activity level through schema validation', () => {
       const input = createBaseRawIntake({
-        activityLevel: 'invalid' as any,
+        activityLevel: 'invalid' as unknown as 'moderately_active',
       });
 
       expect(() => normalizer.normalize(input)).toThrow();
@@ -410,7 +410,7 @@ describe('IntakeNormalizer', () => {
 
     it('rejects invalid dietary style through schema validation', () => {
       const input = createBaseRawIntake({
-        dietaryStyle: 'invalid' as any,
+        dietaryStyle: 'invalid' as unknown as 'omnivore',
       });
 
       expect(() => normalizer.normalize(input)).toThrow();

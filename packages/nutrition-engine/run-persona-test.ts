@@ -9,10 +9,11 @@
 
 import { config as dotenvConfig } from 'dotenv';
 import { resolve } from 'path';
-dotenvConfig({ path: resolve(__dirname, '../../.env') });
+dotenvConfig({ path: resolve(__dirname, '../../apps/web/.env') });
 
 import { NutritionPipelineOrchestrator, PipelineConfig } from './src/orchestrator';
 import { RawIntakeForm, PipelineProgress } from './src/types/schemas';
+import { PrismaClient } from '@prisma/client';
 
 // No PDF mock needed — orchestrator already catches renderPdf failures
 // and falls back to Buffer.alloc(0) when Puppeteer/Chrome is unavailable
@@ -121,11 +122,19 @@ async function main() {
   console.log(`  USDA-FIRST Pipeline Test — Persona ${personaId}: ${input.name}`);
   console.log('='.repeat(70));
 
-  // USDA-only mode: no FatSecret fallback, no AI estimate fallback
+  // Local-DB-only mode: use PrismaClient for LocalUSDAAdapter + FoodAliasCache
+  const prisma = process.env.DATABASE_URL ? new PrismaClient() : undefined;
+  if (prisma) {
+    console.log('  LocalUSDA: ENABLED (DATABASE_URL set)');
+  } else {
+    console.log('  LocalUSDA: DISABLED (no DATABASE_URL — will use live APIs)');
+  }
+
   const config: PipelineConfig = {
     anthropicApiKey: process.env.ANTHROPIC_API_KEY || 'YOUR_KEY_placeholder',
-    usdaApiKey: process.env.USDA_API_KEY || 'placeholder-usda-key',
-    // FatSecret intentionally omitted — USDA-only data source
+    usdaApiKey: process.env.USDA_API_KEY || undefined,
+    prismaClient: prisma,
+    // FatSecret intentionally omitted — local DB only
   };
 
   const orchestrator = new NutritionPipelineOrchestrator(config);
@@ -171,15 +180,15 @@ async function main() {
   // --- Daily targets from plan ---
   console.log('\n── Daily Targets ─────────────────────────────────────');
   for (const day of result.plan.days) {
-    const label = (day as any).dayName ?? day.dayLabel ?? '?';
+    const label = day.dayName ?? '?';
     const type = day.isTrainingDay ? 'TRAIN' : 'REST ';
-    const kcal = day.targetKcal ?? (day as any).totalKcal ?? '?';
+    const kcal = day.targetKcal ?? '?';
     console.log(`  ${String(label).padEnd(12)} [${type}] ${kcal} kcal | ${day.meals.length} meals`);
   }
 
   // --- Day 1 meals detail ---
   const day1 = result.plan.days[0];
-  const day1Label = (day1 as any).dayName ?? day1.dayLabel ?? 'Day 1';
+  const day1Label = day1.dayName ?? 'Day 1';
   console.log(`\n── Day 1 Meals (${day1Label}) ───────────────────────────`);
   for (const meal of day1.meals) {
     const kcal = meal.nutrition?.kcal ?? 0;
@@ -205,9 +214,9 @@ async function main() {
   // --- QA day results ---
   console.log('\n── QA Results ────────────────────────────────────────');
   for (const dayQa of result.plan.qa.dayResults) {
-    const dayNum = (dayQa as any).dayNumber ?? '?';
-    const variance = (dayQa as any).variancePercent?.toFixed(1) ?? '?';
-    const mv = (dayQa as any).macroVariances;
+    const dayNum = dayQa.dayNumber ?? '?';
+    const variance = dayQa.variancePercent?.toFixed(1) ?? '?';
+    const mv = dayQa.macroVariances;
     const macros = mv
       ? `P:${mv.proteinPercent?.toFixed(1)}% C:${mv.carbsPercent?.toFixed(1)}% F:${mv.fatPercent?.toFixed(1)}%`
       : '';
@@ -250,6 +259,8 @@ async function main() {
   console.log('\n' + '='.repeat(70));
   console.log('  Test complete.');
   console.log('='.repeat(70));
+
+  if (prisma) await prisma.$disconnect();
 }
 
 main().catch((err) => {

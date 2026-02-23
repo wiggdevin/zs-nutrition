@@ -77,15 +77,15 @@ export function useQuickAdd() {
           lastSubmissionTimestampRef.current = Date.now();
         }
       };
-    } catch {
-      // BroadcastChannel not supported
+    } catch (err) {
+      console.warn('[useQuickAdd] BroadcastChannel not supported in this environment:', err);
     }
 
     return () => {
       try {
         channel?.close();
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.warn('[useQuickAdd] Failed to close BroadcastChannel:', err);
       }
     };
   }, []);
@@ -101,8 +101,8 @@ export function useQuickAdd() {
         const channel = new BroadcastChannel('zsn-quick-add-submissions');
         channel.postMessage({ type: 'quick-add-submitted', mealName: data.trackedMeal.mealName });
         channel.close();
-      } catch {
-        /* BroadcastChannel not supported */
+      } catch (err) {
+        console.warn('[useQuickAdd] BroadcastChannel postMessage failed:', err);
       }
 
       const dupNote = data.duplicate ? ' (duplicate prevented)' : '';
@@ -111,8 +111,8 @@ export function useQuickAdd() {
       );
       try {
         window.history.replaceState({ ...window.history.state, quickAddSubmitted: true }, '');
-      } catch {
-        /* ignore */
+      } catch (err) {
+        console.warn('[useQuickAdd] Failed to update history state:', err);
       }
       setCalories('');
       setProtein('');

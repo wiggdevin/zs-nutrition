@@ -369,9 +369,9 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
           completedAt: new Date(),
         },
       });
-    } catch {
+    } catch (updateErr) {
       // If we can't update the job, just log it
-      logger.error('[savePlanToDatabase] Could not update job status');
+      logger.error('[savePlanToDatabase] Could not update job status:', updateErr);
     }
 
     return { success: false, error: errorMessage };

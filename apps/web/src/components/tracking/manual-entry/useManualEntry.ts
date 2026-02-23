@@ -107,8 +107,8 @@ export function useManualEntry({ onSuccess }: ManualEntryFormProps) {
 
         try {
           window.history.replaceState({ ...window.history.state, manualEntrySubmitted: true }, '');
-        } catch {
-          /* ignore */
+        } catch (err) {
+          console.warn('[useManualEntry] Failed to update history state:', err);
         }
         if (onSuccess) {
           onSuccess(data.trackedMeal);
@@ -116,7 +116,8 @@ export function useManualEntry({ onSuccess }: ManualEntryFormProps) {
         resetForm();
 
         setTimeout(() => setSuccessMessage(null), 3000);
-      } catch {
+      } catch (err) {
+        console.error('[useManualEntry] Network error submitting manual entry:', err);
         setError('Unable to connect. Please check your internet connection and try again.');
         setIsNetworkError(true);
         toast.error('Unable to connect. Please check your internet connection and try again.');

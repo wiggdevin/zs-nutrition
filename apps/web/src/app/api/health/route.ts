@@ -26,7 +26,8 @@ async function checkDatabase(): Promise<boolean> {
   try {
     await prisma.$queryRaw`SELECT 1`;
     return true;
-  } catch {
+  } catch (err) {
+    console.warn('[health] Database check failed:', err);
     return false;
   }
 }
@@ -34,7 +35,8 @@ async function checkDatabase(): Promise<boolean> {
 async function checkRedis(): Promise<boolean> {
   try {
     return await checkRedisHealth();
-  } catch {
+  } catch (err) {
+    console.warn('[health] Redis check failed:', err);
     return false;
   }
 }

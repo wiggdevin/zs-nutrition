@@ -154,8 +154,12 @@ export async function POST(request: NextRequest) {
                 JSON.stringify({ type: 'error', message: 'Stream interrupted' }) + '\n'
               )
             );
-          } catch {
-            // controller may already be closed
+          } catch (enqueueErr) {
+            // Controller may already be closed by client disconnect
+            logger.warn(
+              '[chat/stream] Failed to enqueue error event (stream already closed):',
+              enqueueErr
+            );
           }
           controller.close();
         }

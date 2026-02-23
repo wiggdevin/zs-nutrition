@@ -25,7 +25,8 @@ function getSessionCache(): CachedInsights | null {
       return null;
     }
     return cached;
-  } catch {
+  } catch (err) {
+    console.warn('[InsightsSection] Failed to read session cache:', err);
     return null;
   }
 }
@@ -36,8 +37,11 @@ function setSessionCache(insights: InsightItem[], generatedAt: string) {
       SESSION_CACHE_KEY,
       JSON.stringify({ insights, generatedAt, timestamp: Date.now() })
     );
-  } catch {
-    // Session storage full or unavailable
+  } catch (err) {
+    console.warn(
+      '[InsightsSection] Failed to write session cache (storage full or unavailable):',
+      err
+    );
   }
 }
 
@@ -45,7 +49,8 @@ function getDismissedIds(): Set<string> {
   try {
     const raw = sessionStorage.getItem(SESSION_DISMISSED_KEY);
     return raw ? new Set(JSON.parse(raw)) : new Set();
-  } catch {
+  } catch (err) {
+    console.warn('[InsightsSection] Failed to read dismissed IDs from session storage:', err);
     return new Set();
   }
 }
@@ -55,8 +60,11 @@ function addDismissedId(id: string) {
     const dismissed = getDismissedIds();
     dismissed.add(id);
     sessionStorage.setItem(SESSION_DISMISSED_KEY, JSON.stringify([...dismissed]));
-  } catch {
-    // Session storage full or unavailable
+  } catch (err) {
+    console.warn(
+      '[InsightsSection] Failed to persist dismissed ID (storage full or unavailable):',
+      err
+    );
   }
 }
 
@@ -99,8 +107,8 @@ export function InsightsSection() {
       setDismissedIds(new Set());
       try {
         sessionStorage.removeItem(SESSION_DISMISSED_KEY);
-      } catch {
-        // ignore
+      } catch (err) {
+        console.warn('[InsightsSection] Failed to clear dismissed IDs from session storage:', err);
       }
     },
   });
@@ -128,7 +136,11 @@ export function InsightsSection() {
   const visibleInsights = insights.filter((i) => !dismissedIds.has(i.id));
 
   if (error && !sessionCache) {
-    return null; // Silently fail — insights are supplementary
+    return (
+      <div className="p-4 rounded border border-border bg-muted text-sm text-muted-foreground">
+        Failed to load insights. Try refreshing the page.
+      </div>
+    );
   }
 
   if (isLoading && !sessionCache) {

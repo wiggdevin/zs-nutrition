@@ -45,8 +45,8 @@ export default function ChatPage() {
         sid
       );
       setShowHistory(false);
-    } catch {
-      // ignore
+    } catch (err) {
+      console.error('[ChatPage] Failed to load session messages:', err);
     }
   };
 

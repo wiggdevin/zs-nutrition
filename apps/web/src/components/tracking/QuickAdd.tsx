@@ -86,7 +86,8 @@ export default function QuickAdd() {
         setCarbs('');
         setFat('');
         setLabel('');
-      } catch {
+      } catch (err) {
+        console.error('[QuickAdd] Network error submitting quick add entry:', err);
         setError('Unable to connect. Please check your internet connection and try again.');
         setIsNetworkError(true);
         toast.error('Unable to connect. Please check your internet connection and try again.');

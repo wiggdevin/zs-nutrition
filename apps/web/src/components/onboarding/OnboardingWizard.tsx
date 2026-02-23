@@ -98,8 +98,11 @@ export function OnboardingWizard() {
             setCurrentStep(step);
           }
         }
-      } catch {
-        // Ignore parse errors
+      } catch (err) {
+        console.warn(
+          '[OnboardingWizard] Failed to parse saved onboarding state from localStorage:',
+          err
+        );
       }
 
       setIsHydrated(true);

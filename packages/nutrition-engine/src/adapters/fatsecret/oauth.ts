@@ -121,7 +121,7 @@ export async function apiRequest(
   oauth: OAuthManager,
   method: string,
   params: Record<string, string>
-): Promise<any> {
+): Promise<unknown> {
   const token = await oauth.authenticate();
   const url = new URL('https://platform.fatsecret.com/rest/server.api');
   url.searchParams.set('method', method);

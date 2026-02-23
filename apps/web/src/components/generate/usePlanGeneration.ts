@@ -139,8 +139,8 @@ export function usePlanGeneration() {
             eventSource.close();
             eventSourceRef.current = null;
           }
-        } catch {
-          // Ignore parse errors
+        } catch (err) {
+          logger.warn('[usePlanGeneration] Skipping malformed SSE chunk:', err);
         }
       };
 

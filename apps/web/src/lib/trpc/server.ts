@@ -8,8 +8,9 @@ export const createTRPCContext = async () => {
   try {
     const authResult = await auth();
     clerkUserId = authResult.userId;
-  } catch {
-    // Auth not available (e.g. during build)
+  } catch (err) {
+    // Auth not available (e.g. during build or in edge environments)
+    console.warn('[tRPC/server] Clerk auth() unavailable, proceeding as unauthenticated:', err);
   }
   return { prisma, clerkUserId };
 };

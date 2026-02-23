@@ -13,3 +13,4 @@ export interface RepairStrategy {
 }
 
 export { proteinBoost } from './protein-boost';
+export { macroRebalancing } from './macro-rebalancing';

@@ -27,7 +27,8 @@ export default function SettingsAccountConsolidated() {
         await fetch('/api/dev-auth/signout', { method: 'POST' });
         window.location.href = '/sign-in';
       }
-    } catch {
+    } catch (err) {
+      console.error('[SettingsAccount] Sign out failed:', err);
       setSigningOut(false);
     }
   }
@@ -43,7 +44,8 @@ export default function SettingsAccountConsolidated() {
         await fetch('/api/dev-auth/signout', { method: 'POST' });
         window.location.href = '/sign-in';
       }
-    } catch {
+    } catch (err) {
+      console.error('[SettingsAccount] Account deactivation failed:', err);
       setDeactivating(false);
     }
   }
@@ -58,8 +60,9 @@ export default function SettingsAccountConsolidated() {
         await fetch('/api/dev-auth/signout', { method: 'POST' });
         window.location.href = '/sign-in';
       }
-    } catch {
-      // mutation error state handles UI feedback
+    } catch (err) {
+      // tRPC mutation error state handles UI feedback via deleteAccountMutation.isError
+      console.error('[SettingsAccount] Account deletion failed:', err);
     }
   }
 

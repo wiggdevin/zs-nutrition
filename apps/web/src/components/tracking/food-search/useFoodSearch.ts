@@ -188,8 +188,8 @@ export function useFoodSearch() {
         lastLogTimestampRef.current = Date.now();
         try {
           window.history.replaceState({ ...window.history.state, foodSearchSubmitted: true }, '');
-        } catch {
-          /* ignore */
+        } catch (err) {
+          console.warn('[useFoodSearch] Failed to update history state:', err);
         }
         setTimeout(() => {
           setSelectedFood(null);
@@ -204,7 +204,8 @@ export function useFoodSearch() {
         setLogError(data.error || 'Failed to log food');
         setIsLogNetworkError(false);
       }
-    } catch {
+    } catch (err) {
+      logger.error('[useFoodSearch] Network error logging food:', err);
       setLogError('Unable to connect. Please check your internet connection and try again.');
       setIsLogNetworkError(true);
     } finally {

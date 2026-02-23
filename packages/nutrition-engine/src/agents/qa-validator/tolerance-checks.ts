@@ -100,7 +100,7 @@ export function findViolations(days: CompiledDay[], macroStyle?: string): Violat
       const fatVar = tF > 0 ? Math.abs(aF - tF) / tF : 0;
 
       // Check each macro against its individual tolerance (scaled by confidence)
-      const offendingMacros: Array<'protein' | 'carbs' | 'fat'> = [];
+      const offendingMacros: Array<'protein' | 'carbs' | 'fat' | 'carbs_keto_cap'> = [];
       if (proteinVar > PROTEIN_TOLERANCE * confMultiplier) offendingMacros.push('protein');
       if (carbsVar > CARBS_TOLERANCE * confMultiplier) offendingMacros.push('carbs');
       if (fatVar > FAT_TOLERANCE * confMultiplier) offendingMacros.push('fat');

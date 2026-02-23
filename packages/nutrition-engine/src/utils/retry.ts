@@ -8,6 +8,16 @@ export interface RetryOptions {
 
 const NON_RETRYABLE_STATUS_CODES = [400, 401, 403, 404];
 
+/** Extract a numeric HTTP status code from an unknown error object. */
+function getStatusCode(error: unknown): number | undefined {
+  if (error !== null && typeof error === 'object') {
+    const err = error as Record<string, unknown>;
+    const code = err['status'] ?? err['statusCode'];
+    if (typeof code === 'number') return code;
+  }
+  return undefined;
+}
+
 export async function withRetry<T>(
   fn: () => Promise<T>,
   options: RetryOptions = { maxRetries: 3, baseDelay: 1000, maxDelay: 10000 }
@@ -17,11 +27,11 @@ export async function withRetry<T>(
   for (let attempt = 0; attempt <= options.maxRetries; attempt++) {
     try {
       return await fn();
-    } catch (error: any) {
-      lastError = error;
+    } catch (error: unknown) {
+      lastError = error as Error;
 
-      const statusCode = error?.status || error?.statusCode;
-      if (NON_RETRYABLE_STATUS_CODES.includes(statusCode)) {
+      const statusCode = getStatusCode(error);
+      if (statusCode !== undefined && NON_RETRYABLE_STATUS_CODES.includes(statusCode)) {
         throw error;
       }
 
@@ -34,9 +44,10 @@ export async function withRetry<T>(
         options.maxDelay
       );
 
+      const message = error instanceof Error ? error.message : String(error);
       engineLogger.warn(
         `[Retry] Attempt ${attempt + 1}/${options.maxRetries} failed, ` +
-          `retrying in ${Math.round(delay)}ms: ${error.message}`
+          `retrying in ${Math.round(delay)}ms: ${message}`
       );
 
       await new Promise((resolve) => setTimeout(resolve, delay));

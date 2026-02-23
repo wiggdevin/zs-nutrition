@@ -8,6 +8,50 @@ import { fatSecretCircuitBreaker } from './circuit-breaker';
 import { LocalFoodDatabase } from './local-fallback';
 import type { FoodDetails, RecipeDetails, FatSecretFoodResponse, FatSecretServing } from './types';
 
+/** Raw ingredient entry from the FatSecret recipe.get.v2 API response */
+interface FatSecretRecipeIngredient {
+  food_id?: string | number;
+  food_name?: string;
+  ingredient_description?: string;
+  number_of_units?: string | number;
+  measurement_description?: string;
+}
+
+/** Raw direction entry from the FatSecret recipe.get.v2 API response */
+interface FatSecretRecipeDirection {
+  direction_number?: string | number;
+  direction_description?: string;
+}
+
+/** Raw serving size entry from the FatSecret recipe.get.v2 API response */
+interface FatSecretRecipeServing {
+  calories?: string | number;
+  protein?: string | number;
+  carbohydrate?: string | number;
+  fat?: string | number;
+  fiber?: string | number;
+}
+
+/** Recipe detail response from FatSecret API */
+interface FatSecretRecipeResponse {
+  recipe?: {
+    recipe_id?: string | number;
+    recipe_name?: string;
+    recipe_description?: string;
+    preparation_time_min?: string | number;
+    cooking_time_min?: string | number;
+    number_of_servings?: string | number;
+    ingredients?: { ingredient?: FatSecretRecipeIngredient | FatSecretRecipeIngredient[] };
+    directions?: { direction?: FatSecretRecipeDirection | FatSecretRecipeDirection[] };
+    serving_sizes?: { serving?: FatSecretRecipeServing };
+  };
+}
+
+/** Barcode lookup response from FatSecret API */
+interface FatSecretBarcodeResponse {
+  food_id?: { value?: string };
+}
+
 export async function getFood(
   oauth: OAuthManager,
   cache: FatSecretCache,
@@ -74,9 +118,9 @@ export async function getFoodByBarcode(
   }
 
   try {
-    const data = await fatSecretCircuitBreaker.execute(() =>
+    const data = (await fatSecretCircuitBreaker.execute(() =>
       apiRequest(oauth, 'food.find_id_for_barcode', { barcode })
-    );
+    )) as FatSecretBarcodeResponse;
     const foodId = data?.food_id?.value;
     if (!foodId) {
       return null;
@@ -103,29 +147,43 @@ export async function getRecipe(
     return cached;
   }
 
-  const data = await fatSecretCircuitBreaker.execute(() =>
+  const data = (await fatSecretCircuitBreaker.execute(() =>
     apiRequest(oauth, 'recipe.get.v2', { recipe_id: recipeId })
-  );
+  )) as FatSecretRecipeResponse;
   const r = data?.recipe;
   if (!r) {
     throw new Error(`Recipe ${recipeId} not found`);
   }
 
+  const ingredientData = r.ingredients?.ingredient;
+  const ingredientsArray = Array.isArray(ingredientData)
+    ? ingredientData
+    : ingredientData
+      ? [ingredientData]
+      : [];
+
+  const directionData = r.directions?.direction;
+  const directionsArray = Array.isArray(directionData)
+    ? directionData
+    : directionData
+      ? [directionData]
+      : [];
+
   const result: RecipeDetails = {
     recipeId: String(r.recipe_id),
-    name: r.recipe_name,
+    name: r.recipe_name ?? '',
     description: r.recipe_description || '',
     preparationTimeMin: r.preparation_time_min ? Number(r.preparation_time_min) : undefined,
     cookingTimeMin: r.cooking_time_min ? Number(r.cooking_time_min) : undefined,
     servingSize: Number(r.number_of_servings) || 1,
-    ingredients: (r.ingredients?.ingredient || []).map((i: any) => ({
+    ingredients: ingredientsArray.map((i: FatSecretRecipeIngredient) => ({
       foodId: i.food_id ? String(i.food_id) : undefined,
       name: i.ingredient_description || i.food_name || '',
       amount: i.number_of_units
         ? `${i.number_of_units} ${i.measurement_description || ''}`.trim()
         : '',
     })),
-    directions: (r.directions?.direction || []).map((d: any) => ({
+    directions: directionsArray.map((d: FatSecretRecipeDirection) => ({
       stepNumber: Number(d.direction_number) || 0,
       description: d.direction_description || '',
     })),

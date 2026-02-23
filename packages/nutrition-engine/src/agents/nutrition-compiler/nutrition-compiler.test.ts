@@ -17,6 +17,10 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { NutritionCompiler, kcalFromMacros } from './index';
 import type { FoodDetails, FoodServing, FoodSearchResult } from '../../adapters/food-data-types';
 import type { MealPlanDraft, DraftMeal, ClientIntake } from '../../types/schemas';
+import type { USDAAdapter } from '../../adapters/usda';
+import type { FatSecretAdapter } from '../../adapters/fatsecret';
+import type { LocalUSDAAdapter } from '../../adapters/usda-local';
+import type { FoodAliasCache } from '../../data/food-alias-cache';
 
 // ── Mock the logger to suppress output during tests ──
 vi.mock('../../utils/logger', () => ({
@@ -49,7 +53,7 @@ import { isProductCompliant } from '../../utils/dietary-compliance';
 
 // ── Mock FoodAliasCache ──
 
-function createMockAliasCache(): { get: (alias: string) => any; isLoaded: boolean; size: number } {
+function createMockAliasCache(): Pick<FoodAliasCache, 'get' | 'isLoaded' | 'size'> {
   const aliases = new Map<string, { canonicalName: string; fdcId?: number }>([
     ['eggs', { canonicalName: 'egg whole raw' }],
     ['egg', { canonicalName: 'egg whole raw' }],
@@ -171,10 +175,10 @@ describe('NutritionCompiler', () => {
     mockFatSecret = createMockAdapter();
     mockLocalUsda = createMockAdapter();
     compiler = new NutritionCompiler(
-      mockUsda as any,
-      mockFatSecret as any,
-      mockLocalUsda as any,
-      createMockAliasCache() as any
+      mockUsda as unknown as USDAAdapter,
+      mockFatSecret as unknown as FatSecretAdapter,
+      mockLocalUsda as unknown as LocalUSDAAdapter,
+      createMockAliasCache() as unknown as FoodAliasCache
     );
   });
 
@@ -1324,7 +1328,11 @@ describe('NutritionCompiler', () => {
   // ──────────────────────────────────────────────────────────
   describe('Compiler without optional adapters', () => {
     it('works without FatSecret adapter', async () => {
-      const compilerNoFS = new NutritionCompiler(mockUsda as any, undefined, mockLocalUsda as any);
+      const compilerNoFS = new NutritionCompiler(
+        mockUsda as unknown as USDAAdapter,
+        undefined,
+        mockLocalUsda as unknown as LocalUSDAAdapter
+      );
 
       mockLocalUsda.searchFoods.mockResolvedValue([]);
       mockUsda.searchFoods.mockResolvedValue([]);
@@ -1341,8 +1349,8 @@ describe('NutritionCompiler', () => {
 
     it('works without LocalUSDA adapter', async () => {
       const compilerNoLocal = new NutritionCompiler(
-        mockUsda as any,
-        mockFatSecret as any,
+        mockUsda as unknown as USDAAdapter,
+        mockFatSecret as unknown as FatSecretAdapter,
         undefined
       );
 
@@ -1360,7 +1368,7 @@ describe('NutritionCompiler', () => {
     });
 
     it('works with only USDA adapter', async () => {
-      const compilerMinimal = new NutritionCompiler(mockUsda as any);
+      const compilerMinimal = new NutritionCompiler(mockUsda as unknown as USDAAdapter);
 
       mockUsda.searchFoods.mockResolvedValue([]);
 

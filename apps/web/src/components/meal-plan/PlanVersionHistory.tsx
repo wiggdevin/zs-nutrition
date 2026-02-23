@@ -283,7 +283,8 @@ export default function PlanVersionHistory() {
       if (!res.ok) throw new Error('Failed to compute diff');
       const data = await res.json();
       setDiff(data);
-    } catch {
+    } catch (err) {
+      console.error('[PlanVersionHistory] Failed to compare plans:', err);
       setError('Failed to compare plans');
     } finally {
       setDiffLoading(false);

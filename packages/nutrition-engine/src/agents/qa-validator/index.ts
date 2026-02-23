@@ -17,6 +17,7 @@ import {
   calculateQAScore,
   calculateWeeklyTotals,
   confidenceToleranceMultiplier,
+  recalcDailyTotals,
 } from './tolerance-checks';
 import { aggregateGroceryList } from './repair-strategies';
 import type { RepairStrategy } from './strategies/index';
@@ -25,11 +26,13 @@ import { selectiveScaling } from './strategies/selective-scaling';
 import { snackAdjustment } from './strategies/snack-adjustment';
 import { ingredientSubstitution } from './strategies/ingredient-substitution';
 import { proteinBoost } from './strategies/protein-boost';
+import { macroRebalancing } from './strategies/macro-rebalancing';
 import { repairComplianceViolations } from './strategies/compliance-substitution';
 
 /** Ordered cascade of repair strategies. For each violation, strategies are
  *  tried in order until one succeeds. */
 const REPAIR_CASCADE: RepairStrategy[] = [
+  macroRebalancing,
   proportionalScaling,
   selectiveScaling,
   snackAdjustment,
@@ -53,7 +56,7 @@ export class QAValidator {
 
     // 2-pass repair: first pass may partially fix, second pass finishes
     for (let pass = 0; pass < 2; pass++) {
-      const violations = findViolations(currentDays);
+      const violations = findViolations(currentDays, clientIntake?.macroStyle);
       if (violations.length === 0) break;
 
       for (const violation of violations) {
@@ -71,6 +74,80 @@ export class QAValidator {
         if (!repaired && pass === 1) {
           adjustmentsMade.push(
             `Day ${currentDays[violation.dayIndex].dayNumber}: No strategy could fix ${violation.type} violation (${violation.variancePercent}%)`
+          );
+        }
+      }
+    }
+
+    // Layer 3B: Keto carb gate — hard-enforce daily carb cap after repair cascade
+    if (clientIntake?.macroStyle === 'keto') {
+      for (let i = 0; i < currentDays.length; i++) {
+        const day = currentDays[i];
+        const carbTarget = day.macroTargets?.carbsG ?? 0;
+        // Cap = target × 1.1 with a floor of 25g
+        const carbCap = Math.max(25, carbTarget * 1.1);
+        const actualCarbs = day.dailyTotals.carbsG;
+
+        if (actualCarbs > carbCap) {
+          // Hard-scale carb-dense ingredients down to bring carbs within cap
+          const carbReductionFactor = carbCap / actualCarbs;
+          const CARB_KEYWORDS = [
+            'rice',
+            'quinoa',
+            'oats',
+            'pasta',
+            'bread',
+            'tortilla',
+            'potato',
+            'sweet potato',
+            'lentil',
+            'chickpea',
+            'bean',
+            'banana',
+            'apple',
+            'corn',
+            'cereal',
+            'granola',
+            'honey',
+            'maple',
+            'sugar',
+          ];
+
+          const scaledMeals = day.meals.map((meal) => ({
+            ...meal,
+            nutrition: {
+              ...meal.nutrition,
+              carbsG: Math.round(meal.nutrition.carbsG * carbReductionFactor * 10) / 10,
+              kcal: Math.round(
+                meal.nutrition.proteinG * 4 +
+                  meal.nutrition.carbsG * carbReductionFactor * 4 +
+                  meal.nutrition.fatG * 9
+              ),
+            },
+            ingredients: meal.ingredients.map((ing) => {
+              const isCarb = CARB_KEYWORDS.some((kw) => ing.name.toLowerCase().includes(kw));
+              if (!isCarb) return ing;
+              return {
+                ...ing,
+                amount: Math.round(ing.amount * carbReductionFactor * 100) / 100,
+              };
+            }),
+          }));
+
+          const newTotals = recalcDailyTotals(scaledMeals);
+          const newVarianceKcal = newTotals.kcal - day.targetKcal;
+          const newVariancePercent =
+            day.targetKcal > 0 ? Math.round((newVarianceKcal / day.targetKcal) * 10000) / 100 : 0;
+
+          currentDays[i] = {
+            ...day,
+            meals: scaledMeals,
+            dailyTotals: newTotals,
+            varianceKcal: Math.round(newVarianceKcal),
+            variancePercent: newVariancePercent,
+          };
+          adjustmentsMade.push(
+            `Day ${day.dayNumber}: [keto-carb-gate] Scaled carbs from ${actualCarbs.toFixed(1)}g to ${newTotals.carbsG.toFixed(1)}g (cap: ${carbCap.toFixed(0)}g)`
           );
         }
       }

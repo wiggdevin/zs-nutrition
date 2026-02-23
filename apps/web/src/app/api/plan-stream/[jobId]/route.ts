@@ -57,8 +57,9 @@ export async function GET(
       const send = (data: Record<string, unknown>) => {
         try {
           controller.enqueue(encoder.encode(formatSSE(data)));
-        } catch {
-          // Stream may be closed
+        } catch (err) {
+          // Stream may already be closed by client disconnect
+          console.warn('[plan-stream] Failed to enqueue SSE event (stream closed):', err);
         }
       };
 
@@ -161,8 +162,9 @@ async function simulateDevPipeline(
           ...(agentNum === 1 ? { startedAt: new Date() } : {}),
         },
       });
-    } catch {
-      // Non-blocking
+    } catch (err) {
+      // Non-blocking: DB progress update failed during dev simulation
+      console.warn(`[plan-stream] Failed to update job progress for agent ${agentNum}:`, err);
     }
 
     await new Promise((resolve) => setTimeout(resolve, 1500));

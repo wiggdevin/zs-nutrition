@@ -74,7 +74,11 @@ export async function GET(request: NextRequest) {
                 }
               : null,
           };
-        } catch {
+        } catch (err) {
+          logger.warn(
+            `[food-search] Failed to enrich food details for "${food.name}" (${food.foodId}):`,
+            err
+          );
           return {
             ...food,
             verified: true,

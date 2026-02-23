@@ -97,8 +97,9 @@ export function useChat() {
               } else if (chunk.type === 'error') {
                 setError(chunk.message);
               }
-            } catch {
-              // skip malformed lines
+            } catch (err) {
+              // Skip malformed SSE lines — partial chunks during streaming
+              console.warn('[useChat] Skipping malformed SSE chunk:', err);
             }
           }
         }

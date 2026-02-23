@@ -14,10 +14,16 @@
 
 import { describe, it, expect } from 'vitest';
 import { QAValidator } from './qa-validator';
-import { MealPlanCompiledSchema, MealPlanValidatedSchema } from '../types/schemas';
+import {
+  MealPlanCompiledSchema,
+  MealPlanValidatedSchema,
+  type CompiledMeal,
+  type CompiledDay,
+  type MealPlanCompiled,
+} from '../types/schemas';
 
 // Helper to create a test meal
-function createTestMeal(overrides: Partial<any> = {}): any {
+function createTestMeal(overrides: Partial<CompiledMeal> = {}): CompiledMeal {
   return {
     slot: 'breakfast',
     name: 'Test Oatmeal',
@@ -45,7 +51,11 @@ function createTestMeal(overrides: Partial<any> = {}): any {
 }
 
 // Helper to create a test day
-function createTestDay(dayNumber: number, targetKcal: number, variancePercent: number): any {
+function createTestDay(
+  dayNumber: number,
+  targetKcal: number,
+  variancePercent: number
+): CompiledDay {
   const actualKcal = Math.round(targetKcal * (1 + variancePercent / 100));
   const varianceKcal = actualKcal - targetKcal;
 
@@ -99,11 +109,17 @@ function createTestDay(dayNumber: number, targetKcal: number, variancePercent: n
 }
 
 // Helper to create a compiled meal plan
-function createCompiledPlan(days: any[]): any {
-  const totalKcal = days.reduce((sum: number, day: any) => sum + day.dailyTotals.kcal, 0);
-  const totalProtein = days.reduce((sum: number, day: any) => sum + day.dailyTotals.proteinG, 0);
-  const totalCarbs = days.reduce((sum: number, day: any) => sum + day.dailyTotals.carbsG, 0);
-  const totalFat = days.reduce((sum: number, day: any) => sum + day.dailyTotals.fatG, 0);
+function createCompiledPlan(days: CompiledDay[]): MealPlanCompiled {
+  const totalKcal = days.reduce((sum: number, day: CompiledDay) => sum + day.dailyTotals.kcal, 0);
+  const totalProtein = days.reduce(
+    (sum: number, day: CompiledDay) => sum + day.dailyTotals.proteinG,
+    0
+  );
+  const totalCarbs = days.reduce(
+    (sum: number, day: CompiledDay) => sum + day.dailyTotals.carbsG,
+    0
+  );
+  const totalFat = days.reduce((sum: number, day: CompiledDay) => sum + day.dailyTotals.fatG, 0);
 
   return {
     days,

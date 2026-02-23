@@ -77,8 +77,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           ? JSON.parse(plan.validatedPlan)
           : plan.validatedPlan;
       validatedPlan = decompressJson(raw);
-    } catch {
-      // empty
+    } catch (err) {
+      logger.error(`[/api/plan/${planId}] Failed to parse validatedPlan:`, err);
     }
 
     let metabolicProfile = null;
@@ -88,8 +88,8 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
           ? JSON.parse(plan.metabolicProfile)
           : plan.metabolicProfile;
       metabolicProfile = decompressJson(raw);
-    } catch {
-      // empty
+    } catch (err) {
+      logger.error(`[/api/plan/${planId}] Failed to parse metabolicProfile:`, err);
     }
 
     return NextResponse.json({

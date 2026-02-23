@@ -67,8 +67,8 @@ export async function GET() {
           ? JSON.parse(activePlan.validatedPlan)
           : activePlan.validatedPlan;
       validatedPlan = decompressJson(raw);
-    } catch {
-      logger.error('Failed to parse validatedPlan');
+    } catch (err) {
+      logger.error('[/api/plan/active] Failed to parse validatedPlan:', err);
     }
 
     let metabolicProfile = null;
@@ -78,8 +78,8 @@ export async function GET() {
           ? JSON.parse(activePlan.metabolicProfile)
           : activePlan.metabolicProfile;
       metabolicProfile = decompressJson(raw);
-    } catch {
-      logger.error('Failed to parse metabolicProfile');
+    } catch (err) {
+      logger.error('[/api/plan/active] Failed to parse metabolicProfile:', err);
     }
 
     return NextResponse.json({

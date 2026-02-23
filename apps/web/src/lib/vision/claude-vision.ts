@@ -168,7 +168,7 @@ export class ClaudeVisionClient {
     });
 
     logger.info(
-      `[Vision] Usage: input=${message.usage?.input_tokens}, output=${message.usage?.output_tokens}, cache_read=${(message.usage as any)?.cache_read_input_tokens ?? 0}`
+      `[Vision] Usage: input=${message.usage?.input_tokens}, output=${message.usage?.output_tokens}, cache_read=${(message.usage as unknown as Record<string, number>)?.cache_read_input_tokens ?? 0}`
     );
 
     // Extract the text response

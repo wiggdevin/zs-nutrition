@@ -64,7 +64,9 @@ export async function checkRedisHealth(): Promise<boolean> {
   try {
     const pong = await redis.ping();
     return pong === 'PONG';
-  } catch {
+  } catch (err) {
+    // Health check failures are expected when Redis is unavailable
+    console.warn('[redis] Health check ping failed:', err);
     return false;
   }
 }

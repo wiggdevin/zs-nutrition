@@ -167,7 +167,7 @@ export interface GoogleFitDataPoint {
 export interface GoogleFitValue {
   intVal?: number;
   fpVal?: number;
-  mapVal?: any;
+  mapVal?: Array<{ key: string; value: { fpVal?: number; intVal?: number } }>;
 }
 
 // ============================================================
@@ -254,6 +254,7 @@ export interface FitbitSleepSummary {
   totalSleepRecords: number;
   totalSleepTime: number;
   totalTimeInBed: number;
+  efficiency?: number;
 }
 
 export interface FitbitSleepLog {

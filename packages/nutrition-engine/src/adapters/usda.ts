@@ -59,6 +59,21 @@ interface USDAFoodPortion {
   };
 }
 
+/** Top-level shape of a USDA food search API response */
+interface USDASearchResponse {
+  foods?: USDASearchFoodItem[];
+}
+
+/** Top-level shape of a USDA food detail API response */
+interface USDAFoodDetailResponse {
+  fdcId?: number;
+  description?: string;
+  brandName?: string;
+  brandOwner?: string;
+  foodNutrients?: USDAFoodNutrient[];
+  foodPortions?: USDAFoodPortion[];
+}
+
 export class USDAAdapter {
   private apiKey: string;
   private readonly apiLimit = pLimit(5);
@@ -172,7 +187,10 @@ export class USDAAdapter {
     throw lastError || new Error('USDA API request failed after retries');
   }
 
-  private async apiRequest(endpoint: string, params: Record<string, string> = {}): Promise<any> {
+  private async apiRequest(
+    endpoint: string,
+    params: Record<string, string> = {}
+  ): Promise<unknown> {
     return usdaCircuitBreaker.execute(async () => {
       const url = new URL(`https://api.nal.usda.gov/fdc/v1/${endpoint}`);
       url.searchParams.set('api_key', this.apiKey);
@@ -228,13 +246,13 @@ export class USDAAdapter {
         `[USDA] Search cache MISS for "${query}" (total misses: ${this.cacheStats.searchMisses})`
       );
 
-      const data = await this.apiRequest('foods/search', {
+      const data = (await this.apiRequest('foods/search', {
         query,
         pageSize: String(maxResults),
         dataType: 'Foundation,SR Legacy',
-      });
+      })) as USDASearchResponse;
 
-      const foods: USDASearchFoodItem[] = data?.foods;
+      const foods: USDASearchFoodItem[] = data?.foods ?? [];
       if (!foods || !Array.isArray(foods) || foods.length === 0) {
         // Cache empty results too to avoid repeated failed lookups
         this.searchCache.set(cacheKey, []);
@@ -322,7 +340,7 @@ export class USDAAdapter {
         `[USDA] Food cache MISS for ID "${fdcId}" (total misses: ${this.cacheStats.foodMisses})`
       );
 
-      const data = await this.apiRequest(`food/${fdcId}`);
+      const data = (await this.apiRequest(`food/${fdcId}`)) as USDAFoodDetailResponse | null;
 
       if (!data) {
         throw new Error(`Food ${fdcId} not found`);

@@ -40,8 +40,8 @@ export async function handleRedisPubSub(
     try {
       await subscriber.unsubscribe(channel);
       await subscriber.quit();
-    } catch {
-      // Ignore cleanup errors
+    } catch (err) {
+      logger.warn('[SSE] Redis cleanup error (non-critical):', err);
     }
   };
 
@@ -81,7 +81,9 @@ export async function handleRedisPubSub(
   heartbeatInterval = setInterval(() => {
     try {
       controller.enqueue(encoder.encode(': heartbeat\n\n'));
-    } catch {
+    } catch (err) {
+      // Stream closed by client disconnect — stop heartbeat
+      logger.warn('[SSE] Heartbeat enqueue failed (stream closed), stopping heartbeat:', err);
       if (heartbeatInterval) {
         clearInterval(heartbeatInterval);
         heartbeatInterval = null;
@@ -192,8 +194,9 @@ export async function handleRedisPubSub(
     await cleanup();
     try {
       controller.close();
-    } catch {
-      // Stream may already be closed
+    } catch (err) {
+      // Stream may already be closed by prior disconnect
+      logger.warn('[SSE] Controller close failed on abort (stream already closed):', err);
     }
   });
 }

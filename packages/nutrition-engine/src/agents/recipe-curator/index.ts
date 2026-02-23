@@ -10,6 +10,7 @@ import { estimateTokens, MAX_PROMPT_TOKENS } from '../../utils/token-estimate';
 import { engineLogger } from '../../utils/logger';
 import { getConfig, callWithFallback } from '../../config/model-config';
 import { generateDeterministic } from './meal-generator';
+import { correctDraftMacros } from './draft-macro-corrector';
 import type { DraftViolation } from '../../utils/draft-compliance-gate';
 import { scanDraftForViolations } from '../../utils/draft-compliance-gate';
 import type { BatchIngredientResolver } from './batch-resolver';
@@ -310,7 +311,7 @@ export class RecipeCurator {
     // Check if response was truncated due to token limit
     if (response.stop_reason === 'max_tokens') {
       engineLogger.warn(
-        `[RecipeCurator] Claude response truncated (max_tokens hit). Usage: input=${response.usage?.input_tokens}, output=${response.usage?.output_tokens}, cache_read=${(response.usage as any)?.cache_read_input_tokens ?? 0}`
+        `[RecipeCurator] Claude response truncated (max_tokens hit). Usage: input=${response.usage?.input_tokens}, output=${response.usage?.output_tokens}, cache_read=${response.usage?.cache_read_input_tokens ?? 0}`
       );
       throw new Error('Claude response truncated — meal plan too large for token limit');
     }
@@ -328,7 +329,10 @@ export class RecipeCurator {
 
     // tool_use input is already parsed JSON; validate against Zod schema
     const parsed = toolUseBlock.input;
-    return MealPlanDraftSchema.parse(parsed);
+    const draft = MealPlanDraftSchema.parse(parsed);
+
+    // Post-draft deterministic macro correction (Layer 1)
+    return correctDraftMacros(draft, intake.macroStyle, metabolicProfile.carbsTargetG);
   }
 
   /**
@@ -388,7 +392,7 @@ Include cooking state when relevant: "brown rice, cooked" not just "rice".`;
       round1ToolUse.input as { ingredients: Array<{ name: string; context?: string }> }
     ).ingredients;
     engineLogger.info(
-      `[RecipeCurator] Round 1 complete. Usage: input=${round1Response.usage?.input_tokens}, output=${round1Response.usage?.output_tokens}, cache_read=${(round1Response.usage as any)?.cache_read_input_tokens ?? 0}`
+      `[RecipeCurator] Round 1 complete. Usage: input=${round1Response.usage?.input_tokens}, output=${round1Response.usage?.output_tokens}, cache_read=${round1Response.usage?.cache_read_input_tokens ?? 0}`
     );
     engineLogger.info(
       `[RecipeCurator] Round 1: Claude listed ${ingredientList.length} unique ingredients`
@@ -471,7 +475,7 @@ You have received food database resolution results. For each ingredient in draft
 
     if (round2Response.stop_reason === 'max_tokens') {
       engineLogger.warn(
-        `[RecipeCurator] Round 2 truncated (max_tokens hit). Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}, cache_read=${(round2Response.usage as any)?.cache_read_input_tokens ?? 0}`
+        `[RecipeCurator] Round 2 truncated (max_tokens hit). Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}, cache_read=${round2Response.usage?.cache_read_input_tokens ?? 0}`
       );
       throw new Error('Round 2: Claude response truncated — meal plan too large for token limit');
     }
@@ -484,10 +488,13 @@ You have received food database resolution results. For each ingredient in draft
     }
 
     engineLogger.info(
-      `[RecipeCurator] Round 2 complete. Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}, cache_read=${(round2Response.usage as any)?.cache_read_input_tokens ?? 0}`
+      `[RecipeCurator] Round 2 complete. Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}, cache_read=${round2Response.usage?.cache_read_input_tokens ?? 0}`
     );
 
-    return MealPlanDraftSchema.parse(round2ToolUse.input);
+    const draft = MealPlanDraftSchema.parse(round2ToolUse.input);
+
+    // Post-draft deterministic macro correction (Layer 1)
+    return correctDraftMacros(draft, intake.macroStyle, metabolicProfile.carbsTargetG);
   }
 
   /**

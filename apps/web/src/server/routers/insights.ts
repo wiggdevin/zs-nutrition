@@ -3,6 +3,7 @@ import { router, protectedProcedure } from '../trpc';
 import { aggregateInsightsData } from '../services/insights-aggregator';
 import { generateInsights, generateFallbackInsights } from '../services/insights-generator';
 import { insightsLogger, categorizeError, InsightsErrorCategory } from '../utils/insights-logger';
+import { logger } from '@/lib/safe-logger';
 import type { InsightsResponse } from '@/lib/insights/schemas';
 import type { InsightItem } from '@/lib/insights/schemas';
 
@@ -158,7 +159,8 @@ export const insightsRouter = router({
       const result = await generateInsights(payload);
       insights = result.insights;
       tokenUsage = result.tokenUsage;
-    } catch {
+    } catch (err) {
+      logger.error('[INSIGHTS] generateInsights failed, using fallback insights:', err);
       insights = generateFallbackInsights(payload);
       tokenUsage = { inputTokens: 0, outputTokens: 0 };
     }

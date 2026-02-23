@@ -6,6 +6,75 @@ import { prisma } from '@/lib/prisma';
 import { decrypt } from '@/lib/encryption';
 import { logger } from '@/lib/safe-logger';
 import { OuraApiClient } from './oura-client';
+import type { FitnessConnection, Prisma } from '@prisma/client';
+import type {
+  FitbitActivitySummary,
+  FitbitSleepSummary,
+  FitbitActivity,
+  FitbitDistance,
+} from './types';
+import type {
+  OuraDaySyncData,
+  OuraSleepPeriod,
+  OuraHeartRateSample,
+  OuraWorkout,
+} from './oura-types';
+
+// ---- Platform-specific sync data shapes ----
+
+interface FitbitSyncData {
+  platform: 'fitbit';
+  activity: FitbitActivitySummary;
+  sleep: FitbitSleepSummary | null;
+  activities: FitbitActivity[];
+}
+
+interface OuraSyncData extends OuraDaySyncData {
+  platform: 'oura';
+}
+
+interface GoogleFitSyncData {
+  platform: 'google_fit';
+  steps: { dataset?: Array<{ point?: Array<{ value?: Array<{ intVal?: number }> }> }> } | null;
+}
+
+type PlatformSyncData = FitbitSyncData | OuraSyncData | GoogleFitSyncData;
+
+interface SyncResult {
+  success: boolean;
+  data?: PlatformSyncData;
+  error?: string;
+}
+
+/** Fields returned by normalizeSyncData for ActivitySync upsert */
+interface NormalizedSyncFields {
+  rawSyncData: Prisma.InputJsonValue;
+  processed: boolean;
+  steps?: number | null;
+  activeCalories?: number | null;
+  totalCalories?: number | null;
+  distanceKm?: number | null;
+  distanceMiles?: number | null;
+  activeMinutes?: number | null;
+  workoutCount?: number;
+  workouts?: Prisma.InputJsonValue;
+  sleepMinutes?: number | null;
+  sleepScore?: number | null;
+  heartRateResting?: number | null;
+  readinessScore?: number | null;
+  readinessTemperature?: number | null;
+  readinessHrvBalance?: number | null;
+  hrvAvg?: number | null;
+  sleepDeepMinutes?: number | null;
+  sleepRemMinutes?: number | null;
+  sleepLightMinutes?: number | null;
+  sleepAwakeMinutes?: number | null;
+  sleepEfficiency?: number | null;
+  sleepLatency?: number | null;
+  bedtimeStart?: Date | null;
+  bedtimeEnd?: Date | null;
+  bodyTemperatureDelta?: number | null;
+}
 
 /**
  * Sync frequencies in milliseconds
@@ -48,7 +117,7 @@ export async function syncAllUserActivity(): Promise<{
     });
 
     // Group connections by user
-    const connectionsByUser = new Map<string, any[]>();
+    const connectionsByUser = new Map<string, FitnessConnection[]>();
     for (const connection of connections) {
       const userId = connection.userId;
       if (!connectionsByUser.has(userId)) {
@@ -92,7 +161,7 @@ export async function syncAllUserActivity(): Promise<{
  */
 export async function syncUserActivity(
   userId: string,
-  connections?: any[],
+  connections?: FitnessConnection[],
   options?: { force?: boolean }
 ): Promise<void> {
   // If connections not provided, fetch them
@@ -148,7 +217,7 @@ export async function syncUserActivity(
 /**
  * Check if a connection should be synced based on its frequency and last sync time
  */
-function shouldSync(connection: any, now: Date): boolean {
+function shouldSync(connection: FitnessConnection, now: Date): boolean {
   const { lastSyncAt, syncFrequency } = connection;
 
   // If never synced, sync now
@@ -167,13 +236,9 @@ function shouldSync(connection: any, now: Date): boolean {
  * Sync activity data from a specific platform
  */
 async function syncFromPlatform(
-  connection: any,
+  connection: FitnessConnection,
   syncDate: Date
-): Promise<{
-  success: boolean;
-  data?: any;
-  error?: string;
-}> {
+): Promise<SyncResult> {
   const platform = connection.platform;
 
   switch (platform) {
@@ -227,8 +292,7 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
     }
   );
 
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  let sleepData: any = null;
+  let sleepData: { summary?: FitbitSleepSummary } | null = null;
   if (sleepResponse.ok) {
     sleepData = await sleepResponse.json();
   }
@@ -236,10 +300,10 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
   return {
     success: true,
     data: {
-      platform: 'fitbit',
-      activity: activityData.summary,
-      sleep: sleepData?.summary || null,
-      activities: activityData.activities || [],
+      platform: 'fitbit' as const,
+      activity: activityData.summary as FitbitActivitySummary,
+      sleep: (sleepData?.summary as FitbitSleepSummary) || null,
+      activities: (activityData.activities || []) as FitbitActivity[],
     },
   };
 }
@@ -248,7 +312,11 @@ async function syncFitbitData(accessToken: string, syncDate: Date) {
  * Sync Oura data for a date range and store each day separately.
  * First sync: 14 days back. Subsequent syncs: from lastSyncAt to endDate.
  */
-async function syncOuraDateRange(connection: any, endDate: Date, force?: boolean): Promise<void> {
+async function syncOuraDateRange(
+  connection: FitnessConnection,
+  endDate: Date,
+  force?: boolean
+): Promise<void> {
   const BACKFILL_DAYS = 14;
 
   // Calculate start date
@@ -343,7 +411,7 @@ async function syncGoogleFitData(accessToken: string, syncDate: Date) {
   return {
     success: true,
     data: {
-      platform: 'google_fit',
+      platform: 'google_fit' as const,
       steps: stepsData.bucket?.[0] || null,
     },
   };
@@ -352,7 +420,11 @@ async function syncGoogleFitData(accessToken: string, syncDate: Date) {
 /**
  * Store activity sync in database
  */
-async function storeActivitySync(connection: any, syncData: any, syncDate: Date): Promise<void> {
+async function storeActivitySync(
+  connection: FitnessConnection,
+  syncData: PlatformSyncData,
+  syncDate: Date
+): Promise<void> {
   const normalizedData = normalizeSyncData(syncData);
 
   await prisma.activitySync.upsert({
@@ -378,9 +450,9 @@ async function storeActivitySync(connection: any, syncData: any, syncDate: Date)
 /**
  * Normalize sync data from various platforms to database schema
  */
-function normalizeSyncData(syncData: any): any {
+function normalizeSyncData(syncData: PlatformSyncData): NormalizedSyncFields {
   const base = {
-    rawSyncData: syncData,
+    rawSyncData: JSON.parse(JSON.stringify(syncData)) as Prisma.InputJsonValue,
     processed: false,
   };
 
@@ -394,11 +466,12 @@ function normalizeSyncData(syncData: any): any {
         activeCalories: activity?.activityCalories,
         totalCalories: activity?.caloriesOut,
         distanceKm: activity?.distance,
-        distanceMiles: activity?.distances?.find((d: any) => d.activity === 'total')?.distance,
+        distanceMiles: activity?.distances?.find((d: FitbitDistance) => d.activity === 'total')
+          ?.distance,
         activeMinutes: activity?.veryActiveMinutes + activity?.fairlyActiveMinutes,
         workoutCount: syncData.activities?.length || 0,
         workouts:
-          syncData.activities?.map((a: any) => ({
+          syncData.activities?.map((a: FitbitActivity) => ({
             type: a.activityName,
             startTime: a.startTime,
             durationMinutes: Math.round(a.duration / 60000),
@@ -418,16 +491,17 @@ function normalizeSyncData(syncData: any): any {
 
       // Find the main (longest) sleep period for detailed data
       const mainSleep = sleepPeriods
-        .filter((s: any) => s.type === 'long_sleep')
-        .sort((a: any, b: any) => (b.duration || 0) - (a.duration || 0))[0];
+        .filter((s: OuraSleepPeriod) => s.type === 'long_sleep')
+        .sort((a: OuraSleepPeriod, b: OuraSleepPeriod) => (b.duration || 0) - (a.duration || 0))[0];
 
       // Calculate average resting heart rate from sleep/rest samples
       const restingSamples = heartRateSamples.filter(
-        (s: any) => s.source === 'rest' || s.source === 'sleep'
+        (s: OuraHeartRateSample) => s.source === 'rest' || s.source === 'sleep'
       );
       const restingHR =
         restingSamples.length > 0
-          ? restingSamples.reduce((sum: number, s: any) => sum + s.bpm, 0) / restingSamples.length
+          ? restingSamples.reduce((sum: number, s: OuraHeartRateSample) => sum + s.bpm, 0) /
+            restingSamples.length
           : null;
 
       return {
@@ -494,7 +568,7 @@ function normalizeSyncData(syncData: any): any {
 
         // Workouts
         workoutCount: syncData.workouts?.length || 0,
-        workouts: (syncData.workouts || []).map((w: any) => ({
+        workouts: (syncData.workouts || []).map((w: OuraWorkout) => ({
           type: w.activity,
           startTime: w.start_datetime,
           endTime: w.end_datetime,

@@ -35,7 +35,8 @@ function getCachedResult(): CachedWeeklyCheckResult | null {
     const isExpired = Date.now() - parsed.timestamp > WEEKLY_CHECK_CACHE_DURATION_MS;
 
     return isExpired ? null : parsed;
-  } catch {
+  } catch (err) {
+    console.warn('[AdaptiveNutritionBanner] Failed to read weekly check cache:', err);
     return null;
   }
 }
@@ -52,8 +53,11 @@ function setCachedResult(result: Omit<CachedWeeklyCheckResult, 'timestamp'>): vo
       timestamp: Date.now(),
     };
     sessionStorage.setItem(WEEKLY_CHECK_CACHE_KEY, JSON.stringify(cacheEntry));
-  } catch {
-    // Silently fail if sessionStorage is unavailable
+  } catch (err) {
+    console.warn(
+      '[AdaptiveNutritionBanner] Failed to write weekly check cache (storage unavailable):',
+      err
+    );
   }
 }
 

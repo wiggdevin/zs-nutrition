@@ -30,7 +30,12 @@ async function loadEdgeConfig() {
     // eslint-disable-next-line @typescript-eslint/no-require-imports
     const mod = require('@vercel/edge-config');
     edgeConfigModule = mod;
-  } catch {
+  } catch (err) {
+    // @vercel/edge-config is an optional dependency — not present in all environments
+    console.warn(
+      '[FeatureFlags] @vercel/edge-config not available, falling back to env vars:',
+      err
+    );
     edgeConfigModule = null;
   }
 }
@@ -65,7 +70,11 @@ function readFlagFromEnv(flagName: string): FeatureFlag | null {
         rolloutPercent: parsed.rolloutPercent,
         allowlist: parsed.allowlist,
       };
-    } catch {
+    } catch (err) {
+      console.warn(
+        `[FeatureFlags] Failed to parse JSON for flag "${flagName}", treating as boolean:`,
+        err
+      );
       // Fall through to simple boolean
     }
   }
@@ -102,8 +111,11 @@ export async function isFeatureEnabled(flagName: string, userId?: string): Promi
           typeof value === 'object' ? (value as FeatureFlag) : { enabled: Boolean(value) };
         return evaluateFlag(flag, flagName, userId);
       }
-    } catch {
-      // Edge Config read failed, fall through to env var
+    } catch (err) {
+      console.warn(
+        `[FeatureFlags] Edge Config read failed for flag "${flagName}", falling back to env var:`,
+        err
+      );
     }
   }
 
@@ -130,8 +142,11 @@ export async function getFeatureFlags(): Promise<Record<string, FeatureFlag>> {
             typeof value === 'object' ? (value as FeatureFlag) : { enabled: Boolean(value) };
           continue;
         }
-      } catch {
-        // Fall through
+      } catch (err) {
+        console.warn(
+          `[FeatureFlags] Edge Config read failed for flag "${name}", falling back to env var:`,
+          err
+        );
       }
     }
 
