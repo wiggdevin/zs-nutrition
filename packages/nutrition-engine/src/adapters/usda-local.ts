@@ -87,9 +87,13 @@ export class LocalUSDAAdapter {
 
   // ------- Private helpers -------
 
-  private async fullTextSearch(query: string, maxResults: number, offset: number) {
+  private async fullTextSearch(
+    query: string,
+    maxResults: number,
+    offset: number
+  ): Promise<UsdaFoodRow[]> {
     // plainto_tsquery handles natural language input without requiring boolean operators
-    return this.prisma.$queryRawUnsafe<UsdaFoodRow[]>(
+    return this.prisma.$queryRawUnsafe(
       `SELECT "fdcId", "description", "dataType", "nutrients", "portions"
        FROM "UsdaFood"
        WHERE "searchVector" @@ plainto_tsquery('english', $1)
@@ -98,7 +102,7 @@ export class LocalUSDAAdapter {
       query,
       maxResults,
       offset
-    );
+    ) as Promise<UsdaFoodRow[]>;
   }
 
   /**
@@ -107,8 +111,12 @@ export class LocalUSDAAdapter {
    * against long descriptions (e.g. "broc" matches "Broccoli, raw").
    * Threshold 0.3 balances recall vs precision.
    */
-  private async trigramSearch(query: string, maxResults: number, offset: number) {
-    return this.prisma.$queryRawUnsafe<UsdaFoodRow[]>(
+  private async trigramSearch(
+    query: string,
+    maxResults: number,
+    offset: number
+  ): Promise<UsdaFoodRow[]> {
+    return this.prisma.$queryRawUnsafe(
       `SELECT "fdcId", "description", "dataType", "nutrients", "portions"
        FROM (
          SELECT *, word_similarity($1, "description") AS wsim
@@ -120,7 +128,7 @@ export class LocalUSDAAdapter {
       query,
       maxResults,
       offset
-    );
+    ) as Promise<UsdaFoodRow[]>;
   }
 
   private toSearchResult(row: UsdaFoodRow): FoodSearchResult {

@@ -658,13 +658,13 @@ async function main() {
 
     for (const [alias, canonicalName] of Object.entries(INGREDIENT_NAME_MAP)) {
       // Try to resolve fdcId via tsvector search
-      const rows = await prisma.$queryRawUnsafe<{ fdcId: number }[]>(
+      const rows = (await prisma.$queryRawUnsafe(
         `SELECT "fdcId" FROM "UsdaFood"
          WHERE "searchVector" @@ plainto_tsquery('english', $1)
          ORDER BY ts_rank("searchVector", plainto_tsquery('english', $1)) DESC
          LIMIT 1`,
         canonicalName
-      );
+      )) as { fdcId: number }[];
 
       const fdcId = rows.length > 0 ? rows[0].fdcId : null;
 
