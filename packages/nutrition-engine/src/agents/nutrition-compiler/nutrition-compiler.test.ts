@@ -47,6 +47,24 @@ vi.mock('../../utils/dietary-compliance', () => ({
 
 import { isProductCompliant } from '../../utils/dietary-compliance';
 
+// ── Mock FoodAliasCache ──
+
+function createMockAliasCache(): { get: (alias: string) => any; isLoaded: boolean; size: number } {
+  const aliases = new Map<string, { canonicalName: string; fdcId?: number }>([
+    ['eggs', { canonicalName: 'egg whole raw' }],
+    ['egg', { canonicalName: 'egg whole raw' }],
+    ['chicken breast', { canonicalName: 'chicken breast skinless raw' }],
+    ['apple', { canonicalName: 'apple raw with skin' }],
+    ['peanut butter', { canonicalName: 'peanut butter smooth' }],
+    ['spinach', { canonicalName: 'spinach raw' }],
+  ]);
+  return {
+    get: (alias: string) => aliases.get(alias.toLowerCase().trim()),
+    isLoaded: true,
+    size: aliases.size,
+  };
+}
+
 // ── Helpers ──
 
 /** Create a mock FoodServing with sensible defaults. */
@@ -152,7 +170,12 @@ describe('NutritionCompiler', () => {
     mockUsda = createMockAdapter();
     mockFatSecret = createMockAdapter();
     mockLocalUsda = createMockAdapter();
-    compiler = new NutritionCompiler(mockUsda as any, mockFatSecret as any, mockLocalUsda as any);
+    compiler = new NutritionCompiler(
+      mockUsda as any,
+      mockFatSecret as any,
+      mockLocalUsda as any,
+      createMockAliasCache() as any
+    );
   });
 
   // ──────────────────────────────────────────────────────────
