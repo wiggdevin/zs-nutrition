@@ -15,11 +15,67 @@ import type { DraftViolation } from '../../utils/draft-compliance-gate';
 import { scanDraftForViolations } from '../../utils/draft-compliance-gate';
 import type { BatchIngredientResolver } from './batch-resolver';
 
-/** Timeout for Claude streaming requests (3 minutes per attempt — complex meal plans with tool_use need headroom) */
-const CLAUDE_STREAM_TIMEOUT_MS = 180_000;
+/**
+ * Coerce stringified JSON fields in tool_use responses.
+ * Claude sometimes serializes nested arrays/objects as JSON strings
+ * rather than actual JSON when the tool schema is deeply nested.
+ */
+function coerceToolUseInput(input: unknown): unknown {
+  if (typeof input !== 'object' || input === null) return input;
+  const obj = input as Record<string, unknown>;
+  const coerced: Record<string, unknown> = { ...obj };
 
-/** Timeout for Round 1 (resolve_ingredients) — shorter since it's a small output */
-const RESOLVE_STREAM_TIMEOUT_MS = 30_000;
+  // Coerce `days` from string → array
+  if (typeof coerced.days === 'string') {
+    try {
+      coerced.days = JSON.parse(coerced.days);
+      engineLogger.warn('[RecipeCurator] Coerced stringified `days` field from Claude tool_use');
+    } catch {
+      // Leave as-is; Zod will report the type error
+    }
+  }
+
+  // Coerce `varietyReport` from string → object
+  if (typeof coerced.varietyReport === 'string') {
+    try {
+      coerced.varietyReport = JSON.parse(coerced.varietyReport);
+      engineLogger.warn(
+        '[RecipeCurator] Coerced stringified `varietyReport` field from Claude tool_use'
+      );
+    } catch {
+      // Leave as-is; Zod will report the type error
+    }
+  }
+
+  // Supply a default varietyReport if missing entirely (Claude occasionally omits it)
+  if (coerced.varietyReport === undefined && Array.isArray(coerced.days)) {
+    const days = coerced.days as Array<{
+      meals?: Array<{ primaryProtein?: string; cuisine?: string }>;
+    }>;
+    const proteins = new Set<string>();
+    const cuisines = new Set<string>();
+    for (const day of days) {
+      for (const meal of day.meals ?? []) {
+        if (meal.primaryProtein) proteins.add(meal.primaryProtein);
+        if (meal.cuisine) cuisines.add(meal.cuisine);
+      }
+    }
+    coerced.varietyReport = {
+      proteinsUsed: [...proteins],
+      cuisinesUsed: [...cuisines],
+      recipeIdsUsed: [],
+    };
+    engineLogger.warn('[RecipeCurator] Synthesized missing `varietyReport` from meal data');
+  }
+
+  return coerced;
+}
+
+/** Timeout for Claude streaming requests (5 minutes per attempt — 7-day meal plans with tool_use generate 20K+ tokens) */
+const CLAUDE_STREAM_TIMEOUT_MS = 300_000;
+
+/** Timeout for Round 1 (resolve_ingredients) — needs headroom for Haiku cold-start + large prompt */
+const RESOLVE_STREAM_TIMEOUT_MS = 60_000;
 
 /**
  * Tool schema for Round 1: Claude lists all unique ingredients for batch resolution.
@@ -327,8 +383,8 @@ export class RecipeCurator {
       throw new Error('No tool_use response from Claude');
     }
 
-    // tool_use input is already parsed JSON; validate against Zod schema
-    const parsed = toolUseBlock.input;
+    // tool_use input is already parsed JSON; coerce stringified fields then validate
+    const parsed = coerceToolUseInput(toolUseBlock.input);
     const draft = MealPlanDraftSchema.parse(parsed);
 
     // Post-draft deterministic macro correction (Layer 1)
@@ -491,7 +547,7 @@ You have received food database resolution results. For each ingredient in draft
       `[RecipeCurator] Round 2 complete. Usage: input=${round2Response.usage?.input_tokens}, output=${round2Response.usage?.output_tokens}, cache_read=${round2Response.usage?.cache_read_input_tokens ?? 0}`
     );
 
-    const draft = MealPlanDraftSchema.parse(round2ToolUse.input);
+    const draft = MealPlanDraftSchema.parse(coerceToolUseInput(round2ToolUse.input));
 
     // Post-draft deterministic macro correction (Layer 1)
     return correctDraftMacros(draft, intake.macroStyle, metabolicProfile.carbsTargetG);
