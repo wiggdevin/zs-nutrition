@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { prisma } from '@/lib/prisma';
 import { checkRedisHealth } from '@/lib/redis';
+import { logger } from '@/lib/safe-logger';
 
 const HEALTH_CHECK_TIMEOUT_MS = 5000;
 const APP_VERSION = process.env.npm_package_version || '0.1.0';
@@ -27,7 +28,7 @@ async function checkDatabase(): Promise<boolean> {
     await prisma.$queryRaw`SELECT 1`;
     return true;
   } catch (err) {
-    console.warn('[health] Database check failed:', err);
+    logger.warn('[health] Database check failed:', err);
     return false;
   }
 }
@@ -36,7 +37,7 @@ async function checkRedis(): Promise<boolean> {
   try {
     return await checkRedisHealth();
   } catch (err) {
-    console.warn('[health] Redis check failed:', err);
+    logger.warn('[health] Redis check failed:', err);
     return false;
   }
 }

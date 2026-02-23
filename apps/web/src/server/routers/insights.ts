@@ -72,7 +72,7 @@ export const insightsRouter = router({
         // Claude failed — use deterministic fallback
         const category = categorizeError(err);
         if (category === InsightsErrorCategory.CLAUDE_AUTH_ERROR) {
-          console.error('[INSIGHTS] Auth error — check ANTHROPIC_API_KEY');
+          logger.error('[INSIGHTS] Auth error — check ANTHROPIC_API_KEY');
         }
         insights = generateFallbackInsights(payload);
         tokenUsage = { inputTokens: 0, outputTokens: 0 };
@@ -99,7 +99,7 @@ export const insightsRouter = router({
         fromCache: false,
       };
     } catch (err) {
-      console.error('[INSIGHTS] Pipeline error:', err);
+      logger.error('[INSIGHTS] Pipeline error:', err instanceof Error ? err : undefined);
       // Return empty on total failure rather than crashing the dashboard
       return {
         insights: [],

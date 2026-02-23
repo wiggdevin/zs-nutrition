@@ -2,6 +2,7 @@ import { initTRPC, TRPCError } from '@trpc/server';
 import { auth } from '@clerk/nextjs/server';
 import superjson from 'superjson';
 import { prisma } from '@/lib/prisma';
+import { logger } from '@/lib/safe-logger';
 
 export const createTRPCContext = async () => {
   let clerkUserId: string | null = null;
@@ -10,7 +11,7 @@ export const createTRPCContext = async () => {
     clerkUserId = authResult.userId;
   } catch (err) {
     // Auth not available (e.g. during build or in edge environments)
-    console.warn('[tRPC/server] Clerk auth() unavailable, proceeding as unauthenticated:', err);
+    logger.warn('[tRPC/server] Clerk auth() unavailable, proceeding as unauthenticated:', err);
   }
   return { prisma, clerkUserId };
 };

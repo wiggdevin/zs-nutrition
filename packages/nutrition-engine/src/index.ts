@@ -1,8 +1,70 @@
 // @zero-sum/nutrition-engine — Barrel exports
 // Standalone AI nutrition pipeline package
 
-// Types & Schemas
-export * from './types/schemas';
+// Types & Schemas (named exports for tree-shaking)
+export {
+  SexEnum,
+  GoalTypeEnum,
+  ActivityLevelEnum,
+  DietaryStyleEnum,
+  MacroStyleEnum,
+  WeekdayEnum,
+  TrainingTimeEnum,
+  ConfidenceLevelEnum,
+  QAStatusEnum,
+  TrackingSourceEnum,
+  RawIntakeFormSchema,
+  ClientIntakeSchema,
+  MealTargetSchema,
+  MetabolicProfileSchema,
+  EstimatedNutritionSchema,
+  DraftMealSchema,
+  DraftDaySchema,
+  MealPlanDraftSchema,
+  VerifiedNutritionSchema,
+  IngredientSchema,
+  CompiledMealSchema,
+  MacroTargetsSchema,
+  CompiledDaySchema,
+  MealPlanCompiledSchema,
+  GroceryItemSchema,
+  GroceryCategorySchema,
+  DayQAResultSchema,
+  QAResultSchema,
+  MealPlanValidatedSchema,
+  PipelineProgressSchema,
+  FoodSearchResultSchema,
+  FoodServingSchema,
+  FoodDetailsSchema,
+  RecipeSearchResultSchema,
+  RecipeIngredientSchema,
+  RecipeDirectionSchema,
+  RecipeDetailsSchema,
+} from './types/schemas';
+export type {
+  RawIntakeForm,
+  ClientIntake,
+  MetabolicProfile,
+  MealTarget,
+  MealPlanDraft,
+  DraftDay,
+  DraftMeal,
+  MealPlanCompiled,
+  CompiledDay,
+  CompiledMeal,
+  Ingredient,
+  MealPlanValidated,
+  QAResult,
+  GroceryCategory,
+  PipelineProgress,
+  FoodSearchResult,
+  FoodServing,
+  FoodDetails,
+  RecipeSearchResult,
+  RecipeIngredient,
+  RecipeDirection,
+  RecipeDetails,
+} from './types/schemas';
 
 // Agents
 export { IntakeNormalizer } from './agents/intake-normalizer';
