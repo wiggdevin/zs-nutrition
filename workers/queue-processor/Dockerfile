@@ -41,9 +41,9 @@ COPY packages/shared-types/ packages/shared-types/
 COPY packages/queue-config/ packages/queue-config/
 COPY workers/queue-processor/ workers/queue-processor/
 
-# Copy Prisma schema and generate the client
+# Copy Prisma schema and generate the client (npx downloads the CLI temporarily)
 COPY apps/web/prisma/ apps/web/prisma/
-RUN pnpm exec prisma generate --schema=./apps/web/prisma/schema.prisma
+RUN npx prisma@6.19.2 generate --schema=./apps/web/prisma/schema.prisma
 
 # Build the queue-processor and its dependencies
 RUN pnpm turbo run build --filter=@zsn/queue-processor
