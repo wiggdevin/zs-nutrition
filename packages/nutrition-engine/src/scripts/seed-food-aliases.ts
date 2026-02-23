@@ -699,7 +699,7 @@ async function main() {
           alias,
           canonicalName,
           usdaFdcId: fdcId,
-          priority: 0,
+          priority: 10,
           per100gKcal,
           per100gProtein,
           per100gCarbs,

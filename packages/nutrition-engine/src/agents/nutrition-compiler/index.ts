@@ -16,6 +16,7 @@ import { LocalUSDAAdapter } from '../../adapters/usda-local';
 import { engineLogger } from '../../utils/logger';
 import { isProductCompliant } from '../../utils/dietary-compliance';
 import { convertToGrams } from '../../utils/unit-conversion';
+import { estimateCalorieDensity } from '../../data/calorie-density-heuristics';
 import {
   buildIngredientsFromFood,
   generateEstimatedIngredients,
@@ -759,7 +760,7 @@ export class NutritionCompiler {
     const results = await Promise.all(
       meal.draftIngredients.map((ing) =>
         ingredientLimit(async () => {
-          const gramsNeeded = convertToGrams(ing.quantity, ing.unit);
+          const gramsNeeded = convertToGrams(ing.quantity, ing.unit, ing.name);
           const normalized = normalizeIngredientName(ing.name, this.aliasCache);
 
           // Deduplication: check if we've already looked up this ingredient at this gram amount
@@ -963,9 +964,39 @@ export class NutritionCompiler {
             }
           }
 
-          // All names/sources failed — ingredient stays unverified
+          // All names/sources failed — use resolvedPer100g or heuristic estimate
           engineLogger.warn(
             `[NutritionCompiler] No match found for ingredient "${ing.name}" (tried: ${normalized.map((n) => n.searchName).join(', ')})`
+          );
+
+          // Try resolvedPer100g from BatchResolver (often populated even when search fails)
+          if (ing.resolvedPer100g && ing.resolvedPer100g.kcal > 0) {
+            const scale = gramsNeeded / 100;
+            engineLogger.info(
+              `[NutritionCompiler] Using resolvedPer100g fallback for "${ing.name}" (${Math.round(ing.resolvedPer100g.kcal * scale)} kcal)`
+            );
+            return cacheAndReturn({
+              ingredient: {
+                name: ing.name,
+                amount: Math.round(gramsNeeded),
+                unit: 'g',
+                foodId: ing.fdcId ? `usda-${ing.fdcId}` : undefined,
+              } as Ingredient,
+              kcal: ing.resolvedPer100g.kcal * scale,
+              proteinG: ing.resolvedPer100g.proteinG * scale,
+              carbsG: ing.resolvedPer100g.carbsG * scale,
+              fatG: ing.resolvedPer100g.fatG * scale,
+              fiberG: undefined as number | undefined,
+              verified: false,
+              source: 'unverified',
+            });
+          }
+
+          // Final fallback: keyword-based calorie density heuristic
+          const heuristic = estimateCalorieDensity(ing.name);
+          const hScale = gramsNeeded / 100;
+          engineLogger.info(
+            `[NutritionCompiler] Using calorie density heuristic for "${ing.name}" (${Math.round(heuristic.kcal * hScale)} kcal est.)`
           );
           return cacheAndReturn({
             ingredient: {
@@ -973,10 +1004,10 @@ export class NutritionCompiler {
               amount: Math.round(gramsNeeded),
               unit: 'g',
             } as Ingredient,
-            kcal: 0,
-            proteinG: 0,
-            carbsG: 0,
-            fatG: 0,
+            kcal: heuristic.kcal * hScale,
+            proteinG: heuristic.proteinG * hScale,
+            carbsG: heuristic.carbsG * hScale,
+            fatG: heuristic.fatG * hScale,
             fiberG: undefined as number | undefined,
             verified: false,
             source: 'unverified',

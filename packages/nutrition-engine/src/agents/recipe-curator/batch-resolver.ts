@@ -54,13 +54,19 @@ export interface IngredientInput {
 const RESOLVE_CONCURRENCY = 10;
 
 /** Max ingredients to resolve in a single batch */
-const MAX_INGREDIENTS = 60;
+const MAX_INGREDIENTS = 150;
 
 /** Max matches to return per ingredient */
 const MAX_MATCHES_PER = 3;
 
-/** Timeout for the entire batch resolution (ms) */
-const BATCH_TIMEOUT_MS = 10_000;
+/**
+ * Dynamic timeout for batch resolution.
+ * Base 5s + 100ms per unique ingredient, capped at 30s.
+ * Safe because BatchResolver runs parallel with RecipeCurator's Claude API call (30-60s).
+ */
+function getBatchTimeout(uniqueCount: number): number {
+  return Math.min(30_000, 5_000 + uniqueCount * 100);
+}
 
 export class BatchIngredientResolver {
   constructor(
@@ -102,10 +108,11 @@ export class BatchIngredientResolver {
 
     const limit = pLimit(RESOLVE_CONCURRENCY);
     const startTime = Date.now();
+    const batchTimeout = getBatchTimeout(unique.length);
 
     // Resolve all unique ingredients in parallel with timeout
     const settledResults = await Promise.allSettled(
-      unique.map((ing) => limit(() => this.resolveOne(ing, startTime)))
+      unique.map((ing) => limit(() => this.resolveOne(ing, startTime, batchTimeout)))
     );
 
     const uniqueResults: ResolvedIngredient[] = settledResults.map((result, i) => {
@@ -140,14 +147,15 @@ export class BatchIngredientResolver {
    */
   private async resolveOne(
     ing: IngredientInput,
-    batchStartTime: number
+    batchStartTime: number,
+    batchTimeout: number
   ): Promise<ResolvedIngredient> {
     const name = ing.name.trim();
     const searchName = name.toLowerCase().replace(/,/g, '');
     const matches: ResolvedMatch[] = [];
 
     // Check batch timeout
-    if (Date.now() - batchStartTime > BATCH_TIMEOUT_MS) {
+    if (Date.now() - batchStartTime > batchTimeout) {
       return { name, resolved: false, matches: [] };
     }
 
@@ -207,7 +215,7 @@ export class BatchIngredientResolver {
     // 3. USDA API search — fallback when local DB has insufficient matches
     if (matches.length < MAX_MATCHES_PER) {
       // Check timeout before making API call
-      if (Date.now() - batchStartTime <= BATCH_TIMEOUT_MS) {
+      if (Date.now() - batchStartTime <= batchTimeout) {
         try {
           const usdaResults = await this.usdaAdapter.searchFoods(searchName, 5);
           await this.addMatchesFromSearch(
@@ -228,7 +236,7 @@ export class BatchIngredientResolver {
 
     // 4. FatSecret search — fallback when prior sources have insufficient matches
     if (this.fatSecretAdapter && matches.length < MAX_MATCHES_PER) {
-      if (Date.now() - batchStartTime <= BATCH_TIMEOUT_MS) {
+      if (Date.now() - batchStartTime <= batchTimeout) {
         try {
           const fsResults = await this.fatSecretAdapter.searchFoods(searchName, 5);
           await this.addMatchesFromFatSecret(fsResults, matches);

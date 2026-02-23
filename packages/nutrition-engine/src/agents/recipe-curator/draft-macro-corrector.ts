@@ -457,7 +457,7 @@ interface IngredientWithMacros {
  */
 function analyzeMealIngredients(meal: DraftMeal): IngredientWithMacros[] {
   return meal.draftIngredients.map((ing, idx) => {
-    const grams = convertToGrams(ing.quantity, ing.unit);
+    const grams = convertToGrams(ing.quantity, ing.unit, ing.name);
     const density = lookupDensity(ing.name);
     const macroClass = density?.class ?? 'vegetable';
 
@@ -574,7 +574,7 @@ function correctMealMacros(meal: DraftMeal, analyzed: IngredientWithMacros[]): D
     const ing = adjustedIngredients[i];
     const density = lookupDensity(ing.name);
     if (density) {
-      const grams = convertToGrams(ing.quantity, ing.unit);
+      const grams = convertToGrams(ing.quantity, ing.unit, ing.name);
       const scale = grams / 100;
       newProtein += density.per100g.proteinG * scale;
       newCarbs += density.per100g.carbsG * scale;
@@ -639,7 +639,7 @@ function applyKetoSwaps(meal: DraftMeal, _dailyCarbTarget: number): DraftMeal {
   for (const ing of swappedIngredients) {
     const density = lookupDensity(ing.name);
     if (density) {
-      const grams = convertToGrams(ing.quantity, ing.unit);
+      const grams = convertToGrams(ing.quantity, ing.unit, ing.name);
       const scale = grams / 100;
       newProtein += density.per100g.proteinG * scale;
       newCarbs += density.per100g.carbsG * scale;
