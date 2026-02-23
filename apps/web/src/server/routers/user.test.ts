@@ -110,6 +110,7 @@ describe('user router', () => {
         updatedAt: new Date(),
       };
 
+      vi.mocked(prisma.userProfile.updateMany).mockResolvedValue({ count: 0 });
       vi.mocked(prisma.userProfile.create).mockResolvedValue(mockProfile);
       vi.mocked(prisma.onboardingState.upsert).mockResolvedValue(mockOnboardingState);
 
@@ -179,6 +180,7 @@ describe('user router', () => {
         updatedAt: new Date(),
       };
 
+      vi.mocked(prisma.userProfile.updateMany).mockResolvedValue({ count: 0 });
       vi.mocked(prisma.userProfile.create).mockResolvedValue(mockProfile);
       vi.mocked(prisma.onboardingState.upsert).mockResolvedValue({
         id: 'state-456',
@@ -237,9 +239,11 @@ describe('user router', () => {
       const result = await caller.user.getProfile();
 
       expect(result).toBeNull();
-      expect(prisma.userProfile.findFirst).toHaveBeenCalledWith({
-        where: { userId: 'user-no-profile', isActive: true },
-      });
+      expect(prisma.userProfile.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { userId: 'user-no-profile', isActive: true },
+        })
+      );
     });
 
     it('returns the active profile', async () => {

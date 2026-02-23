@@ -44,7 +44,7 @@ describe('meal router', () => {
       });
     });
 
-    it('returns duplicate when meal already logged today', async () => {
+    it('returns duplicate when unique constraint is violated', async () => {
       const ctx = createAuthedTestContext({ dbUserId: 'user-123' });
       const caller = createCaller(ctx);
 
@@ -91,17 +91,19 @@ describe('meal router', () => {
         adherenceScore: 85,
       };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
-        return callback({
-          trackedMeal: {
-            findFirst: vi.fn().mockResolvedValue(existingMeal),
-          },
-          dailyLog: {
-            findUnique: vi.fn().mockResolvedValue(existingDailyLog),
-          },
-        });
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as never);
+
+      // The production code calls tx.trackedMeal.create() first, then catches unique constraint errors
+      const { Prisma } = await import('@prisma/client');
+      const uniqueError = new Prisma.PrismaClientKnownRequestError('Unique constraint failed', {
+        code: 'P2002',
+        clientVersion: '5.0.0',
       });
+      vi.mocked(prisma.$transaction).mockRejectedValue(uniqueError);
+
+      // After catching the unique constraint error, the code queries outside the transaction
+      vi.mocked(prisma.trackedMeal.findFirst).mockResolvedValue(existingMeal as never);
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(existingDailyLog as never);
 
       const result = await caller.meal.logMealFromPlan({
         planId: 'plan-123',
@@ -166,8 +168,8 @@ describe('meal router', () => {
         adherenceScore: 85,
       };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as never);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         return callback({
           trackedMeal: {
             findFirst: vi.fn().mockResolvedValue(null),
@@ -194,7 +196,7 @@ describe('meal router', () => {
         portion: 1.0,
       });
 
-      expect(result.duplicate).toBeUndefined();
+      expect(result.duplicate).toBe(false);
       expect(result.trackedMeal.mealName).toBe('Chicken Salad');
       expect(result.trackedMeal.kcal).toBe(600);
       expect(result.dailyLog.actualKcal).toBe(600);
@@ -248,8 +250,8 @@ describe('meal router', () => {
         adherenceScore: 85,
       };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as never);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         return callback({
           trackedMeal: {
             findFirst: vi.fn().mockResolvedValue(null),
@@ -329,7 +331,7 @@ describe('meal router', () => {
         adherenceScore: 85,
       };
 
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         return callback({
           trackedMeal: {
             findFirst: vi.fn().mockResolvedValue(null),
@@ -392,7 +394,7 @@ describe('meal router', () => {
         adherenceScore: 85,
       };
 
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         return callback({
           trackedMeal: {
             findFirst: vi.fn().mockResolvedValue(existingQuickAdd),
@@ -464,7 +466,7 @@ describe('meal router', () => {
         adherenceScore: 85,
       };
 
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         return callback({
           trackedMeal: {
             findFirst: vi.fn().mockResolvedValue(null),
@@ -557,10 +559,10 @@ describe('meal router', () => {
         adherenceScore: 85,
       };
 
-      vi.mocked(prisma.trackedMeal.findFirst).mockResolvedValue(mealToDelete as any);
-      vi.mocked(prisma.trackedMeal.delete).mockResolvedValue(mealToDelete as any);
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(updatedDailyLog as any);
-      vi.mocked(prisma.dailyLog.update).mockResolvedValue(updatedDailyLog as any);
+      vi.mocked(prisma.trackedMeal.findFirst).mockResolvedValue(mealToDelete as never);
+      vi.mocked(prisma.trackedMeal.delete).mockResolvedValue(mealToDelete as never);
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(updatedDailyLog as never);
+      vi.mocked(prisma.dailyLog.update).mockResolvedValue(updatedDailyLog as never);
 
       const { recalculateDailyLog } = await import('@/server/utils/daily-log');
 
@@ -645,8 +647,8 @@ describe('meal router', () => {
         },
       ];
 
-      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(todayLog as any);
-      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue(todayMeals as any);
+      vi.mocked(prisma.dailyLog.findUnique).mockResolvedValue(todayLog as never);
+      vi.mocked(prisma.trackedMeal.findMany).mockResolvedValue(todayMeals as never);
 
       const result = await caller.meal.getTodaysLog();
 

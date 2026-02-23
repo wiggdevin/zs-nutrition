@@ -74,7 +74,7 @@ describe('plan router', () => {
         },
       };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as never);
 
       const result = await caller.plan.getActivePlan();
 
@@ -108,7 +108,7 @@ describe('plan router', () => {
         metabolicProfile: { invalid: 'data' }, // Invalid structure
       };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as never);
 
       const result = await caller.plan.getActivePlan();
 
@@ -165,7 +165,7 @@ describe('plan router', () => {
         },
       };
 
-      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as any);
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(mockPlan as never);
 
       const result = await caller.plan.getPlanById({ planId });
 
@@ -231,7 +231,7 @@ describe('plan router', () => {
         error: null,
       };
 
-      vi.mocked(prisma.planGenerationJob.findFirst).mockResolvedValue(mockJob as any);
+      vi.mocked(prisma.planGenerationJob.findFirst).mockResolvedValue(mockJob as never);
       vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(null);
 
       await expect(
@@ -315,9 +315,9 @@ describe('plan router', () => {
         metabolicProfile: {},
       };
 
-      vi.mocked(prisma.planGenerationJob.findFirst).mockResolvedValue(mockJob as any);
-      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(mockProfile as any);
-      vi.mocked(prisma.$transaction).mockImplementation(async (callback: any) => {
+      vi.mocked(prisma.planGenerationJob.findFirst).mockResolvedValue(mockJob as never);
+      vi.mocked(prisma.userProfile.findFirst).mockResolvedValue(mockProfile as never);
+      vi.mocked(prisma.$transaction).mockImplementation(async (callback) => {
         return callback({
           mealPlan: {
             updateMany: vi.fn().mockResolvedValue({ count: 1 }),
@@ -330,7 +330,7 @@ describe('plan router', () => {
         status: 'completed',
         result: { planId },
         completedAt: new Date(),
-      } as any);
+      } as never);
 
       const result = await caller.plan.completeJob({
         jobId,
@@ -382,7 +382,7 @@ describe('plan router', () => {
         error: null,
       };
 
-      vi.mocked(prisma.planGenerationJob.create).mockResolvedValue(mockJob as any);
+      vi.mocked(prisma.planGenerationJob.create).mockResolvedValue(mockJob as never);
 
       const { planGenerationQueue } = await import('@/lib/queue');
 
@@ -462,12 +462,13 @@ describe('plan router', () => {
         error: null,
       };
 
-      vi.mocked(prisma.planGenerationJob.findFirst).mockResolvedValue(mockJob as any);
+      vi.mocked(prisma.planGenerationJob.findFirst).mockResolvedValue(mockJob as never);
 
       const result = await caller.plan.getJobStatus({ jobId });
 
       expect(result.status).toBe('processing');
-      expect(result.currentAgent).toBe('metabolic');
+      expect(result.currentAgent).toBe(2);
+      expect(result.currentAgentName).toBe('metabolic');
       expect(result.progress).toHaveProperty('completedAgents');
     });
   });

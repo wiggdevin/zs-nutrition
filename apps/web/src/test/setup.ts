@@ -13,6 +13,7 @@ vi.mock('@/lib/prisma', () => ({
       findMany: vi.fn(),
       create: vi.fn(),
       update: vi.fn(),
+      updateMany: vi.fn(),
     },
     onboardingState: {
       findUnique: vi.fn(),
