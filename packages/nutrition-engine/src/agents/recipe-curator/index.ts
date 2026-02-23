@@ -14,8 +14,8 @@ import type { DraftViolation } from '../../utils/draft-compliance-gate';
 import { scanDraftForViolations } from '../../utils/draft-compliance-gate';
 import type { BatchIngredientResolver } from './batch-resolver';
 
-/** Timeout for Claude streaming requests (2 minutes per attempt) */
-const CLAUDE_STREAM_TIMEOUT_MS = 120_000;
+/** Timeout for Claude streaming requests (3 minutes per attempt — complex meal plans with tool_use need headroom) */
+const CLAUDE_STREAM_TIMEOUT_MS = 180_000;
 
 /** Timeout for Round 1 (resolve_ingredients) — shorter since it's a small output */
 const RESOLVE_STREAM_TIMEOUT_MS = 30_000;
@@ -503,7 +503,26 @@ You have received food database resolution results. For each ingredient in draft
     const dayNames = ['Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'];
     const trainingDaysSet = new Set(intake.trainingDays);
 
-    return `Create a personalized ${intake.planDurationDays}-day meal plan using the generate_meal_plan tool.
+    // Build hard-constraint warnings for critical dietary styles
+    const hardConstraints: string[] = [];
+    if (intake.macroStyle === 'keto') {
+      hardConstraints.push(
+        `## ⚠️ KETO HARD CONSTRAINT — READ FIRST\nTotal carbs per day MUST be ≤ ${metabolicProfile.carbsTargetG}g. This is NON-NEGOTIABLE.\nEvery ingredient contributes carbs — track them: onion (10g=1gC), garlic (3g=1gC), tomato (100g=4gC), bell pepper (100g=6gC).\nIf a meal's carbs exceed its targetNutrition.carbsG, REPLACE the carb-contributing ingredient with a zero-carb alternative.\nDo NOT use rice, bread, pasta, potatoes, beans, fruit, or any starchy food.`
+      );
+    }
+    if (intake.macroStyle === 'high_protein') {
+      const mealProteinTargets = metabolicProfile.mealTargets
+        .map((t) => `${t.label}: ${t.proteinG}g protein`)
+        .join(', ');
+      hardConstraints.push(
+        `## ⚠️ HIGH PROTEIN CONSTRAINT — READ FIRST\nDaily protein target: ${metabolicProfile.proteinTargetG}g. Per-meal targets: ${mealProteinTargets}.\nEach meal's ingredient protein sum MUST be within ±10% of its per-meal target. OVERSHOOTING protein is just as bad as undershooting.\nCalculate: meat_grams = target_protein / density. Examples: 30g target → 97g chicken, 45g target → 173g lean beef, 53g target → 171g chicken.\nNEVER use "1 lb" or "1 pound" or "20 oz" meat portions — ALWAYS calculate the exact grams needed from the target.`
+      );
+    }
+
+    const hardConstraintBlock =
+      hardConstraints.length > 0 ? hardConstraints.join('\n\n') + '\n\n' : '';
+
+    return `${hardConstraintBlock}Create a personalized ${intake.planDurationDays}-day meal plan using the generate_meal_plan tool.
 
 ## Client Profile
 - Sex: ${intake.sex}, Age: ${intake.age}
@@ -527,8 +546,15 @@ You have received food database resolution results. For each ingredient in draft
 ## Macro Style: ${intake.macroStyle.toUpperCase().replace('_', ' ')}
 ${this.getMacroStyleGuidance(intake.macroStyle, metabolicProfile, intake.mealsPerDay + intake.snacksPerDay)}
 
-## Meal Slot Targets
-${metabolicProfile.mealTargets.map((t) => `- ${t.label}: ${t.kcal} kcal (P: ${t.proteinG}g, C: ${t.carbsG}g, F: ${t.fatG}g)`).join('\n')}
+## Meal Slot Targets (STRICT — match each meal individually)
+${metabolicProfile.mealTargets
+  .map((t) => {
+    const chickenEquiv = Math.round(t.proteinG / 0.31);
+    return `- ${t.label}: ${t.kcal} kcal | P: ${t.proteinG}g (≈${chickenEquiv}g chicken breast) | C: ${t.carbsG}g | F: ${t.fatG}g`;
+  })
+  .join('\n')}
+⚠️ PROTEIN CEILING: Each meal's total ingredient protein MUST stay within ±10% of its P target above.
+If your recipe has 1 lb (454g) meat but the target is only 45g protein, use ~175g meat instead.
 
 ## Variety Rules (MUST follow)
 1. No repeated protein on consecutive days; no identical meal within 3 days
@@ -557,7 +583,11 @@ Rules:
    - Vegetables: grams (e.g., 100g broccoli)
    - Oils/fats: tbsp (e.g., 1 tbsp olive oil)
    - Small items: pieces (e.g., 2 eggs)
-4. Realistic quantities: 85-230g protein per meal, max 340g; 100-200g grains; 1-2 tbsp oil
+4. Realistic quantities — scale protein portions to match per-meal protein targets:
+   - Calculate: needed_grams = targetNutrition.proteinG / protein_density_per_gram
+   - Example: 30g protein target → ~100g chicken breast (31g/100g)
+   - Example: 50g protein target → ~165g chicken breast (31g/100g)
+   - Grains: 100-200g cooked; Oils: 1-2 tbsp
 5. Ingredient calories should closely match targetNutrition for that meal slot
 6. Each meal MUST have 4-8 ingredients (not counting salt/pepper/water). This is a hard requirement:
    - Minimum 4 distinct ingredients per meal (e.g., protein + grain/starch + vegetable + fat/sauce)
@@ -580,8 +610,9 @@ tofu (firm): 17g protein, 9g fat
 olive oil: 0g protein, 100g fat
 
 CRITICAL: For each meal, multiply protein source grams × protein density to verify
-you hit targetNutrition.proteinG. Known bias: AI underestimates protein, overestimates fat.
-Counter by using UPPER end of protein portions (170-230g lean protein per main meal).
+you hit targetNutrition.proteinG ±10%. Known bias: AI underestimates protein, overestimates fat.
+Counter by calculating exact protein grams needed: serving_g = targetNutrition.proteinG / density.
+Do NOT default to 170-230g protein portions — use the CALCULATED amount for each meal's target.
 
 Priority: dietary compliance > variety > calorie accuracy.
 ${this.buildBiometricPromptSection(biometricContext)}`;
@@ -637,13 +668,13 @@ ${this.buildBiometricPromptSection(biometricContext)}`;
 
     switch (macroStyle) {
       case 'high_protein':
-        return `Per-meal: protein≥${perMealProtein}g, fat≤${perMealFat}g, carbs~${perMealCarbs}g
+        return `Use per-meal P/C/F targets from Meal Slot Targets above. Each meal's protein MUST be within ±10%.
 ALLOWED proteins: chicken breast, turkey breast, white fish (cod/tilapia/sole), egg whites, Greek yogurt 0%, shrimp, 95%+ lean beef, 99% lean turkey
 BANNED proteins: chicken thigh, salmon, >1 whole egg/meal, pork belly, ribeye, dark meat, sausage
 Fat rules: MAX 1 fat source/meal (oil OR butter OR nuts OR avocado OR cheese). No stacking. Cooking oil≤1tsp.
-Main meals: 170-230g lean protein source (yields 40-60g protein). Snacks: include ≥15g protein.
-If protein target seems high, use LARGER lean protein portions rather than adding fat-heavy alternatives.
-Tolerance: estimatedNutrition within 15% of targetNutrition for all macros.`;
+PORTION RULE: Calculate exact protein source weight for EACH meal: grams = targetNutrition.proteinG / density_per_g.
+Example: if targetNutrition.proteinG=45g → 45/0.26 = 173g lean beef, NOT 1 lb (454g). NEVER use standard recipe portions — ALWAYS calculate.
+Tolerance: estimatedNutrition within 10% of targetNutrition for protein, 15% for carbs/fat.`;
 
       case 'keto':
         return `Per-meal: carbs≤${perMealCarbs}g (STRICT), fat~${perMealFat}g, protein~${perMealProtein}g
@@ -662,10 +693,10 @@ Fat rules: MAX 2 fat sources/meal (oil, butter, nuts, avocado, cheese).
 Tolerance: estimatedNutrition within 15% of targetNutrition for all macros.`;
 
       default:
-        return `Per-meal: protein~${perMealProtein}g, carbs~${perMealCarbs}g, fat~${perMealFat}g
+        return `Use per-meal P/C/F targets from Meal Slot Targets above (±15% tolerance for each macro).
 Mix lean proteins, whole grains, fruits, vegetables, moderate healthy fats. No single macro should dominate.
-Fat rules: MAX 2 fat sources/meal (oil, butter, nuts, avocado, cheese).
-Tolerance: estimatedNutrition within 15% of targetNutrition for all macros.`;
+PORTION RULE: Calculate protein source weight to match targetNutrition.proteinG — do NOT use default recipe portions.
+Fat rules: MAX 2 fat sources/meal (oil, butter, nuts, avocado, cheese).`;
     }
   }
 

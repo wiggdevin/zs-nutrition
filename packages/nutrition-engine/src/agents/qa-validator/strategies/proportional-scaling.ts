@@ -60,7 +60,33 @@ export const proportionalScaling: RepairStrategy = {
         return null;
       }
 
-      scaleFactor = worst.target / worst.actual;
+      // Before scaling for the worst macro, check if scaling would push
+      // another macro beyond its tolerance (protein ±10%, carbs/fat ±15%).
+      // If so, limit the scale factor to avoid collateral damage.
+      const proposedFactor = worst.target / worst.actual;
+      const macroTolerances: Record<string, number> = { protein: 0.1, carbs: 0.15, fat: 0.15 };
+      let safeFactor = proposedFactor;
+      for (const c of candidates) {
+        if (c.name === worst.name) continue;
+        const tolerance = macroTolerances[c.name] || 0.15;
+        const scaled = c.actual * proposedFactor;
+        const scaledVariance = Math.abs(scaled - c.target) / c.target;
+        if (scaledVariance > tolerance && Math.abs(c.actual - c.target) / c.target <= tolerance) {
+          // Scaling would push a currently-compliant macro out of tolerance.
+          // Limit the factor so it stays within tolerance.
+          const maxScaled = c.target * (1 + tolerance);
+          const minScaled = c.target * (1 - tolerance);
+          const limitUp = c.actual > 0 ? maxScaled / c.actual : proposedFactor;
+          const limitDown = c.actual > 0 ? minScaled / c.actual : proposedFactor;
+          if (proposedFactor > 1) {
+            safeFactor = Math.min(safeFactor, limitUp);
+          } else {
+            safeFactor = Math.max(safeFactor, limitDown);
+          }
+        }
+      }
+
+      scaleFactor = safeFactor;
       descriptionContext = `${worst.name} from ${worst.actual}g toward ${worst.target}g`;
     } else {
       return null;
@@ -71,7 +97,9 @@ export const proportionalScaling: RepairStrategy = {
     const minGuard = day.targetKcal < 1500 ? 0.65 : 0.75;
     const maxGuard = day.targetKcal < 1500 ? 1.35 : 1.25;
     if (scaleFactor < minGuard || scaleFactor > maxGuard) {
-      return null;
+      // Clamp to guard for partial fix instead of giving up entirely.
+      // This lets subsequent repair passes close the remaining gap.
+      scaleFactor = Math.max(minGuard, Math.min(maxGuard, scaleFactor));
     }
 
     const scaledMeals: CompiledMeal[] = day.meals.map((meal) => ({

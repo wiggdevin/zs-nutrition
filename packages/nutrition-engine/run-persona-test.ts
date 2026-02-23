@@ -7,6 +7,10 @@
  * Default: persona 1 (Marcus)
  */
 
+import { config as dotenvConfig } from 'dotenv';
+import { resolve } from 'path';
+dotenvConfig({ path: resolve(__dirname, '../../.env') });
+
 import { NutritionPipelineOrchestrator, PipelineConfig } from './src/orchestrator';
 import { RawIntakeForm, PipelineProgress } from './src/types/schemas';
 
@@ -58,6 +62,28 @@ const PERSONAS: Record<string, RawIntakeForm> = {
     macroStyle: 'high_protein',
     planDurationDays: 7,
   } as RawIntakeForm,
+  '4': {
+    name: 'Jennifer',
+    sex: 'female',
+    age: 38,
+    heightFeet: 5,
+    heightInches: 5,
+    weightLbs: 160,
+    goalType: 'cut',
+    goalRate: 1,
+    activityLevel: 'lightly_active',
+    trainingDays: ['tuesday', 'thursday', 'saturday'],
+    dietaryStyle: 'omnivore',
+    allergies: ['dairy'],
+    exclusions: [],
+    cuisinePreferences: ['american', 'mexican'],
+    mealsPerDay: 3,
+    snacksPerDay: 1,
+    cookingSkill: 6,
+    prepTimeMaxMin: 30,
+    macroStyle: 'keto',
+    planDurationDays: 7,
+  } as RawIntakeForm,
   '7': {
     name: 'Takeshi',
     sex: 'male',
@@ -95,9 +121,11 @@ async function main() {
   console.log(`  USDA-FIRST Pipeline Test — Persona ${personaId}: ${input.name}`);
   console.log('='.repeat(70));
 
+  // USDA-only mode: no FatSecret fallback, no AI estimate fallback
   const config: PipelineConfig = {
-    anthropicApiKey: 'YOUR_KEY_placeholder',
-    usdaApiKey: 'placeholder-usda-key',
+    anthropicApiKey: process.env.ANTHROPIC_API_KEY || 'YOUR_KEY_placeholder',
+    usdaApiKey: process.env.USDA_API_KEY || 'placeholder-usda-key',
+    // FatSecret intentionally omitted — USDA-only data source
   };
 
   const orchestrator = new NutritionPipelineOrchestrator(config);

@@ -174,10 +174,13 @@ export function generateEstimatedIngredients(meal: DraftMeal): Ingredient[] {
 
 /**
  * Get complementary ingredients based on the meal's characteristics.
+ * Includes healthy fat sources to prevent systematic fat deficit.
  */
 export function getComplementaryIngredients(meal: DraftMeal): Ingredient[] {
   const ingredients: Ingredient[] = [];
   const query = meal.foodSearchQuery.toLowerCase();
+  const mealName = meal.name.toLowerCase();
+  const combinedText = `${query} ${mealName}`;
 
   // Add carb source if mentioned in query
   if (query.includes('rice')) {
@@ -199,6 +202,44 @@ export function getComplementaryIngredients(meal: DraftMeal): Ingredient[] {
     ingredients.push({ name: 'Asparagus Spears', amount: 100, unit: 'g' });
   } else if (query.includes('vegetables')) {
     ingredients.push({ name: 'Mixed Vegetables', amount: 150, unit: 'g' });
+  }
+
+  // Add healthy fat source — prevents systematic fat deficit.
+  // Only add if no fat-rich ingredient is already present in the query
+  // AND the meal's fat budget is large enough to warrant it.
+  const mealFatTarget = meal.targetNutrition?.fatG ?? 0;
+  const mealKcalTarget = meal.targetNutrition?.kcal ?? 0;
+
+  // Skip fat enrichment on low-fat-budget meals (< 8g fat target per meal,
+  // typical of aggressive cuts with ~24-28g daily fat across 3-4 slots)
+  const hasFatSource =
+    combinedText.includes('avocado') ||
+    combinedText.includes('salmon') ||
+    combinedText.includes('nuts') ||
+    combinedText.includes('almond') ||
+    combinedText.includes('peanut') ||
+    combinedText.includes('cheese') ||
+    combinedText.includes('butter');
+
+  if (!hasFatSource && !isSweetDish(meal) && mealFatTarget >= 8) {
+    // Scale fat portion based on caloric budget
+    const isLowCal = mealKcalTarget > 0 && mealKcalTarget < 350;
+    const slot = meal.slot || '';
+    if (
+      slot.includes('breakfast') ||
+      combinedText.includes('bowl') ||
+      combinedText.includes('salad')
+    ) {
+      ingredients.push({ name: 'Avocado', amount: isLowCal ? 20 : 40, unit: 'g' });
+    } else if (slot.includes('snack')) {
+      ingredients.push({ name: 'Almonds, Raw', amount: isLowCal ? 8 : 15, unit: 'g' });
+    } else {
+      ingredients.push({
+        name: 'Extra Virgin Olive Oil',
+        amount: isLowCal ? 0.5 : 1,
+        unit: 'tbsp',
+      });
+    }
   }
 
   // Add complementary seasoning/oil based on dish type

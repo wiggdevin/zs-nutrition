@@ -14,7 +14,7 @@ export const DEFAULT_MODEL_CONFIG: ModelConfigMap = {
     maxTokens: 4096,
     fallbackModel: 'claude-sonnet-4-20250514',
   },
-  recipeRound2: { model: 'claude-sonnet-4-20250514', maxTokens: 16384 },
+  recipeRound2: { model: 'claude-sonnet-4-20250514', maxTokens: 32768 },
   complianceRegen: {
     model: 'claude-haiku-4-5-20251001',
     maxTokens: 8192,

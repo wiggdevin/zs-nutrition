@@ -49,7 +49,7 @@ export interface Violation {
   type: 'kcal' | 'macro';
   variancePercent: number;
   /** Which specific macros are out of tolerance (only for macro violations) */
-  offendingMacros?: Array<'protein' | 'carbs' | 'fat'>;
+  offendingMacros?: Array<'protein' | 'carbs' | 'fat' | 'carbs_keto_cap'>;
 }
 
 /**
@@ -65,7 +65,7 @@ export interface Violation {
  * - Carbs:   +/- 15%
  * - Fat:     +/- 15%
  */
-export function findViolations(days: CompiledDay[]): Violation[] {
+export function findViolations(days: CompiledDay[], macroStyle?: string): Violation[] {
   const violations: Violation[] = [];
 
   for (let i = 0; i < days.length; i++) {
@@ -104,6 +104,11 @@ export function findViolations(days: CompiledDay[]): Violation[] {
       if (proteinVar > PROTEIN_TOLERANCE * confMultiplier) offendingMacros.push('protein');
       if (carbsVar > CARBS_TOLERANCE * confMultiplier) offendingMacros.push('carbs');
       if (fatVar > FAT_TOLERANCE * confMultiplier) offendingMacros.push('fat');
+
+      // Keto hard cap: net carbs must not exceed 50g/day regardless of percentage tolerance
+      if (macroStyle === 'keto' && aC > 50) {
+        offendingMacros.push('carbs_keto_cap');
+      }
 
       if (offendingMacros.length > 0) {
         const worstVar = Math.max(proteinVar, carbsVar, fatVar);
