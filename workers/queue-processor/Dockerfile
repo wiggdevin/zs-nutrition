@@ -41,9 +41,12 @@ COPY packages/shared-types/ packages/shared-types/
 COPY packages/queue-config/ packages/queue-config/
 COPY workers/queue-processor/ workers/queue-processor/
 
-# Copy Prisma schema and generate the client
+# Generate Prisma client (hide pnpm-lock.yaml to prevent Prisma's auto-install via pnpm)
 COPY apps/web/prisma/ apps/web/prisma/
-RUN npm install -g prisma@6.19.2 && prisma generate --schema=./apps/web/prisma/schema.prisma
+RUN npm install -g prisma@6.19.2 \
+    && mv pnpm-lock.yaml pnpm-lock.yaml.bak \
+    && prisma generate --schema=./apps/web/prisma/schema.prisma \
+    && mv pnpm-lock.yaml.bak pnpm-lock.yaml
 
 # Build the queue-processor and its dependencies
 RUN pnpm turbo run build --filter=@zsn/queue-processor
