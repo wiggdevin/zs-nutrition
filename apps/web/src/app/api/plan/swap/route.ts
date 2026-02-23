@@ -89,7 +89,7 @@ export async function POST(req: NextRequest) {
 
     // Rate limit: 10 meal swaps per hour per user
     const rateLimitResult = await checkRateLimit(mealSwapLimiter, clerkUserId);
-    if (rateLimitResult && !rateLimitResult.success) {
+    if (!rateLimitResult.success) {
       return rateLimitExceededResponse(rateLimitResult.reset);
     }
 

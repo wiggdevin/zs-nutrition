@@ -8,6 +8,7 @@
 import { timingSafeEqual } from 'crypto';
 import { Router, Request, Response, NextFunction } from 'express';
 import { FatSecretAdapter } from '@zero-sum/nutrition-engine';
+import { logger } from './logger.js';
 
 /**
  * Compare two strings in constant time to prevent timing attacks.
@@ -43,7 +44,7 @@ function authMiddleware(req: Request, res: Response, next: NextFunction): void {
   const expectedSecret = process.env.FATSECRET_PROXY_SECRET;
 
   if (!expectedSecret) {
-    console.error('[FatSecret Proxy] FATSECRET_PROXY_SECRET not configured');
+    logger.error('FATSECRET_PROXY_SECRET not configured', { component: 'fatsecret-proxy' });
     res.status(500).json({ error: 'Proxy not configured' });
     return;
   }
@@ -88,10 +89,10 @@ export function createFatSecretProxyRouter(): Router {
       const results = await fatSecret.searchFoods(query, maxResults, pageNumber);
       res.json({ results, pageNumber });
     } catch (error) {
-      console.error(
-        '[FatSecret Proxy] Search error:',
-        error instanceof Error ? error.message : error
-      );
+      logger.error('Search error', {
+        component: 'fatsecret-proxy',
+        error: error instanceof Error ? error.message : String(error),
+      });
       res.status(500).json({ error: 'Search failed' });
     }
   });
@@ -113,10 +114,10 @@ export function createFatSecretProxyRouter(): Router {
       const food = await fatSecret.getFood(foodId);
       res.json({ food });
     } catch (error) {
-      console.error(
-        '[FatSecret Proxy] Get food error:',
-        error instanceof Error ? error.message : error
-      );
+      logger.error('Get food error', {
+        component: 'fatsecret-proxy',
+        error: error instanceof Error ? error.message : String(error),
+      });
       res.status(500).json({ error: 'Food lookup failed' });
     }
   });
@@ -138,10 +139,10 @@ export function createFatSecretProxyRouter(): Router {
       const suggestions = await fatSecret.autocomplete(query);
       res.json({ suggestions });
     } catch (error) {
-      console.error(
-        '[FatSecret Proxy] Autocomplete error:',
-        error instanceof Error ? error.message : error
-      );
+      logger.error('Autocomplete error', {
+        component: 'fatsecret-proxy',
+        error: error instanceof Error ? error.message : String(error),
+      });
       res.status(500).json({ error: 'Autocomplete failed' });
     }
   });
@@ -169,10 +170,10 @@ export function createFatSecretProxyRouter(): Router {
 
       res.json({ food });
     } catch (error) {
-      console.error(
-        '[FatSecret Proxy] Barcode lookup error:',
-        error instanceof Error ? error.message : error
-      );
+      logger.error('Barcode lookup error', {
+        component: 'fatsecret-proxy',
+        error: error instanceof Error ? error.message : String(error),
+      });
       res.status(500).json({ error: 'Barcode lookup failed' });
     }
   });
@@ -194,10 +195,10 @@ export function createFatSecretProxyRouter(): Router {
       const results = await fatSecret.searchRecipes(query, maxResults);
       res.json({ results });
     } catch (error) {
-      console.error(
-        '[FatSecret Proxy] Recipe search error:',
-        error instanceof Error ? error.message : error
-      );
+      logger.error('Recipe search error', {
+        component: 'fatsecret-proxy',
+        error: error instanceof Error ? error.message : String(error),
+      });
       res.status(500).json({ error: 'Recipe search failed' });
     }
   });
@@ -219,10 +220,10 @@ export function createFatSecretProxyRouter(): Router {
       const recipe = await fatSecret.getRecipe(recipeId);
       res.json({ recipe });
     } catch (error) {
-      console.error(
-        '[FatSecret Proxy] Recipe details error:',
-        error instanceof Error ? error.message : error
-      );
+      logger.error('Recipe details error', {
+        component: 'fatsecret-proxy',
+        error: error instanceof Error ? error.message : String(error),
+      });
       res.status(500).json({ error: 'Recipe lookup failed' });
     }
   });

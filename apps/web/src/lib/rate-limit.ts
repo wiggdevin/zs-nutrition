@@ -81,8 +81,13 @@ export const chatLimiter = redis
 export async function checkRateLimit(
   limiter: Ratelimit | null,
   identifier: string
-): Promise<{ success: boolean; remaining?: number; reset?: number } | null> {
-  if (!limiter) return null;
+): Promise<{ success: boolean; remaining?: number; reset?: number }> {
+  if (!limiter) {
+    console.warn(
+      `[rate-limit] Limiter unavailable for ${identifier}, denying request (Redis offline?)`
+    );
+    return { success: false };
+  }
   const result = await limiter.limit(identifier);
   return { success: result.success, remaining: result.remaining, reset: result.reset };
 }

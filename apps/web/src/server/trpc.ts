@@ -97,7 +97,7 @@ const enforceAuth = t.middleware(async ({ ctx, next }) => {
 const rateLimit = t.middleware(async ({ ctx, next }) => {
   if (ctx.userId && generalLimiter) {
     const result = await checkRateLimit(generalLimiter, ctx.userId);
-    if (result && !result.success) {
+    if (!result.success) {
       const retryAfter = Math.max(1, Math.ceil(((result.reset || Date.now()) - Date.now()) / 1000));
       throw new TRPCError({
         code: 'TOO_MANY_REQUESTS',

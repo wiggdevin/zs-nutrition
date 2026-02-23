@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
 
   // Rate limit
   const rateLimitResult = await checkRateLimit(chatLimiter, clerkUserId);
-  if (rateLimitResult && !rateLimitResult.success) {
+  if (!rateLimitResult.success) {
     return rateLimitExceededResponse(rateLimitResult.reset);
   }
 

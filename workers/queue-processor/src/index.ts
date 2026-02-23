@@ -12,6 +12,8 @@ import type { RawIntakeForm, MealPlanDraft } from '@zero-sum/nutrition-engine';
 import { workerEnv } from './env.js';
 import { PrismaClient } from '@prisma/client';
 import { startDLQConsumer } from './dlq-consumer.js';
+import { logger } from './logger.js';
+import { safeError } from './utils.js';
 
 /**
  * Redis publisher for SSE progress streaming.
@@ -21,7 +23,7 @@ import { startDLQConsumer } from './dlq-consumer.js';
 function createRedisPublisher(): IORedis {
   const redisUrl = process.env.REDIS_URL;
   if (!redisUrl) {
-    console.error('[Worker] REDIS_URL is required for pub/sub. Progress streaming disabled.');
+    logger.error('REDIS_URL not set, progress streaming disabled');
     // Return a dummy publisher that no-ops on publish
     return new IORedis({
       host: '127.0.0.1',
@@ -44,7 +46,7 @@ const publisher = createRedisPublisher();
 
 // Handle publisher errors to prevent unhandled rejections
 publisher.on('error', (err) => {
-  console.error('[Worker] Redis publisher error:', err.message);
+  logger.error('Redis publisher error', { error: err.message });
   // Don't crash - progress updates will fail silently and SSE falls back to polling
 });
 
@@ -63,7 +65,7 @@ async function publishProgress(jobId: string, progress: Record<string, unknown>)
     await publisher.publish(channel, message);
   } catch (err) {
     // Non-fatal: SSE can fall back to database polling if pub/sub fails
-    console.warn('[Worker] Failed to publish progress to Redis:', safeError(err));
+    logger.warn('Failed to publish progress to Redis', { error: safeError(err) });
   }
 }
 
@@ -106,20 +108,6 @@ async function fetchIntakeData(
   return { intakeData: data.intakeData, draftData: data.draftData };
 }
 
-/** Extract safe error message without PII or stack traces */
-function safeError(error: unknown): string {
-  if (!error) return 'Unknown error';
-  const message = error instanceof Error ? error.message : String(error);
-  return message
-    .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[EMAIL_REDACTED]')
-    .replace(/sk-ant-[a-zA-Z0-9_-]+/g, '[API_KEY_REDACTED]')
-    .replace(/sk_(test|live)_[a-zA-Z0-9]+/g, '[CLERK_KEY_REDACTED]')
-    .replace(/Bearer\s+[a-zA-Z0-9._-]+/gi, 'Bearer [TOKEN_REDACTED]')
-    .replace(/postgresql:\/\/[^\s"']+/g, '[DB_URL_REDACTED]')
-    .replace(/rediss?:\/\/[^\s"']+/g, '[REDIS_URL_REDACTED]')
-    .replace(/\/Users\/[^\s"']+/g, '[PATH_REDACTED]');
-}
-
 /**
  * BullMQ Queue Processor Worker
  * Processes plan generation jobs by running the nutrition pipeline.
@@ -158,9 +146,12 @@ async function saveToWebApp(
       lastError = err instanceof Error ? err : new Error(safeError(err));
       if (attempt < maxRetries - 1) {
         const delay = Math.pow(2, attempt + 1) * 1000;
-        console.warn(
-          `⚠️ Save attempt ${attempt + 1}/${maxRetries} failed, retrying in ${delay / 1000}s: ${safeError(err)}`
-        );
+        logger.warn('Save attempt failed, retrying', {
+          attempt: attempt + 1,
+          maxAttempts: maxRetries,
+          retryDelaySeconds: delay / 1000,
+          error: safeError(err),
+        });
         await new Promise((resolve) => setTimeout(resolve, delay));
       }
     }
@@ -191,10 +182,10 @@ async function reportProgressToWebApp(
     });
 
     if (!response.ok) {
-      console.warn(`[Worker] Progress report failed (status: ${response.status})`);
+      logger.warn('Progress report failed', { status: response.status });
     }
   } catch (err) {
-    console.warn('[Worker] Failed to report progress to web app:', safeError(err));
+    logger.warn('Failed to report progress to web app', { error: safeError(err) });
   }
 }
 
@@ -227,40 +218,40 @@ function validateEnvVars() {
 
   // Additional runtime warnings
   if (!env.DATABASE_URL) {
-    console.warn(
-      '⚠️  DATABASE_URL not set — LocalUSDAAdapter disabled. All food lookups will hit live USDA API.'
+    logger.warn(
+      'DATABASE_URL not set — LocalUSDAAdapter disabled, all food lookups will hit live USDA API'
     );
   }
 
   if (env.REDIS_URL && !env.REDIS_URL.startsWith('rediss://')) {
-    console.warn('⚠️  REDIS_URL does not use TLS (rediss://). Upstash requires TLS.');
+    logger.warn('REDIS_URL does not use TLS (rediss://), Upstash requires TLS');
   }
 
   const isProduction = process.env.NODE_ENV === 'production';
   if (isProduction && env.WEB_APP_URL.includes('localhost')) {
-    console.error('❌ WEB_APP_URL points to localhost in production — worker callbacks will fail');
+    logger.error('WEB_APP_URL points to localhost in production — worker callbacks will fail');
     process.exit(1);
   }
 
-  console.log('✅ Environment variables validated');
+  logger.info('Environment variables validated');
 }
 
 async function startWorker() {
-  console.log('🚀 Starting ZS-MAC Queue Processor...');
+  logger.info('Starting ZS-MAC Queue Processor');
 
   // Validate env vars before doing anything else
   validateEnvVars();
 
-  console.log(`📋 Listening on queue: ${QUEUE_NAMES.PLAN_GENERATION}`);
+  logger.info('Listening on queue', { queue: QUEUE_NAMES.PLAN_GENERATION });
 
   const connection = createRedisConnection();
 
   // Test Redis connectivity
   try {
     const pong = await connection.ping();
-    console.log(`🔗 Redis connected: ${pong}`);
+    logger.info('Redis connected', { response: pong });
   } catch (err) {
-    console.error('❌ Failed to connect to Redis:', safeError(err));
+    logger.error('Failed to connect to Redis', { error: safeError(err) });
     process.exit(1);
   }
 
@@ -268,16 +259,16 @@ async function startWorker() {
   try {
     const infoRaw = await connection.info('clients');
     const connectedClients = infoRaw.match(/connected_clients:(\d+)/)?.[1] || 'unknown';
-    console.log(`✅ Redis rate limiter check: ${connectedClients} connected client(s)`);
+    logger.info('Redis rate limiter check passed', { connectedClients });
   } catch (err) {
-    console.error(`🚨 CRITICAL: Rate limiter health check failed: ${safeError(err)}`);
-    console.error('🚨 Worker continuing in degraded mode — rate limiting may not function');
+    logger.error('Rate limiter health check failed', { error: safeError(err) });
+    logger.error('Worker continuing in degraded mode — rate limiting may not function');
     // Do not exit: allow worker to operate in degraded mode
   }
 
   // Dead letter queue for jobs that exhaust all retry attempts
   const deadLetterQueue = createDeadLetterQueue(connection);
-  console.log(`🪦 Dead letter queue ready: ${QUEUE_NAMES.DEAD_LETTER}`);
+  logger.info('Dead letter queue ready', { queue: QUEUE_NAMES.DEAD_LETTER });
 
   // P5-T02: Start DLQ consumer to process permanently failed jobs
   const dlqWorker = startDLQConsumer(connection);
@@ -287,7 +278,7 @@ async function startWorker() {
   const worker = new Worker(
     QUEUE_NAMES.PLAN_GENERATION,
     async (job: Job<PlanGenerationJobData>) => {
-      console.log(`📦 Processing job ${job.id}: ${job.name}`);
+      logger.info('Processing job', { jobId: String(job.id), jobName: job.name });
 
       const { jobId, pipelinePath, existingDraftId } = job.data;
 
@@ -320,23 +311,26 @@ async function startWorker() {
           const progressWithStatus = { ...progress, status: 'running' as const };
           await publishProgress(jobId, progressWithStatus);
           await reportProgressToWebApp(webAppUrl, jobId, progressWithStatus, resolvedSecret);
-          console.log(
-            `  Agent ${progress.agent} (${progress.agentName}): ${progress.message}${progress.subStep ? ` [${progress.subStep}]` : ''}`
-          );
+          logger.info('Agent progress', {
+            agent: String(progress.agent),
+            agentName: progress.agentName,
+            message: progress.message,
+            subStep: progress.subStep,
+          });
         };
 
         // P5-T03: Run full or fast pipeline based on pipelinePath
         let result;
         if (pipelinePath === 'fast' && draftData) {
-          console.log(`⚡ Running fast pipeline (reusing draft from plan ${existingDraftId})`);
+          logger.info('Running fast pipeline', { existingDraftId });
           result = await orchestrator.runFast(
             { rawInput: intakeData as RawIntakeForm, existingDraft: draftData as MealPlanDraft },
             onProgress
           );
         } else {
           if (pipelinePath === 'fast' && !draftData) {
-            console.warn(
-              '⚠️ Fast path requested but no draft available, falling back to full pipeline'
+            logger.warn(
+              'Fast path requested but no draft available, falling back to full pipeline'
             );
           }
           result = await orchestrator.run(intakeData as RawIntakeForm, onProgress);
@@ -346,7 +340,7 @@ async function startWorker() {
           throw new Error(result.error || 'Pipeline failed');
         }
 
-        console.log(`✅ Job ${job.id} completed successfully (path: ${pipelinePath})`);
+        logger.info('Job completed successfully', { jobId: String(job.id), pipelinePath });
 
         // Save the completed plan to the database via the web app's API endpoint
         const savingProgress = { status: 'saving', message: 'Saving your meal plan...' };
@@ -361,13 +355,13 @@ async function startWorker() {
           resolvedSecret,
           result.draft
         );
-        console.log(`💾 Plan saved to database: ${saveData.planId}`);
+        logger.info('Plan saved to database', { planId: saveData.planId });
 
         return { success: true, jobId: job.data.jobId };
       } catch (error) {
-        console.error(`❌ Job ${job.id} failed:`, safeError(error));
+        logger.error('Job failed', { jobId: String(job.id), error: safeError(error) });
         if (error instanceof Error && error.stack) {
-          console.error(`❌ Error stack:`, safeError({ message: error.stack }));
+          logger.error('Error stack', { error: safeError({ message: error.stack }) });
         }
         throw error;
       }
@@ -380,7 +374,7 @@ async function startWorker() {
   );
 
   worker.on('completed', async (job) => {
-    console.log(`✅ Job ${job?.id} completed`);
+    logger.info('Job completed', { jobId: String(job?.id) });
     // Publish completion event for SSE subscribers
     if (job?.data?.jobId) {
       await publishProgress(job.data.jobId, {
@@ -392,7 +386,7 @@ async function startWorker() {
 
   worker.on('failed', async (job, err) => {
     if (!job) {
-      console.error('❌ Unknown job failed:', safeError(err));
+      logger.error('Unknown job failed', { error: safeError(err) });
       return;
     }
 
@@ -401,9 +395,12 @@ async function startWorker() {
 
     if (attemptsMade >= maxAttempts) {
       // Job exhausted all retries — move to dead letter queue
-      console.error(
-        `💀 Job ${job.id} permanently failed after ${attemptsMade}/${maxAttempts} attempts: ${safeError(err)}`
-      );
+      logger.error('Job permanently failed', {
+        jobId: String(job.id),
+        attemptsMade,
+        maxAttempts,
+        error: safeError(err),
+      });
 
       // Publish failure event for SSE subscribers (only on final failure)
       if (job.data?.jobId) {
@@ -437,27 +434,33 @@ async function startWorker() {
           },
           { jobId: `dlq-${job.id}` }
         );
-        console.log(`🪦 Job ${job.id} moved to dead letter queue`);
+        logger.info('Job moved to dead letter queue', { jobId: String(job.id) });
       } catch (dlqErr) {
-        console.error(`❌ Failed to move job ${job.id} to DLQ:`, safeError(dlqErr));
+        logger.error('Failed to move job to DLQ', {
+          jobId: String(job.id),
+          error: safeError(dlqErr),
+        });
       }
     } else {
-      console.warn(
-        `⚠️ Job ${job.id} failed (attempt ${attemptsMade}/${maxAttempts}), will retry: ${safeError(err)}`
-      );
+      logger.warn('Job failed, will retry', {
+        jobId: String(job.id),
+        attemptsMade,
+        maxAttempts,
+        error: safeError(err),
+      });
     }
   });
 
   worker.on('error', (err) => {
-    console.error('Worker error:', safeError(err));
+    logger.error('Worker error', { error: safeError(err) });
   });
 
   process.on('unhandledRejection', (reason) => {
-    console.error('Unhandled Rejection:', safeError(reason));
+    logger.error('Unhandled Rejection', { error: safeError(reason) });
   });
 
   process.on('uncaughtException', async (error) => {
-    console.error('Uncaught Exception:', safeError(error));
+    logger.error('Uncaught Exception', { error: safeError(error) });
     await worker.close();
     await dlqWorker.close();
     await deadLetterQueue.close();
@@ -468,7 +471,7 @@ async function startWorker() {
 
   // Graceful shutdown
   const shutdown = async () => {
-    console.log('\n🛑 Shutting down worker...');
+    logger.info('Shutting down worker');
     await closeBrowserPool();
     if (_prisma) await _prisma.$disconnect();
     await worker.close();
@@ -482,10 +485,10 @@ async function startWorker() {
   process.on('SIGINT', shutdown);
   process.on('SIGTERM', shutdown);
 
-  console.log('✅ Worker is running and waiting for jobs...');
+  logger.info('Worker is running and waiting for jobs');
 }
 
 startWorker().catch((err) => {
-  console.error('Failed to start worker:', safeError(err));
+  logger.error('Failed to start worker', { error: safeError(err) });
   process.exit(1);
 });

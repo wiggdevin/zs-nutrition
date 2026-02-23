@@ -2,20 +2,8 @@ import { Worker, Job } from 'bullmq';
 import IORedis from 'ioredis';
 import { QUEUE_NAMES } from './queues.js';
 import { workerEnv } from './env.js';
-
-/** Sanitize error messages to strip PII before logging or sending via webhook */
-function safeError(error: unknown): string {
-  if (!error) return 'Unknown error';
-  const message = error instanceof Error ? error.message : String(error);
-  return message
-    .replace(/[\w.-]+@[\w.-]+\.\w+/g, '[EMAIL_REDACTED]')
-    .replace(/sk-ant-[a-zA-Z0-9_-]+/g, '[API_KEY_REDACTED]')
-    .replace(/sk_(test|live)_[a-zA-Z0-9]+/g, '[CLERK_KEY_REDACTED]')
-    .replace(/Bearer\s+[a-zA-Z0-9._-]+/gi, 'Bearer [TOKEN_REDACTED]')
-    .replace(/postgresql:\/\/[^\s"']+/g, '[DB_URL_REDACTED]')
-    .replace(/rediss?:\/\/[^\s"']+/g, '[REDIS_URL_REDACTED]')
-    .replace(/\/Users\/[^\s"']+/g, '[PATH_REDACTED]');
-}
+import { logger } from './logger.js';
+import { safeError } from './utils.js';
 
 /**
  * DLQ job payload — matches what the main worker pushes to dead-letter queue.
@@ -53,22 +41,20 @@ async function sendAdminAlert(data: DLQJobData): Promise<void> {
         body: JSON.stringify(alertPayload),
       });
       if (!response.ok) {
-        console.warn(`[DLQ] Alert webhook returned ${response.status}`);
+        logger.warn('Alert webhook returned non-OK status', { status: response.status });
       }
     } catch (err) {
-      console.error('[DLQ] Failed to send alert webhook:', safeError(err));
+      logger.error('Failed to send alert webhook', { error: safeError(err) });
     }
   } else {
     // No webhook configured — log at CRITICAL level for log aggregator to pick up
-    console.error(
-      JSON.stringify({
-        level: 'critical',
-        source: 'dlq-consumer',
-        message: 'Job permanently failed — no alert webhook configured',
-        ...alertPayload,
-        timestamp: new Date().toISOString(),
-      })
-    );
+    logger.error('Job permanently failed — no alert webhook configured', {
+      jobId: alertPayload.jobId,
+      originalJobId: alertPayload.originalJobId,
+      failedReason: alertPayload.failedReason,
+      attemptsMade: alertPayload.attemptsMade,
+      failedAt: alertPayload.failedAt,
+    });
   }
 }
 
@@ -88,19 +74,13 @@ export function startDLQConsumer(connection: IORedis): Worker<DLQJobData> {
       const { jobId, originalJobId, failedReason, attemptsMade, failedAt } = job.data;
 
       // Log PII-redacted failure info
-      console.error(
-        JSON.stringify({
-          level: 'error',
-          source: 'dlq-consumer',
-          message: 'Processing dead letter job',
-          jobId,
-          originalJobId,
-          failedReason: safeError(failedReason),
-          attemptsMade,
-          failedAt,
-          timestamp: new Date().toISOString(),
-        })
-      );
+      logger.error('Processing dead letter job', {
+        jobId,
+        originalJobId,
+        failedReason: safeError(failedReason),
+        attemptsMade,
+        failedAt,
+      });
 
       // Send admin alert
       await sendAdminAlert(job.data);
@@ -132,17 +112,20 @@ export function startDLQConsumer(connection: IORedis): Worker<DLQJobData> {
   );
 
   worker.on('completed', (job) => {
-    console.log(`[DLQ] Processed dead letter job: ${job?.data?.jobId || job?.id}`);
+    logger.info('Processed dead letter job', { jobId: job?.data?.jobId || String(job?.id) });
   });
 
   worker.on('failed', (job, err) => {
-    console.error(`[DLQ] Failed to process dead letter job ${job?.id}:`, safeError(err));
+    logger.error('Failed to process dead letter job', {
+      jobId: String(job?.id),
+      error: safeError(err),
+    });
   });
 
   worker.on('error', (err) => {
-    console.error('[DLQ] Worker error:', safeError(err));
+    logger.error('DLQ worker error', { error: safeError(err) });
   });
 
-  console.log(`🪦 DLQ consumer started on queue: ${QUEUE_NAMES.DEAD_LETTER}`);
+  logger.info('DLQ consumer started', { queue: QUEUE_NAMES.DEAD_LETTER });
   return worker;
 }

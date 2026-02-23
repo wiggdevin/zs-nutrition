@@ -15,7 +15,7 @@ export async function GET(request: NextRequest) {
     // Rate limit by IP since this is a public endpoint
     const ip = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() || 'anonymous';
     const rateLimitResult = await checkRateLimit(foodSearchLimiter, ip);
-    if (rateLimitResult && !rateLimitResult.success) {
+    if (!rateLimitResult.success) {
       return rateLimitExceededResponse(rateLimitResult.reset);
     }
 

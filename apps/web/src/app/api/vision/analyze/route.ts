@@ -32,7 +32,7 @@ export async function POST(request: NextRequest) {
 
     // Rate limit: 20 vision analyses per hour per user
     const rateLimitResult = await checkRateLimit(visionLimiter, clerkUserId);
-    if (rateLimitResult && !rateLimitResult.success) {
+    if (!rateLimitResult.success) {
       return rateLimitExceededResponse(rateLimitResult.reset);
     }
 

@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { logger } from './logger.js';
 
 /**
  * Environment variable validation for the queue worker.
@@ -52,7 +53,7 @@ export function workerEnv() {
       const issues = result.error.issues
         .map((i) => `  - ${i.path.join('.')}: ${i.message}`)
         .join('\n');
-      console.error(`\nMissing worker environment variables:\n${issues}\n`);
+      logger.error('Missing worker environment variables', { issues });
       throw new Error(`Invalid worker environment variables.\n${issues}`);
     }
     _workerEnv = result.data;

@@ -22,7 +22,7 @@ export async function authenticateAndRateLimit(): Promise<
   }
 
   const rateLimitResult = await checkRateLimit(planGenerationLimiter, clerkUserId);
-  if (rateLimitResult && !rateLimitResult.success) {
+  if (!rateLimitResult.success) {
     return { errorResponse: rateLimitExceededResponse(rateLimitResult.reset) };
   }
 

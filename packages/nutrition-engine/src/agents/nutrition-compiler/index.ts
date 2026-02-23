@@ -15,6 +15,7 @@ import { USDAAdapter } from '../../adapters/usda';
 import { LocalUSDAAdapter } from '../../adapters/usda-local';
 import { engineLogger } from '../../utils/logger';
 import { isProductCompliant } from '../../utils/dietary-compliance';
+import { convertToGrams } from '../../utils/unit-conversion';
 import {
   buildIngredientsFromFood,
   generateEstimatedIngredients,
@@ -89,58 +90,6 @@ const MIN_RECALIBRATION_FACTOR = 0.5;
 
 /** Recalibration: maximum scale factor (don't inflate portions above 200%) */
 const MAX_RECALIBRATION_FACTOR = 2.0;
-
-/**
- * Convert a quantity + unit to grams for per-100g scaling.
- */
-function convertToGrams(quantity: number, unit: string): number {
-  const u = unit.toLowerCase().trim();
-  switch (u) {
-    case 'g':
-    case 'grams':
-    case 'gram':
-      return quantity;
-    case 'oz':
-    case 'ounce':
-    case 'ounces':
-      return quantity * 28.35;
-    case 'lb':
-    case 'lbs':
-    case 'pound':
-    case 'pounds':
-      return quantity * 453.6;
-    case 'kg':
-    case 'kilogram':
-    case 'kilograms':
-      return quantity * 1000;
-    case 'cup':
-    case 'cups':
-      return quantity * 240;
-    case 'tbsp':
-    case 'tablespoon':
-    case 'tablespoons':
-      return quantity * 15;
-    case 'tsp':
-    case 'teaspoon':
-    case 'teaspoons':
-      return quantity * 5;
-    case 'ml':
-    case 'milliliter':
-    case 'milliliters':
-      return quantity;
-    case 'pieces':
-    case 'piece':
-    case 'count':
-    case 'large':
-    case 'medium':
-    case 'small':
-    case 'slices':
-    case 'slice':
-      return quantity * 50;
-    default:
-      return quantity * 100;
-  }
-}
 
 // INGREDIENT_NAME_MAP has been migrated to the FoodAlias database table.
 // See seed-food-aliases.ts for the data and FoodAliasCache for runtime lookups.
@@ -939,8 +888,8 @@ export class NutritionCompiler {
                 );
               }
 
-              // USDA live API (only when no local DB available)
-              if (!this.localUsdaAdapter) {
+              // USDA live API (runs in parallel with LocalUSDA; preference logic below picks best hit)
+              {
                 lookups.push(
                   this.tryIngredientFromSource(
                     (q, max) => this.usdaAdapter.searchFoods(q, max),
@@ -981,8 +930,8 @@ export class NutritionCompiler {
               if (bestHit) return cacheAndReturn(bestHit);
             }
 
-            // --- FatSecret fallback (only when no local DB available) ---
-            if (!this.localUsdaAdapter && this.fatSecretAdapter) {
+            // --- FatSecret fallback (when neither LocalUSDA nor USDA API returned results) ---
+            if (this.fatSecretAdapter) {
               try {
                 const fsRef = this.fatSecretAdapter;
                 const fsResult = await this.tryIngredientFromSource(
@@ -1322,8 +1271,8 @@ export class NutritionCompiler {
           }
         }
 
-        // --- USDA live API fallback (only when no local DB available) ---
-        if (!verified && !this.localUsdaAdapter) {
+        // --- USDA live API fallback ---
+        if (!verified) {
           const usdaResult = await this.tryVerifyFromFoodDB(
             (q, max) => this.usdaAdapter.searchFoods(q, max),
             (id) => this.usdaAdapter.getFood(id),
@@ -1340,8 +1289,8 @@ export class NutritionCompiler {
           }
         }
 
-        // --- FatSecret fallback for Strategy 2 (only when no local DB available) ---
-        if (!verified && !this.localUsdaAdapter && this.fatSecretAdapter) {
+        // --- FatSecret fallback for Strategy 2 ---
+        if (!verified && this.fatSecretAdapter) {
           try {
             const fatsecretRef = this.fatSecretAdapter;
             const fatsecretResult = await this.tryVerifyFromFoodDB(

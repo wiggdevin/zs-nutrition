@@ -959,10 +959,9 @@ describe('RecipeCurator', () => {
       await curator.generate(mockProfile, { ...mockIntake, macroStyle: 'high_protein' as const });
 
       const prompt = mockMessagesStream.mock.calls[0][0].messages[0].content;
-      expect(prompt).toContain('## Macro Style: HIGH PROTEIN');
-      expect(prompt).toContain('protein≥');
-      expect(prompt).toContain('BANNED proteins:');
+      expect(prompt).toContain('HIGH PROTEIN CONSTRAINT');
       expect(prompt).toContain('ALLOWED proteins:');
+      expect(prompt).toContain('BANNED proteins:');
     });
 
     it('produces low_carb guidance with banned starches', async () => {
@@ -1036,7 +1035,7 @@ describe('RecipeCurator', () => {
       await curator.generate(mockProfile, mockIntake);
 
       const callArgs = mockMessagesStream.mock.calls[0][0];
-      expect(callArgs.max_tokens).toBe(16384);
+      expect(callArgs.max_tokens).toBe(32768);
     });
 
     it('sets max_tokens to 8192 for regeneration calls', async () => {

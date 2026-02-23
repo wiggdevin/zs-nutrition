@@ -1,6 +1,7 @@
 import { Queue } from 'bullmq';
 import IORedis from 'ioredis';
 import { QUEUE_NAMES, DEFAULT_JOB_OPTIONS } from '@zsn/queue-config';
+import { logger } from './logger.js';
 
 export { QUEUE_NAMES } from '@zsn/queue-config';
 
@@ -12,9 +13,7 @@ export function createRedisConnection(): IORedis {
   const redisUrl = process.env.REDIS_URL;
 
   if (!redisUrl) {
-    console.error(
-      '[Worker] REDIS_URL is required for the queue worker. The worker cannot function without Redis.'
-    );
+    logger.error('REDIS_URL is required for the queue worker');
     process.exit(1);
   }
 

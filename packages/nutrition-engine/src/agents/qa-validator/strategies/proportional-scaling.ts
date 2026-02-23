@@ -64,6 +64,15 @@ export const proportionalScaling: RepairStrategy = {
       // another macro beyond its tolerance (protein ±10%, carbs/fat ±15%).
       // If so, limit the scale factor to avoid collateral damage.
       const proposedFactor = worst.target / worst.actual;
+
+      // Guard check on the raw factor — if proportional scaling can't bridge the
+      // macro gap within the allowed range, bail out so other strategies can try.
+      const minGuardMacro = day.targetKcal < 1500 ? 0.65 : 0.75;
+      const maxGuardMacro = day.targetKcal < 1500 ? 1.35 : 1.25;
+      if (proposedFactor < minGuardMacro || proposedFactor > maxGuardMacro) {
+        return null;
+      }
+
       const macroTolerances: Record<string, number> = { protein: 0.1, carbs: 0.15, fat: 0.15 };
       let safeFactor = proposedFactor;
       for (const c of candidates) {
@@ -97,9 +106,7 @@ export const proportionalScaling: RepairStrategy = {
     const minGuard = day.targetKcal < 1500 ? 0.65 : 0.75;
     const maxGuard = day.targetKcal < 1500 ? 1.35 : 1.25;
     if (scaleFactor < minGuard || scaleFactor > maxGuard) {
-      // Clamp to guard for partial fix instead of giving up entirely.
-      // This lets subsequent repair passes close the remaining gap.
-      scaleFactor = Math.max(minGuard, Math.min(maxGuard, scaleFactor));
+      return null;
     }
 
     const scaledMeals: CompiledMeal[] = day.meals.map((meal) => ({
