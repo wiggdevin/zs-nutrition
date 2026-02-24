@@ -294,7 +294,7 @@ export const nutritionAdjustmentsRouter = router({
             'BullMQ enqueue failed during calorie adjustment (Redis may be unavailable):',
             queueError
           );
-          planRegenerated = true;
+          planRegenerated = false;
         }
       }
 

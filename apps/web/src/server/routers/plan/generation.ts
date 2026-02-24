@@ -100,7 +100,15 @@ export const planGenerationRouter = router({
         jobId: job.id,
       });
     } catch (queueError) {
-      logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError);
+      logger.error('BullMQ enqueue failed:', queueError);
+      await prisma.planGenerationJob.update({
+        where: { id: job.id },
+        data: { status: 'failed', error: 'Queue unavailable — please try again later.' },
+      });
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Unable to start plan generation. Please try again.',
+      });
     }
 
     return { jobId: job.id };
@@ -316,7 +324,15 @@ export const planGenerationRouter = router({
         jobId: job.id,
       });
     } catch (queueError) {
-      logger.warn('BullMQ enqueue failed (Redis may be unavailable):', queueError);
+      logger.error('BullMQ enqueue failed:', queueError);
+      await prisma.planGenerationJob.update({
+        where: { id: job.id },
+        data: { status: 'failed', error: 'Queue unavailable — please try again later.' },
+      });
+      throw new TRPCError({
+        code: 'INTERNAL_SERVER_ERROR',
+        message: 'Unable to start plan generation. Please try again.',
+      });
     }
 
     return { jobId: job.id };

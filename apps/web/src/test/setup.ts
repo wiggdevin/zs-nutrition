@@ -67,6 +67,7 @@ vi.mock('@/lib/prisma', () => ({
     },
     calorieAdjustment: {
       findMany: vi.fn(),
+      create: vi.fn(),
     },
     $transaction: vi.fn((fn) =>
       fn({
@@ -80,14 +81,31 @@ vi.mock('@/lib/prisma', () => ({
   },
 }));
 
+// Mock BullMQ queue to prevent Redis connection attempts
+vi.mock('@/lib/queue', () => ({
+  planGenerationQueue: {
+    add: vi.fn().mockResolvedValue({ id: 'mock-job-id', name: 'generate-plan' }),
+  },
+  PLAN_GENERATION_QUEUE: 'plan-generation',
+}));
+
 // Mock Redis
 vi.mock('@/lib/redis', () => ({
-  redis: { get: vi.fn(), set: vi.fn(), del: vi.fn(), publish: vi.fn() },
+  redis: {
+    get: vi.fn(),
+    set: vi.fn(),
+    del: vi.fn(),
+    publish: vi.fn(),
+    subscribe: vi.fn(),
+    unsubscribe: vi.fn(),
+  },
   createNewRedisConnection: vi.fn(() => ({
     get: vi.fn(),
     set: vi.fn(),
     del: vi.fn(),
     publish: vi.fn(),
+    subscribe: vi.fn(),
+    unsubscribe: vi.fn(),
     disconnect: vi.fn(),
   })),
 }));

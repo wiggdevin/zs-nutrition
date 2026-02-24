@@ -172,6 +172,30 @@ describe('plan router', () => {
       expect(result.id).toBe(planId);
       expect(result.dailyKcalTarget).toBe(2200);
     });
+
+    it('includes isActive: true in the query filter', async () => {
+      const userId = testUUID('user');
+      const planId = testUUID('plan');
+      const ctx = createAuthedTestContext({ dbUserId: userId });
+      const caller = createCaller(ctx);
+
+      vi.mocked(prisma.mealPlan.findFirst).mockResolvedValue(null);
+
+      await expect(caller.plan.getPlanById({ planId })).rejects.toMatchObject({
+        code: 'NOT_FOUND',
+      });
+
+      expect(prisma.mealPlan.findFirst).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            id: planId,
+            userId,
+            isActive: true,
+            deletedAt: null,
+          }),
+        })
+      );
+    });
   });
 
   describe('completeJob', () => {
@@ -422,6 +446,69 @@ describe('plan router', () => {
         })
       );
       expect(planGenerationQueue.add).toHaveBeenCalled();
+    });
+
+    it('throws INTERNAL_SERVER_ERROR when BullMQ enqueue fails', async () => {
+      const userId = testUUID('user');
+      const jobId = testUUID('job');
+      const ctx = createAuthedTestContext({ dbUserId: userId });
+      const caller = createCaller(ctx);
+
+      const mockJob = {
+        id: jobId,
+        userId,
+        status: 'pending' as const,
+        intakeData: {},
+        createdAt: new Date(),
+        updatedAt: new Date(),
+        completedAt: null,
+        currentAgent: null,
+        progress: null,
+        result: null,
+        error: null,
+      };
+
+      vi.mocked(prisma.planGenerationJob.create).mockResolvedValue(mockJob as never);
+      vi.mocked(prisma.planGenerationJob.update).mockResolvedValue({
+        ...mockJob,
+        status: 'failed',
+      } as never);
+
+      const { planGenerationQueue } = await import('@/lib/queue');
+      vi.mocked(planGenerationQueue.add).mockRejectedValue(new Error('Redis connection refused'));
+
+      await expect(
+        caller.plan.generatePlan({
+          name: 'John Doe',
+          sex: 'male',
+          age: 30,
+          heightCm: 180,
+          weightKg: 80,
+          goalType: 'maintain',
+          goalRate: 0,
+          activityLevel: 'moderately_active',
+          trainingDays: ['monday', 'wednesday', 'friday'],
+          dietaryStyle: 'omnivore',
+          allergies: [],
+          exclusions: [],
+          cuisinePreferences: [],
+          mealsPerDay: 3,
+          snacksPerDay: 1,
+          cookingSkill: 5,
+          prepTimeMaxMin: 45,
+          macroStyle: 'balanced',
+          planDurationDays: 7,
+        })
+      ).rejects.toMatchObject({
+        code: 'INTERNAL_SERVER_ERROR',
+      });
+
+      expect(prisma.planGenerationJob.update).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: jobId },
+          data: expect.objectContaining({ status: 'failed' }),
+        })
+      );
     });
   });
 

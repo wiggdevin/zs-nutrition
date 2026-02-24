@@ -88,6 +88,7 @@ export const planCrudRouter = router({
         where: {
           id: input.planId,
           userId: dbUserId,
+          isActive: true,
           deletedAt: null,
         },
       });
