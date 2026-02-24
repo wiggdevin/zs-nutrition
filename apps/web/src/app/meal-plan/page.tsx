@@ -1,0 +1,1018 @@
+'use client';
+
+import { useEffect, useState, useCallback, useRef } from 'react';
+import NavBar from '@/components/navigation/NavBar';
+
+interface MealNutrition {
+  kcal: number;
+  proteinG: number;
+  carbsG: number;
+  fatG: number;
+  fiberG?: number;
+}
+
+interface Meal {
+  slot: string;
+  name: string;
+  cuisine?: string;
+  prepTimeMin?: number;
+  cookTimeMin?: number;
+  nutrition: MealNutrition;
+  confidenceLevel?: string;
+  ingredients?: Array<{ name: string; amount: string }>;
+  instructions?: string[];
+}
+
+interface PlanDay {
+  dayNumber: number;
+  dayName: string;
+  isTrainingDay: boolean;
+  targetKcal: number;
+  meals: Meal[];
+}
+
+interface GroceryItem {
+  name: string;
+  amount: number;
+  unit: string;
+}
+
+interface GroceryCategory {
+  category: string;
+  items: GroceryItem[];
+}
+
+/**
+ * Normalize a raw grocery item (from various pipeline formats) into standard GroceryItem.
+ * Handles cases where items may be strings, have 'amount' as string (e.g., "700g"), or be
+ * in the proper {name, amount, unit} format.
+ */
+function normalizeGroceryItem(raw: Record<string, unknown>): GroceryItem {
+  const name =
+    (raw.name as string) || (raw.food_name as string) || (raw.item as string) || 'Unknown Item';
+  let amount: number;
+  let unit: string;
+
+  if (typeof raw.amount === 'number' && typeof raw.unit === 'string') {
+    // Standard format: { name, amount: number, unit: string }
+    amount = raw.amount;
+    unit = raw.unit;
+  } else if (typeof raw.amount === 'string') {
+    // Legacy format: { name, amount: "700g" } — parse number and unit from string
+    const match = (raw.amount as string).match(/^([\d.]+)\s*(.*)$/);
+    if (match) {
+      amount = parseFloat(match[1]);
+      unit = match[2] || (raw.unit as string) || '';
+    } else {
+      amount = 0;
+      unit = raw.amount as string;
+    }
+  } else if (typeof raw.quantity === 'number') {
+    // Alternative format: { name, quantity, unit }
+    amount = raw.quantity as number;
+    unit = (raw.unit as string) || '';
+  } else {
+    amount = 0;
+    unit = '';
+  }
+
+  return { name, amount, unit };
+}
+
+/**
+ * Normalize a raw grocery list from any pipeline format into standard GroceryCategory[].
+ * Handles multiple formats:
+ * 1. Standard: { category, items: [{ name, amount, unit }] }
+ * 2. String items: { category, items: ["Chicken breast", "Rice"] }
+ * 3. Legacy amounts: { category, items: [{ name, amount: "700g" }] }
+ */
+function normalizeGroceryList(raw: unknown[]): GroceryCategory[] {
+  if (!Array.isArray(raw) || raw.length === 0) return [];
+
+  return raw
+    .filter((cat): cat is Record<string, unknown> => cat !== null && typeof cat === 'object')
+    .map((cat) => {
+      const items = Array.isArray(cat.items)
+        ? (cat.items as unknown[]).map((item) => {
+            // Case 1: item is a string (e.g., "Chicken breast")
+            if (typeof item === 'string') {
+              return { name: item, amount: 0, unit: '' };
+            }
+            // Case 2: item is an object
+            if (item !== null && typeof item === 'object') {
+              return normalizeGroceryItem(item as Record<string, unknown>);
+            }
+            return { name: String(item), amount: 0, unit: '' };
+          })
+        : [];
+      return {
+        category: (cat.category as string) || 'Other',
+        items,
+      };
+    })
+    .filter((cat) => cat.items.length > 0);
+}
+
+interface PlanData {
+  id: string;
+  dailyKcalTarget: number | null;
+  dailyProteinG: number | null;
+  dailyCarbsG: number | null;
+  dailyFatG: number | null;
+  trainingBonusKcal: number | null;
+  planDays: number;
+  startDate: string;
+  endDate: string;
+  qaScore: number | null;
+  qaStatus: string | null;
+  status: string;
+  generatedAt: string;
+  validatedPlan: {
+    days: PlanDay[];
+    groceryList?: unknown[];
+    qa?: { status: string; score: number; iterations?: number };
+    weeklyTotals?: {
+      avgKcal: number;
+      avgProteinG: number;
+      avgCarbsG: number;
+      avgFatG: number;
+    };
+  };
+  metabolicProfile: {
+    bmrKcal?: number;
+    tdeeKcal?: number;
+    goalKcal?: number;
+    proteinTargetG?: number;
+    carbsTargetG?: number;
+    fatTargetG?: number;
+  };
+  profile?: {
+    name: string;
+    sex: string;
+    age: number;
+    goalType: string;
+    activityLevel: string;
+  };
+}
+
+interface SwapTarget {
+  dayNumber: number;
+  mealIdx: number;
+  meal: Meal;
+}
+
+/** Skeleton loader that replaces a meal card during swap */
+function MealCardSkeleton() {
+  return (
+    <div
+      className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-2.5 animate-pulse"
+      data-testid="meal-swap-skeleton"
+    >
+      <div className="flex items-center gap-1.5 mb-1.5">
+        <div className="h-4 w-16 rounded bg-[#2a2a2a]" />
+        <div className="h-3 w-14 rounded bg-[#2a2a2a]" />
+      </div>
+      <div className="h-4 w-3/4 rounded bg-[#2a2a2a] mt-1" />
+      <div className="h-3 w-1/2 rounded bg-[#2a2a2a] mt-2" />
+      <div className="mt-2 flex gap-1">
+        <div className="h-5 w-14 rounded-full bg-[#2a2a2a]" />
+        <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
+        <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
+        <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
+      </div>
+    </div>
+  );
+}
+
+/** Swap alternatives modal */
+function SwapModal({
+  target,
+  alternatives,
+  loading,
+  onSelect,
+  onClose,
+}: {
+  target: SwapTarget;
+  alternatives: Meal[];
+  loading: boolean;
+  onSelect: (alt: Meal) => void;
+  onClose: () => void;
+}) {
+  const [selecting, setSelecting] = useState(false);
+
+  const handleSelect = (alt: Meal) => {
+    if (selecting) return;
+    setSelecting(true);
+    onSelect(alt);
+  };
+
+  return (
+    <div
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm"
+      data-testid="swap-modal"
+    >
+      <div className="relative mx-4 w-full max-w-lg rounded-xl border border-[#2a2a2a] bg-[#141414] shadow-2xl">
+        {/* Modal header */}
+        <div className="flex items-center justify-between border-b border-[#2a2a2a] px-5 py-4">
+          <div>
+            <h3 className="text-sm font-bold uppercase tracking-wider text-[#fafafa]">Swap Meal</h3>
+            <p className="mt-0.5 text-xs text-[#a1a1aa]">
+              Replace <span className="text-[#f97316] font-semibold">{target.meal.name}</span>
+            </p>
+          </div>
+          <button
+            onClick={onClose}
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] text-[#a1a1aa] transition-colors hover:bg-[#2a2a2a] hover:text-[#fafafa]"
+            data-testid="swap-modal-close"
+            aria-label="Close swap modal"
+          >
+            <svg
+              width="14"
+              height="14"
+              viewBox="0 0 14 14"
+              fill="none"
+              xmlns="http://www.w3.org/2000/svg"
+            >
+              <path
+                d="M1 1L13 13M1 13L13 1"
+                stroke="currentColor"
+                strokeWidth="2"
+                strokeLinecap="round"
+              />
+            </svg>
+          </button>
+        </div>
+
+        {/* Modal body */}
+        <div className="max-h-[60vh] overflow-y-auto p-5">
+          {loading ? (
+            <div className="space-y-3" data-testid="swap-alternatives-loading">
+              {[1, 2, 3].map((i) => (
+                <div
+                  key={i}
+                  className="animate-pulse rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4"
+                >
+                  <div className="h-4 w-2/3 rounded bg-[#2a2a2a]" />
+                  <div className="mt-2 h-3 w-1/2 rounded bg-[#2a2a2a]" />
+                  <div className="mt-2 flex gap-2">
+                    <div className="h-5 w-16 rounded-full bg-[#2a2a2a]" />
+                    <div className="h-5 w-12 rounded-full bg-[#2a2a2a]" />
+                    <div className="h-5 w-12 rounded-full bg-[#2a2a2a]" />
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : alternatives.length === 0 ? (
+            <div className="py-8 text-center">
+              <p className="text-sm text-[#a1a1aa]">
+                No alternatives available for this meal slot.
+              </p>
+            </div>
+          ) : (
+            <div className="space-y-3" data-testid="swap-alternatives-list">
+              {alternatives.map((alt, idx) => (
+                <button
+                  key={idx}
+                  onClick={() => handleSelect(alt)}
+                  disabled={selecting}
+                  className={`w-full rounded-lg border border-[#2a2a2a] bg-[#0f0f0f] p-4 text-left transition-all ${
+                    selecting
+                      ? 'opacity-50 cursor-not-allowed'
+                      : 'hover:border-[#f97316]/50 hover:bg-[#1a1a1a]'
+                  }`}
+                  data-testid={`swap-alternative-${idx}`}
+                >
+                  <div className="flex items-start justify-between">
+                    <div className="flex-1">
+                      <h4 className="text-sm font-semibold text-[#fafafa]">{alt.name}</h4>
+                      {alt.cuisine && (
+                        <p className="mt-0.5 text-xs text-[#71717a]">{alt.cuisine}</p>
+                      )}
+                      <div className="mt-1 text-[10px] text-[#71717a]">
+                        {alt.prepTimeMin ? `${alt.prepTimeMin}m prep` : ''}
+                        {alt.prepTimeMin && alt.cookTimeMin ? ' + ' : ''}
+                        {alt.cookTimeMin ? `${alt.cookTimeMin}m cook` : ''}
+                      </div>
+                    </div>
+                    <span className="ml-2 rounded bg-[#f97316]/20 px-2 py-1 text-[10px] font-bold text-[#f97316]">
+                      SELECT
+                    </span>
+                  </div>
+                  {/* Macro pills */}
+                  <div className="mt-2 flex flex-wrap gap-1.5">
+                    <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-0.5 text-[10px] font-bold text-[#f97316]">
+                      {alt.nutrition.kcal} kcal
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-0.5 text-[10px] font-bold text-[#3b82f6]">
+                      P {alt.nutrition.proteinG}g
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-0.5 text-[10px] font-bold text-[#f59e0b]">
+                      C {alt.nutrition.carbsG}g
+                    </span>
+                    <span className="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-0.5 text-[10px] font-bold text-[#ef4444]">
+                      F {alt.nutrition.fatG}g
+                    </span>
+                  </div>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function DayColumn({
+  day,
+  swappingMeal,
+  swapSuccess,
+  swapInProgress,
+  onSwapClick,
+}: {
+  day: PlanDay;
+  swappingMeal: { dayNumber: number; mealIdx: number } | null;
+  swapSuccess: { dayNumber: number; mealIdx: number } | null;
+  swapInProgress: boolean;
+  onSwapClick: (dayNumber: number, mealIdx: number, meal: Meal) => void;
+}) {
+  const dayTotalKcal = day.meals.reduce((sum, m) => sum + m.nutrition.kcal, 0);
+  const dayTotalProtein = day.meals.reduce((sum, m) => sum + m.nutrition.proteinG, 0);
+  const dayTotalCarbs = day.meals.reduce((sum, m) => sum + m.nutrition.carbsG, 0);
+  const dayTotalFat = day.meals.reduce((sum, m) => sum + m.nutrition.fatG, 0);
+
+  return (
+    <div
+      className="flex flex-col rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden"
+      data-testid={`day-column-${day.dayNumber}`}
+    >
+      {/* Day header */}
+      <div className="border-b border-[#2a2a2a] bg-[#141414] px-3 py-3 text-center">
+        <h3 className="text-sm font-bold uppercase tracking-wider text-[#fafafa]">
+          {day.dayName}
+          {day.isTrainingDay && (
+            <span className="ml-1 text-[10px]" title="Training Day">
+              &#x1F4AA;
+            </span>
+          )}
+        </h3>
+        <p className="mt-0.5 font-mono text-xs text-[#a1a1aa]">{day.targetKcal} kcal target</p>
+      </div>
+
+      {/* Day macro summary */}
+      <div className="border-b border-[#2a2a2a] bg-[#111] px-3 py-2">
+        <div className="text-center">
+          <span className="text-sm font-bold text-[#f97316]">{dayTotalKcal}</span>
+          <span className="ml-1 text-[10px] text-[#a1a1aa]">kcal</span>
+        </div>
+        <div className="mt-1 flex justify-center gap-2 text-[10px]">
+          <span className="text-[#3b82f6]">P {dayTotalProtein}g</span>
+          <span className="text-[#f59e0b]">C {dayTotalCarbs}g</span>
+          <span className="text-[#ef4444]">F {dayTotalFat}g</span>
+        </div>
+      </div>
+
+      {/* Meals */}
+      <div className="flex-1 space-y-2 p-2" data-testid={`day-${day.dayNumber}-meals`}>
+        {day.meals.map((meal, mealIdx) => {
+          const isSwapping =
+            swappingMeal?.dayNumber === day.dayNumber && swappingMeal?.mealIdx === mealIdx;
+
+          if (isSwapping) {
+            return <MealCardSkeleton key={mealIdx} />;
+          }
+
+          const isSwapSuccess =
+            swapSuccess?.dayNumber === day.dayNumber && swapSuccess?.mealIdx === mealIdx;
+
+          return (
+            <div
+              key={mealIdx}
+              className={`group relative rounded-md border p-2.5 transition-all ${
+                isSwapSuccess
+                  ? 'border-green-500/60 bg-green-500/5 ring-1 ring-green-500/30'
+                  : 'border-[#2a2a2a] bg-[#0f0f0f] hover:border-[#3a3a3a]'
+              }`}
+              data-testid={`meal-card-${day.dayNumber}-${mealIdx}`}
+            >
+              {/* Swap success indicator */}
+              {isSwapSuccess && (
+                <div
+                  className="absolute -top-2 -right-2 z-10 flex h-6 w-6 items-center justify-center rounded-full bg-green-500 shadow-lg shadow-green-500/30"
+                  data-testid={`swap-success-${day.dayNumber}-${mealIdx}`}
+                >
+                  <svg className="w-3.5 h-3.5 text-white" fill="currentColor" viewBox="0 0 20 20">
+                    <path
+                      fillRule="evenodd"
+                      d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+                      clipRule="evenodd"
+                    />
+                  </svg>
+                </div>
+              )}
+              {/* Swap icon button */}
+              <button
+                onClick={() => !swapInProgress && onSwapClick(day.dayNumber, mealIdx, meal)}
+                disabled={swapInProgress}
+                className={`absolute right-1.5 top-1.5 flex h-6 w-6 items-center justify-center rounded-md border border-transparent bg-transparent text-[#71717a] transition-all ${
+                  swapInProgress
+                    ? 'opacity-30 cursor-not-allowed'
+                    : 'opacity-0 group-hover:opacity-100 hover:border-[#f97316]/50 hover:bg-[#f97316]/10 hover:text-[#f97316]'
+                }`}
+                data-testid={`swap-icon-${day.dayNumber}-${mealIdx}`}
+                aria-label={`Swap ${meal.name}`}
+                title={swapInProgress ? 'Swap in progress...' : 'Swap this meal'}
+              >
+                <svg
+                  width="14"
+                  height="14"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M7 16L3 12M3 12L7 8M3 12H16M17 8L21 12M21 12L17 16M21 12H8"
+                    stroke="currentColor"
+                    strokeWidth="2"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </button>
+
+              {/* Slot label + Confidence badge */}
+              <div className="flex items-center gap-1.5 mb-1.5">
+                <span className="rounded bg-[#f97316]/20 px-1.5 py-0.5 text-[10px] font-bold uppercase text-[#f97316]">
+                  {meal.slot}
+                </span>
+                <span
+                  data-testid={`confidence-badge-${day.dayNumber}-${mealIdx}`}
+                  className={`rounded px-1.5 py-0.5 text-[8px] font-semibold uppercase tracking-wide ${
+                    meal.confidenceLevel === 'verified'
+                      ? 'bg-[#22c55e]/20 text-[#22c55e]'
+                      : 'bg-[#f59e0b]/20 text-[#f59e0b]'
+                  }`}
+                >
+                  {meal.confidenceLevel === 'verified' ? '✓ Verified' : '⚡ AI-Estimated'}
+                </span>
+              </div>
+
+              {/* Meal name */}
+              <h4
+                className="text-xs font-semibold text-[#fafafa] leading-tight pr-6"
+                data-testid={`meal-name-${day.dayNumber}-${mealIdx}`}
+              >
+                {meal.name}
+              </h4>
+
+              {meal.cuisine && <p className="mt-0.5 text-[10px] text-[#71717a]">{meal.cuisine}</p>}
+
+              {/* Prep time indicator */}
+              <div
+                className="mt-1.5 flex items-center gap-1 text-[10px] text-[#71717a]"
+                data-testid={`prep-time-${day.dayNumber}-${mealIdx}`}
+              >
+                <span>🕒</span>
+                <span>
+                  {meal.prepTimeMin ? `${meal.prepTimeMin}m prep` : ''}
+                  {meal.prepTimeMin && meal.cookTimeMin ? ' + ' : ''}
+                  {meal.cookTimeMin ? `${meal.cookTimeMin}m cook` : ''}
+                  {!meal.prepTimeMin && !meal.cookTimeMin ? 'Time N/A' : ''}
+                </span>
+              </div>
+
+              {/* Macro pills */}
+              <div
+                className="mt-2 flex flex-wrap gap-1"
+                data-testid={`macro-pills-${day.dayNumber}-${mealIdx}`}
+              >
+                <span className="inline-flex items-center rounded-full bg-[#f97316]/15 px-2 py-0.5 text-[10px] font-bold text-[#f97316]">
+                  {meal.nutrition.kcal} kcal
+                </span>
+                <span className="inline-flex items-center rounded-full bg-[#3b82f6]/15 px-2 py-0.5 text-[10px] font-bold text-[#3b82f6]">
+                  P {meal.nutrition.proteinG}g
+                </span>
+                <span className="inline-flex items-center rounded-full bg-[#f59e0b]/15 px-2 py-0.5 text-[10px] font-bold text-[#f59e0b]">
+                  C {meal.nutrition.carbsG}g
+                </span>
+                <span className="inline-flex items-center rounded-full bg-[#ef4444]/15 px-2 py-0.5 text-[10px] font-bold text-[#ef4444]">
+                  F {meal.nutrition.fatG}g
+                </span>
+              </div>
+            </div>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Format a grocery amount for practical display.
+ * Rounds up and uses friendly formats (e.g., "2 lbs" not "1.73 lbs").
+ */
+function formatGroceryAmount(amount: number, unit: string): string {
+  if (!amount && !unit) return 'as needed';
+  if (!amount || isNaN(amount)) return unit || 'as needed';
+
+  const unitStr = unit || '';
+
+  // For display, format whole numbers without decimals
+  if (Number.isInteger(amount)) {
+    return `${amount} ${unitStr}`.trim();
+  }
+  // For quarter increments, show as fraction-like
+  const quarters = amount * 4;
+  if (Number.isInteger(Math.round(quarters))) {
+    const frac = amount % 1;
+    const whole = Math.floor(amount);
+    if (Math.abs(frac - 0.25) < 0.01) return `${whole > 0 ? whole + ' ' : ''}1/4 ${unitStr}`.trim();
+    if (Math.abs(frac - 0.5) < 0.01) return `${whole > 0 ? whole + ' ' : ''}1/2 ${unitStr}`.trim();
+    if (Math.abs(frac - 0.75) < 0.01) return `${whole > 0 ? whole + ' ' : ''}3/4 ${unitStr}`.trim();
+  }
+  // Fallback: 1 decimal place
+  return `${Math.round(amount * 10) / 10} ${unitStr}`.trim();
+}
+
+/** Category icon mapping for grocery list */
+function getCategoryIcon(category: string): string {
+  const lower = category.toLowerCase();
+  if (lower.includes('meat') || lower.includes('seafood')) return '🥩';
+  if (lower.includes('dairy') || lower.includes('egg')) return '🥛';
+  if (lower.includes('produce') || lower.includes('vegetable')) return '🥦';
+  if (lower.includes('fruit')) return '🍎';
+  if (lower.includes('grain') || lower.includes('bread')) return '🌾';
+  if (lower.includes('legume') || lower.includes('plant protein')) return '🫘';
+  if (lower.includes('oil') || lower.includes('condiment')) return '🫒';
+  if (lower.includes('spice') || lower.includes('season')) return '🧂';
+  if (lower.includes('nut') || lower.includes('seed')) return '🥜';
+  return '🛒';
+}
+
+function GroceryListSection({ groceryList }: { groceryList: GroceryCategory[] }) {
+  const [expanded, setExpanded] = useState(true);
+  const totalItems = groceryList.reduce((sum, cat) => sum + cat.items.length, 0);
+
+  return (
+    <div className="mt-8 mx-auto max-w-[1600px] px-4 pb-8" data-testid="grocery-list-section">
+      {/* Section header */}
+      <button
+        onClick={() => setExpanded(!expanded)}
+        className="flex w-full items-center justify-between rounded-lg border border-[#2a2a2a] bg-[#141414] px-5 py-4 transition-colors hover:bg-[#1a1a1a]"
+        data-testid="grocery-list-toggle"
+      >
+        <div className="flex items-center gap-3">
+          <span className="text-xl">🛒</span>
+          <div className="text-left">
+            <h2 className="text-lg font-bold uppercase tracking-wider text-[#fafafa]">
+              Grocery List
+            </h2>
+            <p className="text-xs text-[#a1a1aa]">
+              {totalItems} items across {groceryList.length} categories
+            </p>
+          </div>
+        </div>
+        <svg
+          width="20"
+          height="20"
+          viewBox="0 0 24 24"
+          fill="none"
+          className={`text-[#a1a1aa] transition-transform ${expanded ? 'rotate-180' : ''}`}
+        >
+          <path
+            d="M6 9L12 15L18 9"
+            stroke="currentColor"
+            strokeWidth="2"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+
+      {/* Category grid */}
+      {expanded && (
+        <div
+          className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4"
+          data-testid="grocery-list-categories"
+        >
+          {groceryList.map((cat) => (
+            <div
+              key={cat.category}
+              className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden"
+              data-testid={`grocery-category-${cat.category.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+            >
+              {/* Category header */}
+              <div className="border-b border-[#2a2a2a] bg-[#141414] px-4 py-3">
+                <div className="flex items-center gap-2">
+                  <span className="text-base">{getCategoryIcon(cat.category)}</span>
+                  <h3 className="text-sm font-bold uppercase tracking-wider text-[#fafafa]">
+                    {cat.category}
+                  </h3>
+                  <span className="ml-auto rounded-full bg-[#f97316]/15 px-2 py-0.5 text-[10px] font-bold text-[#f97316]">
+                    {cat.items.length}
+                  </span>
+                </div>
+              </div>
+
+              {/* Items */}
+              <div className="divide-y divide-[#2a2a2a]">
+                {cat.items.map((item, idx) => (
+                  <div
+                    key={idx}
+                    className="flex items-center justify-between px-4 py-2.5 transition-colors hover:bg-[#222]"
+                    data-testid={`grocery-item-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                  >
+                    <span className="text-sm text-[#fafafa]">{item.name || 'Unknown Item'}</span>
+                    <span
+                      className="ml-3 whitespace-nowrap rounded bg-[#2a2a2a] px-2 py-0.5 font-mono text-xs font-bold text-[#a1a1aa]"
+                      data-testid={`grocery-amount-${(item.name || 'unknown').toLowerCase().replace(/[^a-z0-9]+/g, '-')}`}
+                    >
+                      {formatGroceryAmount(item.amount, item.unit)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
+export default function MealPlanPage() {
+  const [plan, setPlan] = useState<PlanData | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Swap state
+  const [swapTarget, setSwapTarget] = useState<SwapTarget | null>(null);
+  const [swapAlternatives, setSwapAlternatives] = useState<Meal[]>([]);
+  const [swapLoading, setSwapLoading] = useState(false);
+  const [swappingMeal, setSwappingMeal] = useState<{ dayNumber: number; mealIdx: number } | null>(
+    null
+  );
+  const [swapSuccess, setSwapSuccess] = useState<{ dayNumber: number; mealIdx: number } | null>(
+    null
+  );
+  // Ref-based guard for synchronous double-click prevention (state updates are async)
+  const swapLockRef = useRef(false);
+
+  const fetchPlan = useCallback(async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      const res = await fetch('/api/plan/active');
+      const data = await res.json();
+
+      if (res.ok && data.hasActivePlan) {
+        setPlan(data.plan);
+      } else {
+        setError(data.error || 'No active meal plan found');
+      }
+    } catch (err) {
+      console.error('Error fetching meal plan:', err);
+      setError('Failed to load meal plan. Please check your connection and try again.');
+    } finally {
+      setLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    fetchPlan();
+  }, [fetchPlan]);
+
+  // Handle swap icon click - open modal and fetch alternatives
+  const handleSwapClick = useCallback(
+    async (dayNumber: number, mealIdx: number, meal: Meal) => {
+      // Synchronous ref-based guard prevents double-click (state updates are async)
+      if (swapLockRef.current) return;
+      swapLockRef.current = true;
+
+      setSwapTarget({ dayNumber, mealIdx, meal });
+      setSwapLoading(true);
+      setSwapAlternatives([]);
+
+      try {
+        const res = await fetch('/api/plan/swap/alternatives', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            planId: plan?.id,
+            dayNumber,
+            slot: meal.slot,
+            currentMealName: meal.name,
+          }),
+        });
+
+        if (res.ok) {
+          const data = await res.json();
+          setSwapAlternatives(data.alternatives || []);
+        }
+      } catch (err) {
+        console.error('Failed to fetch swap alternatives:', err);
+      } finally {
+        setSwapLoading(false);
+      }
+    },
+    [plan?.id]
+  );
+
+  // Handle selecting a swap alternative
+  const handleSwapSelect = useCallback(
+    async (alt: Meal) => {
+      if (!swapTarget || !plan) return;
+
+      // Close modal and show skeleton
+      const target = swapTarget;
+      setSwapTarget(null);
+      setSwappingMeal({ dayNumber: target.dayNumber, mealIdx: target.mealIdx });
+
+      try {
+        const res = await fetch('/api/plan/swap', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            planId: plan.id,
+            dayNumber: target.dayNumber,
+            slot: target.meal.slot,
+            mealIdx: target.mealIdx,
+            originalMeal: target.meal,
+            newMeal: alt,
+          }),
+        });
+
+        if (res.ok) {
+          // Update the plan locally
+          const updatedDays = [...(plan.validatedPlan?.days || [])];
+          const dayIdx = updatedDays.findIndex((d) => d.dayNumber === target.dayNumber);
+          if (dayIdx !== -1 && updatedDays[dayIdx].meals[target.mealIdx]) {
+            updatedDays[dayIdx].meals[target.mealIdx] = alt;
+            setPlan({
+              ...plan,
+              validatedPlan: {
+                ...plan.validatedPlan,
+                days: updatedDays,
+              },
+            });
+          }
+        }
+      } catch (err) {
+        console.error('Failed to swap meal:', err);
+      } finally {
+        // Keep skeleton for a brief moment, then show success indicator
+        setTimeout(() => {
+          setSwappingMeal(null);
+          swapLockRef.current = false;
+          setSwapSuccess({ dayNumber: target.dayNumber, mealIdx: target.mealIdx });
+          // Clear success indicator after 3 seconds
+          setTimeout(() => {
+            setSwapSuccess(null);
+          }, 3000);
+        }, 500);
+      }
+    },
+    [swapTarget, plan]
+  );
+
+  const handleSwapClose = useCallback(() => {
+    setSwapTarget(null);
+    setSwapAlternatives([]);
+    setSwapLoading(false);
+    swapLockRef.current = false;
+  }, []);
+
+  if (loading) {
+    return (
+      <>
+        <NavBar />
+        <div className="md:pt-14 pb-20 md:pb-0">
+          <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa]">
+            {/* Skeleton Header */}
+            <div className="border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-6">
+              <div className="mx-auto max-w-[1600px]">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <div className="h-3 w-40 animate-pulse rounded bg-[#2a2a2a]" />
+                    <div className="mt-2 h-7 w-56 animate-pulse rounded bg-[#2a2a2a]" />
+                    <div className="mt-2 h-4 w-48 animate-pulse rounded bg-[#2a2a2a]" />
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="h-14 w-20 animate-pulse rounded-lg border border-[#2a2a2a] bg-[#1a1a1a]" />
+                    <div className="h-14 w-20 animate-pulse rounded-lg border border-[#2a2a2a] bg-[#1a1a1a]" />
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            {/* Skeleton 7-day grid */}
+            <div className="mx-auto max-w-[1600px] px-4 py-6">
+              <div
+                className="flex gap-3 overflow-x-auto pb-4"
+                data-testid="meal-plan-skeleton-grid"
+              >
+                {[1, 2, 3, 4, 5, 6, 7].map((dayNum) => (
+                  <div key={dayNum} className="min-w-[200px] flex-1">
+                    <div
+                      className="flex flex-col rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] overflow-hidden"
+                      data-testid={`skeleton-day-${dayNum}`}
+                    >
+                      {/* Skeleton day header */}
+                      <div className="border-b border-[#2a2a2a] bg-[#141414] px-3 py-3 text-center">
+                        <div className="mx-auto h-4 w-20 animate-pulse rounded bg-[#2a2a2a]" />
+                        <div className="mx-auto mt-1.5 h-3 w-24 animate-pulse rounded bg-[#2a2a2a]" />
+                      </div>
+
+                      {/* Skeleton day macro summary */}
+                      <div className="border-b border-[#2a2a2a] bg-[#111] px-3 py-2">
+                        <div className="mx-auto h-4 w-16 animate-pulse rounded bg-[#2a2a2a]" />
+                        <div className="mt-1 flex justify-center gap-2">
+                          <div className="h-3 w-10 animate-pulse rounded bg-[#2a2a2a]" />
+                          <div className="h-3 w-10 animate-pulse rounded bg-[#2a2a2a]" />
+                          <div className="h-3 w-10 animate-pulse rounded bg-[#2a2a2a]" />
+                        </div>
+                      </div>
+
+                      {/* Skeleton meal cards */}
+                      <div className="flex-1 space-y-2 p-2">
+                        {[1, 2, 3, 4].map((mealNum) => (
+                          <div
+                            key={mealNum}
+                            className="rounded-md border border-[#2a2a2a] bg-[#0f0f0f] p-2.5 animate-pulse"
+                            data-testid={`skeleton-meal-card-${dayNum}-${mealNum}`}
+                          >
+                            {/* Slot label + confidence badge */}
+                            <div className="flex items-center gap-1.5 mb-1.5">
+                              <div className="h-4 w-16 rounded bg-[#2a2a2a]" />
+                              <div className="h-3 w-14 rounded bg-[#2a2a2a]" />
+                            </div>
+                            {/* Meal name */}
+                            <div className="h-4 w-3/4 rounded bg-[#2a2a2a] mt-1" />
+                            {/* Prep time */}
+                            <div className="h-3 w-1/2 rounded bg-[#2a2a2a] mt-2" />
+                            {/* Macro pills */}
+                            <div className="mt-2 flex gap-1">
+                              <div className="h-5 w-14 rounded-full bg-[#2a2a2a]" />
+                              <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
+                              <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
+                              <div className="h-5 w-10 rounded-full bg-[#2a2a2a]" />
+                            </div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  if (error || !plan) {
+    const isNetworkError =
+      error?.toLowerCase().includes('failed to load') ||
+      error?.toLowerCase().includes('network') ||
+      error?.toLowerCase().includes('fetch');
+    return (
+      <>
+        <NavBar />
+        <div className="md:pt-14 pb-20 md:pb-0">
+          <div className="flex min-h-screen items-center justify-center bg-[#0a0a0a] px-4">
+            <div className="w-full max-w-md text-center" data-testid="meal-plan-empty-state">
+              <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] p-8">
+                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-[#f97316]/10">
+                  <span className="text-2xl">{isNetworkError ? '⚠️' : '📋'}</span>
+                </div>
+                <h2 className="text-xl font-bold text-[#fafafa]" data-testid="empty-state-message">
+                  {isNetworkError ? 'Connection Error' : 'No Active Plan'}
+                </h2>
+                <p className="mt-2 text-sm text-[#a1a1aa]" data-testid="empty-state-description">
+                  {error || "You haven't generated a meal plan yet."}
+                </p>
+                <div className="mt-6 flex flex-col gap-3 items-center">
+                  {isNetworkError && (
+                    <button
+                      onClick={fetchPlan}
+                      data-testid="retry-button"
+                      className="inline-block rounded-lg bg-[#f97316] px-6 py-3 text-sm font-bold uppercase tracking-wide text-white transition-colors hover:bg-[#ea580c]"
+                    >
+                      Retry
+                    </button>
+                  )}
+                  <a
+                    href="/generate"
+                    className={`inline-block rounded-lg px-6 py-3 text-sm font-bold uppercase tracking-wide transition-colors ${
+                      isNetworkError
+                        ? 'border border-[#2a2a2a] text-[#a1a1aa] hover:bg-[#252525]'
+                        : 'bg-[#f97316] text-white hover:bg-[#ea580c]'
+                    }`}
+                    data-testid="generate-plan-cta"
+                  >
+                    Generate Plan
+                  </a>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
+
+  const days = plan.validatedPlan?.days || [];
+
+  return (
+    <>
+      <NavBar />
+      <div className="md:pt-14 pb-20 md:pb-0">
+        <div className="min-h-screen bg-[#0a0a0a] text-[#fafafa]">
+          {/* Header */}
+          <div className="border-b border-[#2a2a2a] bg-[#0a0a0a] px-4 py-6">
+            <div className="mx-auto max-w-[1600px]">
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-mono text-xs uppercase tracking-widest text-[#a1a1aa]">
+                    /// ZERO SUM NUTRITION
+                  </p>
+                  <h1 className="mt-1 text-2xl font-heading uppercase tracking-wider text-[#fafafa]">
+                    Your Meal Plan
+                  </h1>
+                  {plan.profile && (
+                    <p className="mt-1 text-sm text-[#a1a1aa]">
+                      {plan.profile.name} &middot; {plan.profile.goalType} &middot; {plan.planDays}
+                      -day plan
+                    </p>
+                  )}
+                </div>
+                <div className="flex items-center gap-4">
+                  {plan.qaScore !== null && (
+                    <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-center">
+                      <p className="font-mono text-xs text-[#a1a1aa]">QA Score</p>
+                      <p
+                        className={`text-lg font-bold ${plan.qaScore >= 80 ? 'text-[#22c55e]' : plan.qaScore >= 60 ? 'text-[#f59e0b]' : 'text-[#ef4444]'}`}
+                      >
+                        {plan.qaScore}%
+                      </p>
+                    </div>
+                  )}
+                  {plan.dailyKcalTarget && (
+                    <div className="rounded-lg border border-[#2a2a2a] bg-[#1a1a1a] px-3 py-2 text-center">
+                      <p className="font-mono text-xs text-[#a1a1aa]">Target</p>
+                      <p className="text-lg font-bold text-[#f97316]">
+                        {plan.dailyKcalTarget} kcal
+                      </p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* 7-day grid */}
+          <div className="mx-auto max-w-[1600px] px-4 py-6">
+            <div className="flex gap-3 overflow-x-auto pb-4" data-testid="seven-day-grid">
+              {days.map((day) => (
+                <div key={day.dayNumber} className="min-w-[200px] flex-1">
+                  <DayColumn
+                    day={day}
+                    swappingMeal={swappingMeal}
+                    swapSuccess={swapSuccess}
+                    swapInProgress={swapLoading || swappingMeal !== null}
+                    onSwapClick={handleSwapClick}
+                  />
+                </div>
+              ))}
+            </div>
+
+            {days.length === 0 && (
+              <div className="text-center py-12">
+                <p className="text-[#a1a1aa]">No meal plan data available.</p>
+              </div>
+            )}
+          </div>
+
+          {/* Grocery List Section */}
+          {plan.validatedPlan?.groceryList && plan.validatedPlan.groceryList.length > 0 && (
+            <GroceryListSection
+              groceryList={normalizeGroceryList(plan.validatedPlan.groceryList as unknown[])}
+            />
+          )}
+        </div>
+      </div>
+
+      {/* Swap modal */}
+      {swapTarget && (
+        <SwapModal
+          target={swapTarget}
+          alternatives={swapAlternatives}
+          loading={swapLoading}
+          onSelect={handleSwapSelect}
+          onClose={handleSwapClose}
+        />
+      )}
+    </>
+  );
+}
