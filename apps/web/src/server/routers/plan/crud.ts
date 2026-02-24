@@ -91,6 +91,22 @@ export const planCrudRouter = router({
           isActive: true,
           deletedAt: null,
         },
+        select: {
+          id: true,
+          dailyKcalTarget: true,
+          dailyProteinG: true,
+          dailyCarbsG: true,
+          dailyFatG: true,
+          trainingBonusKcal: true,
+          planDays: true,
+          startDate: true,
+          endDate: true,
+          qaScore: true,
+          qaStatus: true,
+          status: true,
+          validatedPlan: true,
+          metabolicProfile: true,
+        },
       });
 
       if (!plan) {

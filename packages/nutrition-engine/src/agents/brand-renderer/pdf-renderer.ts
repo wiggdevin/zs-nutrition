@@ -98,13 +98,6 @@ export async function closeBrowserPool(): Promise<void> {
   }
 }
 
-// Graceful shutdown: close browser on SIGTERM/SIGINT
-const shutdownHandler = () => {
-  closeBrowserPool();
-};
-process.on('SIGTERM', shutdownHandler);
-process.on('SIGINT', shutdownHandler);
-
 // ============================================================
 // PDF Rendering
 // ============================================================

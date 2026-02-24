@@ -105,6 +105,8 @@ export type { CircuitBreakerState } from './adapters/fatsecret';
 export { USDAAdapter } from './adapters/usda';
 export { LocalUSDAAdapter } from './adapters/usda-local';
 export type { ExternalFoodCache } from './adapters/food-data-types';
+export { RedisFoodCache } from './adapters/redis-food-cache';
+export type { RedisLike } from './adapters/redis-food-cache';
 
 // Data - Food Alias Cache
 export { FoodAliasCache } from './data/food-alias-cache';

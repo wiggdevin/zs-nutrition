@@ -35,6 +35,7 @@ export const accountRouter = router({
     const latestPlan = await ctx.prisma.mealPlan.findFirst({
       where: { userId: dbUserId, status: 'replaced', deletedAt: null },
       orderBy: { generatedAt: 'desc' },
+      select: { id: true },
     });
 
     if (latestPlan) {

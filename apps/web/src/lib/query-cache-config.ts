@@ -28,10 +28,10 @@ export const CACHE_TIMES = {
   ACTIVE_PLAN: 5 * 60 * 1000, // 5 minutes
 
   /**
-   * Today's meals - updates more frequently as user logs meals.
-   * Use shorter cache but rely on mutation invalidation for real-time updates.
+   * Today's meals - updates when user logs meals.
+   * Mutations invalidate the cache, so staleTime just limits background refetches.
    */
-  TODAYS_MEALS: 30 * 1000, // 30 seconds
+  TODAYS_MEALS: 2 * 60 * 1000, // 2 minutes
 
   /**
    * User profile - rarely changes, only when user updates settings.
@@ -58,9 +58,9 @@ export const CACHE_TIMES = {
 
   /**
    * Daily tracking summary - changes as user logs meals.
-   * Short cache but rely on mutation invalidation.
+   * Mutations invalidate the cache, so staleTime just limits background refetches.
    */
-  DAILY_SUMMARY: 30 * 1000, // 30 seconds
+  DAILY_SUMMARY: 2 * 60 * 1000, // 2 minutes
 
   /**
    * Weekly trend analysis - computed data, safe to cache.

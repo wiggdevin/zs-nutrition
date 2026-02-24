@@ -19,6 +19,8 @@ export interface PlanGenerationJobData {
   jobId: string;
   pipelinePath: 'full' | 'fast';
   existingDraftId?: string;
+  /** Unique trace ID for correlating logs across web app, queue, and worker */
+  traceId?: string;
 }
 
 /**

@@ -61,9 +61,16 @@ export async function GET(request: Request) {
     });
 
     // Get active meal plan (exclude soft-deleted)
+    // Only select fields used by the dashboard — skip large draftData/metabolicProfile blobs
     const activePlan = await prisma.mealPlan.findFirst({
       where: { userId: user.id, isActive: true, status: 'active', deletedAt: null },
       orderBy: { generatedAt: 'desc' },
+      select: {
+        id: true,
+        trainingBonusKcal: true,
+        validatedPlan: true,
+        generatedAt: true,
+      },
     });
 
     // Get today's date (start of day) - use UTC midnight to match toLocalDay() storage
@@ -105,7 +112,7 @@ export async function GET(request: Request) {
 
       // Decompress validatedPlan (handles both compressed and legacy uncompressed data)
       const validatedPlan = decompressJson<{
-        days?: Array<{ dayNumber: number; meals?: Array<any> }>;
+        days?: Array<{ dayNumber: number; meals?: Array<Record<string, unknown>> }>;
       } | null>(activePlan.validatedPlan);
 
       // If validatedPlan is null or has no valid days, treat as no plan
@@ -289,7 +296,7 @@ export async function GET(request: Request) {
       isPlanStale,
       staleReason,
       todayPlanMeals,
-      trackedMeals: trackedMeals.map((tm: any) => ({
+      trackedMeals: trackedMeals.map((tm) => ({
         id: tm.id,
         name: tm.mealName,
         calories: tm.kcal,

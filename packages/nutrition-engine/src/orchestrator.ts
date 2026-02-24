@@ -14,6 +14,7 @@ import { FoodAliasCache } from './data/food-alias-cache';
 import { assertPipelineConfig } from './config/env-validation';
 import { sanitizeError } from './utils/error-sanitizer';
 import { engineLogger } from './utils/logger';
+import type { ExternalFoodCache } from './adapters/food-data-types';
 import type { PrismaClient } from '@prisma/client';
 
 export interface PipelineConfig {
@@ -22,6 +23,7 @@ export interface PipelineConfig {
   fatsecretClientId?: string;
   fatsecretClientSecret?: string;
   prismaClient?: PrismaClient;
+  externalFoodCache?: ExternalFoodCache;
 }
 
 export interface PipelineResult {
@@ -43,6 +45,31 @@ export interface FastPipelineInput {
 }
 
 export type ProgressCallback = (progress: PipelineProgress) => void | Promise<void>;
+
+/** Per-stage timeout defaults (seconds). Must be well under BullMQ lockDuration (300s). */
+const STAGE_TIMEOUTS = {
+  recipeCurator: 240_000,
+  nutritionCompiler: 60_000,
+  qaValidator: 60_000,
+  brandRenderer: 120_000,
+} as const;
+
+/** Wraps a promise with a timeout. Rejects with a descriptive error if the deadline is exceeded. */
+function withTimeout<T>(promise: Promise<T>, ms: number, label: string): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error(`${label} timed out after ${ms / 1000}s`)), ms);
+    promise.then(
+      (val) => {
+        clearTimeout(timer);
+        resolve(val);
+      },
+      (err) => {
+        clearTimeout(timer);
+        reject(err);
+      }
+    );
+  });
+}
 
 /**
  * Nutrition Pipeline Orchestrator (P4-T03 refactor)
@@ -75,11 +102,15 @@ export class NutritionPipelineOrchestrator {
   constructor(config: PipelineConfig) {
     assertPipelineConfig(config);
 
-    this.usdaAdapter = new USDAAdapter(config.usdaApiKey);
+    this.usdaAdapter = new USDAAdapter(config.usdaApiKey, config.externalFoodCache);
 
     this.fatSecretAdapter =
       config.fatsecretClientId && config.fatsecretClientSecret
-        ? new FatSecretAdapter(config.fatsecretClientId, config.fatsecretClientSecret)
+        ? new FatSecretAdapter(
+            config.fatsecretClientId,
+            config.fatsecretClientSecret,
+            config.externalFoodCache
+          )
         : undefined;
 
     this.localUsdaAdapter = config.prismaClient
@@ -176,33 +207,37 @@ export class NutritionPipelineOrchestrator {
 
       const cacheWarmAbort = new AbortController();
 
-      const [draft] = await Promise.all([
-        // Agent 3: main path — generate meal plan via Claude
-        this.recipeCurator
-          .generate(metabolicProfile, clientIntake, (sub) => {
-            emit(3, 'Recipe Curator', 'Generating personalized meal ideas...', sub);
-          })
-          .then((d) => {
-            // Cancel cache warming once Claude returns (results already cached)
-            cacheWarmAbort.abort();
-            return d;
-          }),
+      const [draft] = await withTimeout(
+        Promise.all([
+          // Agent 3: main path — generate meal plan via Claude
+          this.recipeCurator
+            .generate(metabolicProfile, clientIntake, (sub) => {
+              emit(3, 'Recipe Curator', 'Generating personalized meal ideas...', sub);
+            })
+            .then((d) => {
+              // Cancel cache warming once Claude returns (results already cached)
+              cacheWarmAbort.abort();
+              return d;
+            }),
 
-        // CacheWarmer: fire-and-forget, runs during Claude wait
-        // Prefer local adapter when available to avoid live API calls
-        this.cacheWarmer
-          .warm(
-            clientIntake.dietaryStyle,
-            clientIntake.allergies,
-            this.localUsdaAdapter
-              ? (query) => this.localUsdaAdapter!.searchFoods(query, 5).then(() => undefined)
-              : (query) => this.usdaAdapter.searchFoods(query, 5).then(() => undefined),
-            { signal: cacheWarmAbort.signal, concurrency: 3 }
-          )
-          .catch(() => {
-            // Fire-and-forget: errors are silent
-          }),
-      ]);
+          // CacheWarmer: fire-and-forget, runs during Claude wait
+          // Prefer local adapter when available to avoid live API calls
+          this.cacheWarmer
+            .warm(
+              clientIntake.dietaryStyle,
+              clientIntake.allergies,
+              this.localUsdaAdapter
+                ? (query) => this.localUsdaAdapter!.searchFoods(query, 5).then(() => undefined)
+                : (query) => this.usdaAdapter.searchFoods(query, 5).then(() => undefined),
+              { signal: cacheWarmAbort.signal, concurrency: 3 }
+            )
+            .catch(() => {
+              // Fire-and-forget: errors are silent
+            }),
+        ]),
+        STAGE_TIMEOUTS.recipeCurator,
+        'RecipeCurator'
+      );
 
       timings['recipeCurator'] = Date.now() - start;
 
@@ -228,9 +263,13 @@ export class NutritionPipelineOrchestrator {
       // Agent 4: Nutrition Compiler
       await emit(4, 'Nutrition Compiler', 'Verifying nutrition data...');
       start = Date.now();
-      const compiled = await this.nutritionCompiler.compile(finalDraft, clientIntake, (sub) => {
-        emit(4, 'Nutrition Compiler', 'Verifying nutrition data...', sub);
-      });
+      const compiled = await withTimeout(
+        this.nutritionCompiler.compile(finalDraft, clientIntake, (sub) => {
+          emit(4, 'Nutrition Compiler', 'Verifying nutrition data...', sub);
+        }),
+        STAGE_TIMEOUTS.nutritionCompiler,
+        'NutritionCompiler'
+      );
       timings['nutritionCompiler'] = Date.now() - start;
 
       // ──────────────────────────────────────────────
@@ -240,7 +279,11 @@ export class NutritionPipelineOrchestrator {
       // Agent 5: QA Validator
       await emit(5, 'QA Validator', 'Running quality assurance checks...');
       start = Date.now();
-      const validated = await this.qaValidator.validate(compiled, clientIntake);
+      const validated = await withTimeout(
+        this.qaValidator.validate(compiled, clientIntake),
+        STAGE_TIMEOUTS.qaValidator,
+        'QAValidator'
+      );
       timings['qaValidator'] = Date.now() - start;
 
       // Enrich validated plan with calculation metadata for templates (P4-T08)
@@ -260,15 +303,15 @@ export class NutritionPipelineOrchestrator {
       // should not fail if Puppeteer is unavailable (e.g. missing Chromium on Railway)
       let pdfBuffer: Buffer;
       try {
-        pdfBuffer = await renderPdf(summaryHtml, gridHtml, groceryHtml);
+        pdfBuffer = await withTimeout(
+          renderPdf(summaryHtml, gridHtml, groceryHtml),
+          STAGE_TIMEOUTS.brandRenderer,
+          'BrandRenderer:PDF'
+        );
       } catch (pdfError) {
-        console.warn(
-          JSON.stringify({
-            level: 'warn',
-            message: 'PDF generation failed, returning empty buffer',
-            error: pdfError instanceof Error ? pdfError.message : String(pdfError),
-            timestamp: new Date().toISOString(),
-          })
+        engineLogger.warn(
+          '[Pipeline] PDF generation failed, returning empty buffer',
+          pdfError instanceof Error ? pdfError.message : String(pdfError)
         );
         pdfBuffer = Buffer.alloc(0);
       }
@@ -277,16 +320,7 @@ export class NutritionPipelineOrchestrator {
 
       const totalTime = Date.now() - pipelineStart;
 
-      // eslint-disable-next-line no-console
-      console.log(
-        JSON.stringify({
-          level: 'info',
-          message: 'Pipeline completed',
-          timings,
-          totalTime,
-          timestamp: new Date().toISOString(),
-        })
-      );
+      engineLogger.info('[Pipeline] Pipeline completed', { timings, totalTime });
 
       await onProgress?.({
         status: 'completed',
@@ -306,16 +340,11 @@ export class NutritionPipelineOrchestrator {
       const userMessage = sanitizeError(error);
       const totalTime = Date.now() - pipelineStart;
 
-      console.error(
-        JSON.stringify({
-          level: 'error',
-          message: 'Pipeline failed',
-          error: internalMessage,
-          timings,
-          totalTime,
-          timestamp: new Date().toISOString(),
-        })
-      );
+      engineLogger.error('[Pipeline] Pipeline failed', {
+        error: internalMessage,
+        timings,
+        totalTime,
+      });
 
       await onProgress?.({
         status: 'failed',
@@ -384,19 +413,23 @@ export class NutritionPipelineOrchestrator {
       // Stage 2: Skip Agent 3, re-compile with updated targets
       await emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...');
       start = Date.now();
-      const compiled = await this.nutritionCompiler.compile(
-        input.existingDraft,
-        clientIntake,
-        (sub) => {
+      const compiled = await withTimeout(
+        this.nutritionCompiler.compile(input.existingDraft, clientIntake, (sub) => {
           emit(4, 'Nutrition Compiler', 'Re-compiling with updated targets...', sub);
-        }
+        }),
+        STAGE_TIMEOUTS.nutritionCompiler,
+        'NutritionCompiler'
       );
       timings['nutritionCompiler'] = Date.now() - start;
 
       // Stage 3: QA + Rendering
       await emit(5, 'QA Validator', 'Running quality assurance checks...');
       start = Date.now();
-      const validated = await this.qaValidator.validate(compiled, clientIntake);
+      const validated = await withTimeout(
+        this.qaValidator.validate(compiled, clientIntake),
+        STAGE_TIMEOUTS.qaValidator,
+        'QAValidator'
+      );
       timings['qaValidator'] = Date.now() - start;
 
       await emit(6, 'Brand Renderer', 'Generating your meal plan deliverables...');
@@ -405,15 +438,15 @@ export class NutritionPipelineOrchestrator {
 
       let pdfBuffer: Buffer;
       try {
-        pdfBuffer = await renderPdf(summaryHtml, gridHtml, groceryHtml);
+        pdfBuffer = await withTimeout(
+          renderPdf(summaryHtml, gridHtml, groceryHtml),
+          STAGE_TIMEOUTS.brandRenderer,
+          'BrandRenderer:PDF'
+        );
       } catch (pdfError) {
-        console.warn(
-          JSON.stringify({
-            level: 'warn',
-            message: 'PDF generation failed (fast path), returning empty buffer',
-            error: pdfError instanceof Error ? pdfError.message : String(pdfError),
-            timestamp: new Date().toISOString(),
-          })
+        engineLogger.warn(
+          '[Pipeline] PDF generation failed (fast path), returning empty buffer',
+          pdfError instanceof Error ? pdfError.message : String(pdfError)
         );
         pdfBuffer = Buffer.alloc(0);
       }
@@ -422,16 +455,7 @@ export class NutritionPipelineOrchestrator {
 
       const totalTime = Date.now() - pipelineStart;
 
-      // eslint-disable-next-line no-console
-      console.log(
-        JSON.stringify({
-          level: 'info',
-          message: 'Fast pipeline completed',
-          timings,
-          totalTime,
-          timestamp: new Date().toISOString(),
-        })
-      );
+      engineLogger.info('[Pipeline] Fast pipeline completed', { timings, totalTime });
 
       await onProgress?.({
         status: 'completed',
@@ -451,16 +475,11 @@ export class NutritionPipelineOrchestrator {
       const userMessage = sanitizeError(error);
       const totalTime = Date.now() - pipelineStart;
 
-      console.error(
-        JSON.stringify({
-          level: 'error',
-          message: 'Fast pipeline failed',
-          error: internalMessage,
-          timings,
-          totalTime,
-          timestamp: new Date().toISOString(),
-        })
-      );
+      engineLogger.error('[Pipeline] Fast pipeline failed', {
+        error: internalMessage,
+        timings,
+        totalTime,
+      });
 
       await onProgress?.({
         status: 'failed',

@@ -32,6 +32,7 @@ export async function GET() {
     }
 
     // Find the active meal plan (exclude soft-deleted plans)
+    // Use select instead of include to skip large unused blobs like draftData
     const activePlan = await prisma.mealPlan.findFirst({
       where: {
         userId: user.id,
@@ -39,7 +40,25 @@ export async function GET() {
         deletedAt: null, // Exclude soft-deleted plans
       },
       orderBy: { generatedAt: 'desc' },
-      include: {
+      select: {
+        id: true,
+        version: true,
+        dailyKcalTarget: true,
+        dailyProteinG: true,
+        dailyCarbsG: true,
+        dailyFatG: true,
+        trainingBonusKcal: true,
+        planDays: true,
+        startDate: true,
+        endDate: true,
+        qaScore: true,
+        qaStatus: true,
+        status: true,
+        isActive: true,
+        generatedAt: true,
+        pdfUrl: true,
+        validatedPlan: true,
+        metabolicProfile: true,
         profile: {
           select: {
             name: true,

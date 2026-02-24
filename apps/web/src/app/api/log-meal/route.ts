@@ -40,6 +40,7 @@ export async function POST(request: Request) {
     // Verify plan belongs to user
     const plan = await prisma.mealPlan.findFirst({
       where: { id: planId, userId: dbUserId },
+      select: { id: true },
     });
 
     if (!plan) {

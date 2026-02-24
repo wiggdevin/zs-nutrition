@@ -13,6 +13,9 @@ const withBundleAnalyzer = bundleAnalyzer({
 const nextConfig: NextConfig = {
   distDir: process.env.NEXT_DIST_DIR || '.next',
   reactStrictMode: true,
+  compiler: {
+    removeConsole: isDev ? false : { exclude: ['error', 'warn'] },
+  },
   transpilePackages: ['@zero-sum/nutrition-engine', '@zsn/queue-config'],
   outputFileTracingRoot: path.join(__dirname, '../../'),
   serverExternalPackages: [

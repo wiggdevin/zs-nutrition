@@ -95,6 +95,7 @@ export async function POST() {
       const bullmqJobData: PlanGenerationJobData = {
         jobId: job.id,
         pipelinePath: 'full',
+        traceId: crypto.randomUUID(),
       };
 
       try {

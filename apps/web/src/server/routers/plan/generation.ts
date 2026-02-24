@@ -93,6 +93,7 @@ export const planGenerationRouter = router({
     const bullmqJobData: PlanGenerationJobData = {
       jobId: job.id,
       pipelinePath: 'full',
+      traceId: crypto.randomUUID(),
     };
 
     try {
@@ -317,6 +318,7 @@ export const planGenerationRouter = router({
     const bullmqJobData: PlanGenerationJobData = {
       jobId: job.id,
       pipelinePath: 'full',
+      traceId: crypto.randomUUID(),
     };
 
     try {

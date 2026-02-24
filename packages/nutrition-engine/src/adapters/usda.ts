@@ -14,6 +14,12 @@ import { CircuitBreaker } from './fatsecret/circuit-breaker';
 import { FoodSearchResult, FoodDetails, FoodServing, ExternalFoodCache } from './food-data-types';
 
 /**
+ * Module-level concurrency limiter shared across all USDAAdapter instances.
+ * Capped at 3 to stay well under the USDA rate limit (1,000 req/hour).
+ */
+const usdaApiLimit = pLimit(3);
+
+/**
  * Module-level circuit breaker for USDA API calls.
  * Configuration: 5 failures to open, 30s reset, 10s per-request timeout.
  */
@@ -76,7 +82,6 @@ interface USDAFoodDetailResponse {
 
 export class USDAAdapter {
   private apiKey: string;
-  private readonly apiLimit = pLimit(5);
 
   private searchCache: LRUCache<string, FoodSearchResult[]>;
   private foodCache: LRUCache<string, FoodDetails>;
@@ -209,7 +214,7 @@ export class USDAAdapter {
   }
 
   async searchFoods(query: string, maxResults: number = 20): Promise<FoodSearchResult[]> {
-    return this.apiLimit(async () => {
+    return usdaApiLimit(async () => {
       if (!this.isConfigured()) {
         return [];
       }
@@ -304,7 +309,7 @@ export class USDAAdapter {
   }
 
   async getFood(fdcId: string): Promise<FoodDetails> {
-    return this.apiLimit(async () => {
+    return usdaApiLimit(async () => {
       if (!this.isConfigured()) {
         throw new Error('USDA food lookup requires a valid API key');
       }

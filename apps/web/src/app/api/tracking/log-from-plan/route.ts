@@ -42,7 +42,7 @@ export async function POST(request: NextRequest) {
       return notFound('User not found');
     }
 
-    let body: any;
+    let body: Record<string, unknown>;
     try {
       body = await request.json();
     } catch {
@@ -58,6 +58,14 @@ export async function POST(request: NextRequest) {
     // Get the meal plan (exclude soft-deleted)
     const mealPlan = await prisma.mealPlan.findFirst({
       where: { id: planId, userId: user.id, deletedAt: null },
+      select: {
+        id: true,
+        validatedPlan: true,
+        dailyKcalTarget: true,
+        dailyProteinG: true,
+        dailyCarbsG: true,
+        dailyFatG: true,
+      },
     });
 
     if (!mealPlan) {

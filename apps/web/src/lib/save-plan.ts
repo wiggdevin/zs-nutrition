@@ -4,7 +4,6 @@ import { generatePlanPdf } from '@/lib/generate-plan-pdf';
 import { uploadPlanPdf } from '@/lib/upload-pdf';
 import { logger } from '@/lib/safe-logger';
 import { toLocalDay, addDays } from '@/lib/date-utils';
-import { isUniqueConstraintError } from '@/lib/plan-utils';
 import { compressJson, decompressJson, jsonSizeBytes } from '@/lib/compression';
 import { cacheDelete, CacheKeys } from '@/lib/cache';
 
@@ -181,15 +180,7 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
     const planDays = planData.days?.length || 7;
     const endDate = addDays(startDate, planDays);
 
-    // 4. Determine the next version number for this user
-    const latestPlan = await prisma.mealPlan.findFirst({
-      where: { userId },
-      orderBy: { version: 'desc' },
-      select: { version: true },
-    });
-    const nextVersion = (latestPlan?.version ?? 0) + 1;
-
-    // 5. Compress large JSON fields before storage
+    // 4. Compress large JSON fields before storage
     const compressedPlan = compressJson(planData);
     const compressedDraft = draftData ? compressJson(draftData) : undefined;
 
@@ -226,87 +217,51 @@ export async function savePlanToDatabase(data: PlanCompletionData): Promise<Save
       savingsPercent,
     });
 
-    // 6. Deactivate old plans and create new plan atomically in a transaction
-    // This prevents race conditions where plans could be left in an inconsistent state
-    // The partial unique index (MealPlan_userId_active_unique) enforces only one active plan per user
-    let mealPlan;
-    try {
-      mealPlan = await prisma.$transaction(async (tx) => {
-        // Step 1: Deactivate any existing active plans for this user (only non-deleted ones)
-        await tx.mealPlan.updateMany({
-          where: { userId, isActive: true, deletedAt: null },
-          data: { isActive: false, status: 'replaced' },
-        });
-
-        // Step 2: Create the MealPlan record (atomic with step 1)
-        // validatedPlan and draftData are compressed if >10KB for storage optimization
-        return tx.mealPlan.create({
-          data: {
-            userId,
-            profileId: profile.id,
-            validatedPlan: compressedPlan as unknown as Prisma.InputJsonValue,
-            metabolicProfile: metabolicProfile || {},
-            draftData: (compressedDraft ?? undefined) as Prisma.InputJsonValue | undefined,
-            dailyKcalTarget: dailyKcalTarget ? Math.round(dailyKcalTarget) : null,
-            dailyProteinG: dailyProteinG ? Math.round(dailyProteinG) : null,
-            dailyCarbsG: dailyCarbsG ? Math.round(dailyCarbsG) : null,
-            dailyFatG: dailyFatG ? Math.round(dailyFatG) : null,
-            trainingBonusKcal: metabolicProfile?.trainingBonusKcal
-              ? Math.round(metabolicProfile.trainingBonusKcal)
-              : null,
-            planDays,
-            startDate,
-            endDate,
-            qaScore: qaScore ? Math.round(qaScore) : null,
-            qaStatus: qaStatus || null,
-            version: nextVersion,
-            status: 'active',
-            isActive: true,
-          },
-        });
+    // 5. Deactivate old plans, compute next version, and create new plan atomically
+    // Version is computed inside the transaction to prevent race conditions where
+    // concurrent saves could read the same latest version before either commits.
+    const mealPlan = await prisma.$transaction(async (tx) => {
+      // Step 1: Deactivate any existing active plans for this user (only non-deleted ones)
+      await tx.mealPlan.updateMany({
+        where: { userId, isActive: true, deletedAt: null },
+        data: { isActive: false, status: 'replaced' },
       });
-    } catch (error) {
-      // Handle unique constraint violation from partial unique index
-      // This can occur in rare race conditions despite the transaction
-      if (isUniqueConstraintError(error)) {
-        logger.warn(
-          `[savePlanToDatabase] Unique constraint hit, retrying with forced deactivation`
-        );
 
-        // Force deactivate all active plans and retry
-        await prisma.mealPlan.updateMany({
-          where: { userId, isActive: true, deletedAt: null },
-          data: { isActive: false, status: 'replaced' },
-        });
+      // Step 2: Determine the next version number (inside tx to prevent duplicates)
+      const latestPlan = await tx.mealPlan.findFirst({
+        where: { userId },
+        orderBy: { version: 'desc' },
+        select: { version: true },
+      });
+      const nextVersion = (latestPlan?.version ?? 0) + 1;
 
-        mealPlan = await prisma.mealPlan.create({
-          data: {
-            userId,
-            profileId: profile.id,
-            validatedPlan: compressedPlan as unknown as Prisma.InputJsonValue,
-            metabolicProfile: metabolicProfile || {},
-            draftData: (compressedDraft ?? undefined) as Prisma.InputJsonValue | undefined,
-            dailyKcalTarget: dailyKcalTarget ? Math.round(dailyKcalTarget) : null,
-            dailyProteinG: dailyProteinG ? Math.round(dailyProteinG) : null,
-            dailyCarbsG: dailyCarbsG ? Math.round(dailyCarbsG) : null,
-            dailyFatG: dailyFatG ? Math.round(dailyFatG) : null,
-            trainingBonusKcal: metabolicProfile?.trainingBonusKcal
-              ? Math.round(metabolicProfile.trainingBonusKcal)
-              : null,
-            planDays,
-            startDate,
-            endDate,
-            qaScore: qaScore ? Math.round(qaScore) : null,
-            qaStatus: qaStatus || null,
-            version: nextVersion,
-            status: 'active',
-            isActive: true,
-          },
-        });
-      } else {
-        throw error;
-      }
-    }
+      // Step 3: Create the MealPlan record (atomic with steps 1-2)
+      // validatedPlan and draftData are compressed if >10KB for storage optimization
+      return tx.mealPlan.create({
+        data: {
+          userId,
+          profileId: profile.id,
+          validatedPlan: compressedPlan as unknown as Prisma.InputJsonValue,
+          metabolicProfile: metabolicProfile || {},
+          draftData: (compressedDraft ?? undefined) as Prisma.InputJsonValue | undefined,
+          dailyKcalTarget: dailyKcalTarget ? Math.round(dailyKcalTarget) : null,
+          dailyProteinG: dailyProteinG ? Math.round(dailyProteinG) : null,
+          dailyCarbsG: dailyCarbsG ? Math.round(dailyCarbsG) : null,
+          dailyFatG: dailyFatG ? Math.round(dailyFatG) : null,
+          trainingBonusKcal: metabolicProfile?.trainingBonusKcal
+            ? Math.round(metabolicProfile.trainingBonusKcal)
+            : null,
+          planDays,
+          startDate,
+          endDate,
+          qaScore: qaScore ? Math.round(qaScore) : null,
+          qaStatus: qaStatus || null,
+          version: nextVersion,
+          status: 'active',
+          isActive: true,
+        },
+      });
+    });
 
     // 7. Generate and upload PDF
     let pdfUrl: string | null = null;

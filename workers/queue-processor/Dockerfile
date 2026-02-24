@@ -1,6 +1,6 @@
 FROM node:20-slim
 
-# Install system dependencies required by @sparticuz/chromium
+# Install system dependencies required by @sparticuz/chromium + curl for healthcheck
 RUN apt-get update && apt-get install -y --no-install-recommends \
     libnss3 \
     libatk1.0-0 \
@@ -17,6 +17,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libasound2 \
     libxshmfence1 \
     fonts-liberation \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
 RUN corepack enable pnpm
@@ -52,5 +53,9 @@ RUN pnpm turbo run build --filter=@zsn/queue-processor
 ENV NODE_ENV=production
 
 WORKDIR /app/workers/queue-processor
+
+EXPOSE 3457
+HEALTHCHECK --interval=30s --timeout=5s --start-period=15s --retries=3 \
+  CMD curl -f http://localhost:3457/ || exit 1
 
 CMD ["node", "dist/index.js"]

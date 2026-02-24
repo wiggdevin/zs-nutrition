@@ -37,6 +37,13 @@ export const mealMutationsRouter = router({
           userId: dbUserId,
           deletedAt: null,
         },
+        select: {
+          id: true,
+          dailyKcalTarget: true,
+          dailyProteinG: true,
+          dailyCarbsG: true,
+          dailyFatG: true,
+        },
       });
 
       if (!plan) {

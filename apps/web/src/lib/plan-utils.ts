@@ -27,6 +27,7 @@ export async function softDeleteMealPlan(
   // First verify the plan exists and belongs to the user
   const existingPlan = await prisma.mealPlan.findFirst({
     where: { id: planId, userId, deletedAt: null },
+    select: { id: true },
   });
 
   if (!existingPlan) {

@@ -2,6 +2,7 @@ import { Worker, Job } from 'bullmq';
 import {
   NutritionPipelineOrchestrator,
   PipelineConfig,
+  RedisFoodCache,
   closeBrowserPool,
   type PipelineProgress,
 } from '@zero-sum/nutrition-engine';
@@ -14,6 +15,7 @@ import { PrismaClient } from '@prisma/client';
 import { startDLQConsumer } from './dlq-consumer.js';
 import { logger } from './logger.js';
 import { safeError } from './utils.js';
+import { startHealthServer, recordJobStart, recordJobEnd } from './health-server.js';
 
 /**
  * Redis publisher for SSE progress streaming.
@@ -200,6 +202,9 @@ function getPrismaClient(): PrismaClient | undefined {
   return _prisma;
 }
 
+// L2 food cache backed by Redis — shares the publisher connection (safe: no SUBSCRIBE mode)
+const foodCache = new RedisFoodCache(publisher);
+
 function buildPipelineConfig(): PipelineConfig {
   const env = workerEnv();
   return {
@@ -208,7 +213,18 @@ function buildPipelineConfig(): PipelineConfig {
     fatsecretClientId: env.FATSECRET_CLIENT_ID || undefined,
     fatsecretClientSecret: env.FATSECRET_CLIENT_SECRET || undefined,
     prismaClient: getPrismaClient(),
+    externalFoodCache: foodCache,
   };
+}
+
+// Module-scope orchestrator singleton — FoodAliasCache loads once at startup
+let _orchestrator: NutritionPipelineOrchestrator | undefined;
+
+function getOrchestrator(): NutritionPipelineOrchestrator {
+  if (!_orchestrator) {
+    _orchestrator = new NutritionPipelineOrchestrator(buildPipelineConfig());
+  }
+  return _orchestrator;
 }
 
 function validateEnvVars() {
@@ -242,6 +258,9 @@ async function startWorker() {
   // Validate env vars before doing anything else
   validateEnvVars();
 
+  // Start health HTTP server for Railway HEALTHCHECK
+  startHealthServer();
+
   logger.info('Listening on queue', { queue: QUEUE_NAMES.PLAN_GENERATION });
 
   const connection = createRedisConnection();
@@ -273,12 +292,14 @@ async function startWorker() {
   // P5-T02: Start DLQ consumer to process permanently failed jobs
   const dlqWorker = startDLQConsumer(connection);
 
-  const orchestrator = new NutritionPipelineOrchestrator(buildPipelineConfig());
+  // Initialize module-scope orchestrator (FoodAliasCache loads once)
+  const orchestrator = getOrchestrator();
 
   const worker = new Worker(
     QUEUE_NAMES.PLAN_GENERATION,
     async (job: Job<PlanGenerationJobData>) => {
       logger.info('Processing job', { jobId: String(job.id), jobName: job.name });
+      recordJobStart();
 
       const { jobId, pipelinePath, existingDraftId } = job.data;
 
@@ -364,12 +385,15 @@ async function startWorker() {
           logger.error('Error stack', { error: safeError({ message: error.stack }) });
         }
         throw error;
+      } finally {
+        recordJobEnd();
       }
     },
     {
       connection,
       concurrency: 2,
       lockDuration: 300000, // 5 min — pipeline can take 75s+, default 30s causes stale lock errors
+      closeTimeout: 180_000, // 3 min — allow in-flight jobs to finish before force-closing
     }
   );
 
@@ -469,13 +493,14 @@ async function startWorker() {
     process.exit(1);
   });
 
-  // Graceful shutdown
+  // Graceful shutdown — drain jobs first, then release resources
   const shutdown = async () => {
-    logger.info('Shutting down worker');
+    logger.info('Shutting down worker — draining active jobs');
+    await worker.close(); // waits for in-flight jobs (up to closeTimeout)
+    await dlqWorker.close();
+    logger.info('Jobs drained, releasing resources');
     await closeBrowserPool();
     if (_prisma) await _prisma.$disconnect();
-    await worker.close();
-    await dlqWorker.close();
     await deadLetterQueue.close();
     await publisher.quit();
     await connection.quit();

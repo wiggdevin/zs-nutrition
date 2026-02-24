@@ -125,6 +125,7 @@ export async function POST(req: NextRequest) {
         userId: user.id,
         deletedAt: null, // Exclude soft-deleted plans
       },
+      select: { id: true, validatedPlan: true },
     });
 
     if (!mealPlan) {

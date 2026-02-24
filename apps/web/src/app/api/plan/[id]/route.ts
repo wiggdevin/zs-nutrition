@@ -47,7 +47,24 @@ export async function GET(request: NextRequest, { params }: { params: Promise<{ 
         userId: user.id, // <-- Security: ensures user can only access their own plans
         deletedAt: null, // Exclude soft-deleted plans
       },
-      include: {
+      select: {
+        id: true,
+        dailyKcalTarget: true,
+        dailyProteinG: true,
+        dailyCarbsG: true,
+        dailyFatG: true,
+        trainingBonusKcal: true,
+        planDays: true,
+        startDate: true,
+        endDate: true,
+        qaScore: true,
+        qaStatus: true,
+        status: true,
+        isActive: true,
+        generatedAt: true,
+        pdfUrl: true,
+        validatedPlan: true,
+        metabolicProfile: true,
         profile: {
           select: {
             name: true,

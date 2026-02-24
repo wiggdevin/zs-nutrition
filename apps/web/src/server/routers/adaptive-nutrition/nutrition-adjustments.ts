@@ -226,6 +226,7 @@ export const nutritionAdjustmentsRouter = router({
           status: 'active',
           deletedAt: null,
         },
+        select: { id: true },
       });
 
       let planRegenerated = false;
@@ -282,6 +283,7 @@ export const nutritionAdjustmentsRouter = router({
         const bullmqJobData: PlanGenerationJobData = {
           jobId: job.id,
           pipelinePath: 'full',
+          traceId: crypto.randomUUID(),
         };
 
         try {
